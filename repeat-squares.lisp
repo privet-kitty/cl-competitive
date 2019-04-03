@@ -1,8 +1,0 @@
-(defun power (obj pow &optional (op #'*) (identity 1))
-  (declare (function op))
-  (labels ((recur (x p)
-             (declare ((integer 0 #.most-positive-fixnum) p))
-             (cond ((zerop p) identity)
-                   ((evenp p) (recur (funcall op x x) (ash p -1)))
-                   (t (funcall op x (recur x (- p 1)))))))
-    (recur obj pow)))
