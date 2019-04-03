@@ -1,0 +1,15 @@
+;; from UIOP
+(defun split-string (string &key max (separator '(#\Space #\Tab)))
+  (block ()
+    (let ((list nil) (words 0) (end (length string)))
+      (when (zerop end) (return nil))
+      (flet ((separatorp (char) (find char separator))
+             (done () (return (cons (subseq string 0 end) list))))
+        (loop
+          :for start = (if (and max (>= words (1- max)))
+                           (done)
+                           (position-if #'separatorp string :end end :from-end t))
+          :do (when (null start) (done))
+              (push (subseq string (1+ start) end) list)
+              (incf words)
+              (setf end start))))))

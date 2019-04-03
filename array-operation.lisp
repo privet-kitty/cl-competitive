@@ -1,0 +1,5 @@
+(defun array+! (a1 a2)
+  (let ((vec1 (array-storage-vector a1))
+        (vec2 (array-storage-vector a2)))
+    (dotimes (idx (length vec1) a1)
+      (incf (aref vec1 idx) (aref vec2 idx)))))

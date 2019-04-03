@@ -1,0 +1,46 @@
+(declaim (inline test-random-graph))
+(defun test-random-graph (n &optional (sample 1000))
+  "Test for random simple graphs of size N."
+  (declare ((integer 1 #.most-positive-fixnum) n sample))
+  (assert (= sb-vm:n-word-bits 64))
+  (let* ((num-words (floor (expt n 2) sb-vm:n-word-bits))
+         (end-index (* num-words sb-vm:n-word-bits))
+         (total-size (* n n))
+         (mask-msb (dpb 0 (byte (- total-size end-index) 0) #.(- (expt 2 64) 1)))
+         (mask-lsb (- (expt 2 (- total-size end-index)) 1))
+         (adjacence (make-array (list n n) :element-type 'bit :initial-element 0))
+         (storage (array-storage-vector adjacence))
+         (sum-table (make-array n :element-type '(unsigned-byte 32) :initial-element 0)))
+    (declare ((integer 0 #.most-positive-fixnum) num-words end-index total-size)
+             ((unsigned-byte 64) mask-msb mask-lsb))
+    (dotimes (_ sample)
+      (fill sum-table 0)
+      (dotimes (i num-words)
+        (setf (sb-kernel:%vector-raw-bits storage i)
+              (random #.(expt 2 64))))
+      ;; Preserves the rest bits of the last word though it may be unnecessary.
+      (unless (= end-index total-size)
+        (setf (sb-kernel:%vector-raw-bits storage num-words)
+              (logxor (logand mask-msb (sb-kernel:%vector-raw-bits storage num-words))
+                      (logand mask-lsb (random #.(expt 2 64))))))
+      (dotimes (i n)
+        (loop for j from (1+ i) below n
+              when (= 1 (aref adjacence i j))
+              do (incf (aref sum-table i) (+ 1 j))
+                 (incf (aref sum-table j) (+ 1 i))))
+      (when (and (> (aref sum-table 0) 0)
+                 (loop for i from 1 below n
+                       always (= (aref sum-table i) (aref sum-table (- i 1)))))
+        (format t "~D:~%" (aref sum-table 0))
+        (normalize-adjacence-matrix! adjacence)
+        (format t "~A~%" adjacence)))))
+
+(declaim (inline normalize-adjacence-matrix!))
+(defun normalize-adjacence-matrix! (mat)
+  "Removes self-loops and copy the right upper triangle to the left lower
+triangle."
+  (let ((n (array-dimension mat 0)))
+    (dotimes (i n) (setf (aref mat i i) 0))
+    (dotimes (i n)
+      (loop for j from 0 below i
+            do (setf (aref mat i j) (aref mat j i))))))

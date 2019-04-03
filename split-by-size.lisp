@@ -1,0 +1,10 @@
+(defun split-by-size (str size)
+  (declare (optimize (speed 3) (safety 1))
+           (simple-string str))
+  (loop with dest-arr = (make-array size :element-type 'fixnum)
+        for idx below size ; fix me
+        for pos1 = 0 then (1+ pos2)
+        for pos2 = (position #\space str :start pos1 :test #'char=)
+        do (setf (aref dest-arr idx)
+                 (parse-integer str :start pos1 :end pos2))
+        finally (return dest-arr)))
