@@ -1,4 +1,6 @@
-;; most naive implementation of deque
+;; naivest implementation of deque
+;; It doesn't serves a serious purpose.
+
 (defstruct (deque (:constructor make-deque (one-direction-size
                                             &key (element-type t)
                                             &aux (front-pos (- one-direction-size 1))

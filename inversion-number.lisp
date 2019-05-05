@@ -1,129 +1,143 @@
-;; -*- coding: utf-8 -*-
+;;;
+;;; Calculates inversion number by merge sort
+;;;
 
-;;
-;; Fehlstandszahl von einen Vektor berechnen
-;;
+;; Introduce INIT-VECTOR for better type-propagation on SBCL
+#+sbcl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-c:defknown init-vector (vector)
+      vector (sb-c:flushable)
+    :overwrite-fndb-silently t)
 
-(deftype non-negative-fixnum nil '(integer 0 #.(min most-positive-fixnum array-total-size-limit)))
+  (sb-c:defoptimizer (init-vector sb-c:derive-type) ((template))
+    (let* ((template-type (sb-c::lvar-type template))
+           (spec `(,(if (sb-kernel:array-type-complexp template-type) 'array 'simple-array)
+                   ,(sb-kernel:type-specifier (sb-kernel:array-type-element-type template-type))
+                   (*))))
+      (sb-c::careful-specifier-type spec))))
 
-(declaim (inline %merge))
-(defun %merge (l mid r source-vec dest-vec source-ref dest-ref predicate)
-  (loop with i = l
+(defun init-vector (template)
+  "Returns a newly initialized vector of the same type as TEMPLATE."
+  (declare (optimize (speed 3)))
+  (make-array (length template) :element-type (array-element-type template)))
+
+(declaim (inline %merge-count))
+(defun %merge-count (l mid r source-vec dest-vec predicate)
+  (declare ((mod #.array-total-size-limit) l mid r)
+           (function predicate))
+  (loop with count of-type (integer 0 #.most-positive-fixnum) = 0
+        with i = l
         with j = mid
         for idx from l
         when (= i mid)
-          do (loop for j from j below r
-                   for idx from idx
-                   do (setf (aref dest-vec idx) (aref source-vec j)
-                            (aref dest-ref idx) (aref source-ref j))
-                   finally (return-from %merge t))
+        do (loop for j from j below r
+                 for idx from idx
+                 do (setf (aref dest-vec idx)
+                          (aref source-vec j))
+                 finally (return-from %merge-count count))
         when (= j r)
-          do (loop for i from i below mid
-                   for idx from idx
-                   do (setf (aref dest-vec idx) (aref source-vec i)
-                            (aref dest-ref idx) (aref source-ref i))
-                   finally (return-from %merge t))
-        do (if (funcall predicate (aref source-vec i) (aref source-vec j))
-               (setf (aref dest-vec idx) (aref source-vec i)
-                     (aref dest-ref idx) (aref source-ref i)
-                     i (1+ i))
+        do (loop for i from i below mid
+                 for idx from idx
+                 do (setf (aref dest-vec idx)
+                          (aref source-vec i))
+                 finally (return-from %merge-count count))
+        do (if (funcall predicate
+                        (aref source-vec j)
+                        (aref source-vec i))
                (setf (aref dest-vec idx) (aref source-vec j)
-                     (aref dest-ref idx) (aref source-ref j)
-                     j (1+ j)))))
+                     j (1+ j)
+                     count (+ count (- mid i)))
+               (setf (aref dest-vec idx) (aref source-vec i)
+                     i (1+ i)))))
 
-(declaim (inline merge-sort!))
-(defun merge-sort! (vector predicate)
-  (declare (vector vector)
-           (function predicate))
-  "Mischsortieren. Gibt den sortierten Vektor und den endsprechenden Indexvektor
-zurück."
-  (let* ((len (length vector))
-         (vec1 vector)
-         (vec2 (make-array len :element-type (array-element-type vector)))
-         (idxvec1 (make-array len :element-type 'non-negative-fixnum)) ; Vektor von Indizes
-         (idxvec2 (make-array len :element-type 'non-negative-fixnum))
-         ;; Was wir brauchen ist die inverse Abbildung von idxvec1.
-         ;; hier idxvec2 als Alias wiederverwenden
-         (refvec idxvec2))
-    (declare (dynamic-extent vec2 idxvec1))
-    (dotimes (i len)
-      (setf (aref idxvec1 i) i))
-    (labels ((%merge-sort (l r merge-to-vec1-p)
-               (declare (optimize (speed 3) (safety 0))
-                        (non-negative-fixnum l r))
-               (if (<= (- r l) 2)
-                   (if (funcall predicate (aref vec1 l) (aref vec1 (- r 1)))
-                       (unless merge-to-vec1-p
-                         (setf (aref vec2 l) (aref vec1 l)
-                               (aref vec2 (- r 1)) (aref vec1 (- r 1))
-                               (aref idxvec2 l) (aref idxvec1 l)
-                               (aref idxvec2 (- r 1)) (aref idxvec1 (- r 1))))
-                       (if merge-to-vec1-p
-                           (progn
-                             (rotatef (aref vec1 l) (aref vec1 (- r 1)))
-                             (rotatef (aref idxvec1 l) (aref idxvec1 (- r 1))))
-                           (setf (aref vec2 l) (aref vec1 (- r 1))
-                                 (aref idxvec2 l) (aref idxvec1 (- r 1))
-                                 (aref vec2 (- r 1)) (aref vec1 l)
-                                 (aref idxvec2 (- r 1)) (aref idxvec1 l))))
-                   (let ((mid (ceiling (+ l r) 2)))
-                     (%merge-sort l mid (not merge-to-vec1-p))
-                     (%merge-sort mid r (not merge-to-vec1-p))
-                     (if merge-to-vec1-p
-                         (%merge l mid r vec2 vec1 idxvec2 idxvec1 predicate)
-                         (%merge l mid r vec1 vec2 idxvec1 idxvec2 predicate))))))
-      (unless (zerop len)
-        (%merge-sort 0 len t)
-        (dotimes (i len)
-          (setf (aref refvec (aref idxvec1 i)) i)))
-      (values vec1 refvec))))
+(defmacro with-fixnum+ (form)
+  (let ((fixnum+ '(integer 0 #.most-positive-fixnum)))
+    `(the ,fixnum+
+          ,(reduce (lambda (f1 f2)`(,(car form)
+                                   (the ,fixnum+ ,f1)
+                                   (the ,fixnum+ ,f2)))
+	           (cdr form)))))
+
+;; (declaim (inline %calc-by-bubble-sort!))
+;; (defun %calc-by-bubble-sort! (vec predicate l r)
+;;   (declare (function predicate)
+;;            ((mod #.array-total-size-limit) l r))
+;;   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
+;;         for end from r above l
+;;         do (loop for i from l below (- end 1)
+;;                  do (when (funcall predicate (aref vec (+ i 1)) (aref vec i))
+;;                       (rotatef (aref vec i) (aref vec (+ i 1)))
+;;                       (incf inv-count)))
+;;         finally (return inv-count)))
+
+(declaim (inline %calc-by-insertion-sort!))
+(defun %calc-by-insertion-sort! (vec predicate l r)
+  (declare (function predicate)
+           ((mod #.array-total-size-limit) l r))
+  (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
+        for end from (+ l 1) below r
+        do (loop for i from end above l
+                 while (funcall predicate (aref vec i) (aref vec (- i 1)))
+                 do (rotatef (aref vec (- i 1)) (aref vec i))
+                    (incf inv-count))
+        finally (return inv-count)))
 
 (declaim (inline calc-inversion-number!))
-(defun calc-inversion-number! (vector non-strict-order)
-  "Nur eine nicht strenge Ordnung (wie #'<=) ist zulässig."
-  (let* ((invnum 0)
-         (b (make-array (length vector) :element-type 'non-negative-fixnum
-                                        :initial-element 0))
-         (refvec (nth-value 1 (merge-sort! (copy-seq vector) non-strict-order))))
-    (declare (non-negative-fixnum invnum))
-    (dotimes (i (length vector) invnum)
-      (loop for k from 0 to (aref refvec i)
-            sum (aref b k) into i-ti of-type non-negative-fixnum
-            finally (incf invnum (the non-negative-fixnum (- i i-ti)))
-                    (incf (aref b (aref refvec i)) 1)))))
+(defun calc-inversion-number! (vector predicate &key (start 0) end)
+  "Calculates the inversion number of VECTOR w.r.t. the strict order
+PREDICATE. This function sorts VECTOR as a side effect."
+  (declare (vector vector)
+           (function predicate))
+  (let ((end (or end (length vector))))
+    (declare ((mod #.array-total-size-limit) start end))
+    (assert (<= start end))
+    (let ((buffer (init-vector vector)))
+      (symbol-macrolet ((vec1 vector) (vec2 buffer))
+        (labels ((recurse (l r merge-to-vec1-p)
+                   (declare (optimize (safety 0))
+                            ((mod #.array-total-size-limit) l r))
+                   (cond ((= l r) 0)
+                         ((= (+ l 1) r)
+                          (unless merge-to-vec1-p
+                            (setf (aref vec2 l) (aref vec1 l)))
+                          0)
+                         ;; ((and (<= (- r l) 24) merge-to-vec1-p)
+                         ;;  (%calc-by-insertion-sort! vec1 predicate l r))
+                         (t
+                          (let ((mid (floor (+ l r) 2)))
+                            (with-fixnum+
+                                (+ (recurse l mid (not merge-to-vec1-p))
+                                   (recurse mid r (not merge-to-vec1-p))
+                                   (if merge-to-vec1-p
+                                       (%merge-count l mid r vec2 vec1 predicate)
+                                       (%merge-count l mid r vec1 vec2 predicate)))))))))
+          (recurse start end t))))))
 
-;; (defun calc-inversion-number-with-bubble-sort! (vec non-strict-order)
-;;   "PREDICATE darf nicht strenge Ordnung sein."
-;;   (loop for end from (length vec) above 0
-;;         sum (loop with inv-count = 0
-;;                   for i from 0 below (- end 1)
-;;                   do (unless (funcall non-strict-order (aref vec i) (aref vec (+ i 1)))
-;;                        (rotatef (aref vec i) (aref vec (+ i 1)))
-;;                        (incf inv-count))
-;;                   finally (return inv-count))))
+;; test
+(defun calc-inversion-number-by-bubble-sort! (vec predicate)
+  "PREDICATE must be strict order."
+  (loop for end from (length vec) above 0
+        sum (loop with inv-count = 0
+                  for i from 0 below (- end 1)
+                  do (when (funcall predicate (aref vec (+ i 1)) (aref vec i))
+                       (rotatef (aref vec i) (aref vec (+ i 1)))
+                       (incf inv-count))
+                  finally (return inv-count))))
 
-;; (defun test-sort (low high size sample)
-;;   (let* (; (state (sb-ext:seed-random-state 0))
-;;          (vec (make-array size :element-type 'fixnum)))
-;;     (labels ((random-fixnum ()
-;;                (- (random (- high low)) low)))
-;;       (loop repeat sample
-;;             do (dotimes (idx size)
-;;                  (setf (aref vec idx) (random-fixnum)))
-;;                (multiple-value-bind (sorted-vec ref)
-;;                    (merge-sort! (copy-seq vec) #'<)
-;;                  (unless (and (equalp (sort (copy-seq vec) #'<)
-;;                                       sorted-vec)
-;;                               (equalp (print vec)
-;;                                       (print (apply #'vector
-;;                                                     (loop for i below size
-;;                                                           collect (aref sorted-vec (aref ref i)))))))
-;;                    (return-from test-sort nil)))
-;;             finally (return t)))))
+(defun test-inversion ()
+  (let ((vec (make-array 200 :element-type 'fixnum)))
+    (declare ((simple-array fixnum (200)) vec))
+    (dotimes (i (length vec)) (setf (aref vec i) (random 20)))
+    (assert (= (calc-inversion-number! (copy-seq vec) #'<)
+               (calc-inversion-number-by-bubble-sort! (copy-seq vec) #'<)))))
 
-;; (defun test ()
-;;   (let ((vec (make-array 200 :element-type 'fixnum)))
-;;     (declare ((simple-array fixnum (200)) vec))
-;;     (dotimes (i (length vec)) (setf (aref vec i) (random 20)))
-;;     (print (calc-inversion-number! vec #'<=))
-;;     (print (calc-inversion-number-with-bubble-sort! vec #'<=))))
+(defun bench ()
+  (let* ((seed (seed-random-state 0))
+         (vector (make-array 1000000 :element-type 'fixnum)))
+    (declare (optimize (speed 3))
+             ((simple-array fixnum (1000000)) vector))
+    (gc :full t)
+    (time (loop repeat 20
+                do (dotimes (i 1000000)
+                     (setf (aref vector i) (random #.(expt 2 32) seed)))
+                sum (calc-inversion-number! vector #'>) of-type fixnum))))

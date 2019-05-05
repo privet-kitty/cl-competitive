@@ -1,3 +1,7 @@
+;;;
+;;; GARBAGE
+;;;
+
 (declaim (inline backward-parse-integer))
 (defun backward-parse-integer (string &key (end (length string)) (declare-fixnum t))
   (declare ((integer 1 #.most-positive-fixnum) end))

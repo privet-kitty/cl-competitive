@@ -5,7 +5,7 @@ to VECTOR each time."
   (declare (function function)
            (vector vector))
   (labels ((recurse (start end)
-             (declare ((integer 0 #.array-total-size-limit) start end))
+             (declare ((mod #.array-total-size-limit) start end))
              (if (> start end)
                  (funcall function vector)
                  (progn
@@ -19,7 +19,7 @@ to VECTOR each time."
 ;; Introduce INIT-VECTOR for better type-propagation on SBCL
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown init-vector (vector (integer 0 #.array-total-size-limit))
+  (sb-c:defknown init-vector (vector (mod #.array-total-size-limit))
       vector (sb-c:flushable)
     :overwrite-fndb-silently t)
 
@@ -47,7 +47,7 @@ the vector passed to FUNCTION will be recycled."
   (let* ((n (length vector))
          (k (or k n))
          (result (init-vector vector k)))
-    (declare ((integer 0 #.array-total-size-limit) k))
+    (declare ((mod #.array-total-size-limit) k))
     (labels ((recurse (pos prev)
                (if (= pos k)
                    (funcall function result)

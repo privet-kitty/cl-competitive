@@ -1,5 +1,5 @@
 (defun gemm! (a b c &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates C := A*B. (OP+, OP*) forms a semiring."
+  "Calculates C := A*B. (OP+, OP*) must form a semiring."
   (declare ((simple-array * (* *)) a b c))
   (dotimes (col (array-dimension a 0))
     (dotimes (row (array-dimension b 1))

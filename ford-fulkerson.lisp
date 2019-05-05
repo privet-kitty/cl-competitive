@@ -12,7 +12,7 @@
 
 (defun push-edge (from-idx to-idx capacity graph &key bidirectional)
   "FROM-IDX, TO-IDX := index of vertex
-GRAPH := vector of list of all the edges that goes from the vertex
+GRAPH := vector of lists of all the edges that goes from each vertex
 
 If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the
 same capacity."

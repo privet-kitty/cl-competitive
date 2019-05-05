@@ -1,15 +1,16 @@
 (declaim (ftype (function * (values simple-bit-vector &optional)) make-prime-table))
 (defun make-prime-table (size)
-  "Erzeugt die Primzahlentabelle 0 zu SIZE-1."
-  (declare (optimize (speed 3)))
+  "Erzeugt die Primzahlentabelle für 0, 1, ...,  SIZE-1."
+  (declare (optimize (speed 3) (safety 0)))
+  (check-type size (mod #.array-total-size-limit))
   (let ((dict (make-array size :element-type 'bit :initial-element 1)))
     (setf (sbit dict 0) 0
           (sbit dict 1) 0)
     (loop for even-num from 4 below size by 2
           do (setf (sbit dict even-num) 0))
-    (loop for p from 3 to (ceiling (sqrt size)) by 2
+    (loop for p from 3 to (+ 1 (isqrt (- size 1))) by 2
           when (= 1 (sbit dict p))
-          do (loop for composite from (+ p p) below size by p
+          do (loop for composite from (* 2 p) below size by p
                    until (>= composite size)
                    do (setf (sbit dict composite) 0)))
     dict))
@@ -37,3 +38,37 @@
                          do (setf num quot)))
           finally (return factor-table))))
 
+
+(declaim (ftype (function * (values list &optional)) factorize))
+(defun factorize (x prime-table)
+  "Returns the associative list of prime factors of X, which is composed
+of (<prime> . <exponent>). E.g. (factorize 100 <prime-table>) => '((2 . 2) (5
+. 5)).
+
+Note that the returned list is NOT guaranteed to be in ascending order."
+  (declare ((integer 1) x)
+           (simple-bit-vector prime-table))
+  (assert (>= (length prime-table) 3))
+  (append
+   (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
+         while (evenp x)
+         do (setf x (ash x -1))
+         finally (return
+                   (when (> exponent 0)
+                     (list (cons 2 exponent)))))
+   (loop for prime from 3 to (min x (- (length prime-table) 1)) by 2
+         for factor-cons =
+            (when (= 1 (sbit prime-table prime))
+              (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
+                    do (multiple-value-bind (quot rem) (floor x prime)
+                         (if (zerop rem)
+                             (setf x quot)
+                             (return
+                               (when (> exponent 0)
+                                 (return (cons prime exponent))))))))
+         when factor-cons
+         collect factor-cons into res
+         finally (return
+                   (if (= x 1)
+                       res
+                       (cons (cons x 1) res))))))

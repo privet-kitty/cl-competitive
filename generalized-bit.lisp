@@ -5,11 +5,11 @@ IDENTITY := object (identity element of the monoid)
 ORDER := nil | strict comparison operator on the monoid
 SUM-TYPE := nil | type specifier
 
-Defines no structure; BIT is just a vector. Defines the three function:
-<NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. In addition this macro defines
-the bisection function <NAME>-BISECT-LEFT if ORDER is specified. (Note that the
-last function works only when the sequence of sums (VECTOR[0],
-VECTOR[0]+VECTOR[1], ...) is monotonous.)
+Defines no structure; BIT is just a vector. This macro defines the three
+function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. In addition this
+macro defines the bisection function <NAME>-BISECT-LEFT if ORDER is
+specified. (Note that the last function works only when the sequence of
+sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotonous.)
 
 SUM-TYPE is used only for the type declaration: each sum
 VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. (The
@@ -18,7 +18,8 @@ element-type of vector itself doesn't need to be SUM-TYPE.)"
          (fname-update (intern (format nil "~A-UPDATE!" name)))
          (fname-sum (intern (format nil "~A-SUM" name)))
          (fname-coerce (intern (format nil "COERCE-TO-~A!" name)))
-         (fname-bisect (intern (format nil "~A-BISECT-LEFT" name))))
+         (fname-bisect-left (intern (format nil "~A-BISECT-LEFT" name)))
+         (fname-bisect-right (intern (format nil "~A-BISECT-RIGHT" name))))
     `(progn
        (declaim (inline ,fname-update))
        (defun ,fname-update (bitree index delta)
@@ -54,11 +55,11 @@ DELTA"
                finally (return vector)))
 
        ,@(when order
-           `((declaim (inline ,fname-bisect))
-             (defun ,fname-bisect (bitree value)
+           `((declaim (inline ,fname-bisect-left))
+             (defun ,fname-bisect-left (bitree value)
                "Returns the smallest index that fulfills VECTOR[0]+ ... +
-VECTOR[index-1] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
-... +VECTOR[END-1] > VALUE."
+VECTOR[index] >= VALUE. Returns length of VECTOR if VECTOR[0]+
+... +VECTOR[length-1] < VALUE."
                (declare (vector bitree))
                (if (not (funcall ,order value ,identity))
                    0
@@ -79,16 +80,41 @@ VECTOR[index-1] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
                                  `((declare (type ,sum-type next-cumul))))
                              (when (funcall ,order value next-cumul)
                                (setf cumul next-cumul)
+                               (incf index+1 delta)))))))))
+             (declaim (inline ,fname-bisect-right))
+             (defun ,fname-bisect-right (bitree value)
+               "Returns the smallest index that fulfills VECTOR[0]+ ... +
+VECTOR[index] > VALUE. Returns length of VECTOR if VECTOR[0]+
+... +VECTOR[length-1] <= VALUE."
+               (declare (vector bitree))
+               (if (funcall ,order ,identity value)
+                   0
+                   (let ((len (length bitree))
+                         (index+1 0)
+                         (cumul ,identity))
+                     (declare ((integer 0 #.most-positive-fixnum) index+1)
+                              ,@(when sum-type
+                                  `((type ,sum-type cumul))))
+                     (do ((delta (ash 1 (- (integer-length len) 1))
+                                 (ash delta -1)))
+                         ((zerop delta) index+1)
+                       (declare ((integer 0 #.most-positive-fixnum) delta))
+                       (let ((next-index (+ index+1 delta -1)))
+                         (when (< next-index len)
+                           (let ((next-cumul (funcall ,operator cumul (aref bitree next-index))))
+                             ,@(when sum-type
+                                 `((declare (type ,sum-type next-cumul))))
+                             (unless (funcall ,order next-cumul value)
+                               (setf cumul next-cumul)
                                (incf index+1 delta))))))))))))))
 
 (define-bitree bitree
   :operator #'+
   :identity 0
-  :sum-type 'fixnum
+  :sum-type fixnum
   :order #'>)
 
 ;; test
-#+swank
 (let ((tree (coerce-to-bitree! (vector 10 2 0 0 1 2 2)))
       (tree2 (coerce-to-bitree! (vector 1 0 0 1))))
   (assert (= 0 (bitree-bisect-left tree -1)))
@@ -104,11 +130,20 @@ VECTOR[index-1] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
   (assert (= 0 (bitree-bisect-left tree2 0)))
   (assert (= 0 (bitree-bisect-left tree2 1)))
   (assert (= 3 (bitree-bisect-left tree2 2)))
-  (assert (= 4 (bitree-bisect-left tree2 30000))))
+  (assert (= 1 (bitree-sum tree2 3)))
+  (assert (= 2 (bitree-sum tree2 4)))
+  (assert (= 4 (bitree-bisect-left tree2 30000)))
+  (assert (= 0 (bitree-bisect-right tree2 -1)))
+  (assert (= 0 (bitree-bisect-right tree2 0)))
+  (assert (= 3 (bitree-bisect-right tree2 1)))
+  (assert (= 4 (bitree-bisect-right tree2 2)))
+  (assert (= 4 (bitree-bisect-right tree2 30000))))
 
 ;; Example: inversion number
 ;; (declaim (inline make-reverse-lookup-table))
 ;; (defun make-reverse-lookup-table (vector &key (test #'eql))
+;;   "Assigns each value of the (usually sorted) VECTOR of length n to the integers
+;; 0, ..., n-1."
 ;;   (let ((table (make-hash-table :test test :size (length vector))))
 ;;     (dotimes (i (length vector) table)
 ;;       (setf (gethash (aref vector i) table) i))))

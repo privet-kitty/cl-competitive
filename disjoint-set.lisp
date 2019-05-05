@@ -6,11 +6,11 @@
             (:conc-name ds-))
   (data nil :type (simple-array fixnum (*))))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) ds-root))
+(declaim (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
 (defun ds-root (x disjoint-set)
   "Returns the root of X."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) x))
+           ((mod #.array-total-size-limit) x))
   (let ((data (ds-data disjoint-set)))
     (if (< (aref data x) 0)
         x

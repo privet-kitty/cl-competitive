@@ -1,4 +1,6 @@
 ;; -*- coding:utf-8 -*-
+
+
 (defstruct (queue (:constructor make-queue
                     (&optional list &aux (tail (last list)))))
   (list nil :type list)
@@ -19,7 +21,8 @@
 (defun dequeue (queue)
   (pop (queue-list queue)))
 
-(defun empty-queue-p (queue)
+(declaim (inline queue-empty-p))
+(defun queue-empty-p (queue)
   (null (queue-list queue)))
 
 (declaim (inline enqueue-front))

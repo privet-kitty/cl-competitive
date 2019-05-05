@@ -2,12 +2,10 @@
 ;;; Minimum cost flow 
 ;;;
 
-;; This is the simplest implementation of minimum cost flow by Ford-Fulkerson
-;; and Bellman-Ford, whose time complexity is O(FEV).
+;; This is the naivest implementation of minimum cost flow by Ford-Fulkerson and
+;; Bellman-Ford, whose time complexity is O(FEV). Please don't use it.
 
 (setf *print-circle* t)
-
-;; TODO: undirected case
 
 (defconstant +inf-dist+ most-positive-fixnum)
 

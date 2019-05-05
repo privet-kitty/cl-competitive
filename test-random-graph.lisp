@@ -32,12 +32,12 @@
                  (loop for i from 1 below n
                        always (= (aref sum-table i) (aref sum-table (- i 1)))))
         (format t "~D:~%" (aref sum-table 0))
-        (normalize-adjacence-matrix! adjacence)
+        (normalize-adjacency-matrix! adjacence)
         (format t "~A~%" adjacence)))))
 
-(declaim (inline normalize-adjacence-matrix!))
-(defun normalize-adjacence-matrix! (mat)
-  "Removes self-loops and copy the right upper triangle to the left lower
+(declaim (inline normalize-adjacency-matrix!))
+(defun normalize-adjacency-matrix! (mat)
+  "Removes self-loops and copies the right upper triangle to the left lower
 triangle."
   (let ((n (array-dimension mat 0)))
     (dotimes (i n) (setf (aref mat i i) 0))

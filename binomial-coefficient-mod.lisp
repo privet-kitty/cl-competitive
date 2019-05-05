@@ -1,7 +1,7 @@
-(defun make-com-table (size &optional (divisor 1000000007))
-  (declare ((unsigned-byte 31) divisor))
+(defun make-binom-table (size &optional (divisor 1000000007))
+  (check-type divisor (unsigned-byte 32))
   (let* ((table (make-array (list size size)
-                            :element-type '(unsigned-byte 31) ; FIXME
+                            :element-type '(unsigned-byte 32) ; FIXME
                             :initial-element 0)))
     (setf (aref table 0 0) 1)
     (loop for i from 1 below size
@@ -13,5 +13,5 @@
                                  divisor))))
     table))
 
-(declaim ((simple-array (unsigned-byte 31) (* *)) com-table))
-(defparameter com-table (make-com-table 1000))
+(declaim ((simple-array (unsigned-byte 32) (* *)) *binom-table*))
+(defparameter *binom-table* (make-binom-table 1000))

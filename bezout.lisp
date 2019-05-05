@@ -1,4 +1,7 @@
 ;; -*- coding:utf-8 -*-
+
+;; DEPRECATED
+
 (deftype non-negative-fixnum () '(integer 0 #.most-positive-fixnum))
 (defun trace-euclidean-alg (m n)
   "Gibt die Verlaufsliste des euklidischen Algorithmus zurück."

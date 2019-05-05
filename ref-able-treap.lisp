@@ -1,7 +1,9 @@
 (setf *print-circle* t)
 
-;; Treap accessible by index (O(log(n)))
-(defstruct (treap (:constructor make-treap (key priority &key left right (count 1)))
+;; Treap accessible by index (O(log(n))).
+;; Virtually it works like std::set of C++ or TreeSet of Java.
+
+(defstruct (treap (:constructor %make-treap (key priority &key left right (count 1)))
                   (:copier nil)
                   (:conc-name %treap-))
   key
@@ -30,8 +32,7 @@
   "Finds the sub-treap of TREAP whose key satisfies (and (not (funcall test
 key (%treap-key sub-treap))) (not (funcall test (%treap-key sub-treap) key)))
 and returns KEY. Returns NIL if KEY is not contained."
-  (declare (optimize (speed 3)) ; TCO
-           (function test)
+  (declare (function test)
            ((or null treap) treap))
   (cond ((null treap) nil)
         ((funcall test key (%treap-key treap))
@@ -40,17 +41,11 @@ and returns KEY. Returns NIL if KEY is not contained."
          (treap-find key (%treap-right treap) :test test))
         (t key)))
 
-(defun treap (test &rest keys)
-  (loop with res = nil
-        for key in keys
-        do (setf res (treap-insert key res :test test))
-        finally (return res)))
-
 (defun treap-bisect-left (value treap &key (test #'<))
   "Returns the smallest index and the corresponding key that satisfies
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
 VALUE."
-  (declare #.OPT (function test))
+  (declare (function test))
   (labels ((recurse (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -114,11 +109,54 @@ The behavior is undefined when duplicated keys are inserted."
                               (recurse node (%treap-right treap))))
                     (update-count treap)
                     treap))))
-    (recurse (make-treap key (random most-positive-fixnum)) treap)))
+    (recurse (%make-treap key (random most-positive-fixnum)) treap)))
+
+(defun treap (test &rest keys)
+  (loop with res = nil
+        for key in keys
+        do (setf res (treap-insert key res :test test))
+        finally (return res)))
+
+;; Reference: https://cp-algorithms.com/data_structures/treap.html
+;; TODO: take a sorted list as the argument
+(declaim (inline make-treap))
+(defun make-treap (sorted-vector)
+  "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
+doesn't check if the SORTED-VECTOR is properly sorted w.r.t. your intended
+order."
+  (declare (vector sorted-vector))
+  (labels ((heapify (top)
+             (when top
+               (let ((prioritized-node top))
+                 (when (and (%treap-left top)
+                            (> (%treap-priority (%treap-left top))
+                               (%treap-priority prioritized-node)))
+                   (setq prioritized-node (%treap-left top)))
+                 (when (and (%treap-right top)
+                            (> (%treap-priority (%treap-right top))
+                               (%treap-priority prioritized-node)))
+                   (setq prioritized-node (%treap-right top)))
+                 (unless (eql prioritized-node top)
+                   (rotatef (%treap-priority prioritized-node)
+                            (%treap-priority top))
+                   (heapify prioritized-node)))))
+           (build (l r)
+             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (if (= l r)
+                 nil
+                 (let* ((mid (ash (+ l r) -1))
+                        (node (%make-treap (aref sorted-vector mid)
+                                           (random most-positive-fixnum))))
+                   (setf (%treap-left node) (build l mid))
+                   (setf (%treap-right node) (build (+ mid 1) r))
+                   (heapify node)
+                   (update-count node)
+                   node))))
+    (build 0 (length sorted-vector))))
 
 (defun treap-merge (left right)
-  "Destructively merges two treaps. Assumes that all keys of LEFT are smaller (or larger,
-depending on the order) than those of RIGHT."
+  "Destructively merges two treaps. Assumes that all keys of LEFT are smaller
+(or larger, depending on the order) than those of RIGHT."
   (declare ((or null treap) left right))
   (cond ((null left) right)
         ((null right) left)
@@ -135,9 +173,7 @@ depending on the order) than those of RIGHT."
 
 (defun treap-delete (key treap &key (test #'<))
   "Destructively deletes the KEY in TREAP and returns the result treap. You
-cannot rely on the side effect. Use the returned value.
-
-Note that this function deletes at most one node even if duplicated keys exist."
+cannot rely on the side effect. Use the returned value."
   (declare ((or null treap) treap)
            (function test))
   (cond ((null treap) nil)
@@ -152,6 +188,25 @@ Note that this function deletes at most one node even if duplicated keys exist."
         (t
          (treap-merge (%treap-left treap) (%treap-right treap)))))
 
+(defun treap-map (function treap)
+  "Successively applies FUNCTION to TREAP[0], ..., TREAP[SIZE-1]. FUNCTION must
+take one argument."
+  (declare (function function))
+  (when treap
+    (treap-map function (%treap-left treap))
+    (funcall function (%treap-key treap))
+    (treap-map function (%treap-right treap))))
+
+(defmethod print-object ((object treap) stream)
+  (print-unreadable-object (object stream :type t)
+    (let ((init t))
+      (treap-map (lambda (key)
+                   (if init
+                       (setf init nil)
+                       (write-char #\  stream))
+                   (write key :stream stream))
+                 object))))
+
 (define-condition invalid-treap-index-error (type-error)
   ((treap :initarg :treap :reader invalid-treap-index-error-treap)
    (index :initarg :index :reader invalid-treap-index-error-index))
@@ -164,11 +219,10 @@ Note that this function deletes at most one node even if duplicated keys exist."
 (declaim (inline treap-ref))
 (defun treap-ref (treap index)
   "Index access"
-  (declare (optimize (speed 3)) ; TCO
-           ((or null treap) treap)
+  (declare ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
   (when (>= index (treap-count treap))
-    (error (make-condition 'invalid-treap-index-error :treap treap :index index)))
+    (error 'invalid-treap-index-error :treap treap :index index))
   (labels ((%ref (treap index)
              (declare ((integer 0 #.most-positive-fixnum) index))
              (let ((left-count (treap-count (%treap-left treap))))
@@ -179,26 +233,64 @@ Note that this function deletes at most one node even if duplicated keys exist."
                      (t (%treap-key treap))))))
     (%ref treap index)))
 
+;;;
+;;; For development
+;;;
+
 (defun copy-treap (treap)
   "For development. Recursively copies the whole TREAP."
   (declare ((or null treap) treap))
   (if (null treap)
       nil
-      (make-treap (%treap-key treap)
-                  (%treap-priority treap)
-                  :left (copy-treap (%treap-left treap))
-                  :right (copy-treap (%treap-right treap))
-                  :count (%treap-count treap))))
+      (%make-treap (%treap-key treap)
+                   (%treap-priority treap)
+                   :left (copy-treap (%treap-left treap))
+                   :right (copy-treap (%treap-right treap))
+                   :count (%treap-count treap))))
+
+(defun treap-priority (treap)
+  (declare ((or null treap) treap))
+  (if (null treap)
+      0
+      (%treap-priority treap)))
+
+(defun treap-sane-p (treap)
+  (or (null treap)
+      (and (>= (%treap-priority treap)
+               (treap-priority (%treap-left treap)))
+           (>= (%treap-priority treap)
+               (treap-priority (%treap-right treap)))
+           (= (%treap-count treap)
+              (+ 1
+                 (treap-count (%treap-left treap))
+                 (treap-count (%treap-right treap))))
+           (treap-sane-p (%treap-left treap))
+           (treap-sane-p (%treap-right treap)))))
 
 ;; Test
-;; (let ((treap1 (make-treap 50 15 :count 5))
-;;       (treap2 (make-treap 100 11 :count 3)))
-;;   (setf (%treap-left treap1) (make-treap 30 5 :count 3))
-;;   (setf (%treap-left (%treap-left treap1)) (make-treap 20 2 :count 1))
-;;   (setf (%treap-right (%treap-left treap1)) (make-treap 40 4 :count 1))
-;;   (setf (%treap-right treap1) (make-treap 70 10 :count 1))
-;;   (setf (%treap-right treap2) (make-treap 200 3 :count 1))
-;;   (setf (%treap-left treap2) (make-treap 99 5 :count 1))
+;; (loop repeat 10
+;;       do (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4))))
+;;          (assert (treap-sane-p (make-treap #(1))))
+;;          (assert (treap-sane-p nil)))
+
+;; (multiple-value-bind (left right) (treap-split 5 (treap-insert 0 (treap-insert 10 (treap-insert 5 nil))))
+;;   (assert (= 0 (%treap-key left)))
+;;   (assert (null (%treap-left left)))
+;;   (assert (null (%treap-right left)))
+;;   (assert (or (typep (%treap-left right) 'treap)
+;;               (typep (%treap-right right) 'treap))))
+
+;; (let ((treap1 (%make-treap 50 15 :count 5))
+;;       (treap2 (%make-treap 100 11 :count 3)))
+;;   (setf (%treap-left treap1) (%make-treap 30 5 :count 3))
+;;   (setf (%treap-left (%treap-left treap1)) (%make-treap 20 2 :count 1))
+;;   (setf (%treap-right (%treap-left treap1)) (%make-treap 40 4 :count 1))
+;;   (setf (%treap-right treap1) (%make-treap 70 10 :count 1))
+;;   (setf (%treap-right treap2) (%make-treap 200 3 :count 1))
+;;   (setf (%treap-left treap2) (%make-treap 99 5 :count 1))
 ;;   ;; copy-treap
 ;;   (assert (equalp treap1 (copy-treap treap1)))
 ;;   (assert (not (eql treap1 (copy-treap treap1))))
@@ -228,11 +320,3 @@ Note that this function deletes at most one node even if duplicated keys exist."
 ;;     (assert (= 99 (treap-ref treap 5)))
 ;;     (assert (= 100 (treap-ref treap 6)))
 ;;     (assert (= 200 (treap-ref treap 7)))))
-
-;; (multiple-value-bind (left right) (treap-split 5 (treap-insert 0 (treap-insert 10 (treap-insert 5 nil))))
-;;   (assert (= 0 (%treap-key left)))
-;;   (assert (null (%treap-left left)))
-;;   (assert (null (%treap-right left)))
-;;   (assert (or (typep (%treap-left right) 'treap)
-;;               (typep (%treap-right right) 'treap))))
-
