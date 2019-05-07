@@ -6,7 +6,7 @@
   (+ x y))
 
 ;; Treap with explicit key
-(defstruct (treap (:constructor make-treap (key priority value accumulator &key left right (count 1)))
+(defstruct (treap (:constructor %make-treap (key priority value accumulator &key left right (count 1)))
                   (:copier nil)
                   (:conc-name %treap-))
   (key 0 :type fixnum)
@@ -46,9 +46,10 @@
   (setf (%treap-accumulator treap)
         (if (%treap-left treap)
             (if (%treap-right treap)
-                (op (op (%treap-accumulator (%treap-left treap))
-                        (%treap-value treap))
-                    (%treap-accumulator (%treap-right treap)))
+                (let ((mid-res (op (%treap-accumulator (%treap-left treap))
+                                   (%treap-value treap))))
+                  (declare (dynamic-extent mid-res))
+                  (op mid-res (%treap-accumulator (%treap-right treap))))
                 (op (%treap-accumulator (%treap-left treap))
                     (%treap-value treap)))
             (if (%treap-right treap)
@@ -143,19 +144,19 @@ The behavior is undefined when duplicated keys are inserted."
                               (recur node (%treap-right treap))))
                     (force-self treap)
                     treap))))
-    (recur (make-treap key (random most-positive-fixnum) value value) treap)))
+    (recur (%make-treap key (random most-positive-fixnum) value value) treap)))
 
 (declaim (inline treap-ensure-key))
 (defun treap-ensure-key (key value treap &key (test #'<) if-exists)
   "IF-EXISTS := nil | function
 
-Ensures that TREAP contains KEY and assigns VALUE to it If IF-EXISTS is null. If
-IF-EXISTS is function and TREAP contains KEY, TREAP-ENSURE-KEY updates the value
-by the function instead of overwriting it with VALUE."
+Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
+false. If IF-EXISTS is function and TREAP contains KEY, TREAP-ENSURE-KEY updates
+the value by the function instead of overwriting it with VALUE."
   (declare (function test)
            ((or null treap) treap))
   (labels ((find-and-update (treap)
-             ;; Updates value and returns T if KEY exists
+             ;; Updates the value slot and returns T if KEY exists
              (cond ((null treap) nil)
                    ((funcall test key (%treap-key treap))
                     (when (find-and-update (%treap-left treap))
@@ -193,9 +194,9 @@ by the function instead of overwriting it with VALUE."
          right)))
 
 (defun treap-delete (key treap &key (test #'<))
-  "Destructively deletes the KEY in TREAP and returns the result treap. Returns
-the unmodified TREAP If KEY doesn't exist. You cannot rely on the side
-effect. Use the returned value.
+  "Destructively deletes the KEY in TREAP and returns the resultant
+treap. Returns the unmodified TREAP If KEY doesn't exist. You cannot rely on the
+side effect. Use the returned value.
 
  (Note that this function deletes at most one node even if duplicated keys
 exist.)"
@@ -240,6 +241,45 @@ KEY-VAR and VALUE-VAR and executes BODY."
   `(block nil
      (treap-map (lambda (,key-var ,value-var) ,@body) ,treap)
      ,result))
+
+;; Reference: https://cp-algorithms.com/data_structures/treap.html
+;; TODO: take a sorted list as the argument
+(declaim (inline make-treap))
+(defun make-treap (sorted-vector)
+  "Makes a treap using each key of the given SORTED-VECTOR in O(n). Note that
+this function doesn't check if the SORTED-VECTOR is properly sorted w.r.t. your
+intended order. The values are filled with the identity element."
+  (declare (vector sorted-vector))
+  (labels ((heapify (top)
+             (when top
+               (let ((prioritized-node top))
+                 (when (and (%treap-left top)
+                            (> (%treap-priority (%treap-left top))
+                               (%treap-priority prioritized-node)))
+                   (setq prioritized-node (%treap-left top)))
+                 (when (and (%treap-right top)
+                            (> (%treap-priority (%treap-right top))
+                               (%treap-priority prioritized-node)))
+                   (setq prioritized-node (%treap-right top)))
+                 (unless (eql prioritized-node top)
+                   (rotatef (%treap-priority prioritized-node)
+                            (%treap-priority top))
+                   (heapify prioritized-node)))))
+           (build (l r)
+             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (if (= l r)
+                 nil
+                 (let* ((mid (ash (+ l r) -1))
+                        (node (%make-treap (aref sorted-vector mid)
+                                           (random most-positive-fixnum)
+                                           +op-identity+
+                                           +op-identity+)))
+                   (setf (%treap-left node) (build l mid))
+                   (setf (%treap-right node) (build (+ mid 1) r))
+                   (heapify node)
+                   (update-count node)
+                   node))))
+    (build 0 (length sorted-vector))))
 
 (define-condition invalid-treap-index-error (type-error)
   ((treap :initarg :treap :reader invalid-treap-index-error-treap)
@@ -298,7 +338,7 @@ RIGHT). If LEFT (RIGHT) is not given, it is assumed to be -inf (+inf)."
   (declare ((or null treap) treap))
   (if (null treap)
       nil
-      (make-treap (%treap-key treap)
+      (%make-treap (%treap-key treap)
                   (%treap-priority treap)
                   (%treap-value treap)
                   (%treap-accumulator treap)
@@ -306,15 +346,50 @@ RIGHT). If LEFT (RIGHT) is not given, it is assumed to be -inf (+inf)."
                   :right (copy-treap (%treap-right treap))
                   :count (%treap-count treap))))
 
+;;;
+;;; For development
+;;;
+
+(defun treap-priority (treap)
+  (declare ((or null treap) treap))
+  (if (null treap)
+      0
+      (%treap-priority treap)))
+
+(defun treap-sane-p (treap)
+  (or (null treap)
+      (and (>= (%treap-priority treap)
+               (treap-priority (%treap-left treap)))
+           (>= (%treap-priority treap)
+               (treap-priority (%treap-right treap)))
+           (= (%treap-count treap)
+              (+ 1
+                 (treap-count (%treap-left treap))
+                 (treap-count (%treap-right treap))))
+           (= (%treap-accumulator treap)
+              (+ (%treap-value treap)
+                 (treap-accumulator (%treap-left treap))
+                 (treap-accumulator (%treap-right treap))))
+           (treap-sane-p (%treap-left treap))
+           (treap-sane-p (%treap-right treap)))))
+
 ;; Test
-;; (let ((treap1 (make-treap 50 15 :count 5))
-;;       (treap2 (make-treap 100 11 :count 3)))
-;;   (setf (%treap-left treap1) (make-treap 30 5 :count 3))
-;;   (setf (%treap-left (%treap-left treap1)) (make-treap 20 2 :count 1))
-;;   (setf (%treap-right (%treap-left treap1)) (make-treap 40 4 :count 1))
-;;   (setf (%treap-right treap1) (make-treap 70 10 :count 1))
-;;   (setf (%treap-right treap2) (make-treap 200 3 :count 1))
-;;   (setf (%treap-left treap2) (make-treap 99 5 :count 1))
+;; (loop repeat 10
+;;       do (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17))))
+;;          (assert (treap-sane-p (make-treap #(1 2 3 4))))
+;;          (assert (treap-sane-p (make-treap #(1))))
+;;          (assert (treap-sane-p nil)))
+
+;; (let ((treap1 (%make-treap 50 15 :count 5))
+;;       (treap2 (%make-treap 100 11 :count 3)))
+;;   (setf (%treap-left treap1) (%make-treap 30 5 :count 3))
+;;   (setf (%treap-left (%treap-left treap1)) (%make-treap 20 2 :count 1))
+;;   (setf (%treap-right (%treap-left treap1)) (%make-treap 40 4 :count 1))
+;;   (setf (%treap-right treap1) (%make-treap 70 10 :count 1))
+;;   (setf (%treap-right treap2) (%make-treap 200 3 :count 1))
+;;   (setf (%treap-left treap2) (%make-treap 99 5 :count 1))
 ;;   ;; copy-treap
 ;;   (assert (equalp treap1 (copy-treap treap1)))
 ;;   (assert (not (eql treap1 (copy-treap treap1))))
