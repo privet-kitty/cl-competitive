@@ -1,8 +1,8 @@
-
 (declaim (ftype (function * (values (vector (integer 0 #.most-positive-fixnum)) &optional))
                 enum-divisors))
 (defun enum-divisors (x)
-  "Enumerates all divisors of X. Note that the returned vector is NOT sorted."
+  "Enumerates all the divisors of X. Note that the returned vector is NOT
+sorted."
   (declare ((integer 0 #.most-positive-fixnum) x))
   (let* ((sqrt (isqrt x))
          (res (make-array (isqrt sqrt) ; FIXME: sets the initial size to x^1/4
