@@ -1,5 +1,5 @@
 (defun nearly= (threshold &rest numbers)
-  "THRESHOLD is acceptable absolute error."
+  "THRESHOLD := acceptable absolute error."
   (loop for (value1 value2) on numbers
         while value2
         always (<= (abs (- value1 value2)) threshold)))
@@ -11,13 +11,13 @@
         (t form)))
 
 (defun nearly<= (threshold &rest numbers)
-  "THRESHOLD is acceptable absolute error."
+  "THRESHOLD := acceptable absolute error."
   (loop for (value1 value2) on numbers
         while value2
         always (<= (- value1 value2) threshold)))
 
 (defun nearly-equal (threshold lst1 &rest lsts)
-  "THRESHOLD is acceptable absolute error."
+  "THRESHOLD := acceptable absolute error."
   (if (null lst1)
       t
       (and (apply #'nearly= threshold

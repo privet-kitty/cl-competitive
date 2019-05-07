@@ -12,6 +12,7 @@
 
 (declaim (inline gemm))
 (defun gemm (a b &key (op+ #'+) (op* #'*) (identity+ 0))
+  "Calculates A*B. (OP+, OP*) must form a semiring."
   (declare ((simple-array * (* *)) a b)
            (function op+ op*))
   (let ((c (make-array (list (array-dimension a 0) (array-dimension b 1))
@@ -27,6 +28,7 @@
 
 (declaim (inline gemv))
 (defun gemv (a x &key (op+ #'+) (op* #'*) (identity+ 0))
+  "Calculates A*x. (OP+, OP*) must form a semiring."
   (declare ((simple-array * (* *)) a)
            ((simple-array * (*)) x)
            (function op+ op*))

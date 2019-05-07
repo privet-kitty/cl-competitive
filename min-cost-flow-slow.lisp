@@ -3,7 +3,8 @@
 ;;;
 
 ;; This is the naivest implementation of minimum cost flow by Ford-Fulkerson and
-;; Bellman-Ford, whose time complexity is O(FEV). Please don't use it.
+;; Bellman-Ford, whose time complexity is O(FEV). I leave it just for my
+;; reference. Please use the Dijkstra version instead.
 
 (setf *print-circle* t)
 

@@ -17,5 +17,5 @@
       (loop
         (let* ((byte (%read-byte)))
           (if (<= 48 byte 57)
-              (setq result (+ (- byte 48) (the fixnum (* result 10))))
+              (setq result (+ (- byte 48) (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) result))))
               (return (if minus (- result) result))))))))

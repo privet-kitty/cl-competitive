@@ -1,4 +1,4 @@
-(defun modfactorial (n divisor)
+(defun mod-factorial (n divisor)
   (declare (optimize (speed 3)) ; TCO
            ((integer 0) n divisor))
   (labels ((rec (n res)
