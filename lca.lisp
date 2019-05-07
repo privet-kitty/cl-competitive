@@ -1,10 +1,10 @@
 ;;;
-;;; Lowest common anscestor of tree by bisection
-;;; construct: O(nlog(n))
+;;; Lowest common anscestor of tree, implemented by so-called doubling method
+;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;
 
-;; PAY ATTENTION TO THE STACK SIZE( as CONSTRUCT-LCA-TABLE does DFS)!
+;; PAY ATTENTION TO THE STACK SIZE! BUILD-LCA-TABLE does DFS.
 
 (deftype lca-vertex-number () '(signed-byte 32))
 
@@ -17,7 +17,7 @@
   (depths nil :type (simple-array lca-vertex-number (*)))
   (parents nil :type (simple-array lca-vertex-number (* *))))
 
-(defun construct-lca-table (root graph)
+(defun build-lca-table (root graph)
   (declare ((simple-array list (*)) graph))
   (let* ((size (length graph))
          (lca-table (make-lca-table size))
@@ -67,8 +67,8 @@
 (defun test-lca ()
   (let* ((graph (make-array 8 :element-type 'list :initial-contents '((1 2) (0 3 4) (0 5) (1) (1 6 7) (2) (4) (4))))
          (graph2 (make-array 9 :element-type 'list :initial-contents '((1) (0 2) (1 3) (2 4) (3 5) (4 6) (5 7) (6 8) (7))))
-         (table (construct-lca-table 0 graph))
-         (table2 (construct-lca-table 0 graph2)))
+         (table (build-lca-table 0 graph))
+         (table2 (build-lca-table 0 graph2)))
     (assert (= 4 (get-lca 6 7 table)))
     (assert (= 1 (get-lca 3 7 table)))
     (assert (= 0 (get-lca 3 5 table)))

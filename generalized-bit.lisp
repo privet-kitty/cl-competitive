@@ -8,7 +8,7 @@ SUM-TYPE := nil | type specifier
 Defines no structure; BIT is just a vector. This macro defines the three
 function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. In addition this
 macro defines the bisection function <NAME>-BISECT-LEFT if ORDER is
-specified. (Note that the last function works only when the sequence of
+specified. (Note that the last function works only when the sequence of prefix
 sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotonous.)
 
 SUM-TYPE is used only for the type declaration: each sum
@@ -34,7 +34,7 @@ DELTA"
 
        (declaim (inline ,fname-sum))
        (defun ,fname-sum (bitree end)
-         "Returns the sum of prefix: vector[0] + ... + vector[END-1]."
+         "Returns the sum of the prefix: vector[0] + ... + vector[END-1]."
          (declare ((integer 0 #.most-positive-fixnum) end))
          (let ((res ,identity))
            ,@(when sum-type `((declare (type ,sum-type res))))
@@ -115,29 +115,30 @@ VECTOR[index] > VALUE. Returns length of VECTOR if VECTOR[0]+
   :order #'>)
 
 ;; test
-(let ((tree (coerce-to-bitree! (vector 10 2 0 0 1 2 2)))
-      (tree2 (coerce-to-bitree! (vector 1 0 0 1))))
-  (assert (= 0 (bitree-bisect-left tree -1)))
-  (assert (= 0 (bitree-bisect-left tree 3)))
-  (assert (= 0 (bitree-bisect-left tree 10)))
-  (assert (= 1 (bitree-bisect-left tree 11)))
-  (assert (= 1 (bitree-bisect-left tree 12)))
-  (assert (= 4 (bitree-bisect-left tree 13)))
-  (assert (= 5 (bitree-bisect-left tree 14)))
-  (assert (= 6 (bitree-bisect-left tree 17)))
-  (assert (= 7 (bitree-bisect-left tree 18)))
-  (assert (= 7 (bitree-bisect-left tree 200)))
-  (assert (= 0 (bitree-bisect-left tree2 0)))
-  (assert (= 0 (bitree-bisect-left tree2 1)))
-  (assert (= 3 (bitree-bisect-left tree2 2)))
-  (assert (= 1 (bitree-sum tree2 3)))
-  (assert (= 2 (bitree-sum tree2 4)))
-  (assert (= 4 (bitree-bisect-left tree2 30000)))
-  (assert (= 0 (bitree-bisect-right tree2 -1)))
-  (assert (= 0 (bitree-bisect-right tree2 0)))
-  (assert (= 3 (bitree-bisect-right tree2 1)))
-  (assert (= 4 (bitree-bisect-right tree2 2)))
-  (assert (= 4 (bitree-bisect-right tree2 30000))))
+(defun test-generalized-bit ()
+  (let ((tree (coerce-to-bitree! (vector 10 2 0 0 1 2 2)))
+        (tree2 (coerce-to-bitree! (vector 1 0 0 1))))
+    (assert (= 0 (bitree-bisect-left tree -1)))
+    (assert (= 0 (bitree-bisect-left tree 3)))
+    (assert (= 0 (bitree-bisect-left tree 10)))
+    (assert (= 1 (bitree-bisect-left tree 11)))
+    (assert (= 1 (bitree-bisect-left tree 12)))
+    (assert (= 4 (bitree-bisect-left tree 13)))
+    (assert (= 5 (bitree-bisect-left tree 14)))
+    (assert (= 6 (bitree-bisect-left tree 17)))
+    (assert (= 7 (bitree-bisect-left tree 18)))
+    (assert (= 7 (bitree-bisect-left tree 200)))
+    (assert (= 0 (bitree-bisect-left tree2 0)))
+    (assert (= 0 (bitree-bisect-left tree2 1)))
+    (assert (= 3 (bitree-bisect-left tree2 2)))
+    (assert (= 1 (bitree-sum tree2 3)))
+    (assert (= 2 (bitree-sum tree2 4)))
+    (assert (= 4 (bitree-bisect-left tree2 30000)))
+    (assert (= 0 (bitree-bisect-right tree2 -1)))
+    (assert (= 0 (bitree-bisect-right tree2 0)))
+    (assert (= 3 (bitree-bisect-right tree2 1)))
+    (assert (= 4 (bitree-bisect-right tree2 2)))
+    (assert (= 4 (bitree-bisect-right tree2 30000)))))
 
 ;; Example: inversion number
 ;; (declaim (inline make-reverse-lookup-table))

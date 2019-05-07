@@ -1,4 +1,9 @@
-;; Based on alexandria
+;;;
+;;; Binomial coefficient by direct bignum arithmetic
+;;;
+;;; This code ist almost the same as that of alexandria.
+;;;
+
 (declaim (inline %multiply-range))
 (defun %multiply-range (i j)
   (labels ((bisect (j k)

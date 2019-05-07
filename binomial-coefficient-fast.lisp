@@ -1,3 +1,9 @@
+;;;
+;;; Binomial coefficient with mod
+;;; build: O(n)
+;;; query: O(1)
+;;;
+
 (defconstant +binom-size+ 510000)
 (defconstant +binom-mod+ #.(+ (expt 10 9) 7))
 

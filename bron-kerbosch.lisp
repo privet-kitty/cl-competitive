@@ -4,15 +4,15 @@
 ;;;
 
 (defun find-max-clique (neighbors)
-  "Returns a fixnum as bitset indicating a maximal clique. NEIGHBORS[i] must be
-the bitset indicating the neighbors of the vertex i."
+  "Returns a fixnum as the bitset indicating a maximal clique. NEIGHBORS[i] must
+be the bitset indicating the neighbors of the vertex i."
   (declare ((simple-array (integer 0 #.most-positive-fixnum) (*)) neighbors))
   (let ((n (length neighbors))
         (result-set 0)
         (result-size 0))
     (declare ((integer 0 #.most-positive-fixnum) result-set result-size))
     (labels ((tzcount (x)
-               (- (integer-length (logand x (- x))) 1))
+               (max 0 (- (integer-length (logand x (- x))) 1)))
              (recur (r p x)
                (declare ((integer 0 #.most-positive-fixnum) r p x))
                (if (zerop p)

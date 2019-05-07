@@ -1,6 +1,7 @@
 ;; -*- coding:utf-8 -*-
 
 ;; DEPRECATED
+;; Please don't use it.
 
 (deftype non-negative-fixnum () '(integer 0 #.most-positive-fixnum))
 (defun trace-euclidean-alg (m n)

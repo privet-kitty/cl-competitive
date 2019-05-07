@@ -4,7 +4,7 @@
 SEQUENCE if FROM-END is false (true). Any integers in SEQUENCE must not exceed
 RANGE-MAX."
   (declare (function function)
-           ((integer 0 (#.most-positive-fixnum)) range-max))
+           ((mod #.array-total-size-limit) range-max))
   (let ((counts (make-array (1+ range-max) :element-type 'fixnum :initial-element 0)))
     (declare (dynamic-extent counts))
     (let ((existing-min most-positive-fixnum)

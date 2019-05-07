@@ -1,3 +1,4 @@
+;; From alexandria
 (defun clamp (number min max)
   (if (< number min)
       min

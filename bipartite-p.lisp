@@ -1,4 +1,4 @@
-;; Be careful with the stack size!
+;; PAY ATTENTION TO THE STACK SIZE!
 (declaim (ftype (function * (values (or null simple-bit-vector) &optional)) bipartite-p))
 (defun bipartite-p (graph)
   "Decides if GRAPH is bipartite and returns the vector of colorings if

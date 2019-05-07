@@ -1,3 +1,9 @@
+;;;
+;;; This is an implementation of binary indexed tree, specialized for the
+;;; ordinary + operation. Please use the generalized-bit instead. I leave it
+;;; just for my reference.
+;;;
+
 (declaim (inline bitree-inc!))
 (defun bitree-inc! (bitree index delta)
   "Destructively increments the vector:
