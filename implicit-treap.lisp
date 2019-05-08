@@ -6,6 +6,8 @@
 (defun op (a b)
   (min a b))
 
+(defconstant +op-identity+ 0)
+
 (defconstant +updater-identity+ 0)
 
 (declaim (inline updater-op))
@@ -19,11 +21,11 @@
   (declare (ignore size))
   (+ a b))
 
-(defstruct (inode (:constructor %make-inode (value priority &key left right (count 1) (accumulator 0) (lazy 0) reversed))
+(defstruct (inode (:constructor %make-inode (value priority &key left right (count 1) (accumulator +op-identity+) (lazy +updater-identity+) reversed))
                   (:copier nil)
                   (:conc-name %inode-))
-  (value 0 :type fixnum)
-  (accumulator 0 :type fixnum) ; e.g. MIN, MAX, SUM, ...
+  (value +op-identity+ :type fixnum)
+  (accumulator +op-identity+ :type fixnum) ; e.g. MIN, MAX, SUM, ...
   (lazy +updater-identity+ :type fixnum)
   (reversed nil :type boolean)
   (priority 0 :type (integer 0 #.most-positive-fixnum))
@@ -201,39 +203,38 @@
                           (inode-insert inode position (car list))))))
     (recurse args 0 nil)))
 
-(declaim (inline log2-ceil))
-(defun log2-ceil (n) (integer-length (- n 1)))
-
-(defun make-inode (min-count initial-element)
-    "Returns a treap whose length is at least MIN-COUNT. Time complexity is
-O(n). (OP INITIAL-ELEMENT INITIAL-ELEMENT) must be equal to INITIAL-ELEMENT."
-  (declare ((integer 0 #.most-positive-fixnum) min-count))
-  (when (zerop min-count)
-    (return-from make-inode nil))
-  (let* ((max-depth (log2-ceil (1+ min-count))) ; Needs depth = log(N+1) for N nodes.
-         (count (- (ash 1 max-depth) 1)) ; 2^d-1 nodes for depth d
-         (width (floor most-positive-fixnum count)) ; step size of priorities
-         )
-    (labels ((recurse (depth)
-               (declare ((integer 0 #.(integer-length most-positive-fixnum)) depth))
-               (if (= depth max-depth)
-                   nil
-                   ;; the beginning node at depth = d has the 2^(d+1)-1-th highest
-                   ;; priority (1-based)
-                   (let* ((priority-index (- (ash 2 depth) 1))
-                          ;; highest priority base = width * (count-1)
-                          ;; lowest priority base = 0
-                          (priority-base (* (- count priority-index) width))
-                          ;; 2^d nodes exist at depth = d
-                          (priority-width (* width (ash 1 depth))))
-                     (declare ((integer 0 #.most-positive-fixnum)
-                               priority-index priority-base priority-width))
-                     (%make-inode initial-element
-                                  (+ priority-base (random priority-width))
-                                  :count (- (ash 1 (- max-depth depth)) 1)
-                                  :left (recurse (1+ depth))
-                                  :right (recurse (1+ depth)))))))
-      (recurse 0))))
+(declaim (inline make-inode))
+(defun make-inode (size)
+  "Makes a treap of SIZE in O(SIZE). The values are filled with the identity
+element."
+  (labels ((heapify (top)
+             (when top
+               (let ((prioritized-node top))
+                 (when (and (%inode-left top)
+                            (> (%inode-priority (%inode-left top))
+                               (%inode-priority prioritized-node)))
+                   (setq prioritized-node (%inode-left top)))
+                 (when (and (%inode-right top)
+                            (> (%inode-priority (%inode-right top))
+                               (%inode-priority prioritized-node)))
+                   (setq prioritized-node (%inode-right top)))
+                 (unless (eql prioritized-node top)
+                   (rotatef (%inode-priority prioritized-node)
+                            (%inode-priority top))
+                   (heapify prioritized-node)))))
+           (build (l r)
+             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (if (= l r)
+                 nil
+                 (let* ((mid (ash (+ l r) -1))
+                        (node (%make-inode +op-identity+
+                                           (random most-positive-fixnum))))
+                   (setf (%inode-left node) (build l mid))
+                   (setf (%inode-right node) (build (+ mid 1) r))
+                   (heapify node)
+                   (update-count node)
+                   node))))
+    (build 0 size)))
 
 (declaim (inline inode-delete))
 (defun inode-delete (inode index)
