@@ -1,3 +1,4 @@
+;; TODO: deal with bignums
 (declaim (inline ext-gcd))
 (defun ext-gcd (a b)
   "Returns two integers X and Y where AX + BY = gcd(A, B) holds."
@@ -27,9 +28,9 @@
 (declaim (inline mod-inverse))
 (defun mod-inverse (a m)
   "Solves ax ≡ 1 mod m. A and M must be coprime."
-  (declare (fixnum a)
+  (declare (integer a)
            ((integer 1 #.most-positive-fixnum) m))
-  (mod (ext-gcd a m) m))
+  (mod (ext-gcd (mod a m) m) m))
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
 (defun mod-log (x y divisor)
@@ -67,8 +68,8 @@ returns NIL if it is infeasible."
         ;; https://math.stackexchange.com/questions/131127/ for the detail.
         (let ((g (gcd x divisor)))
           (declare ((integer 0 #.most-positive-fixnum) g))
-          ;; KLUDGE: special treatment for the case x ≡ y. Without this (mod-log
-          ;; 4 0 4) returns not 1 but 2.
+          ;; Below is tha special treatment for the case x ≡ y. Without this
+          ;; (mod-log 4 0 4) returns not 1 but 2.
           (when (= x y)
             (return-from mod-log 1))
           (multiple-value-bind (y-prime rem) (floor y g)
