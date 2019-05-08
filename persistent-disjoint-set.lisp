@@ -6,8 +6,9 @@
 (defstruct (persistent-disjoint-set
             (:constructor make-persistent-disjoint-set
                 (size &aux
-                      ;; DATA holds a negative integer as size and a
-                      ;; non-negative integer as parent.
+                      ;; DATA holds a negative integer as the size of the
+                      ;; connected component and a non-negative integer as
+                      ;; the parent.
                       (data (make-array size :element-type 'fixnum :initial-element -1))
                       ;; TIMESTAMPS records the time when each vertex is no
                       ;; longer a root.
@@ -29,27 +30,44 @@
       (pds-root (aref (pds-data disjoint-set) x) time disjoint-set)))
 
 (declaim (inline pds-unite!))
-(defun pds-unite! (x1 x2 disjoint-set)
+(defun pds-unite! (x1 x2 disjoint-set &optional time)
   "Destructively unites X1 and X2."
+  (declare ((or null (integer 0 #.most-positive-fixnum))))
   (symbol-macrolet ((now (pds-now disjoint-set)))
-    (incf now)
-    (let ((timestamps (pds-timestamps disjoint-set))
-          (data (pds-data disjoint-set))
-          (root1 (pds-root x1 now disjoint-set))
-          (root2 (pds-root x2 now disjoint-set)))
-      (unless (= root1 root2)
-        (when (> (aref data root1) (aref data root2))
-          (rotatef root1 root2))
-        ;; (size root1) >= (size root2)
-        (incf (aref data root1) (aref data root2))
-        (setf (aref data root2) root1
-              (aref timestamps root2) now)
-        t))))
+    (let ((time (or time (+ 1 now))))
+      (setf now time)
+      (let ((timestamps (pds-timestamps disjoint-set))
+            (data (pds-data disjoint-set))
+            (root1 (pds-root x1 time disjoint-set))
+            (root2 (pds-root x2 time disjoint-set)))
+        (unless (= root1 root2)
+          (when (> (aref data root1) (aref data root2))
+            (rotatef root1 root2))
+          ;; (size root1) >= (size root2)
+          (incf (aref data root1) (aref data root2))
+          (setf (aref data root2) root1
+                (aref timestamps root2) time)
+          t)))))
 
 (declaim (inline pds-connected-p))
 (defun pds-connected-p (x1 x2 time disjoint-set)
   "Checks if X1 and X2 have the same root at TIME."
   (= (pds-root x1 time disjoint-set) (pds-root x2 time disjoint-set)))
+
+(declaim (inline pds-opening-time))
+(defun pds-opening-time (x1 x2 disjoint-set)
+  "Returns the earliest time when X1 and X2 were connected. Returns NIL if X1
+and X2 are not connected yet."
+  (labels ((bisect (ng ok)
+             (declare ((integer 0 #.most-positive-fixnum) ng ok))
+             (if (<= (- ok ng) 1)
+                 ok
+                 (let ((mid (ash (+ ng ok) -1)))
+                   (if (pds-connected-p x1 x2 mid disjoint-set)
+                       (bisect ng mid)
+                       (bisect mid ok))))))
+    (when (pds-connected-p x1 x2 (pds-now disjoint-set) disjoint-set)
+      (bisect 0 (pds-now disjoint-set)))))
 
 ;; Test
 (defun test-persistent-disjoint-set ()
