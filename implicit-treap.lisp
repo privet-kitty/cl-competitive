@@ -40,6 +40,13 @@
       (%inode-count inode)
       0))
 
+(declaim (inline inode-accumulator))
+(defun inode-accumulator (inode)
+  (declare ((or null inode) inode))
+  (if inode
+      (%inode-accumulator inode)
+      +op-identity+))
+
 (declaim (inline update-count))
 (defun update-count (inode)
   (declare (inode inode))
@@ -54,9 +61,10 @@
   (setf (%inode-accumulator inode)
         (if (%inode-left inode)
             (if (%inode-right inode)
-                (op (%inode-accumulator (%inode-left inode))
-                    (op (%inode-value inode)
-                        (%inode-accumulator (%inode-right inode))))
+                (let ((mid (op (%inode-accumulator (%inode-left inode))
+                               (%inode-value inode))))
+                  (declare (dynamic-extent mid))
+                  (op mid (%inode-accumulator (%inode-right inode))))
                 (op (%inode-accumulator (%inode-left inode))
                     (%inode-value inode)))
             (if (%inode-right inode)
