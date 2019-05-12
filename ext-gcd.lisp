@@ -82,26 +82,85 @@ returns NIL if it is infeasible."
                   (if res (+ 1 res) nil))
                 nil))))))
 
-;; test
-;; (progn
-;;   (dotimes (i 100)
-;;     (let ((a (- (random 20) 10))
-;;           (b (- (random 20) 10)))
-;;       (multiple-value-bind (x y) (ext-gcd a b)
-;;         (assert (= (+ (* a x) (* b y)) (gcd a b))))))
-;;   (dotimes (i 1000)
-;;     (let ((a (random 100))
-;;           (m (+ 2 (random 100))))
-;;       (assert (or (/= 1 (gcd a m))
-;;                   (= 1 (mod (* a (mod-inverse a m)) m)))))))
+(declaim (inline calc-min-factor))
+(defun calc-min-factor (x alpha)
+  "Returns k, so that x+k*alpha is the smallest non-negative number."
+  (if (plusp alpha)
+      (ceiling (- x) alpha)
+      (floor (- x) alpha)))
 
-;; (progn
-;;   (assert (= 8 (mod-log 6 4 44)))
-;;   (assert (= 8 (mod-log -38 -40 44)))
-;;   (assert (null (mod-log 6 2 44)))
-;;   (assert (= 2 (mod-log 8 4 12)))
-;;   (assert (= 4 (mod-log 3 13 17)))
-;;   (assert (= 1 (mod-log 12 0 4)))
-;;   (assert (= 2 (mod-log 12 0 8)))
-;;   (assert (null (mod-log 12 1 8)))
-;;   (assert (= 1 (mod-log 0 0 100))))
+(declaim (inline calc-max-factor))
+(defun calc-max-factor (x alpha)
+  "Returns k, so that x+k*alpha is the largest non-positive number."
+  (if (plusp alpha)
+      (floor (- x) alpha)
+      (ceiling (- x) alpha)))
+
+(defun solve-bezout (a b c &optional min max)
+  "Returns an integer solution of a*x+b*y = c, if it exists.
+
+If MIN is specified and MAX is null, X is the smallest integer equal or larger
+than MIN. If MAX is specified and MIN is null, X is the largest integer smaller
+than MAX. If the both are specified, X is an integer in [MIN, MAX]. This
+function returns NIL when no x, that satisfies the given condition, exists."
+  (declare (fixnum a b c)
+           ((or null fixnum) min max))
+  (let ((gcd-ab (gcd a b)))
+    (if (zerop (mod c gcd-ab))
+        (multiple-value-bind (init-x init-y) (ext-gcd a b)
+          (let* ((factor (floor c gcd-ab))
+                 ;; m*x0 + n*y0 = d
+                 (x0 (* init-x factor))
+                 (y0 (* init-y factor)))
+            (if (and (null min) (null max))
+                (values x0 y0)
+                (let (;; general solution: x = x0 + kΔx, y = y0 - kΔy
+                      (deltax (floor b gcd-ab))
+                      (deltay (floor a gcd-ab)))
+                  (if min
+                      (let* ((k-min (calc-min-factor (- x0 min) deltax))
+                             (x (+ x0 (* k-min deltax)))
+                             (y (- y0 (* k-min deltay))))
+                        (if (and max (> x max))
+                            (values nil nil)
+                            (values x y)))
+                      (let* ((k-max (calc-max-factor (- x0 max) deltax))
+                             (x (+ x0 (* k-max deltax)))
+                             (y (- y0 (* k-max deltay))))
+                        (if (<= x max)
+                            (values x y)
+                            (values nil nil))))))))
+        (values nil nil))))
+
+(defun test-ext-gcd ()
+  ;; ext-gcd
+  (dotimes (i 100)
+    (let ((a (- (random 20) 10))
+          (b (- (random 20) 10)))
+      (multiple-value-bind (x y) (ext-gcd a b)
+        (assert (= (+ (* a x) (* b y)) (gcd a b))))))
+  ;; mod-inverse
+  (dotimes (i 1000)
+    (let ((a (random 100))
+          (m (+ 2 (random 100))))
+      (assert (or (/= 1 (gcd a m))
+                  (= 1 (mod (* a (mod-inverse a m)) m))))))
+  ;; mod-log
+  (assert (= 8 (mod-log 6 4 44)))
+  (assert (= 8 (mod-log -38 -40 44)))
+  (assert (null (mod-log 6 2 44)))
+  (assert (= 2 (mod-log 8 4 12)))
+  (assert (= 4 (mod-log 3 13 17)))
+  (assert (= 1 (mod-log 12 0 4)))
+  (assert (= 2 (mod-log 12 0 8)))
+  (assert (null (mod-log 12 1 8)))
+  (assert (= 1 (mod-log 0 0 100)))
+
+  (assert (= (calc-min-factor 8 3) -2))
+  (assert (= (calc-min-factor -8 3) 3))
+  (assert (= (calc-min-factor 8 -3) 2))
+  (assert (= (calc-min-factor -8 -3) -3))
+  (assert (= (calc-max-factor 8 3) -3))
+  (assert (= (calc-max-factor -8 3) 2))
+  (assert (= (calc-max-factor 8 -3) 3))
+  (assert (= (calc-max-factor -8 -3) -2)))
