@@ -99,10 +99,11 @@ returns NIL if it is infeasible."
 (defun solve-bezout (a b c &optional min max)
   "Returns an integer solution of a*x+b*y = c, if it exists.
 
-If MIN is specified and MAX is null, X is the smallest integer equal or larger
-than MIN. If MAX is specified and MIN is null, X is the largest integer smaller
-than MAX. If the both are specified, X is an integer in [MIN, MAX]. This
-function returns NIL when no x, that satisfies the given condition, exists."
+If MIN is specified and MAX is null, the returned x is the smallest integer
+equal or larger than MIN. If MAX is specified and MIN is null, x is the largest
+integer equal or smaller than MAX. If the both are specified, x is an integer in
+[MIN, MAX]. This function returns NIL when no x that satisfies the given
+condition exists."
   (declare (fixnum a b c)
            ((or null fixnum) min max))
   (let ((gcd-ab (gcd a b)))

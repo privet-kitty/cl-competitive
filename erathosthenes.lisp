@@ -2,7 +2,7 @@
 (defun make-prime-table (sup)
   "Erzeugt die Primzahlentabelle für 0, 1, ...,  SUP-1."
   (declare (optimize (speed 3) (safety 0)))
-  (check-type sup (integer 2 (#.array-total-sup-limit)))
+  (check-type sup (integer 2 (#.array-total-size-limit)))
   (let ((dict (make-array sup :element-type 'bit :initial-element 1)))
     (setf (sbit dict 0) 0
           (sbit dict 1) 0)
