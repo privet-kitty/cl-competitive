@@ -13,5 +13,5 @@
                                  divisor))))
     table))
 
-(declaim ((simple-array (unsigned-byte 32) (* *)) *binom-table*))
-(defparameter *binom-table* (make-binom-table 1000))
+(declaim ((simple-array (unsigned-byte 32) (* *)) *binom*))
+(defparameter *binom* (make-binom-table 500))

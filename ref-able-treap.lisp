@@ -29,8 +29,8 @@
            (treap-count (%treap-right treap)))))
 
 (defun treap-find (key treap &key (test #'<))
-  "Finds the sub-treap of TREAP whose key satisfies (and (not (funcall test
-key (%treap-key sub-treap))) (not (funcall test (%treap-key sub-treap) key)))
+  "Finds the sub-treap of TREAP whose key satisfies (and (not (treap-order
+key (%treap-key sub-treap))) (not (treap-order (%treap-key sub-treap) key)))
 and returns KEY. Returns NIL if KEY is not contained."
   (declare (function test)
            ((or null treap) treap))
