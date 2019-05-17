@@ -36,3 +36,13 @@
       (mod (* (aref *fact* n)
               (mod (* (aref *fact-inv* k) (aref *fact-inv* (- n k))) +binom-mod+))
            +binom-mod+)))
+
+(defun multinomial (&rest ks)
+  (let ((sum 0)
+        (result 1))
+    (declare ((integer 0 #.most-positive-fixnum) result sum))
+    (dolist (k ks)
+      (incf sum k)
+      (setq result
+            (mod (* result (aref *fact-inv* k)) +binom-mod+)))
+    (mod (* result (aref *fact* sum)) +binom-mod+)))
