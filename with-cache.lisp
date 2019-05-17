@@ -1,11 +1,14 @@
-;; (with-memoizing (:hash-table :test #'equal :key #'cons)
+;; Memoization macro
+;;
+;; (with-cache (:hash-table :test #'equal :key #'cons)
 ;;   (defun ...))
-;; (with-memoizing (:array (10 10 * 10) :initial-element -1 :element-type 'fixnum)
+;; (with-cache (:array (10 10 * 10) :initial-element -1 :element-type 'fixnum)
 ;;   (defun foo (a b c d) ...) ; C is ignored.
+
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
 
-(defmacro with-memoizing (cache-attribs def-form)
+(defmacro with-cache (cache-attribs def-form)
   (let* ((cache-attribs (if (atom cache-attribs) (list cache-attribs) cache-attribs))
          (cache-type (first cache-attribs))
          (dimensions-with-* (when (eql cache-type :array) (second cache-attribs)))
@@ -127,14 +130,14 @@
                    (declare (ignorable #',(make-reset-name name)))
                    ,@labels-body))))))))))
 
-;; (test with-memoizing
-;;   (finishes (macroexpand `(with-memoizing (:hash-table :test #'equal)
+;; (test with-cache
+;;   (finishes (macroexpand `(with-cache (:hash-table :test #'equal)
 ;;                             (defun add (x y) (+ x y)))))
-;;   (finishes (macroexpand `(with-memoizing (:array '(10 10)
+;;   (finishes (macroexpand `(with-cache (:array '(10 10)
 ;;                                            :element-type 'fixnum
 ;;                                            :initial-element -1)
 ;;                             (defun add (x y) (+ x y)))))
-;;   (finishes (macroexpand `(with-memoizing (:array '(10 10)
+;;   (finishes (macroexpand `(with-cache (:array '(10 10)
 ;;                                            :element-type 'fixnum
 ;;                                            :initial-element -1)
 ;;                             (labels ((add (x y) (+ x y))
