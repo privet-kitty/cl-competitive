@@ -1,6 +1,6 @@
 ;;;
-;;; P(n, k) is the number of ways of writing n as a sum of at least k positive
-;;; integers.
+;;; P(n, k) is the number of ways of writing n as a sum of at least k
+;;; non-negative integers.
 ;;; 
 ;;; corner cases:
 ;;; P(0, k) = 1

@@ -2,7 +2,6 @@
 ;;; Topological sort
 ;;;
 
-
 (define-condition cycle-detected-error (simple-error)
   ((graph :initarg :graph :reader cycle-detected-error-graph)
    (vertex :initarg :vertex :reader cycle-detected-error-vertex))
