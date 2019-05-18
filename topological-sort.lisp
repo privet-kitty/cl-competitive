@@ -12,7 +12,7 @@
              (cycle-detected-error-graph condition)))))
 
 (defun topological-sort (graph)
-  "Returns the topologically sorted array of all the vertex in GRAPH. This
+  "Returns a topologically sorted array of all the vertex in GRAPH. This
 function signals CYCLE-DETECTED-ERROR when it detects a cycle.
 
 GRAPH := adjacency list."
