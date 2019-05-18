@@ -296,7 +296,7 @@ intended order. The values are filled with the identity element."
   (declare ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
   (when (>= index (treap-count treap))
-    (error (make-condition 'invalid-treap-index-error :treap treap :index index)))
+    (error 'invalid-treap-index-error :treap treap :index index))
   (labels ((%ref (treap index)
              (declare ((integer 0 #.most-positive-fixnum) index))
              (let ((left-count (treap-count (%treap-left treap))))

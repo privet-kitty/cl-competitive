@@ -75,35 +75,3 @@ TARGET before comparison."
       (function
        (assert end)
        (body funcall)))))
-
-;; Test
-;; (eval-when (:compile-toplevel :load-toplevel :execute)
-;;   (ql:quickload :fiveam))
-
-;; (5am:test bisect-left
-;;   (5am:is (= 0 (bisect-left #(1 8) -3)))
-;;   (5am:is (= 0 (bisect-left #(1 8) 1)))
-;;   (5am:is (= 1 (bisect-left #(1 8) 4)))
-;;   (5am:is (= 1 (bisect-left #(1 8) 8)))
-;;   (5am:is (= 2 (bisect-left #(1 8) 9)))
-;;   (5am:is (= 3 (bisect-left #(1 4 5 7 7 7 7 7 7 8) 7)))
-;;   (5am:is (= 3 (bisect-left #(1 4 4 7 7 7 7 7 8) 6)))
-;;   (5am:is (= 1 (bisect-left #(#\a #\c #\c #\d) #\b :test #'char<)))
-;;   (5am:is (= 4 (bisect-left #(nil 1 4 4 7 7 nil nil) 6 :start 1 :end 4))))
-
-;; (5am:test bisect-right
-;;   (5am:is (= 0 (bisect-right #(1) 0)))
-;;   (5am:is (= 1 (bisect-right #(1) 1)))
-;;   (5am:is (= 1 (bisect-right #(1) 2)))
-;;   (5am:is (= 0 (bisect-right #(1 8) 0)))
-;;   (5am:is (= 2 (bisect-right #(1 8) 8)))
-;;   (5am:is (= 1 (bisect-right #(1 8) 4)))
-;;   (5am:is (= 1 (bisect-right #(1 8) 1)))
-;;   (5am:is (= 2 (bisect-right #(1 8) 9)))
-;;   (5am:is (= 7 (bisect-right #(1 4 5 7 7 7 7 8) 7)))
-;;   (5am:is (= 3 (bisect-right #(1 4 4 7 7 7 7 7 8) 6)))
-;;   (5am:is (= 3 (bisect-right #(10 9 9 7 7 7 7 7 4) 9 :test #'>)))
-;;   (5am:is (= 3 (bisect-right #(#\a #\c #\c #\d) #\c :test #'char<)))
-;;   (5am:is (= 4 (bisect-right #(nil 1 4 4 4 4 7 7 nil nil) 4 :start 1 :end 4))))
-
-;; (5am:run! '(bisect-left bisect-right))
