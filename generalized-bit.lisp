@@ -1,4 +1,9 @@
-;; 1D BIT
+;;;
+;;; 1-dimensional binary indexed tree
+;;;
+
+;; TODO: multidimensional BIT
+
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'>))
   "OPERATOR := binary operator (on a commutative monoid)
 IDENTITY := object (identity element of the monoid)
@@ -6,10 +11,10 @@ ORDER := nil | strict comparison operator on the monoid
 SUM-TYPE := nil | type specifier
 
 Defines no structure; BIT is just a vector. This macro defines the three
-function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. In addition this
-macro defines the bisection function <NAME>-BISECT-LEFT if ORDER is
-specified. (Note that the last function works only when the sequence of prefix
-sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotonous.)
+function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. If ORDER is
+specified, this macro defines the bisection function <NAME>-BISECT-LEFT in
+addition. (Note that the -BISECT-LEFT function works only when the sequence of
+prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotonous.)
 
 SUM-TYPE is used only for the type declaration: each sum
 VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. (The

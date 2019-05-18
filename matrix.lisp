@@ -7,7 +7,6 @@
       (when (/= m1 m2)
         (error "Die Dimensionen stimmen nicht überein."))
       (let ((mat (make-array (list l n) :element-type (array-element-type mat1))))
-        (declare (dynamic-extent mat))
         (dotimes (row l)
           (dotimes (col n)
             (setf (aref mat row col)

@@ -9,8 +9,12 @@
 (defparameter *factorial-table*
   (make-array 21 :element-type '(unsigned-byte 62) :initial-contents '(1 1 2 6 24 120 720 5040 40320 362880 3628800 39916800 479001600 6227020800 87178291200 1307674368000 20922789888000 355687428096000 6402373705728000 121645100408832000 2432902008176640000)))
 
+;; FIXME: Maybe we should rely on a convergent series instead of the asymptotic
+;; expansion. See
+;; https://en.wikipedia.org/wiki/Stirling%27s_approximation#A_convergent_version_of_Stirling's_formula
 (declaim (ftype (function * (values double-float &optional)) log-factorial))
 (defun log-factorial (n &optional (terms 4))
+  "Returns log(n!). Note that the returned value is just an approximation."
   (declare (optimize (speed 3))
            ((integer 0) n)
            ((unsigned-byte 8) terms))

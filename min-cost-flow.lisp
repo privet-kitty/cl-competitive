@@ -100,7 +100,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
              (not-enough-capacity-error-graph c)))))
 
 (defun min-cost-flow (src-idx dest-idx flow graph &key edges)
-  "Returns the minimum cost to flows FLOW units from SRC-IDX to DEST-IDX in
+  "Returns the minimum cost to flow FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
 EDGES := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"

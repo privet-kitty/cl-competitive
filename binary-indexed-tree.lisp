@@ -1,13 +1,12 @@
 ;;;
 ;;; This is an implementation of binary indexed tree, specialized for the
-;;; ordinary + operation. Please use the generalized-bit instead. I leave it
-;;; just for my reference.
+;;; ordinary `+' operation. You had better to use the generalized-bit instead. I
+;;; leave it just for my reference.
 ;;;
 
 (declaim (inline bitree-inc!))
 (defun bitree-inc! (bitree index delta)
-  "Destructively increments the vector:
-  vector[INDEX] += DELTA"
+  "Destructively increments the vector: vector[INDEX] += DELTA"
   (let ((len (length bitree)))
     (do ((i index (logior i (+ i 1))))
         ((>= i len) bitree)
@@ -35,7 +34,7 @@
                  (+ (aref vector dest-i) (aref vector i)))
         finally (return vector)))
 
-;; Example: calculates inversion number
+;; Example: calculate inversion number of sequence
 (declaim (inline make-reverse-lookup-table))
 (defun make-reverse-lookup-table (vector &key (test #'eql))
   (let ((table (make-hash-table :test test :size (length vector))))

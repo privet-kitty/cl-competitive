@@ -1,3 +1,7 @@
+;;
+;; Calculate a^n in log(n) time on any monoids
+;;
+
 (declaim (inline power))
 (defun power (base exponent op identity)
   (declare ((integer 0) exponent)

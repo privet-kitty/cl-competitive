@@ -9,8 +9,8 @@
 ;;;
 
 (defun make-bpartition (size max divisor)
-  "Generates the table of partition numbers using P_max(n, k) = P_max(n, k-1) +
-P_max(n-k, k) + P_max(n-k-m, k-1)."
+  "Generates the table of partition numbers (mod DIVISOR) using the recurrence
+relation P_max(n, k) = P_max(n, k-1) + P_max(n-k, k) + P_max(n-k-m, k-1)."
   (declare ((integer 0 #.most-positive-fixnum) size max)
            ((integer 1 #.most-positive-fixnum) divisor))
   (let ((table (make-array (list size size) :element-type '(integer 0 #.most-positive-fixnum))))

@@ -1,5 +1,5 @@
 ;;;
-;;; Calculates inversion number by merge sort
+;;; Calculate inversion number by merge sort
 ;;;
 
 ;; Introduce INIT-VECTOR for better type-propagation on SBCL
@@ -92,26 +92,25 @@ PREDICATE. This function sorts VECTOR as a side effect."
     (declare ((mod #.array-total-size-limit) start end))
     (assert (<= start end))
     (let ((buffer (init-vector vector)))
-      (symbol-macrolet ((vec1 vector) (vec2 buffer))
-        (labels ((recurse (l r merge-to-vec1-p)
-                   (declare (optimize (safety 0))
-                            ((mod #.array-total-size-limit) l r))
-                   (cond ((= l r) 0)
-                         ((= (+ l 1) r)
-                          (unless merge-to-vec1-p
-                            (setf (aref vec2 l) (aref vec1 l)))
-                          0)
-                         ;; ((and (<= (- r l) 24) merge-to-vec1-p)
-                         ;;  (%calc-by-insertion-sort! vec1 predicate l r))
-                         (t
-                          (let ((mid (floor (+ l r) 2)))
-                            (with-fixnum+
-                                (+ (recurse l mid (not merge-to-vec1-p))
-                                   (recurse mid r (not merge-to-vec1-p))
-                                   (if merge-to-vec1-p
-                                       (%merge-count l mid r vec2 vec1 predicate)
-                                       (%merge-count l mid r vec1 vec2 predicate)))))))))
-          (recurse start end t))))))
+      (labels ((recurse (l r merge-to-vec1-p)
+                 (declare (optimize (safety 0))
+                          ((mod #.array-total-size-limit) l r))
+                 (cond ((= l r) 0)
+                       ((= (+ l 1) r)
+                        (unless merge-to-vec1-p
+                          (setf (aref buffer l) (aref vector l)))
+                        0)
+                       ;; ((and (<= (- r l) 24) merge-to-vec1-p)
+                       ;;  (%calc-by-insertion-sort! vec1 predicate l r))
+                       (t
+                        (let ((mid (floor (+ l r) 2)))
+                          (with-fixnum+
+                              (+ (recurse l mid (not merge-to-vec1-p))
+                                 (recurse mid r (not merge-to-vec1-p))
+                                 (if merge-to-vec1-p
+                                     (%merge-count l mid r buffer vector predicate)
+                                     (%merge-count l mid r vector buffer predicate)))))))))
+        (recurse start end t)))))
 
 ;; test
 (defun calc-inversion-number-by-bubble-sort! (vec predicate)

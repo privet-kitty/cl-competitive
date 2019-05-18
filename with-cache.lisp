@@ -1,10 +1,15 @@
-;; Memoization macro
-;;
+;;;                                        ;
+;;; Memoization macro
+;;; 
+
+;; Usage example:
 ;; (with-cache (:hash-table :test #'equal :key #'cons)
 ;;   (defun ...))
 ;; (with-cache (:array (10 10 * 10) :initial-element -1 :element-type 'fixnum)
 ;;   (defun foo (a b c d) ...) ; C is ignored.
 
+
+;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
 

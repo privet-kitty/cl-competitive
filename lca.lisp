@@ -1,5 +1,5 @@
 ;;;
-;;; Lowest common anscestor of tree, implemented by so-called doubling method
+;;; Lowest common anscestor of tree; implemented by so-called doubling method
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;

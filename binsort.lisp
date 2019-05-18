@@ -1,8 +1,8 @@
 (declaim (inline map-binsorted))
 (defun map-binsorted (function sequence range-max &key from-end)
-  "Calls FUNCTION with each ascending (descending) non-negative integer in
-SEQUENCE if FROM-END is false (true). Any integers in SEQUENCE must not exceed
-RANGE-MAX."
+  "Calls FUNCTION of one argument with each ascending [descending] non-negative
+integer in SEQUENCE if FROM-END is false [true]. Any integers in SEQUENCE must
+not exceed RANGE-MAX. This function is non-destructive."
   (declare (function function)
            ((mod #.array-total-size-limit) range-max))
   (let ((counts (make-array (1+ range-max) :element-type 'fixnum :initial-element 0)))

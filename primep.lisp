@@ -1,4 +1,4 @@
-;; Miller
+;; Just for an experiment. Use SB-INT:POSITIVE-PRIME-P.
 
 (declaim (inline divide-by-2s))
 (defun divide-by-2s (num)
