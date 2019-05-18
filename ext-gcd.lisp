@@ -34,8 +34,8 @@
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
 (defun mod-log (x y divisor)
-  "Returns the smallest positive integer k that satiefies x^k ≡ y mod p and
-returns NIL if it is infeasible."
+  "Returns the smallest positive integer k that satiefies x^k ≡ y mod p.
+Returns NIL if it is infeasible."
   (declare (integer x y)
            ((integer 1 #.most-positive-fixnum) divisor))
   (let ((x (mod x divisor))
@@ -48,12 +48,12 @@ returns NIL if it is infeasible."
                           then (mod (* res x) divisor)
                           finally (return res)))
                (table (make-hash-table :size m)))
-          ;; Construct TABLE: yx^j |-> j (j = 0, ..., m-1)
+          ;; Constructs TABLE: yx^j |-> j (j = 0, ..., m-1)
           (loop for j from 0 below m
                 for res of-type (integer 0 #.most-positive-fixnum) = y
                 then (mod (* res x) divisor)
                 do (setf (gethash res table) j))
-          ;; Find i, j that satisfies (x^m)^i = yx^j and returns m*i-j
+          ;; Finds i, j that satisfies (x^m)^i = yx^j and returns m*i-j
           (loop for i from 1 to m
                 for x^m^i of-type (integer 0 #.most-positive-fixnum) = x^m
                 then (mod (* x^m^i x^m) divisor)
@@ -132,36 +132,3 @@ condition exists."
                             (values x y)
                             (values nil nil))))))))
         (values nil nil))))
-
-(defun test-ext-gcd ()
-  ;; ext-gcd
-  (dotimes (i 100)
-    (let ((a (- (random 20) 10))
-          (b (- (random 20) 10)))
-      (multiple-value-bind (x y) (ext-gcd a b)
-        (assert (= (+ (* a x) (* b y)) (gcd a b))))))
-  ;; mod-inverse
-  (dotimes (i 1000)
-    (let ((a (random 100))
-          (m (+ 2 (random 100))))
-      (assert (or (/= 1 (gcd a m))
-                  (= 1 (mod (* a (mod-inverse a m)) m))))))
-  ;; mod-log
-  (assert (= 8 (mod-log 6 4 44)))
-  (assert (= 8 (mod-log -38 -40 44)))
-  (assert (null (mod-log 6 2 44)))
-  (assert (= 2 (mod-log 8 4 12)))
-  (assert (= 4 (mod-log 3 13 17)))
-  (assert (= 1 (mod-log 12 0 4)))
-  (assert (= 2 (mod-log 12 0 8)))
-  (assert (null (mod-log 12 1 8)))
-  (assert (= 1 (mod-log 0 0 100)))
-
-  (assert (= (calc-min-factor 8 3) -2))
-  (assert (= (calc-min-factor -8 3) 3))
-  (assert (= (calc-min-factor 8 -3) 2))
-  (assert (= (calc-min-factor -8 -3) -3))
-  (assert (= (calc-max-factor 8 3) -3))
-  (assert (= (calc-max-factor -8 3) 2))
-  (assert (= (calc-max-factor 8 -3) 3))
-  (assert (= (calc-max-factor -8 -3) -2)))
