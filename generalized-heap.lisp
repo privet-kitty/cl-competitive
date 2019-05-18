@@ -1,4 +1,4 @@
-(defmacro define-binary-heap (name &key (test '#'>) (element-type 'fixnum))
+(defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -27,7 +27,7 @@
              (labels ((update (pos)
                         (unless (= pos 1)
                           (let ((parent-pos (ash pos -1)))
-                            (when (funcall ,test (aref data pos) (aref data parent-pos))
+                            (when (funcall ,order (aref data pos) (aref data parent-pos))
                               (rotatef (aref data pos) (aref data parent-pos))
                               (update parent-pos))))))
                (setf (aref data position) obj)
@@ -46,14 +46,14 @@
                                (child-pos2 (1+ child-pos1)))
                           (when (<= child-pos1 position)
                             (if (<= child-pos2 position)
-                                (if (funcall ,test (aref data child-pos1) (aref data child-pos2))
-                                    (unless (funcall ,test (aref data pos) (aref data child-pos1))
+                                (if (funcall ,order (aref data child-pos1) (aref data child-pos2))
+                                    (unless (funcall ,order (aref data pos) (aref data child-pos1))
                                       (rotatef (aref data pos) (aref data child-pos1))
                                       (update child-pos1))
-                                    (unless (funcall ,test (aref data pos) (aref data child-pos2))
+                                    (unless (funcall ,order (aref data pos) (aref data child-pos2))
                                       (rotatef (aref data pos) (aref data child-pos2))
                                       (update child-pos2)))
-                                (unless (funcall ,test (aref data pos) (aref data child-pos1))
+                                (unless (funcall ,order (aref data pos) (aref data child-pos1))
                                   (rotatef (aref data pos) (aref data child-pos1))))))))
                (if (= position 1)
                    (if error
@@ -82,16 +82,16 @@
              (aref (,acc-data heap) 1))))))
 
 (define-binary-heap heap
-  :test #'>
+  :order #'>
   :element-type fixnum)
 
-;; For test
+;; For order
 ;; (eval-when (:compile-toplevel :load-toplevel :execute)
 ;;   (ql:quickload :fiveam)
 ;;   (use-package :fiveam))
 
 ;; (define-binary-heap my-heap
-;;   :test #'<
+;;   :order #'<
 ;;   :element-type (unsigned-byte 32))
 
 ;; (test my-heap-test
