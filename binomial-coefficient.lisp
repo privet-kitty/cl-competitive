@@ -1,5 +1,5 @@
 ;;;
-;;; Binomial coefficient by direct bignum arithmetic
+;;; Compute binomial coefficient by direct bignum arithmetic
 ;;;
 ;;; This code ist almost the same as that of alexandria.
 ;;;

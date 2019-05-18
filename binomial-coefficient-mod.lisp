@@ -1,3 +1,8 @@
+;;
+;; Generate the table of binomial coefficients with mod with time and space
+;; complexity O(n^2).
+;;
+
 (defun make-binom-table (size &optional (divisor 1000000007))
   (check-type divisor (unsigned-byte 32))
   (let* ((table (make-array (list size size)

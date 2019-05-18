@@ -16,7 +16,7 @@ to VECTOR each time."
                             (rotatef (aref vector start) (aref vector i)))))))
     (recurse start (or end (length vector)))))
 
-;; Introduce INIT-VECTOR for better type-propagation on SBCL
+;; I introduce INIT-VECTOR for better type-propagation on SBCL.
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-c:defknown init-vector (vector (mod #.array-total-size-limit))

@@ -1,5 +1,5 @@
 ;;;
-;;; P_m(n, k) is the number of ways of writing n as a sum of at least k integers
+;;; P_m(n, k) is the number of ways of writing n as a sum of at most k integers
 ;;; in {0, 1, ..., m}.
 ;;; 
 ;;; corner cases:

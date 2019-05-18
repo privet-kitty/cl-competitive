@@ -1,3 +1,5 @@
+;; TODO: enable to deal with any ordered sets.
+
 (declaim (inline map-binsorted))
 (defun map-binsorted (function sequence range-max &key from-end)
   "Calls FUNCTION of one argument with each ascending [descending] non-negative
@@ -27,6 +29,7 @@ not exceed RANGE-MAX. This function is non-destructive."
                          do (funcall function v)))))))
 
 (defmacro do-binsorted ((var sequence range-max &key from-end finally) &body body)
+  "DO-style macro of MAP-BINSORTED"
   `(block nil
      (map-binsorted (lambda (,var) ,@body) ,sequence ,range-max :from-end ,from-end)
      ,finally))

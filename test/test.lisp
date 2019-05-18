@@ -1,8 +1,9 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util.lisp")
-  (load "ext-gcd.lisp")
-  (load "bounded-partition-number.lisp")
-  (load "bisect.lisp"))
+  (load "../ext-gcd.lisp")
+  (load "../bounded-partition-number.lisp")
+  (load "../bisect.lisp")
+  (load "../bipartite-matching.lisp"))
 
 (use-package :test-util)
 (setf *elapsed-times* nil)
@@ -88,3 +89,18 @@
   (assert (= 3 (bisect-right #(10 9 9 7 7 7 7 7 4) 9 :test #'>)))
   (assert (= 3 (bisect-right #(#\a #\c #\c #\d) #\c :test #'char<)))
   (assert (= 4 (bisect-right #(nil 1 4 4 4 4 7 7 nil nil) 4 :start 1 :end 4))))
+
+;;;
+;;; bipartite-matching.lisp
+;;;
+
+
+(with-test (:name find-matcning)
+  (let* ((graph (make-array 9
+                            :element-type 'list
+                            :initial-contents '((6) (5 6 7 8) (6) (6) (5) (1 4) (0 1 2 3) (1) (1))))
+         (matching (find-matching graph)))
+    (loop for i below 9
+          do (assert (or (= (aref matching i) -1)
+                         (= i (aref matching (aref matching i))))))
+    (assert (= 6 (count -1 matching :test-not #'=)))))

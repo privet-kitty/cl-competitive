@@ -5,9 +5,9 @@ TEST := strict order
 
 Returns the smallest index (or input) i that fulfills TARGET[i] >= VALUE, where
 '>=' is the complement of TEST. TARGET must be monotonically non-decreasing with
-respect to TEST. Returns END if VALUE exceeds TARGET[END-1]. Note that the range
-[START, END) is half-open. END must be explicitly specified If TARGET is
-function. KEY is applied to each element of TARGET before comparison."
+respect to TEST. This function returns END if VALUE exceeds TARGET[END-1]. Note
+that the range [START, END) is half-open. END must be explicitly specified If
+TARGET is function. KEY is applied to each element of TARGET before comparison."
   (declare (function key test)
            ((integer 0 #.most-positive-fixnum) start)
            ((or null (integer 0 #.most-positive-fixnum)) end))
@@ -42,10 +42,10 @@ function. KEY is applied to each element of TARGET before comparison."
 TEST := strict order
 
 Returns the smallest index (or input) i that fulfills TARGET[i] > VALUE. TARGET
-must be monotonically non-decreasing with respect to TEST. Returns END if VALUE
-exceeds TARGET[END-1]. Note that the range [START, END) is half-open. END must
-be explicitly specified if TARGET is function. KEY is applied to each element of
-TARGET before comparison."
+must be monotonically non-decreasing with respect to TEST. This function returns
+END if VALUE exceeds TARGET[END-1]. Note that the range [START, END) is
+half-open. END must be explicitly specified if TARGET is function. KEY is
+applied to each element of TARGET before comparison."
   (declare (function key test)
            ((integer 0 #.most-positive-fixnum) start)
            ((or null (integer 0 #.most-positive-fixnum)) end))

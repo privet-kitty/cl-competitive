@@ -1,5 +1,5 @@
 ;; naivest implementation of deque
-;; It doesn't serves a serious purpose.
+;; It doesn't serve a serious purpose.
 
 (defstruct (deque (:constructor make-deque (one-direction-size
                                             &key (element-type t)

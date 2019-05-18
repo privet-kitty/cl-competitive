@@ -31,6 +31,7 @@
 
 (declaim (inline binom))
 (defun binom (n k)
+  "Returns nCk."
   (if (or (< n k) (< n 0) (< k 0))
       0
       (mod (* (aref *fact* n)
@@ -38,6 +39,9 @@
            +binom-mod+)))
 
 (defun multinomial (&rest ks)
+  "Returns the multinomial coefficient K!/k_1!k_2!...k_n! for K = k_1 + k_2 +
+... + k_n. K must be equal or smaller than MOST-POSITIVE-FIXNUM. (multinomial)
+returns 1."
   (let ((sum 0)
         (result 1))
     (declare ((integer 0 #.most-positive-fixnum) result sum))

@@ -1,5 +1,5 @@
 ;;;
-;;; P(n, k) is the number of ways of writing n as a sum of at least k
+;;; P(n, k) is the number of ways of writing n as a sum of at most k
 ;;; non-negative integers.
 ;;; 
 ;;; corner cases:
@@ -18,7 +18,8 @@
               :initial-element 0))
 
 (defun initialize-partition ()
-  "Fills *PARTITION* using P(n, k) = P(n, k-1) + P(n-k, k)."
+  "Fills *PARTITION* using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
+k)."
   (dotimes (k +partition-size+)
     (setf (aref *partition* 0 k) 1))
   (loop for n from 1 below +partition-size+

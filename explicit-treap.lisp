@@ -122,8 +122,8 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 
 (declaim (inline treap-insert))
 (defun treap-insert (key value treap &key (test #'<))
-  "Destructively inserts KEY into TREAP and returns the result treap. You cannot
-rely on the side effect. Use the returned value.
+  "Destructively inserts KEY into TREAP and returns the resultant treap. You
+cannot rely on the side effect. Use the returned value.
 
 The behavior is undefined when duplicated keys are inserted."
   (declare ((or null treap) treap)
