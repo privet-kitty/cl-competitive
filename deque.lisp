@@ -1,4 +1,4 @@
-;; naivest implementation of deque
+;; makeshift implementation of deque
 ;; It doesn't serve a serious purpose.
 
 (defstruct (deque (:constructor make-deque (one-direction-size

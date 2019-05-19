@@ -1,4 +1,6 @@
-;; Disjoint set by Union-Find
+;;;
+;;; Disjoint set by Union-Find algorithm
+;;;
 
 (defstruct (disjoint-set
             (:constructor make-disjoint-set
@@ -9,7 +11,7 @@
 (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
 (defun ds-root (x disjoint-set)
   "Returns the root of X."
-  (declare (optimize (speed 3))
+  (declare (optimize (speed 3)) ; as this function cannot be inlined
            ((mod #.array-total-size-limit) x))
   (let ((data (ds-data disjoint-set)))
     (if (< (aref data x) 0)
