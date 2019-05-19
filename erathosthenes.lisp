@@ -39,30 +39,6 @@
                (incf index))
       result)))
 
-(declaim (inline decompose-to-pow-table))
-(defun decompose-to-pow-table (num prime-table)
-  (declare (optimize (speed 3))
-           ((integer 1) num)
-           (simple-bit-vector prime-table))
-  (let ((factor-table (make-array (length prime-table)
-                                  :element-type '(unsigned-byte 32)
-                                  :initial-element 0)))
-    (when (> (length prime-table) 2)
-      (setf (aref factor-table 2)
-            (loop while (evenp num)
-                  count t
-                  do (setf num (ash num -1)))))
-    (loop for prime from 3 to (min num (- (length prime-table) 1)) by 2
-          when (= 1 (sbit prime-table prime))
-          do (setf (aref factor-table prime)
-                   (loop with quot and rem
-                         do (setf (values quot rem) (floor num prime))
-                         while (zerop rem)
-                         count t
-                         do (setf num quot)))
-          finally (return factor-table))))
-
-
 (declaim (ftype (function * (values list &optional)) factorize-with-table))
 (defun factorize-with-table (x prime-table)
   "Returns the associative list of prime factors of X, which is composed
