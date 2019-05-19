@@ -1,5 +1,5 @@
 ;;;
-;;; FFT by simple recursion
+;;; Unfinished. Use fft-recursive.lisp instead.
 ;;;
 
 (deftype fft-float () 'double-float)

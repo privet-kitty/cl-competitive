@@ -1,3 +1,7 @@
+;;;
+;;; This test utility is based on SBCL's test-util.lisp
+;;;
+
 (defpackage :test-util
   (:use :cl :sb-ext)
   (:export #:with-test #:report-test-status #:*failures*
@@ -33,7 +37,9 @@
            #:scratch-file-name
            #:with-scratch-file
            #:opaque-identity
-           #:runtime #:split-string #:integer-sequence #:shuffle))
+           #:runtime #:split-string #:integer-sequence #:shuffle
+
+           #:signals #:quit-with-test-result))
 
 (in-package :test-util)
 
@@ -136,7 +142,7 @@
   (let ((*print-pretty* nil))
     (apply #'log-msg stream args)))
 
-(defvar *elapsed-times*)
+(defvar *elapsed-times* nil)
 (defun record-test-elapsed-time (test-name start-time)
   (let ((et (- (get-internal-real-time) start-time)))
     ;; ATOMIC in case we have within-file test concurrency
@@ -889,3 +895,14 @@
          (sb-assem::%emit-label segment nil label)))
     (sb-assem:segment-buffer
      (sb-assem:finalize-segment segment))))
+
+;; from UIOP
+(defmacro signals (condition sexp &aux (x (gensym)))
+  `(block ,x
+     (handler-bind ((,condition (lambda (c) (return-from ,x))))
+       (let ((,x ,sexp))
+         (error "Expression ~S fails to raise condition ~S, instead returning~{ ~S~}"
+                ',sexp ',condition ,x)))))
+
+(defun quit-with-test-result ()
+  (quit :unix-status (if *failures* 1 0)))

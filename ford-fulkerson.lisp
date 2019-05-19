@@ -55,15 +55,3 @@ same capacity."
           until (zerop incr-flow)
           sum incr-flow of-type (integer 0 #.most-positive-fixnum)
           do (fill checked 0))))
-
-;; For test
-;; (progn
-;;   (defparameter *graph* (make-array '(5) :element-type 'edge :initial-element nil))
-;;   (add-edge 0 1 10 *graph*)
-;;   (add-edge 0 2 2 *graph*)
-;;   (add-edge 1 2 6 *graph*)
-;;   (add-edge 1 3 6 *graph*)
-;;   (add-edge 3 2 3 *graph*)
-;;   (add-edge 3 4 8 *graph*)
-;;   (add-edge 2 4 5 *graph*)
-;;   (assert (= 11 (max-flow 0 4 *graph*))))
