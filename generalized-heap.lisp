@@ -1,3 +1,18 @@
+(define-condition heap-empty-error (simple-error)
+  ((heap :initarg :heap :reader heap-empty-error-heap))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
+
+(define-condition heap-full-error (simple-error)
+  ((heap :initarg :heap :reader heap-full-error-heap)
+   (item :initarg :item :reader heap-full-error-item))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to push item ~W to full heap ~W"
+             (heap-full-error-item condition)
+             (heap-full-error-heap condition)))))
+
 (defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
   (check-type name symbol)
   (let* ((string-name (string name))
@@ -30,6 +45,8 @@
                             (when (funcall ,order (aref data pos) (aref data parent-pos))
                               (rotatef (aref data pos) (aref data parent-pos))
                               (update parent-pos))))))
+               (unless (< position (length data))
+                 (error 'heap-full-error :heap heap :item obj))
                (setf (aref data position) obj)
                (update position)
                (incf position)
@@ -57,7 +74,7 @@
                                   (rotatef (aref data pos) (aref data child-pos1))))))))
                (if (= position 1)
                    (if error
-                       (error "No element in heap.")
+                       (error 'heap-empty-error :heap heap)
                        null-value)
                    (prog1 (aref data 1)
                      (decf position)
@@ -77,37 +94,13 @@
        (defun ,fname-peak (heap &optional (error t) null-value)
          (if (= 1 (,acc-position heap))
              (if error
-                 (error "No element in heap")
+                 (error 'heap-empty-error :heap heap)
                  null-value)
              (aref (,acc-data heap) 1))))))
 
 (define-binary-heap heap
   :order #'>
   :element-type fixnum)
-
-;; For order
-;; (eval-when (:compile-toplevel :load-toplevel :execute)
-;;   (ql:quickload :fiveam)
-;;   (use-package :fiveam))
-
-;; (define-binary-heap my-heap
-;;   :order #'<
-;;   :element-type (unsigned-byte 32))
-
-;; (test my-heap-test
-;;   (let ((h (make-my-heap 20)))
-;;     (finishes (dolist (o (list 7 18 22 15 27 9 11))
-;;                 (my-heap-push o h)))
-;;     (is (= 7 (my-heap-peak h)))
-;;     (is (equal '(7 9 11 15 18 22 27)
-;;                (loop repeat 7 collect (my-heap-pop h))))
-;;     (signals error (my-heap-pop h))
-;;     (is (eql 'eof (my-heap-pop h nil 'eof)))
-;;     (is (eql 'eof (my-heap-peak h nil 'eof))))
-;;   (is (typep (my-heap-data (make-my-heap 10))
-;;              '(simple-array (unsigned-byte 32) (*)))))
-
-;; (run! 'my-heap-test)
 
 ;; (defun bench (&optional (size 2000000))
 ;;   (declare (fixnum size) (optimize (speed 3)))
