@@ -906,6 +906,5 @@
 
 (push (lambda ()
         (when *failures*
-          (write-line "Some test cases failed." *error-output*)
           (sb-ext:exit :code 1)))
       sb-ext:*exit-hooks*)

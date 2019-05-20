@@ -12,8 +12,8 @@
         t
         (and (> (%inode-priority inode) (priority* (%inode-left inode)))
              (> (%inode-priority inode) (priority* (%inode-right inode)))
-             (consistent-priorities-p (%inode-left inode))
-             (consistent-priorities-p (%inode-right inode))))))
+             (inode-sane-p (%inode-left inode))
+             (inode-sane-p (%inode-right inode))))))
 
 (with-test (:name implicit-treap-sanity)
   (assert (loop for i below 100 always (inode-sane-p (make-inode i)))))
