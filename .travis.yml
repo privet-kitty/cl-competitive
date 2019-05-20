@@ -1,0 +1,20 @@
+language: common-lisp
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - PATH=~/.roswell/bin:$PATH
+  matrix:
+    - LISP=sbcl-bin
+    - LISP=sbcl-bin/1.1.14
+
+install:
+  - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
+
+script:
+  - LISP_COMMAND="ros run -- --script" sh test/run-tests.sh
+
+sudo: required
