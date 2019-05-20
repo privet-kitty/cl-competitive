@@ -68,15 +68,3 @@ and X2 are not connected yet."
                        (bisect mid ok))))))
     (when (pds-connected-p x1 x2 (pds-now disjoint-set) disjoint-set)
       (bisect 0 (pds-now disjoint-set)))))
-
-;; Test
-(defun test-persistent-disjoint-set ()
-  (let ((tree (make-persistent-disjoint-set 6)))
-    (pds-unite! 1 3 tree)
-    (pds-unite! 3 5 tree)
-    (pds-unite! 1 5 tree)
-    (pds-unite! 2 4 tree)
-    (pds-unite! 1 2 tree)
-    (assert (equalp (vector most-positive-fixnum most-positive-fixnum 5 1 4 2)
-                    (pds-timestamps tree)))
-    (assert (equalp (vector -1 -5 1 1 2 1) (pds-data tree)))))

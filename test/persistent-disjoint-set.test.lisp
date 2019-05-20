@@ -1,0 +1,16 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../persistent-disjoint-set.lisp"))
+
+(use-package :test-util)
+
+(with-test (:name persistent-disjoint-set)
+  (let ((tree (make-persistent-disjoint-set 6)))
+    (pds-unite! 1 3 tree)
+    (pds-unite! 3 5 tree)
+    (pds-unite! 1 5 tree)
+    (pds-unite! 2 4 tree)
+    (pds-unite! 1 2 tree)
+    (assert (equalp (vector most-positive-fixnum most-positive-fixnum 5 1 4 2)
+                    (pds-timestamps tree)))
+    (assert (equalp (vector -1 -5 1 1 2 1) (pds-data tree)))))
