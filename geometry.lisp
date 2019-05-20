@@ -6,7 +6,7 @@
 (declaim (inline intersect-p))
 (defun intersect-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y)
   "Returns true if the line segment from (P1-X, P1-Y) to (P2-X, P2-Y) intersects
-the the one from (Q1-X, Q1-Y), to (Q2-X, Q2-Y) and false otherwise."
+the the one from (Q1-X, Q1-Y) to (Q2-X, Q2-Y) and false otherwise."
   (let* ((delta-p-x (- p2-x p1-x))
          (delta-p-y (- p2-y p1-y))
          (delta-q-x (- q2-x q1-x))

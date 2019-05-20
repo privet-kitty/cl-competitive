@@ -1,3 +1,7 @@
+;;;
+;;; Binary heap
+;;;
+
 (define-condition heap-empty-error (simple-error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report

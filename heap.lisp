@@ -1,3 +1,8 @@
+;;;
+;;; This is an implementation of binary heap. Please use generalized-heap
+;;; instead. I leave it just for my reference.
+;;;
+
 (defstruct (heap (:constructor make-heap
                             (size
                              &key test (element-type t)
