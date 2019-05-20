@@ -23,7 +23,7 @@
 
 (declaim (inline %merge-count))
 (defun %merge-count (l mid r source-vec dest-vec predicate)
-  (declare ((mod #.array-total-size-limit) l mid r)
+  (declare ((integer 0 #.array-total-size-limit) l mid r)
            (function predicate))
   (loop with count of-type (integer 0 #.most-positive-fixnum) = 0
         with i = l
@@ -61,7 +61,7 @@
 ;; (declaim (inline %calc-by-bubble-sort!))
 ;; (defun %calc-by-bubble-sort! (vec predicate l r)
 ;;   (declare (function predicate)
-;;            ((mod #.array-total-size-limit) l r))
+;;            ((integer 0 #.array-total-size-limit) l r))
 ;;   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
 ;;         for end from r above l
 ;;         do (loop for i from l below (- end 1)
@@ -73,7 +73,7 @@
 (declaim (inline %calc-by-insertion-sort!))
 (defun %calc-by-insertion-sort! (vec predicate l r)
   (declare (function predicate)
-           ((mod #.array-total-size-limit) l r))
+           ((integer 0 #.array-total-size-limit) l r))
   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
         for end from (+ l 1) below r
         do (loop for i from end above l
@@ -89,54 +89,40 @@ PREDICATE. This function sorts VECTOR as a side effect."
   (declare (vector vector)
            (function predicate))
   (let ((end (or end (length vector))))
-    (declare ((mod #.array-total-size-limit) start end))
+    (declare ((integer 0 #.array-total-size-limit) start end))
     (assert (<= start end))
     (let ((buffer (init-vector vector)))
-      (labels ((recurse (l r merge-to-vec1-p)
-                 (declare (optimize (safety 0))
-                          ((mod #.array-total-size-limit) l r))
-                 (cond ((= l r) 0)
-                       ((= (+ l 1) r)
-                        (unless merge-to-vec1-p
-                          (setf (aref buffer l) (aref vector l)))
-                        0)
-                       ;; ((and (<= (- r l) 24) merge-to-vec1-p)
-                       ;;  (%calc-by-insertion-sort! vec1 predicate l r))
-                       (t
-                        (let ((mid (floor (+ l r) 2)))
-                          (with-fixnum+
-                              (+ (recurse l mid (not merge-to-vec1-p))
-                                 (recurse mid r (not merge-to-vec1-p))
-                                 (if merge-to-vec1-p
-                                     (%merge-count l mid r buffer vector predicate)
-                                     (%merge-count l mid r vector buffer predicate)))))))))
+      (labels
+          ((recurse (l r merge-to-vec1-p)
+             (declare (optimize (safety 0))
+                      ((integer 0 #.array-total-size-limit) l r))
+             (cond ((= l r) 0)
+                   ((= (+ l 1) r)
+                    (unless merge-to-vec1-p
+                      (setf (aref buffer l) (aref vector l)))
+                    0)
+                   ;; It is faster to use insertion sort. I don't adopt it
+                   ;; by default, however, because that makes it hard to
+                   ;; change the code to fit some special settings.
+                   ;; ((and (<= (- r l) 24) merge-to-vec1-p)
+                   ;;  (%calc-by-insertion-sort! vec1 predicate l r))
+                   (t
+                    (let ((mid (floor (+ l r) 2)))
+                      (with-fixnum+
+                          (+ (recurse l mid (not merge-to-vec1-p))
+                             (recurse mid r (not merge-to-vec1-p))
+                             (if merge-to-vec1-p
+                                 (%merge-count l mid r buffer vector predicate)
+                                 (%merge-count l mid r vector buffer predicate)))))))))
         (recurse start end t)))))
 
-;; test
-(defun calc-inversion-number-by-bubble-sort! (vec predicate)
-  "PREDICATE must be strict order."
-  (loop for end from (length vec) above 0
-        sum (loop with inv-count = 0
-                  for i from 0 below (- end 1)
-                  do (when (funcall predicate (aref vec (+ i 1)) (aref vec i))
-                       (rotatef (aref vec i) (aref vec (+ i 1)))
-                       (incf inv-count))
-                  finally (return inv-count))))
-
-(defun test-inversion ()
-  (let ((vec (make-array 200 :element-type 'fixnum)))
-    (declare ((simple-array fixnum (200)) vec))
-    (dotimes (i (length vec)) (setf (aref vec i) (random 20)))
-    (assert (= (calc-inversion-number! (copy-seq vec) #'<)
-               (calc-inversion-number-by-bubble-sort! (copy-seq vec) #'<)))))
-
-(defun bench ()
-  (let* ((seed (seed-random-state 0))
-         (vector (make-array 1000000 :element-type 'fixnum)))
-    (declare (optimize (speed 3))
-             ((simple-array fixnum (1000000)) vector))
-    (gc :full t)
-    (time (loop repeat 20
-                do (dotimes (i 1000000)
-                     (setf (aref vector i) (random #.(expt 2 32) seed)))
-                sum (calc-inversion-number! vector #'>) of-type fixnum))))
+;; (defun bench ()
+;;   (let* ((seed (seed-random-state 0))
+;;          (vector (make-array 1000000 :element-type 'fixnum)))
+;;     (declare (optimize (speed 3))
+;;              ((simple-array fixnum (1000000)) vector))
+;;     (gc :full t)
+;;     (time (loop repeat 20
+;;                 do (dotimes (i 1000000)
+;;                      (setf (aref vector i) (random #.(expt 2 32) seed)))
+;;                 sum (calc-inversion-number! vector #'>) of-type fixnum))))
