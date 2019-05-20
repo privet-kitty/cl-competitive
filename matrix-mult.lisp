@@ -1,3 +1,7 @@
+;;
+;; Matrix multiplication over semiring
+;;
+
 (defun gemm! (a b c &key (op+ #'+) (op* #'*) (identity+ 0))
   "Calculates C := A*B. Destructively modifies C.
 
@@ -14,7 +18,8 @@
 
 (declaim (inline gemm))
 (defun gemm (a b &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates A*B. (OP+, OP*) must form a semiring."
+  "Calculates A*B. (OP+, OP*) must form a semiring. IDENTITY+ is the identity
+element w.r.t. OP+."
   (declare ((simple-array * (* *)) a b)
            (function op+ op*))
   (let ((c (make-array (list (array-dimension a 0) (array-dimension b 1))
@@ -31,7 +36,7 @@
 (declaim (inline gemv))
 (defun gemv (a x &key (op+ #'+) (op* #'*) (identity+ 0))
   "Calculates A*x for a matrix A and a vector x. (OP+, OP*) must form a
-semiring."
+semiring. IDENTITY+ is the identity element w.r.t. OP+."
   (declare ((simple-array * (* *)) a)
            ((simple-array * (*)) x)
            (function op+ op*))
