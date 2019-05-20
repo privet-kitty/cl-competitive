@@ -137,11 +137,10 @@
   (let ((*print-pretty* nil))
     (apply #'log-msg stream args)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *elapsed-times* nil))
+(defvar *elapsed-times* nil)
 (defun record-test-elapsed-time (test-name start-time)
   (let ((et (- (get-internal-real-time) start-time)))
-    (sb-ext:atomic-push (cons et test-name) *elapsed-times*)))
+    (push (cons et test-name) *elapsed-times*)))
 
 (defun run-test (test-function name fails-on
                  &aux (start-time (get-internal-real-time)))
@@ -518,30 +517,6 @@
        (unwind-protect
             (let ((,var ,tempname)) ,@forms) ; rebind, as test might asssign into VAR
          (ignore-errors (delete-file ,tempname))))))
-
-;;; Take a list of lists and assemble them as though they are
-;;; instructions inside the body of a vop. There is no need
-;;; to use the INST macro in front of each list.
-;;; As a special case, an atom is the symbol LABEL, it will be
-;;; changed to a generated label. At most one such atom may appear.
-(defun assemble (instructions)
-  (let ((segment (sb-assem:make-segment))
-        (label))
-    (sb-assem:assemble (segment 'nil)
-       (dolist (inst instructions)
-         (setq inst (copy-list inst))
-         (mapl (lambda (cell &aux (x (car cell)))
-                 (when (and (symbolp x) (string= x "LABEL"))
-                   (setq label (sb-assem:gen-label))
-                   (rplaca cell label)))
-               inst)
-         (apply #'sb-assem::%inst
-                (sb-assem::op-encoder-name (car inst))
-                (cdr inst)))
-       (when label
-         (sb-assem::%emit-label segment nil label)))
-    (sb-assem:segment-buffer
-     (sb-assem:finalize-segment segment))))
 
 ;; from UIOP
 (defmacro signals (condition sexp &aux (x (gensym)))
