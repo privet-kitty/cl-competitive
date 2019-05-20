@@ -35,5 +35,3 @@
            (assert (treap-sane-p (make-treap #(1 2 3 4))))
            (assert (treap-sane-p (make-treap #(1))))
            (assert (treap-sane-p nil))))
-
-(quit-with-test-result)

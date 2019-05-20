@@ -904,5 +904,8 @@
          (error "Expression ~S fails to raise condition ~S, instead returning~{ ~S~}"
                 ',sexp ',condition ,x)))))
 
-(defun quit-with-test-result ()
-  (quit :unix-status (if *failures* 1 0)))
+(push (lambda ()
+        (when *failures*
+          (write-line "Some test cases failed." *error-output*)
+          (sb-ext:exit :code 1)))
+      sb-ext:*exit-hooks*)

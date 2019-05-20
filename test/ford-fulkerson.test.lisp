@@ -14,5 +14,3 @@
     (push-edge 3 4 8 graph)
     (push-edge 2 4 5 graph)
     (assert (= 11 (max-flow 0 4 graph)))))
-
-(quit-with-test-result)
