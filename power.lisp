@@ -1,9 +1,11 @@
 ;;
-;; Calculate a^n in log(n) time on any monoids
+;; Calculate a^n in O(log(n)) time on any monoids
 ;;
 
 (declaim (inline power))
 (defun power (base exponent op identity)
+  "OP := binary operation (on a monoid)
+IDENTITY := identity element w.r.t. OP"
   (declare ((integer 0) exponent)
            (function op))
   (labels ((recur (x p)

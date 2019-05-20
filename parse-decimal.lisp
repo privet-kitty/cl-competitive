@@ -1,5 +1,6 @@
 (defun parse-decimal (simple-base-string &key (start 0) end)
-  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  "Is a variant of SBCL(x64)'s PARSE-INTEGER, specialized for decimal."
+  (declare (optimize (speed 3)))
   (sb-c::with-array-data ((string simple-base-string :offset-var offset)
                           (start start)
                           (end end)

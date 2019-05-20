@@ -5,7 +5,7 @@ the returned string will be reused.
 
 This function calls READ-BYTE to read characters though it calls READ-CHAR
 instead on SLIME because SLIME's IO is not bivalent."
-  (declare (inline read-byte)) ; declaring (sb-kernel:ansi-stream in) will be fast
+  (declare (inline read-byte)) ; declaring (sb-kernel:ansi-stream in) will be faster
   (loop for c of-type base-char =
            #-swank (code-char (read-byte in nil #.(char-code #\Newline)))
            #+swank (read-char in nil #\Newline)

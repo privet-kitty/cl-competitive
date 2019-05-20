@@ -1,4 +1,5 @@
 ;; Based on alexandria
+;; TODO: Implement Chase's algorithm
 (defun map-combinations (function sequence &key (start 0) end length)
   (declare (function function))
   (let* ((end (or end (length sequence)))

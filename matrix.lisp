@@ -1,3 +1,4 @@
+;; Use matrix-mult instead.
 (declaim (inline multiply-mat))
 (defun multiply-mat (mat1 mat2)
   (declare (optimize (speed 3) (safety 1)))

@@ -16,14 +16,14 @@ to VECTOR each time."
                             (rotatef (aref vector start) (aref vector i)))))))
     (recurse start (or end (length vector)))))
 
-;; I introduce INIT-VECTOR for better type-propagation on SBCL.
+;; I introduce PERMUTATION-INIT-VECTOR for better type-propagation on SBCL.
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown init-vector (vector (mod #.array-total-size-limit))
+  (sb-c:defknown permutation-init-vector (vector (mod #.array-total-size-limit))
       vector (sb-c:flushable)
     :overwrite-fndb-silently t)
 
-  (sb-c:defoptimizer (init-vector sb-c:derive-type) ((template size))
+  (sb-c:defoptimizer (permutation-init-vector sb-c:derive-type) ((template size))
     (let* ((template-type (sb-c::lvar-type template))
            (size-value (multiple-value-bind (constantp value) (sb-c::constant-lvar-p size)
                          (when constantp value)))
@@ -32,10 +32,10 @@ to VECTOR each time."
                    (,(or size-value '*)))))
       (sb-c::careful-specifier-type spec))))
 
-(defun init-vector (template size)
+(defun permutation-init-vector (template size)
   "Returns a newly initialized vector of the same type as TEMPLATE vector with
 SIZE."
-  (declare (optimize (speed 3) (safety 0)))
+  (declare (optimize (speed 3)))
   (make-array size :element-type (array-element-type template)))
 
 (declaim (inline map-combinations))
@@ -46,7 +46,7 @@ the vector passed to FUNCTION will be recycled."
            (vector vector))
   (let* ((n (length vector))
          (k (or k n))
-         (result (init-vector vector k)))
+         (result (permutation-init-vector vector k)))
     (declare ((mod #.array-total-size-limit) k))
     (labels ((recurse (pos prev)
                (if (= pos k)

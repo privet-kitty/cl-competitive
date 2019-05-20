@@ -2,11 +2,15 @@
 ;;; Memoization macro
 ;;; 
 
+;; TODO: detailed documentation
+
 ;; Usage example:
 ;; (with-cache (:hash-table :test #'equal :key #'cons)
 ;;   (defun ...))
 ;; (with-cache (:array (10 10 * 10) :initial-element -1 :element-type 'fixnum)
-;;   (defun foo (a b c d) ...) ; C is ignored.
+;;   (defun foo (a b c d) ...)) ; => C is ignored.
+;; (with-cache (:array (10 10) :initial-element -1 :element-type 'fixnum :debug t)
+;;   (defun foo (x y) ...)) ; executes with trace of foo
 
 
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
@@ -134,17 +138,3 @@
                     ,@(cdr definitions))
                    (declare (ignorable #',(make-reset-name name)))
                    ,@labels-body))))))))))
-
-;; (test with-cache
-;;   (finishes (macroexpand `(with-cache (:hash-table :test #'equal)
-;;                             (defun add (x y) (+ x y)))))
-;;   (finishes (macroexpand `(with-cache (:array '(10 10)
-;;                                            :element-type 'fixnum
-;;                                            :initial-element -1)
-;;                             (defun add (x y) (+ x y)))))
-;;   (finishes (macroexpand `(with-cache (:array '(10 10)
-;;                                            :element-type 'fixnum
-;;                                            :initial-element -1)
-;;                             (labels ((add (x y) (+ x y))
-;; 		                     (my-print (x) (print x)))
-;; 	                      (add 1 2))))))

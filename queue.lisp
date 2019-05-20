@@ -1,6 +1,3 @@
-;; -*- coding:utf-8 -*-
-
-
 (defstruct (queue (:constructor make-queue
                     (&optional list &aux (tail (last list)))))
   (list nil :type list)

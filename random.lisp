@@ -1,3 +1,5 @@
+;; Just for an experiment. Please use RANDOM.
+
 (defconstant +divisor+ (expt 2 31))
 
 (let ((x (load-time-value (random +divisor+))))

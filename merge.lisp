@@ -1,4 +1,4 @@
-
+;; unfinished
 (declaim (inline intersected-merge))
 (defun intersected-merge (element-type vec1 vec2 predicate)
   (declare (function predicate))
