@@ -1,3 +1,7 @@
+;;;
+;;; Compute a well approximated value of log(n!) by asymtotic expansion
+;;;
+
 (declaim ((simple-array double-float (*)) *bernoulli*))
 (defparameter *bernoulli*
   #.(coerce
