@@ -1,5 +1,5 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util.lisp")
+  (load "test-util")
   (load "../ford-fulkerson.lisp"))
 
 (use-package :test-util)

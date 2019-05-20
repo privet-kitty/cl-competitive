@@ -340,34 +340,3 @@ element."
         (setf (%inode-lazy inode-l-r)
               (updater-op (%inode-lazy inode-l-r) x)))
       (inode-merge inode-0-l (inode-merge inode-l-r inode-r-n)))))
-
-;; Test
-
-;; (defun consistent-priorities-p (inode)
-;;   (labels ((priority* (inode)
-;;              (if (null inode) 0 (%inode-priority inode))))
-;;     (declare (inline priority*))
-;;     (if (null inode)
-;;         t
-;;         (and (> (%inode-priority inode) (priority* (%inode-left inode)))
-;;              (> (%inode-priority inode) (priority* (%inode-right inode)))
-;;              (consistent-priorities-p (%inode-left inode))
-;;              (consistent-priorities-p (%inode-right inode))))))
-
-;; (test :itreap
-;;   (is (loop for i below 100 always (consistent-priorities-p (make-inode i 0)))))
-
-;; (dotimes (i 10)
-;;   (let ((itreap1 (inode 1 2 3 2 1 2 7)))
-;;     (let (res)
-;;       (do-inode (n itreap1) (push n res))
-;;       (assert (equal (reverse res) '(1 2 3 2 1 2 7))))
-;;     (assert (= 7 (inode-ref itreap1 6)))
-;;     (assert (= 1 (inode-query itreap1 0 7)))
-;;     (assert (= 2 (inode-query itreap1 5 7)))
-;;     (assert (= 2 (inode-query itreap1 1 3)))
-;;     (setf (inode-ref itreap1 1) 0)
-;;     (assert (= 0 (inode-ref itreap1 1)))
-;;     (assert (= 0 (inode-query itreap1 0 3)))
-;;     (assert (= 0 (inode-query itreap1 0 7)))
-;;     (assert (= 1 (inode-query itreap1 2 7)))))
