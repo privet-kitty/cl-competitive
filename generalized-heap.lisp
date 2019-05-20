@@ -72,14 +72,12 @@
                                       (update child-pos2)))
                                 (unless (funcall ,order (aref data pos) (aref data child-pos1))
                                   (rotatef (aref data pos) (aref data child-pos1))))))))
-               (if (= position 1)
-                   (if error
-                       (error 'heap-empty-error :heap heap)
-                       null-value)
-                   (prog1 (aref data 1)
-                     (decf position)
-                     (setf (aref data 1) (aref data position))
-                     (update 1)))))))
+               (when (= position 1)
+                 (error 'heap-empty-error :heap heap))
+               (prog1 (aref data 1)
+                 (decf position)
+                 (setf (aref data 1) (aref data position))
+                 (update 1))))))
 
        (declaim (inline ,fname-reinitialize))
        (defun ,fname-reinitialize (heap)
@@ -91,11 +89,9 @@
          (= 1 (,acc-position heap)))
 
        (declaim (inline ,fname-peak))
-       (defun ,fname-peak (heap &optional (error t) null-value)
+       (defun ,fname-peak (heap)
          (if (= 1 (,acc-position heap))
-             (if error
-                 (error 'heap-empty-error :heap heap)
-                 null-value)
+             (error 'heap-empty-error :heap heap)
              (aref (,acc-data heap) 1))))))
 
 (define-binary-heap heap
