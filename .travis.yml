@@ -14,7 +14,6 @@ env:
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
-  - git clone --depth=1 https://gitlab.common-lisp.net/asdf/asdf.git ~/lisp/asdf
 
 script:
   - LISP_COMMAND="ros run -- --script" sh test/run-tests.sh
