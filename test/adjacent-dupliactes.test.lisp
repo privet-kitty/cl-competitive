@@ -9,7 +9,12 @@
   (assert (equalp #(1 2 3 1 2) (delete-adjacent-duplicates #(1 2 2 3 3 1 1 1 2 2))))
   (assert (equalp #(1 2 3) (delete-adjacent-duplicates #(1 1 2 3))))
   (assert (equalp #(0 0.0 0) (delete-adjacent-duplicates #(0 0.0 0))))
-  (assert (equalp #(0) (delete-adjacent-duplicates #(0 0.0 0) :test #'=))))
+  (assert (equalp #(0) (delete-adjacent-duplicates #(0 0.0 0) :test #'=)))
+  (assert (equalp nil (delete-adjacent-duplicates nil)))
+  (assert (equalp '(1 2 3 1 2) (delete-adjacent-duplicates '(1 2 2 3 3 1 1 1 2 2))))
+  (assert (equalp '(1 2 3) (delete-adjacent-duplicates '(1 1 2 3))))
+  (assert (equalp '(0 0.0 0) (delete-adjacent-duplicates '(0 0.0 0))))
+  (assert (equalp '(0) (delete-adjacent-duplicates '(0 0.0 0) :test #'=))))
 
 (with-test (:name map-adjacent-duplicates)
   (map-adjacent-duplicates (lambda (x) (error "Must not be called.")) #())
@@ -20,4 +25,13 @@
   (map-adjacent-duplicates
    (lambda (x y) (assert (and (= 0 x) (= 3 y))))
    #(0 0.0 0)
+   :test #'=)
+  (map-adjacent-duplicates (lambda (x) (error "Must not be called.")) nil)
+  (let ((result '((1 . 1) (2 . 2) (3 . 2) (1 . 3) (2 . 2))))
+    (map-adjacent-duplicates
+     (lambda (x y) (assert (equal (cons x y) (pop result))))
+     '(1 2 2 3 3 1 1 1 2 2)))
+  (map-adjacent-duplicates
+   (lambda (x y) (assert (and (= 0 x) (= 3 y))))
+   '(0 0.0 0)
    :test #'=))
