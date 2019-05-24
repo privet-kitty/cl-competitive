@@ -1,5 +1,6 @@
 ;; Based on alexandria
 ;; TODO: Implement Chase's algorithm
+(declaim (inline map-combinations))
 (defun map-combinations (function sequence &key (start 0) end length)
   (declare (function function))
   (let* ((end (or end (length sequence)))
@@ -7,10 +8,10 @@
          (length (or length size))
          (combination (subseq sequence 0 length)))
     (declare ((integer 0 #.most-positive-fixnum) start end size length))
-    (if (= length size)
-        (funcall function combination)
-        (flet ((call ()
-                 (funcall function combination)))
+    (flet ((call () (nth-value 0 (funcall function combination))))
+      (declare (inline call))
+      (if (= length size)
+          (call)
           (etypecase sequence
             (list
              (labels ((combine-list (c-tail o-tail)
@@ -40,4 +41,12 @@
                                        (combine j (+ i 1)))))))
                (combine length start)))))))
   sequence)
+
+(defmacro do-combinations ((var sequence &key (start 0) end length) &body body)
+  `(map-combinations (lambda (,var) ,@body)
+                     ,sequence
+                     :start ,start
+                     :end ,end
+                     :length ,length))
+
 
