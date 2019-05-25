@@ -6,7 +6,7 @@ PREDICATE := strict order
 Returns the smallest index (or input) i that fulfills TARGET[i] >= VALUE, where
 '>=' is the complement of PREDICATE. TARGET must be monotonically non-decreasing with
 respect to PREDICATE. This function returns END if VALUE exceeds TARGET[END-1]. Note
-that the range [START, END) is half-open. END must be explicitly specified If
+that the range [START, END) is half-open. END must be explicitly specified if
 TARGET is function. KEY is applied to each element of TARGET before comparison."
   (declare (function key predicate)
            ((integer 0 #.most-positive-fixnum) start)

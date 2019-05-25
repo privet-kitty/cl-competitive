@@ -21,7 +21,8 @@
 
 (declaim (inline ds-unite!))
 (defun ds-unite! (x1 x2 disjoint-set)
-  "Unites X1 and X2 destructively."
+  "Unites X1 and X2 destructively. Returns NIL iff X1 and X2 have already been
+connected."
   (let ((root1 (ds-root x1 disjoint-set))
         (root2 (ds-root x2 disjoint-set)))
     (unless (= root1 root2)

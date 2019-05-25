@@ -1,3 +1,4 @@
+(declaim (inline delete-adjacent-duplicates))
 (defun delete-adjacent-duplicates (seq &key (test #'eql))
   "Destructively deletes adjacent duplicates of SEQ: e.g. #(1 1 1 2 2 1 3) ->
 #(1 2 1 3)"

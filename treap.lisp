@@ -106,7 +106,7 @@ depending on the order) than those of RIGHT."
 
 (declaim (inline treap-delete))
 (defun treap-delete (key treap &key (test #'<))
-  "Destructively deletes the KEY in TREAP and returns the result treap. You
+  "Destructively deletes the KEY in TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value."
   (declare ((or null treap) treap)
            (function test))
