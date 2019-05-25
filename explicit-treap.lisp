@@ -77,9 +77,9 @@ KEY. Returns NIL if KEY is not contained."
         (t key)))
 
 (defun treap-bisect-left (threshold treap &key (test #'<))
-  "Returns the smallest index and the corresponding key that satisfies
-KEY[index] >= THRESHOLD. Returns the size of TREAP and THRESHOLD if KEY[size-1]
-< THRESHOLD."
+  "Returns the smallest index and the corresponding key that satisfies KEY >=
+THRESHOLD. Returns the size of TREAP and THRESHOLD if the largest key is smaller
+than THRESHOLD."
   (declare (function test))
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
