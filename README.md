@@ -6,7 +6,7 @@ The greater part of this library is distributed as public domain, or licensed un
 
 ## Test environment
 - latest SBCL (x64, linux)
-- SBCL 1.3.3 (x64, linux) &mdash; CS Academy
+- SBCL 1.3.3 (x64, linux) &mdash; CS Academy's version
 - SBCL 1.2.6 (x64, linux) &mdash; the oldest SBCL that can be installed by roswell
 
 Note that the version of SBCL is _1.1.14_ on AtCoder.
