@@ -1,3 +1,4 @@
+;; Based on SBCL's implementation
 (defun write-double-float (x &optional (stream *standard-output*))
   (declare (double-float x))
   (if (minusp x)
