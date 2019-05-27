@@ -213,7 +213,6 @@
                           (itreap-insert itreap position (car list))))))
     (recurse args 0 nil)))
 
-(declaim (inline make-itreap))
 (defun make-itreap (size)
   "Makes a treap of SIZE in O(SIZE) time. The values are filled with the
 identity element."
