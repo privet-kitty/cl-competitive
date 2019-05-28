@@ -36,3 +36,17 @@
   (assert (= (calc-max-factor -8 3) 2))
   (assert (= (calc-max-factor 8 -3) 3))
   (assert (= (calc-max-factor -8 -3) -2)))
+
+(with-test (:name mod-echelon)
+  (assert (equalp #2a((1 0 1000000005 1000000004) (0 1 1 4) (0 0 0 0))
+                  (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 35)) 1000000007)))
+  (assert (= 2 (nth-value 1 (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 35)) 1000000007))))
+  (assert (equalp #2a((1 0 1000000005 0) (0 1 1 0) (0 0 0 1))
+                  (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 37)) 1000000007)))
+  (assert (= 3 (nth-value 1 (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 37)) 1000000007))))
+  ;; extended
+  (assert (equalp #2a((1 0 1000000005 1000000004) (0 1 1 4) (0 0 0 1))
+                  (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 36)) 1000000007 t)))
+  (assert (= 2 (nth-value 1 (mod-echelon #2a((1 3 1 9) (1 1 -1 1) (3 11 5 36)) 1000000007 t))))
+  (assert (equalp #2a((1 0 0 4) (0 1 0 3) (0 0 1 0))
+                  (mod-echelon #2a ((3 1 4 1) (5 2 6 5) (0 5 2 1)) 7 t))))

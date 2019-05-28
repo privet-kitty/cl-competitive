@@ -132,3 +132,41 @@ condition exists."
                             (values x y)
                             (values nil nil))))))))
         (values nil nil))))
+
+;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800
+;; TODO: enable to deal with `a vector of vectors' as target
+(declaim (inline mod-echelon))
+(defun mod-echelon (matrix divisor &optional extended)
+  "Returns the row echelon form of MATRIX by gaussian elimination.
+
+This function destructively modifies MATRIX."
+  (declare ((integer 1 #.most-positive-fixnum) divisor))
+  (destructuring-bind (m n) (array-dimensions matrix)
+    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (macrolet ((swap-rows (row1 row2)
+                 `(dotimes (j n) (rotatef (aref matrix ,row1 j) (aref matrix ,row2 j)))))
+      (dotimes (i m)
+        (dotimes (j n)
+          (setf (aref matrix i j) (mod (aref matrix i j) divisor))))
+      (let ((rank 0))
+        (dotimes (target-col (if extended (- n 1) n))
+          (let ((pivot-row (do ((i rank (+ 1 i)))
+                               ((= i m) -1)
+                             (unless (zerop (aref matrix i target-col))
+                               (return i)))))
+            (when (>= pivot-row 0)
+              (swap-rows rank pivot-row)
+              (let ((inv (mod-inverse (aref matrix rank target-col) divisor)))
+                (dotimes (j n)
+                  (setf (aref matrix rank j)
+                        (mod  (* inv (aref matrix rank j)) divisor)))
+                (dotimes (i m)
+                  (unless (or (= i rank) (zerop (aref matrix i target-col)))
+                    (let ((factor (aref matrix i target-col)))
+                      (loop for j from target-col below n
+                            do (setf (aref matrix i j)
+                                     (mod (- (aref matrix i j)
+                                             (mod (* (aref matrix rank j) factor) divisor))
+                                          divisor)))))))
+              (incf rank))))
+        (values matrix rank)))))
