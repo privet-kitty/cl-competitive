@@ -104,72 +104,83 @@
                        1))
     (setf (%treap-lazy treap) +updater-identity+)))
 
-(defun treap-find (key treap &key (test #'<))
-  "Finds the key that satisfies (and (not (funcall test key (%treap-key
-sub-treap))) (not (funcall test (%treap-key sub-treap) key))) and returns
+(defun treap-find (key treap &key (order #'<))
+  "Finds the key that satisfies (and (not (funcall order key (%treap-key
+sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and returns
 KEY. Returns NIL if KEY is not contained."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (cond ((null treap) nil)
-        ((funcall test key (%treap-key treap))
-         (treap-find key (%treap-left treap) :test test))
-        ((funcall test (%treap-key treap) key)
-         (treap-find key (%treap-right treap) :test test))
+        ((funcall order key (%treap-key treap))
+         (treap-find key (%treap-left treap) :order order))
+        ((funcall order (%treap-key treap) key)
+         (treap-find key (%treap-right treap) :order order))
         (t key)))
 
-(defun treap-bisect-left (threshold treap &key (test #'<))
-  "Returns the smallest index and the corresponding key that satisfies KEY >=
-THRESHOLD. Returns the size of TREAP and THRESHOLD if the largest key is smaller
-than THRESHOLD."
-  (declare (function test))
-  (labels ((recur (count treap)
-             (declare ((integer 0 #.most-positive-fixnum) count))
-             (cond ((null treap) (values nil nil))
-                   ((funcall test (%treap-key treap) threshold)
-                    (recur count (%treap-right treap)))
-                   (t (let ((left-count (- count (treap-count (%treap-right treap)) 1)))
-                        (multiple-value-bind (idx key)
-                            (recur left-count (%treap-left treap))
-                          (if idx
-                              (values idx key)
-                              (values left-count (%treap-key treap)))))))))
-    (declare (ftype (function * (values t t &optional)) recur))
-    (multiple-value-bind (idx key)
-        (recur (treap-count treap) treap)
-      (if idx
-          (values idx key)
-          (values (treap-count treap) threshold)))))
+(defun treap-bisect-right-1 (key treap &key (order #'<))
+  "Returns the largest key equal or smaller than KEY and the corresponding
+value. Returns NIL if KEY is smaller than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (force-down treap)
+             (if (funcall order key (%treap-key treap))
+                 (recur (%treap-left treap))
+                 (or (recur (%treap-right treap))
+                     treap))))
+    (let ((result (recur treap)))
+      (if result
+          (values (%treap-key result) (%treap-value result))
+          (values nil nil)))))
+
+(defun treap-bisect-left (key treap &key (order #'<))
+  "Returns the smallest key equal or larger than KEY and the corresponding
+value. Returns NIL if KEY is larger than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (force-down treap)
+             (if (funcall order (%treap-key treap) key)
+                 (recur (%treap-right treap))
+                 (or (recur (%treap-left treap))
+                     treap))))
+    (let ((result (recur treap)))
+      (if result
+          (values (%treap-key result) (%treap-value result))
+          (values nil nil)))))
 
 (declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
-(defun treap-split (key treap &key (test #'<))
+(defun treap-split (key treap &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (if (null treap)
       (values nil nil)
       (progn
         (force-down treap)
-        (if (funcall test (%treap-key treap) key)
+        (if (funcall order (%treap-key treap) key)
             (multiple-value-bind (left right)
-                (treap-split key (%treap-right treap) :test test)
+                (treap-split key (%treap-right treap) :order order)
               (setf (%treap-right treap) left)
               (force-self treap)
               (values treap right))
             (multiple-value-bind (left right)
-                (treap-split key (%treap-left treap) :test test)
+                (treap-split key (%treap-left treap) :order order)
               (setf (%treap-left treap) right)
               (force-self treap)
               (values left treap))))))
 
 (declaim (inline treap-insert))
-(defun treap-insert (key value treap &key (test #'<))
+(defun treap-insert (key value treap &key (order #'<))
   "Destructively inserts KEY into TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value.
 
 The behavior is undefined when duplicated keys are inserted."
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (labels ((recur (node treap)
              (declare (treap node))
              (unless treap (return-from recur node))
@@ -177,11 +188,11 @@ The behavior is undefined when duplicated keys are inserted."
              (if (> (%treap-priority node) (%treap-priority treap))
                  (progn
                    (setf (values (%treap-left node) (%treap-right node))
-                         (treap-split (%treap-key node) treap :test test))
+                         (treap-split (%treap-key node) treap :order order))
                    (force-self node)
                    node)
                  (progn
-                   (if (funcall test (%treap-key node) (%treap-key treap))
+                   (if (funcall order (%treap-key node) (%treap-key treap))
                        (setf (%treap-left treap)
                              (recur node (%treap-left treap)))
                        (setf (%treap-right treap)
@@ -191,23 +202,23 @@ The behavior is undefined when duplicated keys are inserted."
     (recur (%make-treap key (random most-positive-fixnum) value value) treap)))
 
 (declaim (inline treap-ensure-key))
-(defun treap-ensure-key (key value treap &key (test #'<) if-exists)
+(defun treap-ensure-key (key value treap &key (order #'<) if-exists)
   "IF-EXISTS := nil | function
 
 Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
 false. If IF-EXISTS is function and TREAP contains KEY, TREAP-ENSURE-KEY updates
 the value by the function instead of overwriting it with VALUE."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (labels ((find-and-update (treap)
              ;; Updates the value slot and returns T if KEY exists
              (unless treap (return-from find-and-update nil))
              (force-down treap)
-             (cond ((funcall test key (%treap-key treap))
+             (cond ((funcall order key (%treap-key treap))
                     (when (find-and-update (%treap-left treap))
                       (force-self treap)
                       t))
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (when (find-and-update (%treap-right treap))
                       (force-self treap)
                       t))
@@ -219,7 +230,7 @@ the value by the function instead of overwriting it with VALUE."
                       t))))
     (if (find-and-update treap)
         treap
-        (treap-insert key value treap :test test))))
+        (treap-insert key value treap :order order))))
 
 (defun treap-merge (left right)
   "Destructively merges two treaps. Assumes that all keys of LEFT are smaller
@@ -241,7 +252,7 @@ the value by the function instead of overwriting it with VALUE."
                (force-self right)
                right)))))
 
-(defun treap-delete (key treap &key (test #'<))
+(defun treap-delete (key treap &key (order #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant
 treap. Returns the unmodified TREAP If KEY doesn't exist. You cannot rely on the
 side effect. Use the returned value.
@@ -249,17 +260,17 @@ side effect. Use the returned value.
  (Note that this function deletes at most one node even if duplicated keys
 exist.)"
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (when treap
     (force-down treap)
-    (cond ((funcall test key (%treap-key treap))
+    (cond ((funcall order key (%treap-key treap))
            (setf (%treap-left treap)
-                 (treap-delete key (%treap-left treap) :test test))
+                 (treap-delete key (%treap-left treap) :order order))
            (force-self treap)
            treap)
-          ((funcall test (%treap-key treap) key)
+          ((funcall order (%treap-key treap) key)
            (setf (%treap-right treap)
-                 (treap-delete key (%treap-right treap) :test test))
+                 (treap-delete key (%treap-right treap) :order order))
            (force-self treap)
            treap)
           (t
@@ -364,38 +375,38 @@ intended order. The values are filled with the identity element."
 
 ;; FIXME: might be problematic when two priorities collide.
 (declaim (inline treap-query))
-(defun treap-query (treap &key left right (test #'<))
+(defun treap-query (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT (RIGHT) is not given, it is assumed to be -inf (+inf)."
   (if (null left)
       (if (null right)
           (treap-accumulator treap)
           (multiple-value-bind (treap-0-r treap-r-n)
-              (treap-split right treap :test test)
+              (treap-split right treap :order order)
             (prog1 (treap-accumulator treap-0-r)
               (treap-merge treap-0-r treap-r-n))))
       (if (null right)
           (multiple-value-bind (treap-0-l treap-l-n)
-              (treap-split left treap :test test)
+              (treap-split left treap :order order)
             (prog1 (treap-accumulator treap-l-n)
               (treap-merge treap-0-l treap-l-n)))
           (progn
-            (assert (not (funcall test right left)))
+            (assert (not (funcall order right left)))
             (multiple-value-bind (treap-0-l treap-l-n)
-                (treap-split left treap :test test)
+                (treap-split left treap :order order)
               (multiple-value-bind (treap-l-r treap-r-n)
-                  (treap-split right treap-l-n :test test)
+                  (treap-split right treap-l-n :order order)
                 (prog1 (treap-accumulator treap-l-r)
                   (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))))))
 
 (declaim (inline treap-update))
-(defun treap-update (treap x left right &key (test #'<))
+(defun treap-update (treap x left right &key (order #'<))
   "Updates TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r)"
-  (assert (not (funcall test left right)))
+  (assert (not (funcall order left right)))
   (multiple-value-bind (treap-0-l treap-l-n)
-      (treap-split treap left :test test)
+      (treap-split treap left :order order)
     (multiple-value-bind (treap-l-r treap-r-n)
-        (treap-split treap-l-n right :test test)
+        (treap-split treap-l-n right :order order)
       (when treap-l-r
         (setf (%treap-lazy treap-l-r)
               (updater-op (%treap-lazy treap-l-r) x)))

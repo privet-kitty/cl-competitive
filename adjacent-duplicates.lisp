@@ -15,7 +15,9 @@
                  do (setf prev (aref seq pos)
                           (aref seq end) (aref seq pos)
                           end (+ 1 end)))
-           (adjust-array seq end))))
+           (if (array-has-fill-pointer-p seq)
+               (adjust-array seq end :fill-pointer end)
+               (adjust-array seq end)))))
     (list
      (loop for rest on seq
            unless (and (cdr rest)
