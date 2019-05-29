@@ -155,7 +155,8 @@ This function destructively modifies MATRIX."
                              (unless (zerop (aref matrix i target-col))
                                (return i)))))
             (when (>= pivot-row 0)
-              (swap-rows rank pivot-row)
+              (loop for j from target-col below n
+                    do (rotatef (aref matrix rank j) (aref matrix pivot-row j)))
               (let ((inv (mod-inverse (aref matrix rank target-col) divisor)))
                 (dotimes (j n)
                   (setf (aref matrix rank j)
