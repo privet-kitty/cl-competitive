@@ -1,3 +1,5 @@
+(assert (= sb-vm:n-word-bits 64))
+
 (declaim (inline map-random-graph))
 (defun map-random-graph (function n &optional (sample 1000))
   "Applies function SAMPLE times to the adjacency matrices of random directed
@@ -7,7 +9,6 @@ self-loops.
 If what you need is an undirected graph, you can just use the upper right (or
 lower left) triangle. NORMALIZE-ADJACENCY-MATRIX! may be helpful."
   (declare ((integer 1 #.most-positive-fixnum) n sample))
-  (assert (= sb-vm:n-word-bits 64))
   (let* ((num-words (floor (expt n 2) sb-vm:n-word-bits))
          (end-index (* num-words sb-vm:n-word-bits))
          (total-size (* n n))

@@ -15,6 +15,7 @@ semiring. IDENTITY+ is the identity element w.r.t. OP+."
         (setf (aref c row col) res))))
   c)
 
+
 (declaim (inline gemm))
 (defun gemm (a b &key (op+ #'+) (op* #'*) (identity+ 0))
   "Calculates A*B. (OP+, OP*) must form a semiring. IDENTITY+ is the identity
@@ -48,8 +49,8 @@ semiring. IDENTITY+ is the identity element w.r.t. OP+."
         (setf (aref y i) res)))
     y))
 
-;; (eval-when (:compile-toplevel :load-toplevel :execute)
-;;   (ql:quickload :galante))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :galante))
 
 ;; (declaim (inline gemm1))
 ;; (defun gemm1 (a b &key (op+ #'+) (op* #'*) (identity+ 0))
@@ -72,12 +73,9 @@ semiring. IDENTITY+ is the identity element w.r.t. OP+."
 ;;           (setf (aref c row col) res))))
 ;;     c))
 
-;; (defun benchmark (&optional (size 1000))
-;;   (declare ((unsigned-byte 32) size)
-;;            (optimize (speed 3) (safety 0)))
-;;   (let ((mat (make-array (list size size) :element-type 'bit)))
-;;     (gemm1 mat mat
-;;            :op+ (lambda (x y)
-;;                   (declare (bit x y))
-;;                   (logxor x y))
-;;            :op* #'logand)))
+(defun benchmark (&optional (size 1000))
+  (declare ((unsigned-byte 32) size)
+           ;; (optimize (speed 3) (safety 0))
+           )
+  (let ((mat (make-array (list size size) :element-type 'bit)))
+    (gemm mat mat)))

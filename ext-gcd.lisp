@@ -218,8 +218,8 @@ returns NIL otherwise. This function destructively modifies MATRIX."
 
 (declaim (inline mod-solve-linear-system))
 (defun mod-solve-linear-system (matrix vector divisor)
-  "Solves Ax = b modulo DIVISOR and returns a root if it exists, and returns NIL
-otherwise. In addition, this function returns the rank of A as the second
+  "Solves Ax = b modulo DIVISOR and returns a root if it exists. Otherwise it
+returns NIL. In addition, this function returns the rank of A as the second
 value."
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((integer 0 #.most-positive-fixnum) m n))
