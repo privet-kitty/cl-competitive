@@ -62,3 +62,10 @@ BIT-VECTOR and copies it to the range [0, END+DELTA) of DEST-VECTOR."
       (dotimes (i (min d/64 (ceiling (length dest-vector) 64)))
         (setf (sb-kernel:%vector-raw-bits dest-vector i) 0))
       dest-vector)))
+
+(defun bench (size sample)
+  (declare ((unsigned-byte 32) size sample))
+  (let ((seq (make-array size :element-type 'bit))
+        (state (sb-ext:seed-random-state 0)))
+    (time (loop repeat sample
+                sum (aref (bit-lshift seq (random 128 state)) 0) of-type bit))))
