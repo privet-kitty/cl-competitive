@@ -17,7 +17,7 @@
 ;; TODO: right shift
 (declaim (inline bit-shift))
 (defun bit-lshift (bit-vector delta &optional dest-vector end)
-  "Left-shifts BIT-VECTOR by DELTA bits and fills the lowert bits with zero.
+  "Left-shifts BIT-VECTOR by DELTA bits and fills the lower bits with zero.
 
 The result is copied to DEST-VECTOR. (If it is NIL, BIT-VECTOR is destructively
 modified.) If END is specified, this function shifts only the range [0, END) of
