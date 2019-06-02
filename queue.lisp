@@ -5,6 +5,7 @@
 
 (declaim (inline enqueue))
 (defun enqueue (obj queue)
+  "Pushes OBJ to the end of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
     (if (null list)
@@ -16,6 +17,7 @@
 
 (declaim (inline dequeue))
 (defun dequeue (queue)
+  "Pops OBJ from the front of QUEUE."
   (pop (queue-list queue)))
 
 (declaim (inline queue-empty-p))
@@ -24,6 +26,7 @@
 
 (declaim (inline enqueue-front))
 (defun enqueue-front (obj queue)
+  "Pushes OBJ to the front of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
     (if (null list)

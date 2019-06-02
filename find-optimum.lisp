@@ -1,5 +1,8 @@
+;; unfinished.
+
 (declaim (inline find-optimum))
 (defun find-optimum (sequence predicate &key (start 0) end)
+  ;; wrong docs!
   "Returns an index x that satisfies (FUNCALL PREDICATE SEQUENCE[x] SEQUENCE[y])
 for all the indices y and returns SEQUENCE[x] as the second value."
   (declare ((or null (integer 0 #.most-positive-fixnum)) end)
