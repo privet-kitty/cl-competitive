@@ -1,6 +1,7 @@
 (defmacro buffered-read-line (&optional (buffer-size 30) (in '*standard-input*) (terminate-char #\Space))
-  "Receives ascii inputs and returns the string and the end position. Note that
-the returned string will be reused.
+  "Receives ascii inputs and returns two values: the string and the end
+position. Note that the returned string will be reused if this form is executed
+more than once.
 
 This macro calls READ-BYTE to read characters though it calls READ-CHAR instead
 on SLIME because SLIME's IO is not bivalent."

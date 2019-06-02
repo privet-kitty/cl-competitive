@@ -35,7 +35,8 @@
 
 (defun log-binomial (n k &optional (terms 2))
   (declare ((integer 0) n k))
-  (assert (>= n k))
-  (- (log-factorial n terms)
-     (log-factorial (- n k) terms)
-     (log-factorial k terms)))
+  (if (>= n k 0)
+      (- (log-factorial n terms)
+         (log-factorial (- n k) terms)
+         (log-factorial k terms))
+      sb-ext:double-float-negative-infinity))
