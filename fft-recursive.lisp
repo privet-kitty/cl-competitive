@@ -4,11 +4,6 @@
 
 (deftype fft-float () 'double-float)
 
-(declaim (inline power2-at-least))
-(defun power2-at-least (x)
-  "Returns the smallest power of 2 equal or larger than x."
-  (ash 1 (integer-length (- x 1))))
-
 (defun dft! (f)
   (declare ((simple-array (complex fft-float) (*)) f))
   (prog1 f
