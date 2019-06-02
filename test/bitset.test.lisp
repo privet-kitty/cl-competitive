@@ -34,8 +34,8 @@
   (make-array (length template-vector) :element-type 'bit :initial-element 0))
 
 (with-test (:name bit-lshift)
+  ;; basic case
   (assert (equalp *seq+1* (bit-lshift (copy-seq *seq*) 1)))
-  (assert (eql *seq* (bit-lshift *seq* 0)))
   (assert (equalp *seq+1* (bit-lshift *seq* 1 (zero-vector *seq*))))
   (assert (equalp *seq+2* (bit-lshift *seq* 2 (zero-vector *seq*))))
   (assert (equalp *seq+3* (bit-lshift *seq* 3 (zero-vector *seq*))))
@@ -56,10 +56,26 @@
   (assert (equalp *seq+88* (bit-lshift *seq* 88 (zero-vector *seq*))))
   (assert (equalp *seq+88* (bit-lshift *seq* 89 (zero-vector *seq*))))
   (assert (equalp *seq+88* (bit-lshift *seq* 890 (zero-vector *seq*))))
+  (assert (equalp *seq+88* (bit-lshift *seq* 8900000000000000 (zero-vector *seq*))))
+
+   ;; corner case
+  (assert (eql *seq* (bit-lshift *seq* 0)))
+  (assert (equalp #* (bit-lshift *seq* 1000000000000000000 #*)))
+  (assert (equalp #* (bit-lshift #* 1000000000000000000 #*)))
+  (assert (equalp #*00000 (bit-lshift #* 1000000000000000000 (copy-seq #*00010))))
+  (assert (equalp #*00010 (bit-lshift #* 3 (copy-seq #*00010))))
+  (assert (equalp #*00000 (bit-lshift #* 4 (copy-seq #*00010))))
+  (assert (equalp #*10010 (bit-lshift #*1 0 (copy-seq #*00010))))
+  (assert (equalp #*00000 (bit-lshift #*1 5 (copy-seq #*00010))))
 
   ;; END argument
   (assert (equalp *seq+1end0* (bit-lshift *seq* 1 (copy-seq *seq*) 0)))
   (assert (equalp *seq+1end1* (bit-lshift *seq* 1 (copy-seq *seq*) 1)))
   (assert (equalp *seq+1end2* (bit-lshift *seq* 1 (copy-seq *seq*) 2)))
   (assert (equalp *seq+1end86* (bit-lshift *seq* 1 (copy-seq *seq*) 86)))
-  (assert (equalp *seq+1end87* (bit-lshift *seq* 1 (copy-seq *seq*) 87))))
+  (assert (equalp *seq+1end87* (bit-lshift *seq* 1 (copy-seq *seq*) 87)))
+
+  ;; smaller dest-vector
+  (assert (equalp #*01011 (bit-lshift *seq* 1 #*00000)))
+  (assert (equalp #*00001 (bit-lshift *seq* 4 #*00000)))
+  (assert (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000))))
