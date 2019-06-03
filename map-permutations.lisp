@@ -72,9 +72,3 @@ vector passed to FUNCTION will be recycled."
 
 (defmacro do-permutations ((var vector &optional k) &body body)
   `(map-permutations (lambda (,var) ,@body) ,vector ,k))
-
-;; (defun test (size)
-;;   (let ((vector (make-array size :element-type '(unsigned-byte 32))))
-;;     (declare ((simple-array (unsigned-byte 32) (*)) vector))
-;;     (dotimes (i size) (setf (aref vector i) i))
-;;     (map-permutations #'print vector (ash size -1))))
