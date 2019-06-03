@@ -118,7 +118,7 @@ KEY. Returns NIL if KEY is not contained."
         (t key)))
 
 (defun treap-bisect-right-1 (key treap &key (order #'<))
-  "Returns the largest key equal or smaller than KEY and the corresponding
+  "Returns the largest key equal to or smaller than KEY and the corresponding
 value. Returns NIL if KEY is smaller than any keys in TREAP."
   (declare ((or null treap) treap)
            (function order))
@@ -135,7 +135,7 @@ value. Returns NIL if KEY is smaller than any keys in TREAP."
           (values nil nil)))))
 
 (defun treap-bisect-left (key treap &key (order #'<))
-  "Returns the smallest key equal or larger than KEY and the corresponding
+  "Returns the smallest key equal to or larger than KEY and the corresponding
 value. Returns NIL if KEY is larger than any keys in TREAP."
   (declare ((or null treap) treap)
            (function order))

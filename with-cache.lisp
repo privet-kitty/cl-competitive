@@ -12,7 +12,6 @@
 ;; (with-cache (:array (10 10) :initial-element -1 :element-type 'fixnum :debug t)
 ;;   (defun foo (x y) ...)) ; executes with trace of foo
 
-
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
