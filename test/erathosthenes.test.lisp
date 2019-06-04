@@ -1,0 +1,32 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../erathosthenes.lisp"))
+
+(use-package :test-util)
+
+(with-test (:name make-prime-sequence)
+  (signals type-error (make-prime-sequence 0))
+  (signals type-error (make-prime-sequence 1))
+  (assert (equalp #() (make-prime-sequence 2)))
+  (assert (equalp #(2) (make-prime-sequence 3)))
+  (assert (equalp #(2 3 5 7) (make-prime-sequence 10)))
+  (assert (equalp #(2 3 5 7) (make-prime-sequence 11))))
+
+(defun set-equal (list1 list2)
+  (let ((table1 (make-hash-table :test #'equalp))
+        (table2 (make-hash-table :test #'equalp)))
+    (dolist (x list1)
+      (setf (gethash x table1) t))
+    (dolist (x list2)
+      (setf (gethash x table2) t))
+    (and (loop for x in list1 always (gethash x table2))
+         (loop for x in list2 always (gethash x table1)))))
+
+(with-test (:name factorize)
+  (assert (set-equal '((2 . 2) (3 . 2) (7 . 1))
+                     (factorize 252 (make-prime-sequence 20))))
+  (assert (set-equal '((2 . 2) (3 . 2) (7 . 1))
+                     (factorize 252 (make-prime-sequence 7))))
+  (assert (set-equal '((2 . 2) (7 . 1) (9 . 1))
+                     (factorize 252 #(2 7)))))
+ 

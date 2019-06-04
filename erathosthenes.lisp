@@ -15,6 +15,7 @@
                    do (setf (sbit dict composite) 0)))
     dict))
 
+;; FIXME: Currently the element type of resultant vector is (UNSIGNED-BYTE 62).
 (defun make-prime-sequence (sup)
   "Returns the ascending sequence of primes smaller than SUP."
   (declare (optimize (speed 3) (safety 0)))
@@ -78,34 +79,33 @@ Note that the returned list is NOT guaranteed to be in ascending order."
                            res
                            (cons (cons x 1) res)))))))
 
-(declaim (ftype (function * (values list &optional)) factorize))
-(defun factorize (x prime-set)
+;; TODO: enable to take a list as PRIME-SEQ
+(declaim (inline factorize)
+         (ftype (function * (values list &optional)) factorize))
+(defun factorize (x prime-seq)
   "Returns the associative list of prime factors of X, which is composed
 of (<prime> . <exponent>). E.g. (factorize 100 <prime-table>) => '((2 . 2) (5
 . 5)).
 
-PRIME-SET := sequence (composed only of not duplicated primes)
+PRIME-SEQ := vector (composed only of not duplicated primes)
 Note that the returned list is NOT guaranteed to be in ascending order."
   (declare (integer x)
-           (sequence prime-set))
+           (vector prime-seq))
   (setq x (abs x))
   (if (zerop x)
       nil
       (let (result)
-        (labels ((process (prime)
-                   (declare ((integer 0 #.most-positive-fixnum) prime))
-                   (when (= x 1)
-                     (return-from factorize result))
-                   (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
-                         do (multiple-value-bind (quot rem) (floor x prime)
-                              (if (zerop rem)
-                                  (setf x quot)
-                                  (return
-                                    (when (> exponent 0)
-                                      (push (cons prime exponent) result))))))))
-          (declare (inline process)
-                   (dynamic-extent #'process))
-          (map () #'process prime-set))
+        (loop for prime of-type unsigned-byte across prime-seq
+              do (when (= x 1)
+                   (return-from factorize result))
+                 (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
+                       do (multiple-value-bind (quot rem) (floor x prime)
+                            (if (zerop rem)
+                                (setf x quot)
+                                (progn
+                                  (when (> exponent 0)
+                                    (push (cons prime exponent) result))
+                                  (loop-finish))))))
         (if (= x 1)
             result
             (cons (cons x 1) result)))))
