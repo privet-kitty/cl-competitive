@@ -1,8 +1,16 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../erathosthenes.lisp"))
+  (load "../eratosthenes.lisp"))
 
 (use-package :test-util)
+
+(with-test (:name make-prime-table)
+  (signals type-error (make-prime-table 0))
+  (signals type-error (make-prime-table 1))
+  (assert (equalp #*00 (make-prime-table 2)))
+  (assert (equalp #*001 (make-prime-table 3)))
+  (assert (equalp #*0011010100 (make-prime-table 10)))
+  (assert (equalp #*001101010001010001010001000001 (make-prime-table 30))))
 
 (with-test (:name make-prime-sequence)
   (signals type-error (make-prime-sequence 0))
@@ -10,7 +18,8 @@
   (assert (equalp #() (make-prime-sequence 2)))
   (assert (equalp #(2) (make-prime-sequence 3)))
   (assert (equalp #(2 3 5 7) (make-prime-sequence 10)))
-  (assert (equalp #(2 3 5 7) (make-prime-sequence 11))))
+  (assert (equalp #(2 3 5 7) (make-prime-sequence 11)))
+  (assert (equalp #(2 3 5 7 11 13 17 19 23 29) (make-prime-sequence 30))))
 
 (defun set-equal (list1 list2)
   (let ((table1 (make-hash-table :test #'equalp))

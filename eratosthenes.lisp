@@ -1,6 +1,9 @@
 (declaim (ftype (function * (values simple-bit-vector &optional)) make-prime-table))
 (defun make-prime-table (sup)
-  "Erzeugt die Primzahlentabelle für 0, 1, ...,  SUP-1."
+  "Returns a simple-bit-vector of length SUP, whose (0-based) i-th bit is 1 if i
+is prime and 0 otherwise.
+
+Example: (make-prime-table 10) => #*0011010100"
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
   (let ((dict (make-array sup :element-type 'bit :initial-element 1)))
@@ -10,12 +13,12 @@
           do (setf (sbit dict even-num) 0))
     (loop for p from 3 to (+ 1 (isqrt (- sup 1))) by 2
           when (= 1 (sbit dict p))
-          do (loop for composite from (* 2 p) below sup by p
+          do (loop for composite from (* p p) below sup by p
                    until (>= composite sup)
                    do (setf (sbit dict composite) 0)))
     dict))
 
-;; FIXME: Currently the element type of resultant vector is (UNSIGNED-BYTE 62).
+;; FIXME: Currently the element type of the resultant vector is (UNSIGNED-BYTE 62).
 (defun make-prime-sequence (sup)
   "Returns the ascending sequence of primes smaller than SUP."
   (declare (optimize (speed 3) (safety 0)))
@@ -27,7 +30,7 @@
           do (setf (sbit dict even-num) 0))
     (loop for p from 3 to (+ 1 (isqrt (- sup 1))) by 2
           when (= 1 (sbit dict p))
-          do (loop for composite from (* 2 p) below sup by p
+          do (loop for composite from (* p p) below sup by p
                    until (>= composite sup)
                    do (setf (sbit dict composite) 0)))
     (let* ((length (count 1 dict))
@@ -58,7 +61,7 @@ Note that the returned list is NOT guaranteed to be in ascending order."
       (append
        (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
              while (evenp x)
-             do (setf x (ash x -1))
+             do (setq x (ash x -1))
              finally (return
                        (when (> exponent 0)
                          (list (cons 2 exponent)))))
