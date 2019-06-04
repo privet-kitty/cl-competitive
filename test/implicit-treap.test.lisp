@@ -4,6 +4,19 @@
 
 (use-package :test-util)
 
+(defun copy-itreap (itreap)
+  "For development. Recursively copies the whole ITREAPs."
+  (if (null itreap)
+      nil
+      (%make-itreap (%itreap-value itreap)
+                   (%itreap-priority itreap)
+                   :left (copy-itreap (%itreap-left itreap))
+                   :right (copy-itreap (%itreap-right itreap))
+                   :count (%itreap-count itreap)
+                   :accumulator (%itreap-accumulator itreap)
+                   :lazy (%itreap-lazy itreap)
+                   :reversed (%itreap-reversed itreap))))
+
 (defun itreap-sane-p (itreap)
   (labels ((priority* (itreap)
              (if (null itreap) 0 (%itreap-priority itreap))))
@@ -45,6 +58,7 @@
                  (itreap-list (itreap-insert (itreap 1 2 3 4 5 6) 5 10))))
   (assert (equal '(1 2 3 4 5 6 10)
                  (itreap-list (itreap-insert (itreap 1 2 3 4 5 6) 6 10))))
+  (assert (= 10 (itreap-query (itreap-insert (itreap 1 2 3 4 5 6) 3 10) 3 4)))
   (signals invalid-itreap-index-error
     (itreap-list (itreap-insert (itreap 1 2 3 4 5 6) 7 10)))
   (assert (equal '(10) (itreap-list (itreap-insert nil 0 10)))))
@@ -73,6 +87,6 @@
 
 (with-test (:name implicit-treap-ordered)
   (let ((itreap (itreap 3 3 2 2 2 2 1 1 1)))
-    (assert (= 6 (itreap-bisect-left 1 itreap #'>)))
-    (assert (= 9 (itreap-bisect-left 0 itreap #'>)))
-    (assert (= 0 (itreap-bisect-left 4 itreap #'>)))))
+    (assert (= 6 (itreap-bisect-left itreap 1 #'>)))
+    (assert (= 9 (itreap-bisect-left itreap 0 #'>)))
+    (assert (= 0 (itreap-bisect-left itreap 4 #'>)))))

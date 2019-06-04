@@ -20,7 +20,7 @@
   (+ a b))
 
 ;; Treap with explicit key
-(defstruct (treap (:constructor %make-treap (key priority value accumulator &key left right lazy (count 1)))
+(defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy (count 1)))
                   (:copier nil)
                   (:conc-name %treap-))
   (key 0 :type fixnum)
@@ -199,7 +199,7 @@ The behavior is undefined when duplicated keys are inserted."
                              (recur node (%treap-right treap))))
                    (force-self treap)
                    treap))))
-    (recur (%make-treap key (random most-positive-fixnum) value value) treap)))
+    (recur (%make-treap key (random most-positive-fixnum) value) treap)))
 
 (declaim (inline treap-ensure-key))
 (defun treap-ensure-key (key value treap &key (order #'<) if-exists)
@@ -334,7 +334,6 @@ intended order. The values are filled with the identity element."
                  (let* ((mid (ash (+ l r) -1))
                         (node (%make-treap (aref sorted-vector mid)
                                            (random most-positive-fixnum)
-                                           +op-identity+
                                            +op-identity+)))
                    (setf (%treap-left node) (build l mid))
                    (setf (%treap-right node) (build (+ mid 1) r))
@@ -420,7 +419,7 @@ RIGHT). If LEFT (RIGHT) is not given, it is assumed to be -inf (+inf)."
       (%make-treap (%treap-key treap)
                   (%treap-priority treap)
                   (%treap-value treap)
-                  (%treap-accumulator treap)
+                  :accumulator (%treap-accumulator treap)
                   :left (copy-treap (%treap-left treap))
                   :right (copy-treap (%treap-right treap))
                   :count (%treap-count treap))))

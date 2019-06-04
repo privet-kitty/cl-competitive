@@ -21,7 +21,7 @@
   (declare (ignore size))
   (+ a b))
 
-(defstruct (itreap (:constructor %make-itreap (value priority &key left right (count 1) (accumulator +op-identity+) (lazy +updater-identity+) reversed))
+(defstruct (itreap (:constructor %make-itreap (value priority &key left right (count 1) (accumulator value) (lazy +updater-identity+) reversed))
                   (:copier nil)
                   (:conc-name %itreap-))
   (value +op-identity+ :type fixnum)
@@ -328,19 +328,6 @@ identity element."
     (%set itreap index)
     new-value))
 
-(defun copy-itreap (itreap)
-  "For development. Recursively copies the whole ITREAPs."
-  (if (null itreap)
-      nil
-      (%make-itreap (%itreap-value itreap)
-                   (%itreap-priority itreap)
-                   :left (copy-itreap (%itreap-left itreap))
-                   :right (copy-itreap (%itreap-right itreap))
-                   :count (%itreap-count itreap)
-                   :accumulator (%itreap-accumulator itreap)
-                   :lazy (%itreap-lazy itreap)
-                   :reversed (%itreap-reversed itreap))))
-
 ;; FIXME: might be problematic when two priorities collide.
 (declaim (inline itreap-query))
 (defun itreap-query (itreap l r)
@@ -416,7 +403,7 @@ identity element."
       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
 (declaim (inline itreap-bisect-left))
-(defun itreap-bisect-left (threshold itreap order)
+(defun itreap-bisect-left (itreap threshold order)
   "Receives a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= THRESHOLD, where >= is the complement of ORDER. Returns the
 size of ITREAP if ITREAP[size-1] < THRESHOLD. The time complexity is O(log(n))."
