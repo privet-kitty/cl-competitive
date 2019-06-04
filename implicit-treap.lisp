@@ -117,21 +117,25 @@
   "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N), where N
   is the number of elements of the ITREAP."
   (declare ((integer 0 #.most-positive-fixnum) index))
-  (unless itreap
-    (return-from itreap-split (values nil nil)))
-  (force-down itreap)
-  (let ((implicit-key (1+ (itreap-count (%itreap-left itreap)))))
-    (if (< index implicit-key)
-        (multiple-value-bind (left right)
-            (itreap-split (%itreap-left itreap) index)
-          (setf (%itreap-left itreap) right)
-          (force-self itreap)
-          (values left itreap))
-        (multiple-value-bind (left right)
-            (itreap-split (%itreap-right itreap) (- index implicit-key))
-          (setf (%itreap-right itreap) left)
-          (force-self itreap)
-          (values itreap right)))))
+  (unless (<= index (itreap-count itreap))
+    (error 'invalid-itreap-index-error :index index :itreap itreap))
+  (labels ((recur (itreap pos)
+             (unless itreap
+               (return-from itreap-split (values nil nil)))
+             (force-down itreap)
+             (let ((implicit-key (1+ (itreap-count (%itreap-left itreap)))))
+               (if (< pos implicit-key)
+                   (multiple-value-bind (left right)
+                       (itreap-split (%itreap-left itreap) pos)
+                     (setf (%itreap-left itreap) right)
+                     (force-self itreap)
+                     (values left itreap))
+                   (multiple-value-bind (left right)
+                       (itreap-split (%itreap-right itreap) (- pos implicit-key))
+                     (setf (%itreap-right itreap) left)
+                     (force-self itreap)
+                     (values itreap right))))))
+    (recur itreap index)))
 
 (defun itreap-merge (left right)
   "Destructively merges two ITREAPs."
@@ -161,17 +165,47 @@
              (invalid-itreap-index-error-index condition)
              (invalid-itreap-index-error-itreap condition)))))
 
+;; simple but slower insertion
+;; (declaim (inline itreap-insert))
+;; (defun itreap-insert (itreap index obj)
+;;   "Destructively inserts OBJ into ITREAP at INDEX."
+;;   (declare ((or null itreap) itreap)
+;;            ((integer 0 #.most-positive-fixnum) index))
+;;   (unless (<= index (itreap-count itreap))
+;;     (error 'invalid-itreap-index-error :itreap itreap :index index))
+;;   (let ((obj-itreap (%make-itreap obj (random most-positive-fixnum))))
+;;     (multiple-value-bind (left right)
+;;         (itreap-split itreap index)
+;;       (itreap-merge (itreap-merge left obj-itreap) right))))
+
 (declaim (inline itreap-insert))
 (defun itreap-insert (itreap index obj)
-  "Destructively inserts OBJ into ITREAP at INDEX."
+  "Destructively inserts OBJ into ITREAP and returns the resultant treap. You
+cannot rely on the side effect. Use the returned value."
   (declare ((or null itreap) itreap)
            ((integer 0 #.most-positive-fixnum) index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
-  (let ((obj-itreap (%make-itreap obj (random most-positive-fixnum))))
-    (multiple-value-bind (left right)
-        (itreap-split itreap index)
-      (itreap-merge (itreap-merge left obj-itreap) right))))
+  (let ((node (%make-itreap obj (random most-positive-fixnum))))
+    (labels ((recur (itreap pos)
+               (declare ((integer 0 #.most-positive-fixnum) pos))
+               (unless itreap (return-from recur node))
+               (force-down itreap)
+               (if (> (%itreap-priority node) (%itreap-priority itreap))
+                   (progn
+                     (setf (values (%itreap-left node) (%itreap-right node))
+                           (itreap-split itreap pos))
+                     (force-self node)
+                     node)
+                   (let ((implicit-key (+ 1 (itreap-count (%itreap-left itreap)))))
+                     (if (< pos implicit-key)
+                         (setf (%itreap-left itreap)
+                               (recur (%itreap-left itreap) pos))
+                         (setf (%itreap-right itreap)
+                               (recur (%itreap-right itreap) (- pos implicit-key))))
+                     (force-self itreap)
+                     itreap))))
+      (recur itreap index))))
 
 (defun itreap-map (function itreap)
   "Successively applies FUNCTION to ITREAP[0], ..., ITREAP[SIZE-1]."
@@ -202,8 +236,8 @@
      ,result))
 
 (defun itreap (&rest args)
-  ;; TODO: Currently takes O(nlog(n)) time though it can be reduced to O(n). Use
-  ;; MAKE-ITREAP for now.
+  ;; TODO: Currently it takes O(nlog(n)) time though it can be reduced to
+  ;; O(n). Use MAKE-ITREAP for now.
   (labels ((recurse (list position itreap)
              (declare ((integer 0 #.most-positive-fixnum) position))
              (if (null list)
