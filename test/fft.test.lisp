@@ -22,6 +22,8 @@
 
   ;; not power of two
   (signals simple-error (dft! (to-fft-array #(1 2 3 4 0 0 0))))
+  (signals simple-error (inverse-dft! (to-fft-array #(1 2 3 4 0 0 0))))
+  (signals simple-error (convolute! (to-fft-array #(1 2 3 4 0 0 0)) (to-fft-array #(1 2 3 4 0 0 00))))
 
   ;; boundary case
   (let ((zero (make-array 0 :element-type '(complex fft-float))))

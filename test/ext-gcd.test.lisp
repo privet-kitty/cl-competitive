@@ -21,7 +21,7 @@
   (assert (= 1 (mod-log 0 0 100))))
 
 (with-test (:name mod-inverse)
-  (dotimes (i 1000)
+  (dotimes (i 100)
     (let ((a (random 100))
           (m (+ 2 (random 100))))
       (assert (or (/= 1 (gcd a m))

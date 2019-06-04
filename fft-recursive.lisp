@@ -1,5 +1,6 @@
 ;;;
 ;;; FFT by simple recursion
+;;; (better to use in-place FFT instead)
 ;;;
 
 (deftype fft-float () 'double-float)
