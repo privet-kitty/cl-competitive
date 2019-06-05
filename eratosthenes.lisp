@@ -6,7 +6,7 @@ is prime and 0 otherwise.
 Example: (make-prime-table 10) => #*0011010100"
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
-  (let ((table (make-array sup :element-type 'bit :initial-element 1)))
+  (let ((table (make-array sup :element-type 'bit :initial-element 0)))
     (multiple-value-bind (sup/64 sup%64) (floor sup 64)
       ;; special treatment for p = 2
       (dotimes (i sup/64)
