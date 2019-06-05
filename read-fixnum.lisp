@@ -9,7 +9,6 @@
                            (cond ((<= 48 byte 57)
                                   (return (- byte 48)))
                                  ((zerop byte) ; #\Nul
-                                  ;; (return-from read-fixnum 0)
                                   (error "Read EOF or #\Nul."))
                                  ((= byte #.(char-code #\-))
                                   (setf minus t)))))))
