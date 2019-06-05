@@ -10,7 +10,11 @@
   (assert (equalp #*00 (make-prime-table 2)))
   (assert (equalp #*001 (make-prime-table 3)))
   (assert (equalp #*0011010100 (make-prime-table 10)))
-  (assert (equalp #*001101010001010001010001000001 (make-prime-table 30))))
+  (assert (equalp #*001101010001010001010001000001 (make-prime-table 30)))
+  (loop for b across (make-prime-table 200)
+        for i below 200
+        when (= b 1)
+        do (assert (sb-int:positive-primep i))))
 
 (with-test (:name make-prime-sequence)
   (signals type-error (make-prime-sequence 0))

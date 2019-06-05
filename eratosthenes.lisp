@@ -6,39 +6,35 @@ is prime and 0 otherwise.
 Example: (make-prime-table 10) => #*0011010100"
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
-  (let ((dict (make-array sup :element-type 'bit :initial-element 1)))
-    (setf (sbit dict 0) 0
-          (sbit dict 1) 0)
-    (loop for even-num from 4 below sup by 2
-          do (setf (sbit dict even-num) 0))
-    (loop for p from 3 to (+ 1 (isqrt (- sup 1))) by 2
-          when (= 1 (sbit dict p))
-          do (loop for composite from (* p p) below sup by p
-                   until (>= composite sup)
-                   do (setf (sbit dict composite) 0)))
-    dict))
+  (let ((table (make-array sup :element-type 'bit :initial-element 1)))
+    (multiple-value-bind (sup/64 sup%64) (floor sup 64)
+      ;; special treatment for p = 2
+      (dotimes (i sup/64)
+        (setf (sb-kernel:%vector-raw-bits table i) #xAAAAAAAAAAAAAAAA))
+      (unless (zerop sup%64)
+        (setf (sb-kernel:%vector-raw-bits table sup/64)
+              (ldb (byte sup%64 0) #xAAAAAAAAAAAAAAAA)))
+      (setf (sbit table 1) 0
+            (sbit table 2) 1)
+      ;; p >= 3
+      (loop for p from 3 to (+ 1 (isqrt (- sup 1))) by 2
+            when (= 1 (sbit table p))
+            do (loop for composite from (* p p) below sup by p
+                     do (setf (sbit table composite) 0)))
+      table)))
 
 ;; FIXME: Currently the element type of the resultant vector is (UNSIGNED-BYTE 62).
 (defun make-prime-sequence (sup)
   "Returns the ascending sequence of primes smaller than SUP."
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
-  (let ((dict (make-array sup :element-type 'bit :initial-element 1)))
-    (setf (sbit dict 0) 0
-          (sbit dict 1) 0)
-    (loop for even-num from 4 below sup by 2
-          do (setf (sbit dict even-num) 0))
-    (loop for p from 3 to (+ 1 (isqrt (- sup 1))) by 2
-          when (= 1 (sbit dict p))
-          do (loop for composite from (* p p) below sup by p
-                   until (>= composite sup)
-                   do (setf (sbit dict composite) 0)))
-    (let* ((length (count 1 dict))
+  (let ((table (make-prime-table sup)))
+    (let* ((length (count 1 table))
            (result (make-array length :element-type '(integer 0 #.most-positive-fixnum)))
            (index 0))
       (declare ((integer 0 #.most-positive-fixnum) length))
       (loop for x below sup
-            when (= 1 (sbit dict x))
+            when (= 1 (sbit table x))
             do (setf (aref result index) x)
                (incf index))
       result)))
