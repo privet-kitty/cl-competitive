@@ -1,5 +1,3 @@
-(setf *print-circle* t)
-
 ;; Treap accessible by index (O(log(n))).
 ;; Virtually it works like std::set of C++ or TreeSet of Java.
 
@@ -28,62 +26,66 @@
            (treap-count (%treap-left treap))
            (treap-count (%treap-right treap)))))
 
+(declaim (inline treap-find))
 (defun treap-find (key treap &key (test #'<))
   "Finds the sub-treap of TREAP whose key satisfies (and (not (treap-order
 key (%treap-key sub-treap))) (not (treap-order (%treap-key sub-treap) key)))
 and returns KEY. Returns NIL if KEY is not contained."
   (declare (function test)
            ((or null treap) treap))
-  (cond ((null treap) nil)
-        ((funcall test key (%treap-key treap))
-         (treap-find key (%treap-left treap) :test test))
-        ((funcall test (%treap-key treap) key)
-         (treap-find key (%treap-right treap) :test test))
-        (t key)))
+  (labels ((recur (treap)
+             (cond ((null treap) nil)
+                   ((funcall test key (%treap-key treap))
+                    (recur (%treap-left treap)))
+                   ((funcall test (%treap-key treap) key)
+                    (recur (%treap-right treap)))
+                   (t key))))
+    (recur treap)))
 
 (defun treap-bisect-left (value treap &key (test #'<))
   "Returns the smallest index and the corresponding key that satisfies
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
 VALUE."
   (declare (function test))
-  (labels ((recurse (count treap)
+  (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
                    ((funcall test (%treap-key treap) value)
-                    (recurse count (%treap-right treap)))
+                    (recur count (%treap-right treap)))
                    (t (let ((left-count (- count (treap-count (%treap-right treap)) 1)))
                         (multiple-value-bind (idx key)
-                            (recurse left-count (%treap-left treap))
+                            (recur left-count (%treap-left treap))
                           (if idx
                               (values idx key)
                               (values left-count (%treap-key treap)))))))))
-    (declare (ftype (function * (values t t &optional)) recurse))
+    (declare (ftype (function * (values t t &optional)) recur))
     (multiple-value-bind (idx key)
-        (recurse (treap-count treap) treap)
+        (recur (treap-count treap) treap)
       (if idx
           (values idx key)
           (values (treap-count treap) value)))))
 
-(declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
+(declaim (inline treap-split)
+         (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
 (defun treap-split (key treap &key (test #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   (declare (function test)
            ((or null treap) treap))
-  (cond ((null treap)
-         (values nil nil))
-        ((funcall test (%treap-key treap) key)
-         (multiple-value-bind (left right)
-             (treap-split key (%treap-right treap) :test test)
-           (setf (%treap-right treap) left)
-           (update-count treap)
-           (values treap right)))
-        (t
-         (multiple-value-bind (left right)
-             (treap-split key (%treap-left treap) :test test)
-           (setf (%treap-left treap) right)
-           (update-count treap)
-           (values left treap)))))
+  (labels ((recur (treap)
+             (cond ((null treap)
+                    (values nil nil))
+                   ((funcall test (%treap-key treap) key)
+                    (multiple-value-bind (left right) (recur (%treap-right treap))
+                      (setf (%treap-right treap) left)
+                      (update-count treap)
+                      (values treap right)))
+                   (t
+                    (multiple-value-bind (left right) (recur (%treap-left treap))
+                      (setf (%treap-left treap) right)
+                      (update-count treap)
+                      (values left treap))))))
+    (recur treap)))
 
 (declaim (inline treap-insert))
 (defun treap-insert (key treap &key (test #'<))
@@ -93,23 +95,24 @@ cannot rely on the side effect. Use the returned value.
 The behavior is undefined when duplicated keys are inserted."
   (declare ((or null treap) treap)
            (function test))
-  (labels ((recurse (node treap)
-             (declare (treap node))
-             (cond ((null treap) node)
-                   ((> (%treap-priority node) (%treap-priority treap))
-                    (setf (values (%treap-left node) (%treap-right node))
-                          (treap-split (%treap-key node) treap :test test))
-                    (update-count node)
-                    node)
-                   (t
-                    (if (funcall test (%treap-key node) (%treap-key treap))
-                        (setf (%treap-left treap)
-                              (recurse node (%treap-left treap)))
-                        (setf (%treap-right treap)
-                              (recurse node (%treap-right treap))))
-                    (update-count treap)
-                    treap))))
-    (recurse (%make-treap key (random most-positive-fixnum)) treap)))
+  (let ((node (%make-treap key (random most-positive-fixnum))))
+    (labels ((recur (treap)
+               (declare (treap node))
+               (cond ((null treap) node)
+                     ((> (%treap-priority node) (%treap-priority treap))
+                      (setf (values (%treap-left node) (%treap-right node))
+                            (treap-split (%treap-key node) treap :test test))
+                      (update-count node)
+                      node)
+                     (t
+                      (if (funcall test (%treap-key node) (%treap-key treap))
+                          (setf (%treap-left treap)
+                                (recur (%treap-left treap)))
+                          (setf (%treap-right treap)
+                                (recur (%treap-right treap))))
+                      (update-count treap)
+                      treap))))
+      (recur treap))))
 
 (defun treap (test &rest keys)
   (loop with res = nil
@@ -122,7 +125,7 @@ The behavior is undefined when duplicated keys are inserted."
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
   "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
-doesn't check if the SORTED-VECTOR is properly sorted w.r.t. your intended
+doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your intended
 order."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
@@ -171,22 +174,25 @@ order."
          (update-count right)
          right)))
 
+(declaim (inline treap-delete))
 (defun treap-delete (key treap &key (test #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value."
   (declare ((or null treap) treap)
            (function test))
-  (cond ((null treap) nil)
-        ((funcall test key (%treap-key treap))
-         (setf (%treap-left treap) (treap-delete key (%treap-left treap) :test test))
-         (update-count treap)
-         treap)
-        ((funcall test (%treap-key treap) key)
-         (setf (%treap-right treap) (treap-delete key (%treap-right treap) :test test))
-         (update-count treap)
-         treap)
-        (t
-         (treap-merge (%treap-left treap) (%treap-right treap)))))
+  (labels ((recur (treap)
+             (cond ((null treap) nil)
+                   ((funcall test key (%treap-key treap))
+                    (setf (%treap-left treap) (recur (%treap-left treap)))
+                    (update-count treap)
+                    treap)
+                   ((funcall test (%treap-key treap) key)
+                    (setf (%treap-right treap) (recur (%treap-right treap)))
+                    (update-count treap)
+                    treap)
+                   (t
+                    (treap-merge (%treap-left treap) (%treap-right treap))))))
+    (recur treap)))
 
 (defun treap-map (function treap)
   "Successively applies FUNCTION to TREAP[0], ..., TREAP[SIZE-1]. FUNCTION must
@@ -202,7 +208,7 @@ take one argument."
     (let ((init t))
       (treap-map (lambda (key)
                    (if init
-                       (setf init nil)
+                       (setq init nil)
                        (write-char #\  stream))
                    (write key :stream stream))
                  object))))
@@ -212,7 +218,7 @@ take one argument."
    (index :initarg :index :reader invalid-treap-index-error-index))
   (:report
    (lambda (condition stream)
-     (format stream "Invalid index ~W for treap ~S."
+     (format stream "Invalid index ~W for treap ~W."
              (invalid-treap-index-error-index condition)
              (invalid-treap-index-error-treap condition)))))
 

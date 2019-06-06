@@ -5,3 +5,4 @@ of length n to the integers 0, ..., n-1."
   (let ((table (make-hash-table :test test :size (length vector))))
     (dotimes (i (length vector) table)
       (setf (gethash (aref vector i) table) i))))
+
