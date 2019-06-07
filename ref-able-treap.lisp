@@ -1,5 +1,12 @@
 ;; Treap accessible by index (O(log(n))).
-;; Virtually it works like std::set of C++ or TreeSet of Java.
+;; Virtually it works like std::set of C++ or TreeSet of Java. 
+
+;; Note:
+;; - You shouldn't insert duplicate keys in a treap unless you know what you are
+;; doing.
+;; - You cannot rely on the side effect when you use any destructive operations
+;; on a treap. Always use the returned value.
+;; - An empty treap is NIL.
 
 (defstruct (treap (:constructor %make-treap (key priority &key left right (count 1)))
                   (:copier nil)
@@ -27,30 +34,31 @@
            (treap-count (%treap-right treap)))))
 
 (declaim (inline treap-find))
-(defun treap-find (key treap &key (test #'<))
-  "Finds the sub-treap of TREAP whose key satisfies (and (not (treap-order
-key (%treap-key sub-treap))) (not (treap-order (%treap-key sub-treap) key)))
-and returns KEY. Returns NIL if KEY is not contained."
-  (declare (function test)
+(defun treap-find (key treap &key (order #'<))
+  "Finds the sub-treap of TREAP whose key satisfies (and (not (funcall order
+key (%treap-key sub-treap))) (not (funcall order (%treap-key sub-treap) key)))
+and returns KEY. It returns NIL instead if KEY is not contained."
+  (declare (function order)
            ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
-                   ((funcall test key (%treap-key treap))
+                   ((funcall order key (%treap-key treap))
                     (recur (%treap-left treap)))
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (recur (%treap-right treap)))
                    (t key))))
     (recur treap)))
 
-(defun treap-bisect-left (value treap &key (test #'<))
+(declaim (inline treap-bisect-left))
+(defun treap-bisect-left (value treap &key (order #'<))
   "Returns the smallest index and the corresponding key that satisfies
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
 VALUE."
-  (declare (function test))
+  (declare (function order))
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
-                   ((funcall test (%treap-key treap) value)
+                   ((funcall order (%treap-key treap) value)
                     (recur count (%treap-right treap)))
                    (t (let ((left-count (- count (treap-count (%treap-right treap)) 1)))
                         (multiple-value-bind (idx key)
@@ -67,15 +75,15 @@ VALUE."
 
 (declaim (inline treap-split)
          (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
-(defun treap-split (key treap &key (test #'<))
+(defun treap-split (key treap &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap)
                     (values nil nil))
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (multiple-value-bind (left right) (recur (%treap-right treap))
                       (setf (%treap-right treap) left)
                       (update-count treap)
@@ -88,24 +96,21 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
     (recur treap)))
 
 (declaim (inline treap-insert))
-(defun treap-insert (key treap &key (test #'<))
-  "Destructively inserts KEY into TREAP and returns the resultant treap. You
-cannot rely on the side effect. Use the returned value.
-
-The behavior is undefined when duplicated keys are inserted."
+(defun treap-insert (key treap &key (order #'<))
+  "Destructively inserts KEY into TREAP and returns the resultant treap."
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (let ((node (%make-treap key (random most-positive-fixnum))))
     (labels ((recur (treap)
                (declare (treap node))
                (cond ((null treap) node)
                      ((> (%treap-priority node) (%treap-priority treap))
                       (setf (values (%treap-left node) (%treap-right node))
-                            (treap-split (%treap-key node) treap :test test))
+                            (treap-split (%treap-key node) treap :order order))
                       (update-count node)
                       node)
                      (t
-                      (if (funcall test (%treap-key node) (%treap-key treap))
+                      (if (funcall order (%treap-key node) (%treap-key treap))
                           (setf (%treap-left treap)
                                 (recur (%treap-left treap)))
                           (setf (%treap-right treap)
@@ -114,14 +119,14 @@ The behavior is undefined when duplicated keys are inserted."
                       treap))))
       (recur treap))))
 
-(defun treap (test &rest keys)
+;; It takes O(nlog(n)).
+(defun treap (order &rest keys)
   (loop with res = nil
         for key in keys
-        do (setf res (treap-insert key res :test test))
+        do (setf res (treap-insert key res :order order))
         finally (return res)))
 
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
-;; TODO: take a sorted list as the argument
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
   "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
@@ -175,18 +180,17 @@ order."
          right)))
 
 (declaim (inline treap-delete))
-(defun treap-delete (key treap &key (test #'<))
-  "Destructively deletes the KEY in TREAP and returns the resultant treap. You
-cannot rely on the side effect. Use the returned value."
+(defun treap-delete (key treap &key (order #'<))
+  "Destructively deletes the KEY in TREAP and returns the resultant treap."
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (labels ((recur (treap)
              (cond ((null treap) nil)
-                   ((funcall test key (%treap-key treap))
+                   ((funcall order key (%treap-key treap))
                     (setf (%treap-left treap) (recur (%treap-left treap)))
                     (update-count treap)
                     treap)
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (setf (%treap-right treap) (recur (%treap-right treap)))
                     (update-count treap)
                     treap)
@@ -238,18 +242,3 @@ take one argument."
                       (%ref (%treap-right treap) (- index left-count 1)))
                      (t (%treap-key treap))))))
     (%ref treap index)))
-
-;;;
-;;; For development
-;;;
-
-(defun copy-treap (treap)
-  "For development. Recursively copies the whole TREAP."
-  (declare ((or null treap) treap))
-  (if (null treap)
-      nil
-      (%make-treap (%treap-key treap)
-                   (%treap-priority treap)
-                   :left (copy-treap (%treap-left treap))
-                   :right (copy-treap (%treap-right treap))
-                   :count (%treap-count treap))))

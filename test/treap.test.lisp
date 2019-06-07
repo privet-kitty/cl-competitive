@@ -4,6 +4,17 @@
 
 (use-package :test-util)
 
+(defun copy-treap (treap)
+  "For development. Recursively copies the whole TREAP."
+  (declare ((or null treap) treap))
+  (if (null treap)
+      nil
+      (%make-treap (%treap-key treap)
+                   (%treap-priority treap)
+                   :left (copy-treap (%treap-left treap))
+                   :right (copy-treap (%treap-right treap))
+                   :count (%treap-count treap))))
+
 (defun treap-priority (treap)
   (declare ((or null treap) treap))
   (if (null treap)
@@ -23,7 +34,6 @@
            (treap-sane-p (%treap-left treap))
            (treap-sane-p (%treap-right treap)))))
 
-;; Test
 (with-test (:name treap-sanity)
   (dotimes (_ 10)
     (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))
@@ -33,7 +43,7 @@
     (assert (treap-sane-p (make-treap #(1))))
     (assert (treap-sane-p nil))))
 
-(with-test (:name treap)
+(with-test (:name treap-fundamental)
   (multiple-value-bind (left right) (treap-split 5 (treap-insert 0 (treap-insert 10 (treap-insert 5 nil))))
     (assert (= 0 (%treap-key left)))
     (assert (null (%treap-left left)))

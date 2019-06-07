@@ -21,7 +21,7 @@ and B is operand."
   "Is the operator to update ACCUMULATOR (and VALUE) based on LAZY value. A is
 the current ACCUMULATOR value and B is the LAZY value. SIZE is the length of the
 specified interval."
-  (declare (ignore size))
+  (declare (ignorable size))
   (+ a b))
 
 (defstruct (itreap (:constructor %make-itreap (value priority &key left right (count 1) (accumulator value) (lazy +updater-identity+) reversed))
@@ -164,9 +164,15 @@ specified interval."
    (index :initarg :index :reader invalid-itreap-index-error-index))
   (:report
    (lambda (condition stream)
-     (format stream "Invalid index ~W for itreap ~W."
-             (invalid-itreap-index-error-index condition)
-             (invalid-itreap-index-error-itreap condition)))))
+     (let ((index (invalid-itreap-index-error-index condition)))
+       (if (consp index)
+           (format stream "Invalid range [~W, ~W) for itreap ~W."
+                   (car index)
+                   (cdr index)
+                   (invalid-itreap-index-error-itreap condition))
+           (format stream "Invalid index ~W for itreap ~W."
+                   index
+                   (invalid-itreap-index-error-itreap condition)))))))
 
 ;; simple but slower insertion
 ;; (declaim (inline itreap-insert))
@@ -389,8 +395,8 @@ identity element."
       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
 (declaim (inline itreap-update))
-(defun itreap-update (itreap x l r)
-  "Updates ITREAP[i] := (OP ITREAP[i] X) for all i in [l, r)"
+(defun itreap-update (itreap operand l r)
+  "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
@@ -405,7 +411,7 @@ identity element."
 
 (declaim (inline itreap-bisect-left))
 (defun itreap-bisect-left (itreap threshold order)
-  "Receives a **sorted** treap and returns the smallest index that satisfies
+  "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= THRESHOLD, where >= is the complement of ORDER. Returns the
 size of ITREAP if ITREAP[size-1] < THRESHOLD. The time complexity is O(log(n))."
   (declare (function order))
