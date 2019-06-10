@@ -1,7 +1,7 @@
 (declaim (inline read-line-into))
 (defun read-line-into (buffer-string &key (in *standard-input*) (terminate-char #\Space))
-  "Receives ascii inputs and returns the string and the end position. Note that
-the returned string will be reused.
+  "Receives ASCII inputs and returns multiple values: the string and the end
+position.
 
 This function calls READ-BYTE to read characters though it calls READ-CHAR
 instead on SLIME because SLIME's IO is not bivalent."
