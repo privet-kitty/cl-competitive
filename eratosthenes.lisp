@@ -108,3 +108,24 @@ Note that the returned list is NOT guaranteed to be in ascending order."
         (if (= x 1)
             result
             (cons (cons x 1) result)))))
+
+(defun make-omega-table (sup prime-seq)
+  "Returns the table of prime omega function on {0, 1, ..., SUP-1}."
+  (declare ((integer 0 #.most-positive-fixnum) sup))
+  ;; (assert (>= (expt (aref prime-seq (- (length prime-seq) 1)) 2) (- sup 1)))
+  (let ((table (make-array sup :element-type '(unsigned-byte 32)))
+        (res (make-array sup :element-type '(unsigned-byte 8))))
+    (dotimes (i (length table))
+      (setf (aref table i) i))
+    (loop for p of-type (integer 0 #.most-positive-fixnum) across prime-seq
+          do (loop for i from p below sup by p
+                   do (loop
+                        (multiple-value-bind (quot rem) (floor (aref table i) p)
+                          (if (zerop rem)
+                              (progn (incf (aref res i))
+                                     (setf (aref table i) quot))
+                              (return))))))
+    (loop for i below sup
+          unless (= 1 (aref table i))
+          do (incf (aref res i)))
+    res))
