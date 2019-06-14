@@ -7,4 +7,5 @@
 (with-test (:name gray-code)
   (dotimes (x 100)
     (assert (= (natural-to-gray (gray-to-natural x))))
-    (assert (= (gray-to-natural (natural-to-gray x))))))
+    (assert (= (gray-to-natural (natural-to-gray x))))
+    (assert (= 1 (logcount (logxor (natural-to-gray (+ x 1)) (natural-to-gray x)))))))
