@@ -14,6 +14,12 @@
           (setf (aref result i j) (aref array i j))))
       result)))
 
+(defun to-bit-vector (vector)
+  (let ((result (make-array (* 64 (ceiling (length vector) 64)) :element-type 'bit)))
+    (dotimes (i (length vector))
+      (setf (aref result i) (aref vector i)))
+    result))
+
 (with-test (:name f2-gemm)
   (assert (equalp
            (to-bit-matrix #2a((1 0 0) (0 1 0) (0 0 1)))
@@ -23,3 +29,13 @@
            (to-bit-matrix #2a((1 0 0) (0 0 0) (0 0 0)))
            (f2-gemm (to-bit-matrix #2a((0 0 1) (0 1 0) (1 0 0)))
                     (to-bit-matrix #2a((0 0 0) (0 0 0) (1 0 0)))))))
+
+(with-test (:name f2-gemv)
+  (assert (equalp
+           (to-bit-vector #*001)
+           (f2-gemv (to-bit-matrix #2a((1 1 1) (0 1 0) (1 0 0)))
+                    (to-bit-vector #*101))))
+  (assert (equalp
+           (to-bit-vector #*111)
+           (f2-gemv (to-bit-matrix #2a((1 0 0) (0 1 0) (0 0 1)))
+                    (to-bit-vector #*111)))))
