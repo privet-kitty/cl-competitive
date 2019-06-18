@@ -40,6 +40,7 @@
 
        (declaim (inline ,fname-push))
        (defun ,fname-push (obj heap)
+         "Adds OBJ to the end of HEAP."
          (symbol-macrolet ((position (,acc-position heap)))
            (let ((data (,acc-data heap)))
              (declare ((simple-array ,element-type (*)) data))
@@ -57,7 +58,8 @@
                heap))))
 
        (declaim (inline ,fname-pop))
-       (defun ,fname-pop (heap &optional (error t) null-value)
+       (defun ,fname-pop (heap)
+         "Pops an element from the top of HEAP."
          (symbol-macrolet ((position (,acc-position heap)))
            (let ((data (,acc-data heap)))
              (declare ((simple-array ,element-type (*)) data))
