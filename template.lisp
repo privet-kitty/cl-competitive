@@ -41,8 +41,8 @@
 ;; For Test
 #+swank
 (defun io-equal (in-string out-string &optional (func #'main))
-  "Passes IN-STRING to *STANDARD-INPUT*, executes FUNC, and checks the string
-output to *STANDARD-OUTPUT* is equal to OUT-STRING."
+  "Passes IN-STRING to *STANDARD-INPUT*, executes FUNC, and returns true if the
+string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
   (labels ((ensure-last-lf (s)
              (if (and (> (length s) 0)
                       (eql (char s (- (length s) 1)) #\Linefeed))
