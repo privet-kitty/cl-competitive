@@ -87,15 +87,18 @@
 
        (declaim (inline ,fname-reinitialize))
        (defun ,fname-reinitialize (heap)
+         "Makes HEAP empty."
          (setf (,acc-position heap) 1)
          heap)
 
        (declaim (inline ,fname-empty-p))
        (defun ,fname-empty-p (heap)
+         "Returns true if HEAP is empty."
          (= 1 (,acc-position heap)))
 
        (declaim (inline ,fname-peak))
        (defun ,fname-peak (heap)
+         "Returns the topmost element of HEAP."
          (if (= 1 (,acc-position heap))
              (error 'heap-empty-error :heap heap)
              (aref (,acc-data heap) 1))))))
@@ -103,12 +106,3 @@
 (define-binary-heap heap
   :order #'>
   :element-type fixnum)
-
-;; (defun bench (&optional (size 2000000))
-;;   (declare (fixnum size) (optimize (speed 3)))
-;;   (let* ((heap (make-heap size))
-;;          (seed (seed-random-state 0)))
-;;     (time (dotimes (i size)
-;;             (heap-push (random most-positive-fixnum seed) heap)))
-;;     (time (dotimes (i size)
-;;             (heap-pop heap)))))

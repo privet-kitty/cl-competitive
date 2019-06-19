@@ -1,6 +1,6 @@
 ;;;
 ;;; FFT by simple recursion
-;;; (better to use in-place FFT instead)
+;;; (better to use in-place FFT instead. I leave it just for my reference.)
 ;;;
 
 (deftype fft-float () 'double-float)

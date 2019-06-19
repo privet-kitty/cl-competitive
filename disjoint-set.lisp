@@ -42,10 +42,3 @@ connected."
 (defun ds-size (x disjoint-set)
   (- (aref (ds-data disjoint-set)
            (ds-root x disjoint-set))))
-
-;; (defun bench ()
-;;   (let* ((size 5000000)
-;;          (tree (make-disjoint-set size))
-;;          (seed (seed-random-state 0)))
-;;     (dotimes (i 5000000)
-;;       (ds-unite! (random size seed) (random size seed) tree))))

@@ -1,5 +1,4 @@
 ;; Not included in test script. Better to use ref-able-treap instead.
-(setf *print-circle* t)
 
 (defstruct (treap (:constructor %make-treap (key priority &optional left right))
                   (:copier nil)

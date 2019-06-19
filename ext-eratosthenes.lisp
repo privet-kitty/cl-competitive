@@ -9,7 +9,7 @@
 
 (defun make-minfactor-table (sup)
   "Returns a vector of length SUP, whose (0-based) i-th value is the minimal
-prime factor of i. (Corner case: 0-th value = 0 and 1st-value = 1.)"
+prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.)"
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
   (let ((table (make-array sup :element-type '(integer 0 #.most-positive-fixnum))))
@@ -32,7 +32,7 @@ prime factor of i. (Corner case: 0-th value = 0 and 1st-value = 1.)"
 of (<prime> . <exponent>). E.g. (factorize 100 <minfactor-table>) => '((2 . 2) (5
 . 5)).
 
-MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal factor of k)
+MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal prime factor of k)
 
 Note that the returned list is NOT guaranteed to be in ascending order."
   (declare (fixnum x)
