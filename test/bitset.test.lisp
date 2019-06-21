@@ -59,7 +59,8 @@
   (assert (equalp *seq+88* (bit-lshift *seq* 8900000000000000 (zero-vector *seq*))))
 
    ;; corner case
-  (assert (eql *seq* (bit-lshift *seq* 0)))
+  (assert (eql *seq* (bit-lshift *seq* 0 t)))
+  (assert (not (eql *seq* (bit-lshift *seq* 0))))
   (assert (equalp #* (bit-lshift *seq* 1000000000000000000 #*)))
   (assert (equalp #* (bit-lshift #* 1000000000000000000 #*)))
   (assert (equalp #*00000 (bit-lshift #* 1000000000000000000 (copy-seq #*00010))))

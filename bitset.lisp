@@ -15,53 +15,58 @@
 
 ;; TODO: benchmark
 ;; TODO: right shift
-(declaim (inline bit-shift))
-(defun bit-lshift (bit-vector delta &optional dest-vector end)
+(defun bit-lshift (bit-vector delta &optional result-vector end)
   "Left-shifts BIT-VECTOR by DELTA bits and fills the lower bits with zero.
 
-The result is copied to DEST-VECTOR. (If it is NIL, BIT-VECTOR is destructively
-modified.) If END is specified, this function shifts only the range [0, END) of
-BIT-VECTOR and copies it to the range [0, END+DELTA) of DEST-VECTOR."
+The result is copied to RESULT-VECTOR. (If it is NIL, BIT-VECTOR is
+destructively modified.) If END is specified, this function shifts only the
+range [0, END) of BIT-VECTOR and copies it to the range [0, END+DELTA) of
+RESULT-VECTOR."
   (declare (simple-bit-vector bit-vector)
-           ((or null simple-bit-vector) dest-vector)
+           ((or null (eql t) simple-bit-vector) result-vector)
            ((integer 0 #.most-positive-fixnum) delta)
            ((or null (integer 0 #.most-positive-fixnum)) end))
-  (setf dest-vector (or dest-vector bit-vector))
-  (setf end (or end (length bit-vector)))
+  (setq result-vector
+        (etypecase result-vector
+          (null (make-array (length bit-vector) :element-type 'bit :initial-element 0))
+          ((eql t) bit-vector)
+          (simple-bit-vector result-vector)))
+  (setq end (or end (length bit-vector)))
   (assert (<= end (length bit-vector)))
-  (setf end (min end (max 0 (- (length dest-vector) delta))))
+  (setq end (min end (max 0 (- (length result-vector) delta))))
   (multiple-value-bind (d/64 d%64) (floor delta 64)
     (multiple-value-bind (end/64 end%64) (floor end 64)
-      (declare (optimize (speed 3) (safety 0)))
+      (declare (simple-bit-vector result-vector))
       ;; process the last bits separately
       (unless (zerop end%64)
         (let ((word (sb-kernel:%vector-raw-bits bit-vector end/64)))
-          (setf (sb-kernel:%vector-raw-bits dest-vector (+ end/64 d/64))
+          (setf (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))
                 (u64-dpb (ldb (byte (min end%64 (- 64 d%64)) 0) word)
                          (byte (min end%64 (- 64 d%64)) d%64)
-                         (sb-kernel:%vector-raw-bits dest-vector (+ end/64 d/64))))
+                         (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))))
           (when (> end%64 (- 64 d%64))
             (setf (ldb (byte (- end%64 (- 64 d%64)) 0)
-                       (sb-kernel:%vector-raw-bits dest-vector (+ 1 end/64 d/64)))
+                       (sb-kernel:%vector-raw-bits result-vector (+ 1 end/64 d/64)))
                   (ldb (byte (- end%64 (- 64 d%64)) (- 64 d%64)) word)))))
-      (loop for i from (- end/64 1) downto 0
-            do (let ((word (sb-kernel:%vector-raw-bits bit-vector i)))
-                 (declare ((unsigned-byte 64) word))
-                 (setf (sb-kernel:%vector-raw-bits dest-vector (+ i d/64))
-                       (u64-dpb (ldb (byte (- 64 d%64) 0) word)
-                                (byte (- 64 d%64) d%64)
-                                (sb-kernel:%vector-raw-bits dest-vector (+ i d/64))))
-                 (setf (ldb (byte d%64 0)
-                            (sb-kernel:%vector-raw-bits dest-vector (+ 1 i d/64)))
-                       (ldb (byte d%64 (- 64 d%64)) word))))
+      (do ((i (- end/64 1) (- i 1)))
+          ((< i 0))
+        (let ((word (sb-kernel:%vector-raw-bits bit-vector i)))
+          (declare ((unsigned-byte 64) word))
+          (setf (sb-kernel:%vector-raw-bits result-vector (+ i d/64))
+                (u64-dpb (ldb (byte (- 64 d%64) 0) word)
+                         (byte (- 64 d%64) d%64)
+                         (sb-kernel:%vector-raw-bits result-vector (+ i d/64))))
+          (setf (ldb (byte d%64 0)
+                     (sb-kernel:%vector-raw-bits result-vector (+ 1 i d/64)))
+                (ldb (byte d%64 (- 64 d%64)) word))))
       ;; zero padding
-      (when (< d/64 (ceiling (length dest-vector) 64))
-        (setf (ldb (byte d%64 0) (sb-kernel:%vector-raw-bits dest-vector d/64)) 0))
+      (when (< d/64 (ceiling (length result-vector) 64))
+        (setf (ldb (byte d%64 0) (sb-kernel:%vector-raw-bits result-vector d/64)) 0))
       ;; REVIEW: May we set the last word of a bit vector to zero beyond the
       ;; actual bound?
-      (dotimes (i (min d/64 (ceiling (length dest-vector) 64)))
-        (setf (sb-kernel:%vector-raw-bits dest-vector i) 0))
-      dest-vector)))
+      (dotimes (i (min d/64 (ceiling (length result-vector) 64)))
+        (setf (sb-kernel:%vector-raw-bits result-vector i) 0))
+      result-vector)))
 
 (defun bench (size sample)
   (declare ((unsigned-byte 32) size sample))
