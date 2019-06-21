@@ -27,7 +27,8 @@ same capacity."
 
 (defun %find-flow (src-idx dest-idx graph max-flow checked)
   "DFS"
-  (declare ((integer 0 #.most-positive-fixnum) src-idx dest-idx max-flow)
+  (declare (optimize (speed 3) (safety 0))
+           ((integer 0 #.most-positive-fixnum) src-idx dest-idx max-flow)
            (simple-bit-vector checked)
            ((simple-array list (*)) graph))
   (setf (aref checked src-idx) 1)
@@ -48,7 +49,8 @@ same capacity."
               (return flow)))))))
 
 (defun max-flow (src-idx dest-idx graph)
-  (declare ((simple-array list (*)) graph))
+  (declare ((integer 0 #.most-positive-fixnum) src-idx dest-idx)
+           ((simple-array list (*)) graph))
   (let ((checked (make-array (length graph) :element-type 'bit :initial-element 0)))
     (loop for incr-flow of-type (integer 0 #.most-positive-fixnum)
              = (%find-flow src-idx dest-idx graph most-positive-fixnum checked)

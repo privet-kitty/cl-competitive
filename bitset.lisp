@@ -16,12 +16,12 @@
 ;; TODO: benchmark
 ;; TODO: right shift
 (defun bit-lshift (bit-vector delta &optional result-vector end)
-  "Left-shifts BIT-VECTOR by DELTA bits and fills the lower bits with zero.
+  "Left-shifts BIT-VECTOR by DELTA bits and fills the new bits with zero.
 
-The result is copied to RESULT-VECTOR. (If it is NIL, BIT-VECTOR is
-destructively modified.) If END is specified, this function shifts only the
-range [0, END) of BIT-VECTOR and copies it to the range [0, END+DELTA) of
-RESULT-VECTOR."
+The result is copied to RESULT-VECTOR. (If it is T, BIT-VECTOR is destructively
+modified; if it is NIL, a new bit-vector of the same length is created.) If END
+is specified, this function shifts only the range [0, END) of BIT-VECTOR and
+copies it to the range [0, END+DELTA) of RESULT-VECTOR."
   (declare (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
            ((integer 0 #.most-positive-fixnum) delta)
@@ -35,8 +35,9 @@ RESULT-VECTOR."
   (assert (<= end (length bit-vector)))
   (setq end (min end (max 0 (- (length result-vector) delta))))
   (multiple-value-bind (d/64 d%64) (floor delta 64)
+    (declare (optimize (speed 3) (safety 0))
+             (simple-bit-vector result-vector))
     (multiple-value-bind (end/64 end%64) (floor end 64)
-      (declare (simple-bit-vector result-vector))
       ;; process the last bits separately
       (unless (zerop end%64)
         (let ((word (sb-kernel:%vector-raw-bits bit-vector end/64)))
