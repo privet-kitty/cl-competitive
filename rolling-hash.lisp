@@ -38,9 +38,9 @@ KEY := function returning FIXNUM"
                   sum))))
     (%make-rhash divisor cumul powers)))
 
-(declaim (inline rhash-get)
-         (ftype (function * (values (unsigned-byte 32) &optional)) rhash-get))
-(defun rhash-get (rhash l r)
+(declaim (inline rhash-query)
+         (ftype (function * (values (unsigned-byte 32) &optional)) rhash-query))
+(defun rhash-query (rhash l r)
   "Returns the hash value of the interval [L, R)."
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (assert (<= l r))
@@ -63,3 +63,26 @@ KEY := function returning FIXNUM"
                     (aref (rhash-powers rhash) hash2-length))
                  divisor))
          divisor)))
+
+(declaim (inline rhash-get-lcp))
+(defun rhash-get-lcp (rhash1 start1 rhash2 start2)
+  (declare ((integer 0 #.most-positive-fixnum) start1 start2))
+  (assert (= (rhash-divisor rhash1) (rhash-divisor rhash2)))
+  (assert (and (< start1 (length (rhash-cumul rhash1)))
+               (< start2 (length (rhash-cumul rhash2)))))
+  (let ((max-length (min (- (length (rhash-cumul rhash1)) start1 1)
+                         (- (length (rhash-cumul rhash2)) start2 1))))
+    (if (= (rhash-query rhash1 start1 (+ start1 max-length))
+           (rhash-query rhash2 start2 (+ start2 max-length)))
+        max-length
+        (labels ((bisect (ok ng)
+                   (declare ((integer 0 #.most-positive-fixnum) ok ng))
+                   (if (<= (- ng ok) 1)
+                       ok
+                       (let ((mid (ash (+ ng ok) -1)))
+                         (if (= (rhash-query rhash1 start1 (+ start1 mid))
+                                (rhash-query rhash2 start2 (+ start2 mid)))
+                             (bisect mid ng)
+                             (bisect ok mid))))))
+          (bisect 0 max-length)))))
+
