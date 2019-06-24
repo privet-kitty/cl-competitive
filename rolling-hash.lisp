@@ -64,14 +64,15 @@ KEY := function returning FIXNUM"
                  divisor))
          divisor)))
 
-(declaim (inline rhash-get-lcp))
 (defun rhash-get-lcp (rhash1 start1 rhash2 start2)
-  (declare ((integer 0 #.most-positive-fixnum) start1 start2))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) start1 start2))
   (assert (= (rhash-divisor rhash1) (rhash-divisor rhash2)))
   (assert (and (< start1 (length (rhash-cumul rhash1)))
                (< start2 (length (rhash-cumul rhash2)))))
   (let ((max-length (min (- (length (rhash-cumul rhash1)) start1 1)
                          (- (length (rhash-cumul rhash2)) start2 1))))
+    (declare (optimize (safety 0)))
     (if (= (rhash-query rhash1 start1 (+ start1 max-length))
            (rhash-query rhash2 start2 (+ start2 max-length)))
         max-length
