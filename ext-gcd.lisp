@@ -2,9 +2,10 @@
 (declaim (inline ext-gcd))
 (defun ext-gcd (a b)
   "Returns two integers X and Y where AX + BY = gcd(A, B) holds."
-  (declare (fixnum a b))
+  (declare ((integer #.(- most-positive-fixnum) #.most-positive-fixnum) a b))
   (labels ((%gcd (a b)
-             (declare (fixnum a b))
+             (declare (fixnum a b)
+                      (optimize (speed 3) (safety 0)))
              (if (zerop b)
                  (values 1 0)
                  (multiple-value-bind (p q) (floor a b) ; a = pb + q
