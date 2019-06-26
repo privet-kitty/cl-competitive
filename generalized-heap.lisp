@@ -24,6 +24,7 @@
          (fname-pop (intern (format nil "~A-POP" string-name)))
          (fname-reinitialize (intern (format nil "~A-REINITIALIZE" string-name)))
          (fname-empty-p (intern (format nil "~A-EMPTY-P" string-name)))
+         (fname-count (intern (format nil "~A-COUNT" string-name)))
          (fname-peak (intern (format nil "~A-PEAK" string-name)))
          (fname-make (intern (format nil "MAKE-~A" string-name)))
          (acc-position (intern (format nil "~A-POSITION" string-name)))
@@ -102,6 +103,11 @@
        (defun ,fname-empty-p (heap)
          "Returns true if HEAP is empty."
          (= 1 (,acc-position heap)))
+
+       (declaim (inline ,fname-count))
+       (defun ,fname-count (heap)
+         "Returns the current number of the elements in HEAP."
+         (- (,acc-position heap) 1))
 
        (declaim (inline ,fname-peak))
        (defun ,fname-peak (heap)

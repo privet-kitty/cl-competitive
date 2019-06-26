@@ -3,6 +3,21 @@
 ;;; instead. I leave it just for my reference.
 ;;;
 
+(define-condition heap-empty-error (simple-error)
+  ((heap :initarg :heap :reader heap-empty-error-heap))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
+
+(define-condition heap-full-error (simple-error)
+  ((heap :initarg :heap :reader heap-full-error-heap)
+   (item :initarg :item :reader heap-full-error-item))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to push item ~W to full heap ~W"
+             (heap-full-error-item condition)
+             (heap-full-error-heap condition)))))
+
 (defstruct (heap (:constructor make-heap
                             (size
                              &key test (element-type t)
@@ -22,13 +37,15 @@
                      (when (funcall test (aref data pos) (aref data parent-pos))
                        (rotatef (aref data pos) (aref data parent-pos))
                        (update parent-pos))))))
+        (unless (< position (length data))
+          (error 'heap-full-error :heap heap :item obj))
         (setf (aref data position) obj)
         (update position)
         (incf position)
         heap))))
 
 (declaim (inline heap-pop))
-(defun heap-pop (heap &optional (error t) null-value)
+(defun heap-pop (heap)
   (symbol-macrolet ((position (heap-position heap)))
     (let ((data (heap-data heap))
           (test (heap-test heap)))
@@ -48,9 +65,7 @@
                          (unless (funcall test (aref data pos) (aref data child-pos1))
                            (rotatef (aref data pos) (aref data child-pos1))))))))
         (if (= position 1)
-            (if error
-                (error "No element in heap.")
-                null-value)
+            (error 'heap-empty-error :heap heap)
             (prog1 (aref data 1)
               (decf position)
               (setf (aref data 1) (aref data position))
@@ -61,32 +76,18 @@
   (setf (heap-position heap) 1)
   heap)
 
-(defun heap-peak (heap &optional (error t) null-value)
+(defun heap-peak (heap)
   (if (= 1 (heap-position heap))
-      (if error
-          (error "No element in heap")
-          null-value)
+      (error 'heap-empty-error :heap heap)
       (aref (heap-data heap) 1)))
 
-;; For test
-;; (eval-when (:compile-toplevel :load-toplevel :execute)
-;;   (ql:quickload :fiveam)
-;;   (use-package :fiveam))
+(declaim (inline heap-count))
+(defun heap-count (heap)
+  (- (heap-position heap) 1))
 
-;; (test heap-test
-;;   (let ((h (make-heap 20)))
-;;     (finishes (dolist (o (list 7 18 22 15 27 9 11))
-;;                 (heap-push o h)))
-;;     (is (= 7 (heap-peak h)))
-;;     (is (equal '(7 9 11 15 18 22 27)
-;;                (loop repeat 7 collect (heap-pop h))))
-;;     (signals error (heap-pop h))
-;;     (is (eql 'eof (heap-pop h nil 'eof)))
-;;     (is (eql 'eof (heap-peak h nil 'eof))))
-;;   (is (typep (heap-data (make-heap 10 :element-type 'fixnum))
-;;              '(simple-array fixnum (*)))))
-
-;; (run! 'heap-test)
+(declaim (inline heap-empty-p))
+(defun heap-empty-p (heap)
+  (= (heap-position heap) 1))
 
 (defun bench (&optional (size 2000000))
   (declare (optimize (speed 3)))
