@@ -36,8 +36,10 @@
           (mod2 (rhash-mod2 rhash1))
           (base1 (aref (rhash-powers1 rhash1) 1))
           (base2 (aref (rhash-powers2 rhash1) 1)))
-      (assert (find (cons mod1 base1) *moduli-table* :test #'equal))
-      (assert (find (cons mod2 base2) *moduli-table* :test #'equal)))
+      (assert (= (position mod1 *moduli-table*)
+                 (position base1 *base-table*)))
+      (assert (= (position mod2 *moduli-table*)
+                 (position base2 *base-table*))))
 
     (make-rhash "")
     (dotimes (i 1000) (make-rhash "a"))
