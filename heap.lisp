@@ -3,6 +3,14 @@
 ;;; instead. I leave it just for my reference.
 ;;;
 
+(defstruct (heap (:constructor make-heap
+                            (size
+                             &key test (element-type t)
+                             &aux (data (make-array (1+ size) :element-type element-type)))))
+  (data #() :type (simple-array * (*)) :read-only t)
+  (test #'< :type function :read-only t)
+  (position 1 :type (integer 1 #.array-total-size-limit)))
+
 (define-condition heap-empty-error (simple-error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report
@@ -17,14 +25,6 @@
      (format stream "Attempted to push item ~W to full heap ~W"
              (heap-full-error-item condition)
              (heap-full-error-heap condition)))))
-
-(defstruct (heap (:constructor make-heap
-                            (size
-                             &key test (element-type t)
-                             &aux (data (make-array (1+ size) :element-type element-type)))))
-  (data #() :type (simple-array * (*)) :read-only t)
-  (test #'< :type function :read-only t)
-  (position 1 :type (integer 1 #.array-total-size-limit)))
 
 (declaim (inline heap-push))
 (defun heap-push (obj heap)
