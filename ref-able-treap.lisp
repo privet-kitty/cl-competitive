@@ -163,9 +163,10 @@ order."
     (build 0 (length sorted-vector))))
 
 (defun treap-merge (left right)
-  "Destructively merges two treaps. Assumes that all keys of LEFT are smaller
-(or larger, depending on the order) than those of RIGHT."
-  (declare ((or null treap) left right))
+  "Destructively merges two treaps. Assumes that all keys of LEFT are
+smaller (or larger, depending on the order) than those of RIGHT."
+  (declare (optimize (speed 3))
+           ((or null treap) left right))
   (cond ((null left) right)
         ((null right) left)
         ((> (%treap-priority left) (%treap-priority right))
@@ -226,7 +227,6 @@ take one argument."
              (invalid-treap-index-error-index condition)
              (invalid-treap-index-error-treap condition)))))
 
-(declaim (inline treap-ref))
 (defun treap-ref (treap index)
   "Index access"
   (declare ((or null treap) treap)
@@ -234,7 +234,8 @@ take one argument."
   (when (>= index (treap-count treap))
     (error 'invalid-treap-index-error :treap treap :index index))
   (labels ((%ref (treap index)
-             (declare ((integer 0 #.most-positive-fixnum) index))
+             (declare (optimize (speed 3) (safety 0))
+                      ((integer 0 #.most-positive-fixnum) index))
              (let ((left-count (treap-count (%treap-left treap))))
                (cond ((< index left-count)
                       (%ref (%treap-left treap) index))

@@ -88,3 +88,8 @@
       (assert (= 99 (treap-ref treap 5)))
       (assert (= 100 (treap-ref treap 6)))
       (assert (= 200 (treap-ref treap 7))))))
+
+(with-test (:name treap)
+  (let ((treap (make-treap #(1 2 3 5 7))))
+    (assert (= 7 (treap-ref treap 4)))
+    (assert (= 1 (treap-ref treap 0)))))

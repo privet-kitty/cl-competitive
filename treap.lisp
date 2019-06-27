@@ -91,7 +91,8 @@ order. FUNCTION must take one argument."
 (defun treap-merge (left right)
   "Destructively merges two treaps. Assumes that all keys of LEFT are smaller (or larger,
 depending on the order) than those of RIGHT."
-  (declare ((or null treap) left right))
+  (declare (optimize (speed 3))
+           ((or null treap) left right))
   (cond ((null left) right)
         ((null right) left)
         ((> (%treap-priority left) (%treap-priority right))
@@ -121,13 +122,16 @@ cannot rely on the side effect. Use the returned value."
                     (treap-merge (%treap-left treap) (%treap-right treap))))))
     (recur treap)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-length))
-(defun treap-length (treap)
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-count))
+(defun treap-count (treap)
   "Computes the length of TREAP in O(n)."
-  (declare ((or null treap) treap))
-  (if (null treap)
-      0
-      (+ 1 (treap-count (%treap-left treap)) (treap-count (%treap-right treap)))))
+  (declare (optimize (speed 3)) ((or null treap) treap))
+  (labels ((recur (treap)
+             (declare (optimize (safety 0)))
+             (if (null treap)
+                 0
+                 (+ 1 (treap-count (%treap-left treap)) (treap-count (%treap-right treap))))))
+    (recur treap)))
 
 ;; (defun copy-treap (treap)
 ;;   "For development. Recursively copies the whole TREAP."

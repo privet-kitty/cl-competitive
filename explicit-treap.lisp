@@ -106,19 +106,19 @@
 
 (defun treap-find (key treap &key (order #'<))
   "Finds the key that satisfies (and (not (funcall order key (%treap-key
-sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and returns
-KEY. Returns NIL if KEY is not contained."
+sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and returns KEY
+and the assigned value. Returns NIL if KEY is not contained."
   (declare (function order)
            ((or null treap) treap))
-  (cond ((null treap) nil)
+  (cond ((null treap) (values nil nil))
         ((funcall order key (%treap-key treap))
          (treap-find key (%treap-left treap) :order order))
         ((funcall order (%treap-key treap) key)
          (treap-find key (%treap-right treap) :order order))
-        (t key)))
+        (t (values key (%treap-value treap)))))
 
 (defun treap-bisect-right-1 (key treap &key (order #'<))
-  "Returns the largest key equal to or smaller than KEY and the corresponding
+  "Returns the largest key equal to or smaller than KEY and the assigned
 value. Returns NIL if KEY is smaller than any keys in TREAP."
   (declare ((or null treap) treap)
            (function order))
@@ -135,7 +135,7 @@ value. Returns NIL if KEY is smaller than any keys in TREAP."
           (values nil nil)))))
 
 (defun treap-bisect-left (key treap &key (order #'<))
-  "Returns the smallest key equal to or larger than KEY and the corresponding
+  "Returns the smallest key equal to or larger than KEY and the assigned
 value. Returns NIL if KEY is larger than any keys in TREAP."
   (declare ((or null treap) treap)
            (function order))
@@ -235,7 +235,8 @@ the value by the function instead of overwriting it with VALUE."
 (defun treap-merge (left right)
   "Destructively merges two treaps. Assumes that all keys of LEFT are smaller
  (or larger, depending on the order) than those of RIGHT."
-  (declare ((or null treap) left right))
+  (declare (optimize (speed 3))
+           ((or null treap) left right))
   (cond ((null left) (when right (force-down right) (force-self right)) right)
         ((null right) (when left (force-down left) (force-self left)) left)
         (t (force-down left)
@@ -351,7 +352,6 @@ intended order. The values are filled with the identity element."
              (invalid-treap-index-error-index condition)
              (invalid-treap-index-error-treap condition)))))
 
-(declaim (inline treap-ref))
 (defun treap-ref (treap index)
   "Returns the key and value corresponding to the INDEX."
   (declare ((or null treap) treap)
@@ -359,7 +359,8 @@ intended order. The values are filled with the identity element."
   (when (>= index (treap-count treap))
     (error 'invalid-treap-index-error :treap treap :index index))
   (labels ((%ref (treap index)
-             (declare (treap treap)
+             (declare (optimize (speed 3) (safety 0))
+                      (treap treap)
                       ((integer 0 #.most-positive-fixnum) index))
              (force-down treap)
              (prog1
@@ -376,7 +377,7 @@ intended order. The values are filled with the identity element."
 (declaim (inline treap-query))
 (defun treap-query (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
-RIGHT). If LEFT (RIGHT) is not given, it is assumed to be -inf (+inf)."
+RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
   (if (null left)
       (if (null right)
           (treap-accumulator treap)
