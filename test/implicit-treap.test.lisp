@@ -66,13 +66,13 @@
 (with-test (:name implicit-treap)
   (dotimes (i 10)
     (let ((itreap1 (itreap 1 2 3 2 1 2 7)))
-      (let (res)
-        (do-itreap (n itreap1) (push n res))
-        (assert (equal (reverse res) '(1 2 3 2 1 2 7))))
+      (assert (equal '(1 2 3 2 1 2 7) (itreap-list itreap1)))
+      ;; ref and query
       (assert (= 7 (itreap-ref itreap1 6)))
       (assert (= 1 (itreap-query itreap1 0 7)))
       (assert (= 2 (itreap-query itreap1 5 7)))
       (assert (= 2 (itreap-query itreap1 1 3)))
+      ;; point update
       (setf (itreap-ref itreap1 1) 0)
       (assert (= 0 (itreap-ref itreap1 1)))
       (assert (= most-positive-fixnum (itreap-query itreap1 1 1)))
@@ -80,10 +80,17 @@
       (assert (= 0 (itreap-query itreap1 0 7)))
       (assert (= 1 (itreap-query itreap1 2 7)))
       (assert (= 2 (itreap-query itreap1 2 4)))
+      ;; invalid index error
       (signals invalid-itreap-index-error (itreap-query itreap1 2 8))
       (signals invalid-itreap-index-error (itreap-query itreap1 2 1))
       (signals invalid-itreap-index-error (itreap-ref itreap1 8))
-      (signals invalid-itreap-index-error (setf (itreap-ref itreap1 8) 5)))))
+      (signals invalid-itreap-index-error (setf (itreap-ref itreap1 8) 5))
+      ;; range update
+      (setf itreap1 (itreap 1 2 3 2 1 2 7))
+      (setf itreap1 (itreap-update itreap1 -10 3 5))
+      (assert (equal '(1 2 3 -8 -9 2 7) (itreap-list itreap1)))
+      (assert (= -8 (itreap-query itreap1 2 4)))
+      (assert (= 3 (itreap-query itreap1 2 3))))))
 
 (with-test (:name implicit-treap-ordered)
   (let ((itreap (itreap 3 3 2 2 2 2 1 1 1)))

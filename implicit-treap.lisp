@@ -406,7 +406,7 @@ identity element."
         (itreap-split itreap-l-n (- r l))
       (when itreap-l-r
         (setf (%itreap-lazy itreap-l-r)
-              (updater-op (%itreap-lazy itreap-l-r) x)))
+              (updater-op (%itreap-lazy itreap-l-r) operand)))
       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
 (declaim (inline itreap-bisect-left))
