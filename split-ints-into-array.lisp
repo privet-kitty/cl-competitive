@@ -1,3 +1,4 @@
+;; obsolete
 (declaim (inline split-ints-into-array))
 (defun split-ints-into-array (string dest-array row &key (offset 0) (key #'identity))
   (declare (string string)

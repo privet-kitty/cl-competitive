@@ -1,3 +1,4 @@
+;; obsolete
 (defmacro split-objs-bind (vars string &body body)
   (let ((position (gensym))
         (s (gensym)))

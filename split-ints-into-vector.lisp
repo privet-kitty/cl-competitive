@@ -1,3 +1,4 @@
+;; obsolete
 (declaim (inline split-ints-into-vector))
 (defun split-ints-into-vector (string dest-vector &key (offset 0) (key #'identity))
   (declare (string string)

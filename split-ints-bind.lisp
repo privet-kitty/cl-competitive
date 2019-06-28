@@ -1,3 +1,4 @@
+;; obsolete
 (defmacro split-ints-bind (vars string &body body)
   (let ((position (gensym))
         (s (gensym)))
