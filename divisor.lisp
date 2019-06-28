@@ -49,7 +49,7 @@ vector is NOT sorted."
 increasing list of every divisor of INDEX. Note that vector[0] = NIL."
   (declare ((integer 0 #.most-positive-fixnum) sup))
   (let ((result (make-array sup :element-type 'list))
-        (tails (make-array sup :element-type 'list))) ; preserves the last cons cell
+        (tails (make-array sup :element-type 'list))) ; preserves the last cons
     (declare (optimize (speed 3) (safety 0)))
     (loop for i from 1 below sup
           for cell = (list 1)
