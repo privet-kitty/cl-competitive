@@ -14,8 +14,8 @@
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of lists of all the edges that goes from each vertex
 
-If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the
-same capacity."
+If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
+capacity."
   (declare ((simple-array list (*)) graph))
   (let* ((dep (%make-edge :to to-idx :capacity capacity))
          (ret (%make-edge :to from-idx

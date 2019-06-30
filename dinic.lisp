@@ -11,7 +11,7 @@
   (:report
    (lambda (condition stream)
      (let ((*print-circle* t))
-       (format stream "Attempted to flow equal to or more than MOST-POSITIVE-FIXNUM on ~W."
+       (format stream "MOST-POSITIVE-FIXNUM units flow on graph ~W."
                (max-flow-overflow-graph condition))))))
 
 (defstruct (edge (:constructor %make-edge))
@@ -66,7 +66,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) %find-path))
 (defun %find-path (src dest tmp-graph dist-table)
-  "Finds an augmenting path, flows maximal flow through it and returns the
+  "Finds an augmenting path, send the maximal flow through it, and returns the
 amount of the flow."
   (declare ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) tmp-graph)
@@ -92,7 +92,7 @@ amount of the flow."
     (dfs src most-positive-fixnum)))
 
 (defun max-flow! (src dest graph)
-  "Destructively flows the maximum flow from SRC to DEST and returns the amount
+  "Destructively send the maximal flow from SRC to DEST and returns the amount
 of the flow."
   (declare ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) graph))
