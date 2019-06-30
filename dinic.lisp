@@ -4,14 +4,14 @@
 
 (setf *print-circle* t)
 
-(defconstant +network-max-distance+ #xffffffff)
+(defconstant +graph-max-distance+ #xffffffff)
 
 (define-condition max-flow-overflow (simple-error)
   ((graph :initarg :graph :reader max-flow-overflow-graph))
   (:report
    (lambda (condition stream)
      (let ((*print-circle* t))
-       (format stream "MOST-POSITIVE-FIXNUM units flow on graph ~W."
+       (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
                (max-flow-overflow-graph condition))))))
 
 (defstruct (edge (:constructor %make-edge))
@@ -23,9 +23,10 @@
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of lists
 
-If BIDIRECTIONAL is true, PUSH-EDGE simultaneously adds the reversed edge of the
-same capacity ."
-  (declare ((simple-array list (*)) graph))
+If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same capacity
+in addition."
+  (declare ((integer 0 #.most-positive-fixnum) from-idx to-idx)
+           ((simple-array list (*)) graph))
   (let* ((dep (%make-edge :to to-idx :capacity capacity))
          (ret (%make-edge :to from-idx
                           :capacity (if bidirectional capacity 0)
@@ -36,7 +37,7 @@ same capacity ."
 
 (defun %fill-dist-table (src graph dist-table queue)
   "Does BFS and sets the distance between SRC and each vertex of GRAPH to
-DIST-TABLE. An edge of zero capacity is regarded as disconnected."
+DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
   (declare ((integer 0 #.most-positive-fixnum) src)
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table queue))
@@ -50,7 +51,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
                (prog1 (aref queue q-front)
                  (incf q-front))))
       (declare (inline enqueue dequeue))
-      (fill dist-table +network-max-distance+)
+      (fill dist-table +graph-max-distance+)
       (setf (aref dist-table src) 0)
       (enqueue src)
       (loop until (= q-front q-end)
@@ -58,7 +59,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
             do (dolist (edge (aref graph vertex))
                  (let ((neighbor (edge-to edge)))
                    (when (and (> (edge-capacity edge) 0)
-                              (= +network-max-distance+ (aref dist-table neighbor)))
+                              (= +graph-max-distance+ (aref dist-table neighbor)))
                      (setf (aref dist-table neighbor)
                            (+ 1 (aref dist-table vertex)))
                      (enqueue neighbor)))))))
@@ -66,7 +67,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) %find-path))
 (defun %find-path (src dest tmp-graph dist-table)
-  "Finds an augmenting path, send the maximal flow through it, and returns the
+  "Finds an augmenting path, sends the maximal flow through it, and returns the
 amount of the flow."
   (declare ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) tmp-graph)
@@ -92,8 +93,9 @@ amount of the flow."
     (dfs src most-positive-fixnum)))
 
 (defun max-flow! (src dest graph)
-  "Destructively send the maximal flow from SRC to DEST and returns the amount
-of the flow."
+  "Destructively sends the maximal flow from SRC to DEST and returns the amount
+of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
+flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
   (declare ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
@@ -104,7 +106,7 @@ of the flow."
     (declare ((integer 0 #.most-positive-fixnum) result))
     (loop
       (%fill-dist-table src graph dist-table queue)
-      (when (= (aref dist-table dest) +network-max-distance+) ; not connected
+      (when (= (aref dist-table dest) +graph-max-distance+) ; not (or no longer) connected
         (return result))
       (dotimes (i n)
         (setf (aref tmp-graph i) (aref graph i)))
