@@ -4,6 +4,8 @@
 
 (setf *print-circle* t)
 
+(defconstant +network-max-distance+ #xffffffff)
+
 (define-condition max-flow-overflow (simple-error)
   ((graph :initarg :graph :reader max-flow-overflow-graph))
   (:report
@@ -48,7 +50,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
                (prog1 (aref queue q-front)
                  (incf q-front))))
       (declare (inline enqueue dequeue))
-      (fill dist-table #xffffffff)
+      (fill dist-table +network-max-distance+)
       (setf (aref dist-table src) 0)
       (enqueue src)
       (loop until (= q-front q-end)
@@ -56,7 +58,7 @@ DIST-TABLE. An edge of zero capacity is regarded as disconnected."
             do (dolist (edge (aref graph vertex))
                  (let ((neighbor (edge-to edge)))
                    (when (and (> (edge-capacity edge) 0)
-                              (= #xffffffff (aref dist-table neighbor)))
+                              (= +network-max-distance+ (aref dist-table neighbor)))
                      (setf (aref dist-table neighbor)
                            (+ 1 (aref dist-table vertex)))
                      (enqueue neighbor)))))))
@@ -102,7 +104,7 @@ of the flow."
     (declare ((integer 0 #.most-positive-fixnum) result))
     (loop
       (%fill-dist-table src graph dist-table queue)
-      (when (= (aref dist-table dest) #xffffffff) ; not (or no longer) connected
+      (when (= (aref dist-table dest) +network-max-distance+) ; not connected
         (return result))
       (dotimes (i n)
         (setf (aref tmp-graph i) (aref graph i)))
