@@ -25,7 +25,8 @@ GRAPH := vector of lists
 
 If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same capacity
 in addition."
-  (declare ((integer 0 #.most-positive-fixnum) from-idx to-idx)
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) from-idx to-idx)
            ((simple-array list (*)) graph))
   (let* ((dep (%make-edge :to to-idx :capacity capacity))
          (ret (%make-edge :to from-idx
@@ -38,7 +39,8 @@ in addition."
 (defun %fill-dist-table (src graph dist-table queue)
   "Does BFS and sets the distance between SRC and each vertex of GRAPH to
 DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
-  (declare ((integer 0 #.most-positive-fixnum) src)
+  (declare (optimize (speed 3) (safety 0))
+           ((integer 0 #.most-positive-fixnum) src)
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table queue))
   (let* ((q-front 0)
@@ -69,7 +71,8 @@ DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
 (defun %find-path (src dest tmp-graph dist-table)
   "Finds an augmenting path, sends the maximal flow through it, and returns the
 amount of the flow."
-  (declare ((integer 0 #.most-positive-fixnum) src dest)
+  (declare (optimize (speed 3) (safety 0))
+           ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) tmp-graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table))
   (labels ((dfs (v flow)

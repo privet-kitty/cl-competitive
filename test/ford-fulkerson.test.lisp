@@ -13,7 +13,7 @@
     (push-edge 3 2 3 graph)
     (push-edge 3 4 8 graph)
     (push-edge 2 4 5 graph)
-    (assert (= 11 (max-flow 0 4 graph))))
+    (assert (= 11 (max-flow! 0 4 graph))))
   ;; Example from https://www.geeksforgeeks.org/max-flow-problem-introduction/
   (let ((graph (make-array 6 :element-type 'list :initial-element nil)))
     (push-edge 0 1 16 graph)
@@ -26,5 +26,5 @@
     (push-edge 4 3 7 graph)
     (push-edge 3 5 20 graph)
     (push-edge 4 5 4 graph)
-    (assert (= 23 (max-flow 0 5 graph))))
-  (assert (= 0 (max-flow 0 3 (make-array '(4) :element-type 'list :initial-element nil)))))
+    (assert (= 23 (max-flow! 0 5 graph))))
+  (assert (= 0 (max-flow! 0 3 (make-array '(4) :element-type 'list :initial-element nil)))))

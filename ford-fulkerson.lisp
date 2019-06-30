@@ -15,7 +15,7 @@
 GRAPH := vector of lists of all the edges that goes from each vertex
 
 If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
-capacity."
+capacity in addition."
   (declare ((simple-array list (*)) graph))
   (let* ((dep (%make-edge :to to-idx :capacity capacity))
          (ret (%make-edge :to from-idx
@@ -48,12 +48,12 @@ capacity."
               (incf (edge-capacity (edge-reversed edge)) flow)
               (return flow)))))))
 
-(defun max-flow (src-idx dest-idx graph)
+(defun max-flow! (src-idx dest-idx graph)
   (declare ((integer 0 #.most-positive-fixnum) src-idx dest-idx)
            ((simple-array list (*)) graph))
   (let ((checked (make-array (length graph) :element-type 'bit :initial-element 0)))
-    (loop for incr-flow of-type (integer 0 #.most-positive-fixnum)
+    (loop for increment of-type (integer 0 #.most-positive-fixnum)
              = (%find-flow src-idx dest-idx graph most-positive-fixnum checked)
-          until (zerop incr-flow)
-          sum incr-flow of-type (integer 0 #.most-positive-fixnum)
+          until (zerop increment)
+          sum increment of-type (integer 0 #.most-positive-fixnum)
           do (fill checked 0))))
