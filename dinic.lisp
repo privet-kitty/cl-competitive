@@ -53,7 +53,7 @@ DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
                (prog1 (aref queue q-front)
                  (incf q-front))))
       (declare (inline enqueue dequeue))
-      (fill dist-table +graph-max-distance+)
+      (fill dist-table +graph-inf-distance+)
       (setf (aref dist-table src) 0)
       (enqueue src)
       (loop until (= q-front q-end)
@@ -61,7 +61,7 @@ DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
             do (dolist (edge (aref graph vertex))
                  (let ((neighbor (edge-to edge)))
                    (when (and (> (edge-capacity edge) 0)
-                              (= +graph-max-distance+ (aref dist-table neighbor)))
+                              (= +graph-inf-distance+ (aref dist-table neighbor)))
                      (setf (aref dist-table neighbor)
                            (+ 1 (aref dist-table vertex)))
                      (enqueue neighbor)))))))
@@ -109,7 +109,7 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
     (declare ((integer 0 #.most-positive-fixnum) result))
     (loop
       (%fill-dist-table src graph dist-table queue)
-      (when (= (aref dist-table dest) +graph-max-distance+) ; not (or no longer) connected
+      (when (= (aref dist-table dest) +graph-inf-distance+) ; not (or no longer) connected
         (return result))
       (dotimes (i n)
         (setf (aref tmp-graph i) (aref graph i)))
