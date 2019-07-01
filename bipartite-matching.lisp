@@ -2,10 +2,12 @@
 ;;; Maximum bipartite matching by Ford-Fulkerson
 ;;;
 
+(declaim (ftype (function * (values (or null (simple-array fixnum (*))) (integer 0 #.most-positive-fixnum) &optional)) find-matching))
 (defun find-matching (graph)
   "Takes an adjacency list and returns the maximal bipartite matching. Note that
 this function doesn't check if GRAPH is truly bipartite."
-  (declare ((simple-array list (*)) graph))
+  (declare (optimize (speed 3))
+           ((simple-array list (*)) graph))
   (let* ((n (length graph))
          (visited (make-array n :element-type 'bit :initial-element 0))
          (matching (make-array n :element-type 'fixnum :initial-element -1))

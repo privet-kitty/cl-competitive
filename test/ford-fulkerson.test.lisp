@@ -27,4 +27,5 @@
     (push-edge 3 5 20 graph)
     (push-edge 4 5 4 graph)
     (assert (= 23 (max-flow! 0 5 graph))))
-  (assert (= 0 (max-flow! 0 3 (make-array '(4) :element-type 'list :initial-element nil)))))
+  (assert (= 0 (max-flow! 0 3 (make-array '(4) :element-type 'list :initial-element nil))))
+  (signals max-flow-overflow (max-flow! 0 0 (make-array '(4) :element-type 'list :initial-element nil))))

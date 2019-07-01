@@ -4,7 +4,7 @@
 
 (setf *print-circle* t)
 
-(defconstant +graph-max-distance+ #xffffffff)
+(defconstant +graph-inf-distance+ #xffffffff)
 
 (define-condition max-flow-overflow (simple-error)
   ((graph :initarg :graph :reader max-flow-overflow-graph))

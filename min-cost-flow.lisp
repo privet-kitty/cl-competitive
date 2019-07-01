@@ -32,7 +32,6 @@ GRAPH := vector of list of all the edges that goes from the vertex"
   (vertices nil :type (simple-array fixnum (*)) :read-only t)
   (next-position 1 :type (integer 1 #.most-positive-fixnum)))
 
-(declaim (inline fheap-push))
 (defun fheap-push (cost vertex fheap)
   (symbol-macrolet ((next-position (fheap-next-position fheap)))
     (let ((costs (fheap-costs fheap))
@@ -50,7 +49,6 @@ GRAPH := vector of list of all the edges that goes from the vertex"
         (incf next-position)
         fheap))))
 
-(declaim (inline fheap-pop))
 (defun fheap-pop (fheap)
   (symbol-macrolet ((next-position (fheap-next-position fheap)))
     (let ((costs (fheap-costs fheap))
@@ -95,29 +93,29 @@ GRAPH := vector of list of all the edges that goes from the vertex"
    (flow :initarg :flow :reader not-enough-capacity-error-flow))
   (:report
    (lambda (c s)
-     (format s "Cannot flows ~A units in the graph ~A due to not enough capacity."
+     (format s "Cannot send ~A units of flow on graph ~A due to not enough capacity."
              (not-enough-capacity-error-flow c)
              (not-enough-capacity-error-graph c)))))
 
-(defun min-cost-flow (src-idx dest-idx flow graph &key edges)
-  "Returns the minimum cost to flow FLOW units from SRC-IDX to DEST-IDX in
+(defun min-cost-flow (src-idx dest-idx flow graph &key edge-count)
+  "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
-EDGES := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"
+EDGE-COUNT := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"
   (declare ((integer 0 #.most-positive-fixnum) flow)
            ((simple-array list (*)) graph))
   (macrolet ((with-fixnum (form)
                (reduce (lambda (f1 f2) `(,(car form) (the fixnum ,f1) (the fixnum ,f2)))
 		       (cdr form))))
     (let* ((size (length graph))
-           (edges (or edges (* size size)))
+           (edge-count (or edge-count (* size size)))
            (prev-vertices (make-array size :element-type 'fixnum :initial-element 0))
            (prev-edges (make-array size :element-type 'edge))
            (potential (make-array size :element-type 'fixnum :initial-element 0))
            (dist (make-array size :element-type 'fixnum))
-           (pqueue (make-fheap edges))
+           (pqueue (make-fheap edge-count))
            (res 0))
-      (declare (fixnum edges res))
+      (declare (fixnum edge-count res))
       (loop while (> flow 0)
             do (fill dist +inf-distance+)
                (setf (aref dist src-idx) 0)
