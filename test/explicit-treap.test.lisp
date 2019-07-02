@@ -27,6 +27,8 @@
            (treap-sane-p (%treap-left treap))
            (treap-sane-p (%treap-right treap)))))
 
+(declaim (notinline make-treap treap-insert))
+
 (with-test (:name explicit-treap-sanity)
   (loop repeat 10
         do (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))

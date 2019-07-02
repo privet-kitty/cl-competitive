@@ -4,7 +4,9 @@
 
 (use-package :test-util)
 
+(declaim (notinline make-convex-hull!))
 (with-test (:name convex-hull)
+  ;; Example from Wikipedia: https://en.wikipedia.org/wiki/Convex_hull
   (assert (equalp #() (make-convex-hull! (vector))))
   (assert (equalp #(#c(1 3)) (make-convex-hull! (vector #c(1 3)))))
   (assert (equalp #(#c(2 -4) #c(2 -4))

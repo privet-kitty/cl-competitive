@@ -34,6 +34,7 @@
            (treap-sane-p (%treap-left treap))
            (treap-sane-p (%treap-right treap)))))
 
+(declaim (notinline make-treap treap-split treap-insert treap-delete treap-ref treap-find))
 (with-test (:name treap-sanity)
   (dotimes (_ 10)
     (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))

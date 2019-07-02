@@ -40,6 +40,8 @@
       (recur itreap)
       (reverse res))))
 
+(declaim (notinline itreap-insert itreap-query itreap-ref itreap-update itreap-bisect-left))
+
 (with-test (:name implicit-treap-sanity)
   (assert (loop for i below 100 always (itreap-sane-p (make-itreap i)))))
 
