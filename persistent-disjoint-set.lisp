@@ -2,7 +2,6 @@
 ;;; Partially persistent disjoint set
 ;;;
 
-;; TODO: enable to get the size of a connected component
 (defstruct (persistent-disjoint-set
             (:constructor make-persistent-disjoint-set
                 (size &aux
@@ -13,12 +12,28 @@
                       ;; TIMESTAMPS records the time when each vertex is no
                       ;; longer a root.
                       (timestamps (make-array size :element-type '(integer 0 #.most-positive-fixnum)
-                                                   :initial-element most-positive-fixnum))))
+                                                   :initial-element most-positive-fixnum))
+                      ;; record history of each connected component: (time . size)
+                      (history (let ((res (make-array size :element-type '(array (cons fixnum fixnum) (*)))))
+                                 (dotimes (i size res)
+                                   (setf (aref res i) (make-array 1 :fill-pointer 1 :initial-element (cons -1 1))))))))
             (:conc-name pds-))
   "partially persistent disjoint set"
   (data nil :type (simple-array fixnum (*)))
   (now 0 :type (integer 0 #.most-positive-fixnum))
-  (timestamps nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
+  (timestamps nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  (history nil :type (simple-array (array (cons fixnum fixnum) (*)) (*))))
+
+;; FIXME: add error handling of PDS-ROOT and PDS-CONNECTED-P. (It is too slow to
+;; naively add this error to these functions.)
+(define-condition persistent-disjoint-set-query-future (simple-error)
+  ((disjoint-set :initarg :disjoint-set :reader pds-query-future-disjoint-set)
+   (specified-time :initarg :specified-time :reader pds-query-future-specified-time))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to query future information. Current time is ~W and specified time is ~W."
+             (pds-now (pds-query-future-disjoint-set condition))
+             (pds-query-future-specified-time condition)))))
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) pds-root))
 (defun pds-root (x time disjoint-set)
@@ -30,11 +45,11 @@
       (pds-root (aref (pds-data disjoint-set) x) time disjoint-set)))
 
 (declaim (inline pds-unite!))
-(defun pds-unite! (x1 x2 disjoint-set &optional time)
+(defun pds-unite! (x1 x2 disjoint-set)
   "Destructively unites X1 and X2."
   (declare ((or null (integer 0 #.most-positive-fixnum))))
   (symbol-macrolet ((now (pds-now disjoint-set)))
-    (let ((time (or time (+ 1 now))))
+    (let ((time (+ 1 now)))
       (setf now time)
       (let ((timestamps (pds-timestamps disjoint-set))
             (data (pds-data disjoint-set))
@@ -47,6 +62,8 @@
           (incf (aref data root1) (aref data root2))
           (setf (aref data root2) root1
                 (aref timestamps root2) time)
+          (vector-push-extend (cons time (- (aref data root1)))
+                              (aref (pds-history disjoint-set) root1))
           t)))))
 
 (declaim (inline pds-connected-p))
@@ -68,3 +85,22 @@ and X2 are not connected yet."
                        (bisect mid ok))))))
     (when (pds-connected-p x1 x2 (pds-now disjoint-set) disjoint-set)
       (bisect 0 (pds-now disjoint-set)))))
+
+(defun pds-size (x time disjoint-set)
+  "Returns the size of X at TIME."
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) x time))
+  (when (< (pds-now disjoint-set) time)
+    (error 'persistent-disjoint-set-query-future :specified-time time :disjoint-set disjoint-set))
+  (let* ((root (pds-root x time disjoint-set))
+         (root-history (aref (pds-history disjoint-set) root)))
+    ;; detect the latest time equal to or earlier than TIME 
+    (labels ((bisect-left-1 (ok ng)
+               (declare ((integer 0 #.most-positive-fixnum) ok ng))
+               (if (<= (- ng ok) 1)
+                   ok
+                   (let ((mid (ash (+ ok ng) -1)))
+                     (if (<= (car (aref root-history mid)) time)
+                         (bisect-left-1 mid ng)
+                         (bisect-left-1 ok mid))))))
+      (cdr (aref root-history (bisect-left-1 0 (length root-history)))))))
