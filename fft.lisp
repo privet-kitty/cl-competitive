@@ -13,6 +13,16 @@
   "Checks if X is a power of 2."
   (zerop (logand x (- x 1))))
 
+(defun %make-cis-table (n sign)
+  (declare ((integer 0 #.most-positive-fixnum) n)
+           ((integer -1 1) sign))
+  (assert (power2-p n))
+  (let* ((table (make-array (ash n -1) :element-type '(complex fft-float)))
+         (theta (* sign (/ (coerce (* 2 pi) 'fft-float) n))))
+    (dotimes (i (length table))
+      (setf (aref table i) (cis (* i theta))))
+    table))
+
 (defun %general-dft! (f sign)
   (declare (optimize (speed 3) (safety 0))
            ((simple-array (complex fft-float) (*)) f)

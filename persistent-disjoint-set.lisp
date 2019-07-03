@@ -32,14 +32,14 @@
 
 ;; FIXME: add error handling of PDS-ROOT and PDS-CONNECTED-P. (It is too slow to
 ;; naively add this error to these functions.)
-(define-condition persistent-disjoint-set-unknown-future (simple-error)
-  ((disjoint-set :initarg :disjoint-set :reader pds-unknown-future-disjoint-set)
-   (specified-time :initarg :specified-time :reader pds-unknown-future-specified-time))
+(define-condition persistent-disjoint-set-query-future (simple-error)
+  ((disjoint-set :initarg :disjoint-set :reader pds-query-future-disjoint-set)
+   (specified-time :initarg :specified-time :reader pds-query-future-specified-time))
   (:report
    (lambda (condition stream)
      (format stream "Attempted to query future information. Current time is ~W and specified time is ~W."
-             (pds-now (pds-unknown-future-disjoint-set condition))
-             (pds-unknown-future-specified-time condition)))))
+             (pds-now (pds-query-future-disjoint-set condition))
+             (pds-query-future-specified-time condition)))))
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) pds-root))
 (defun pds-root (x time disjoint-set)
@@ -102,7 +102,7 @@ and X2 are not connected yet."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) x time))
   (when (< (pds-now disjoint-set) time)
-    (error 'persistent-disjoint-set-unknown-future :specified-time time :disjoint-set disjoint-set))
+    (error 'persistent-disjoint-set-query-future :specified-time time :disjoint-set disjoint-set))
   (let* ((root (pds-root x time disjoint-set))
          (root-history (aref (pds-history disjoint-set) root)))
     (declare (optimize (safety 0)))
