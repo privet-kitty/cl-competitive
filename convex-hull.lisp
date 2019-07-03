@@ -1,7 +1,7 @@
 (declaim (inline make-convex-hull!))
 (defun make-convex-hull! (points &optional (eps 0))
   "Returns the vector of the vertices of the convex hull. This function sorts
-POINTS as a side effect.
+POINTS as a side effect. The time complexity is O(nlog(n)).
 
 If EPS is non-negative (and the calculation error can be ignored), three
 vertices in a straight line are excluded. On the other hand, they are allowed if

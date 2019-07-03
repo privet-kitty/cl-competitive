@@ -27,6 +27,19 @@
            (treap-sane-p (%treap-left treap))
            (treap-sane-p (%treap-right treap)))))
 
+(defun copy-treap (treap)
+  "For development. Recursively copies the whole TREAP."
+  (declare ((or null treap) treap))
+  (if (null treap)
+      nil
+      (%make-treap (%treap-key treap)
+                  (%treap-priority treap)
+                  (%treap-value treap)
+                  :accumulator (%treap-accumulator treap)
+                  :left (copy-treap (%treap-left treap))
+                  :right (copy-treap (%treap-right treap))
+                  :count (%treap-count treap))))
+
 (declaim (notinline make-treap treap-insert))
 
 (with-test (:name explicit-treap-sanity)

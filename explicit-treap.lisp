@@ -354,12 +354,13 @@ intended order. The values are filled with the identity element."
 
 (defun treap-ref (treap index)
   "Returns the key and value corresponding to the INDEX."
-  (declare ((or null treap) treap)
+  (declare (optimize (speed 3))
+           ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
   (when (>= index (treap-count treap))
     (error 'invalid-treap-index-error :treap treap :index index))
   (labels ((%ref (treap index)
-             (declare (optimize (speed 3) (safety 0))
+             (declare (optimize (safety 0))
                       (treap treap)
                       ((integer 0 #.most-positive-fixnum) index))
              (force-down treap)
@@ -411,16 +412,3 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
         (setf (%treap-lazy treap-l-r)
               (updater-op (%treap-lazy treap-l-r) x)))
       (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))
-
-(defun copy-treap (treap)
-  "For development. Recursively copies the whole TREAP."
-  (declare ((or null treap) treap))
-  (if (null treap)
-      nil
-      (%make-treap (%treap-key treap)
-                  (%treap-priority treap)
-                  (%treap-value treap)
-                  :accumulator (%treap-accumulator treap)
-                  :left (copy-treap (%treap-left treap))
-                  :right (copy-treap (%treap-right treap))
-                  :count (%treap-count treap))))

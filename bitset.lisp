@@ -13,6 +13,7 @@
          (logior (the (unsigned-byte 64) (ash (logand ,new ,mask) ,posn))
                  (the (unsigned-byte 64) (logand ,int (lognot (ash ,mask ,posn)))))))))
 
+;; unfinished
 ;; (defun bit-shift (bit-vector delta &optional result-vector)
 ;;   "Shifts BIT-VECTOR by DELTA bits and fills the new bits with zero. Positive
 ;; DELTA means left-shifting and negative DELTA means right-shifting.

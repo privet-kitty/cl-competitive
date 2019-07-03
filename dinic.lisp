@@ -99,7 +99,8 @@ amount of the flow."
   "Destructively sends the maximal flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
-  (declare ((integer 0 #.most-positive-fixnum) src dest)
+  (declare #+sbcl (muffle-conditions style-warning)
+           ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
          (dist-table (make-array n :element-type '(unsigned-byte 32)))

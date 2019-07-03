@@ -4,7 +4,7 @@
 ;; Note:
 ;; - You shouldn't insert duplicate keys in a treap unless you know what you are
 ;; doing.
-;; - You cannot rely on the side effect when you use any destructive operations
+;; - You cannot rely on the side effect when you call any destructive operations
 ;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
 
