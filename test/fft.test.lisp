@@ -20,7 +20,7 @@
 		       (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
            #(-1 -3 -6 -10 -9 -7 -4 0)))
 
-  (assert (with-cached-cis 8
+  (assert (with-fixed-base 8
             (fft-array=
              (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
 		         (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
@@ -28,15 +28,16 @@
 
   ;; cis table doesn't have enough length
   (signals simple-error
-    (with-cached-cis 7 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))
+    (with-fixed-base 4 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))
 
   ;; not power of two
   (signals simple-error (dft! (to-fft-array #(1 2 3 4 0 0 0))))
   (signals simple-error (inverse-dft! (to-fft-array #(1 2 3 4 0 0 0))))
-  (signals simple-error (convolute! (to-fft-array #(1 2 3 4 0 0 0)) (to-fft-array #(1 2 3 4 0 0 00))))
+  (signals simple-error (convolute! (to-fft-array #(1 2 3 4 0 0 0)) (to-fft-array #(1 2 3 4 0 0 0))))
 
   ;; boundary case
   (let ((zero (make-array 0 :element-type '(complex fft-float))))
     (assert (equalp #() (convolute! zero zero)))
     (assert (equalp #() (dft! zero)))
     (assert (equalp #() (inverse-dft! zero)))))
+

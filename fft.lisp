@@ -1,5 +1,5 @@
 ;;;
-;;; In-place FFT
+;;; Complex FFT
 ;;;
 ;;; Reference:
 ;;; http://www.prefield.com/algorithm/math/fft.html
@@ -38,6 +38,7 @@
                   (incf (aref f j) (aref f k))
                   (setf (aref f k) (* w xt))))))
           (setq theta (* theta 2))))
+      ;; bit-reverse ordering
       (let ((i 0))
         (declare ((integer 0 #.most-positive-fixnum) i))
         (loop for j from 1 below (- n 1)
@@ -47,8 +48,9 @@
                  (when (< j i)
                    (rotatef (aref f i) (aref f j))))))))
 
-;; For FFT of fixed length, it is faster preparing the table of exp(i*theta).
-(defun %make-cis-table (n sign)
+;; For FFT of fixed length, preparing the table of exp(i*theta) will be
+;; efficient.
+(defun %make-exp-table (n sign)
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) n)
            ((integer -1 1) sign))
@@ -59,16 +61,18 @@
       (setf (aref table i) (cis (* i theta))))
     table))
 
-(defparameter *cis-table+* nil)
-(defparameter *cis-table-* nil)
+(defparameter *exp-table+* nil)
+(defparameter *exp-table-* nil)
 
-(defmacro with-cached-cis (size &body body)
+(defmacro with-fixed-base (size &body body)
   "Makes FFT faster when the SIZE of target vectors is fixed in BODY. This macro
-computes and holds the roots of unity."
+computes and holds the roots of unity for SIZE, which DFT! and INVERSE-DFT!
+called in BODY automatically uses; they will signal an error when they receive a
+vector of different size."
   (let ((s (gensym)))
     `(let ((,s ,size))
-       (let ((*cis-table+* (%make-cis-table ,s 1))
-             (*cis-table-* (%make-cis-table ,s -1)))
+       (let ((*exp-table+* (%make-exp-table ,s 1))
+             (*exp-table-* (%make-exp-table ,s -1)))
          ,@body))))
 
 (defun %general-dft-cached-cis! (f sign)
@@ -77,7 +81,7 @@ computes and holds the roots of unity."
            ((integer -1 1) sign))
   (prog1 f
     (let ((n (length f))
-          (table (if (= 1 sign) *cis-table+* *cis-table-*)))
+          (table (if (= 1 sign) *exp-table+* *exp-table-*)))
       (declare ((simple-array (complex fft-float) (*)) table))
       (assert (power2-p n))
       (assert (>= (length table) (ash n -1)))
@@ -96,6 +100,7 @@ computes and holds the roots of unity."
                 (declare ((integer 0 #.most-positive-fixnum) k cis-index))
                 (incf (aref f j) (aref f k))
                 (setf (aref f k) (* (aref table cis-index) xt)))))))
+      ;; bit-reverse ordering
       (let ((i 0))
         (declare ((integer 0 #.most-positive-fixnum) i))
         (loop for j from 1 below (- n 1)
@@ -110,7 +115,7 @@ computes and holds the roots of unity."
   (declare ((simple-array (complex fft-float) (*)) f))
   (if (zerop (length f))
       f
-      (if *cis-table+*
+      (if *exp-table+*
           (%general-dft-cached-cis! f 1)
           (%general-dft! f 1))))
 
@@ -121,7 +126,7 @@ computes and holds the roots of unity."
     (let ((n (length f)))
       (unless (zerop n)
         (let ((/n (/ (coerce n 'fft-float))))
-          (if *cis-table-*
+          (if *exp-table-*
               (%general-dft-cached-cis! f -1)
               (%general-dft! f -1))
           (dotimes (i n)
