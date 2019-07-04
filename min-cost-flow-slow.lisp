@@ -1,5 +1,5 @@
 ;;;
-;;; Minimum cost flow 
+;;; Minimum cost flow
 ;;;
 
 ;; This is the naivest implementation of minimum cost flow by Ford-Fulkerson and

@@ -1,5 +1,5 @@
 ;;;
-;;; Minimum cost flow by capacity scaling (O(FElogV))
+;;; Minimum cost flow (O(FElogV))
 ;;;
 
 (setf *print-circle* t)
