@@ -20,6 +20,16 @@
 		       (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
            #(-1 -3 -6 -10 -9 -7 -4 0)))
 
+  (assert (with-cached-cis 8
+            (fft-array=
+             (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
+		         (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
+             #(-1 -3 -6 -10 -9 -7 -4 0))))
+
+  ;; cis table doesn't have enough length
+  (signals simple-error
+    (with-cached-cis 7 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))
+
   ;; not power of two
   (signals simple-error (dft! (to-fft-array #(1 2 3 4 0 0 0))))
   (signals simple-error (inverse-dft! (to-fft-array #(1 2 3 4 0 0 0))))
