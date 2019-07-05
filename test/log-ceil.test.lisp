@@ -4,6 +4,8 @@
 
 (use-package :test-util)
 
+(declaim (notinline log2-ceil log-ceil))
+
 (with-test (:name log2-ceil)
   (assert (= 0 (log2-ceil 0)))
   (assert (= 0 (log2-ceil 1)))
