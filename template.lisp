@@ -3,7 +3,7 @@
   (defparameter OPT
     #+swank '(optimize (speed 3) (safety 2))
     #-swank '(optimize (speed 3) (safety 0) (debug 0)))
-  #+swank (ql:quickload '(:cl-debug-print))
+  #+swank (ql:quickload '(:cl-debug-print :fiveam))
   #-swank (set-dispatch-macro-character #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil (values) t))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 #-swank (disable-debugger) ; for CS Academy
