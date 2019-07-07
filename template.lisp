@@ -3,11 +3,10 @@
   (defparameter OPT
     #+swank '(optimize (speed 3) (safety 2))
     #-swank '(optimize (speed 3) (safety 0) (debug 0)))
-  #+swank (progn (ql:quickload '(:cl-debug-print :fiveam))
-                 (shadow :run)
-                 (use-package :fiveam))
+  #+swank (ql:quickload '(:cl-debug-print))
   #-swank (set-dispatch-macro-character #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil (values) t))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
+#-swank (disable-debugger) ; for CS Academy
 
 ;; BEGIN_INSERTED_CONTENTS
 (defmacro dbg (&rest forms)
