@@ -4,8 +4,12 @@
 
 (use-package :test-util)
 
+(declaim (notinline rhash-query rhash-vector-hash rhash-concat))
+
 (with-test (:name rolling-hash/fixed-mod)
-  (let ((rhash1 (make-rhash "asddfddfd" :mod1 1000000007 :base1 1729 :mod2 1000000009 :base2 10007)))
+  (let ((rhash1 (make-rhash "asddfddfd" :mod1 1000000007 :base1 1729
+                                        :mod2 1000000009 :base2 10007
+                                        :key (lambda (x) (+ 1 (char-code x))))))
     (assert (= (rhash-query rhash1 2 6) (rhash-query rhash1 5 9)))
     (assert (= (rhash-query rhash1 2 2) (rhash-query rhash1 5 5)))
     (assert (/= (rhash-query rhash1 2 6) (rhash-query rhash1 3 7)))
@@ -17,6 +21,11 @@
     (signals error (make-rhash "error" :mod1 17 :mod2 1000000009 :base1 17 :base2 10007))
     (signals error (make-rhash "error" :mod1 17 :mod2 1000000009 :base1 0 :base2 10007))
 
+    ;; hash code of a given sequence
+    (assert (= (rhash-vector-hash rhash1 "sddf" :key (lambda (x) (+ 1 (char-code x))))
+               (rhash-query rhash1 1 5)))
+    (assert (zerop (rhash-vector-hash rhash1 "" :key (lambda (x) (+ 1 (char-code x))))))
+    
     ;; longest common prefix
     (assert (= 0 (rhash-get-lcp rhash1 0 rhash1 3)))
     (assert (= 1 (rhash-get-lcp rhash1 2 rhash1 3)))
