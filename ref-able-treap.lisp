@@ -49,7 +49,8 @@ and returns KEY. It returns NIL instead if KEY is not contained."
                    (t key))))
     (recur treap)))
 
-(declaim (inline treap-bisect-left))
+(declaim (inline treap-bisect-left)
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional)) treap-bisect-left))
 (defun treap-bisect-left (value treap &key (order #'<))
   "Returns the smallest index and the corresponding key that satisfies
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
@@ -197,6 +198,7 @@ smaller (or larger, depending on the order) than those of RIGHT."
                     treap)
                    (t
                     (treap-merge (%treap-left treap) (%treap-right treap))))))
+    (declare (ftype (function * (values (or null treap) &optional)) recur))
     (recur treap)))
 
 (defun treap-map (function treap)
