@@ -4,6 +4,8 @@
 
 (use-package :test-util)
 
+(declaim (notinline mod-log mod-inverse mod-echelon! mod-inverse-matrix!))
+
 (with-test (:name mod-log)
   (dotimes (i 100)
     (let ((a (- (random 20) 10))
