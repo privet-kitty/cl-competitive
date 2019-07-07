@@ -38,6 +38,13 @@
               (mod (* (aref *fact-inv* k) (aref *fact-inv* (- n k))) +binom-mod+))
            +binom-mod+)))
 
+(declaim (inline perm))
+(defun perm (n k)
+  "Returns nPk."
+  (if (or (< n k) (< n 0) (< k 0))
+      0
+      (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +binom-mod+)))
+
 (defun multinomial (&rest ks)
   "Returns the multinomial coefficient K!/k_1!k_2!...k_n! for K = k_1 + k_2 +
 ... + k_n. K must be equal or smaller than MOST-POSITIVE-FIXNUM. (multinomial)
