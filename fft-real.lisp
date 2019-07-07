@@ -296,10 +296,12 @@ be restored by INVERSE-DFT!.)"
         (setf (aref f (ash n -1))
               (* (aref g (ash n -1)) (aref h (ash n -1)))))
       (loop for i from 1 below (ash n -1)
-            for value1 = (- (* (aref g i) (aref h i))
-                            (* (aref g (- n i)) (aref h (- n i))))
-            for value2 = (+ (* (aref g i) (aref h (- n i)))
-                            (* (aref g (- n i)) (aref h i)))
+            for value1 of-type fft-float
+               = (- (* (aref g i) (aref h i))
+                    (* (aref g (- n i)) (aref h (- n i))))
+            for value2 of-type fft-float
+               = (+ (* (aref g i) (aref h (- n i)))
+                    (* (aref g (- n i)) (aref h i)))
             do (setf (aref f i) value1)
                (setf (aref f (- n i)) value2))
       (inverse-dft! f))))
