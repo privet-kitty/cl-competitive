@@ -65,10 +65,10 @@ vector passed to FUNCTION will be recycled."
   (map-combinations (lambda (c) (map-permutations! function c)) vector k))
 
 (defmacro do-permutations! ((var vector &optional (start 0) end) &body body)
-  `(map-permutations! (lambda (,var) ,@body) ,vector ,start ,end))
+  `(block nil (map-permutations! (lambda (,var) ,@body) ,vector ,start ,end)))
 
 (defmacro do-combinations ((var vector &optional k) &body body)
-  `(map-combinations (lambda (,var) ,@body) ,vector ,k))
+  `(block nil (map-combinations (lambda (,var) ,@body) ,vector ,k)))
 
 (defmacro do-permutations ((var vector &optional k) &body body)
-  `(map-permutations (lambda (,var) ,@body) ,vector ,k))
+  `(block nil (map-permutations (lambda (,var) ,@body) ,vector ,k)))
