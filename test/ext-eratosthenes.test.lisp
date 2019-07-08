@@ -29,7 +29,9 @@
          (loop for x in list2 always (gethash x table1)))))
 
 (with-test (:name factorize-osak)
-  (assert (set-equal '((2 . 2) (3 . 2) (7 . 1))
-                     (factorize 252 (make-minfactor-table 253))))
+  (assert (equal '((2 . 2) (3 . 2) (7 . 1))
+                 (factorize -252 (make-minfactor-table 253))))
+  (assert (null (factorize 1 (make-minfactor-table 10))))
+  (assert (null (factorize 0 (make-minfactor-table 10))))
   (signals simple-error (factorize 252 (make-minfactor-table 252))))
  
