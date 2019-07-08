@@ -1,5 +1,5 @@
 ;;;
-;;; Lowest common anscestor of tree; implemented by so-called doubling method
+;;; Lowest common anscestor of tree (binary lifting)
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;
@@ -10,15 +10,20 @@
 
 (defstruct (lca-table
             (:constructor make-lca-table
-                (size &aux (depths (make-array size :element-type 'lca-vertex-number))
-                      ;; requires 1 + log_2{size-1}
-                           (parents (make-array (list size (+ 1 (integer-length (- size 2)))) :element-type 'lca-vertex-number))))
+                (size
+                 &aux
+                 (depths (make-array size :element-type 'lca-vertex-number))
+                 ;; requires 1 + log_2{size-1}
+                 (parents (make-array (list size (+ 1 (integer-length (- size 2))))
+                                      :element-type 'lca-vertex-number))))
             (:conc-name lca-))
   (depths nil :type (simple-array lca-vertex-number (*)))
   (parents nil :type (simple-array lca-vertex-number (* *))))
 
-(defun build-lca-table (root graph)
-  (declare ((simple-array list (*)) graph))
+(defun build-lca-table (root graph &key (key #'identity))
+  (declare (optimize (speed 3))
+           ((simple-array list (*)) graph)
+           (function key))
   (let* ((size (length graph))
          (lca-table (make-lca-table size))
          (depths (lca-depths lca-table))
@@ -28,10 +33,11 @@
                (declare (lca-vertex-number v prev-v))
                (setf (aref depths v) depth)
                (setf (aref parents v 0) prev-v)
-               (dolist (neighbor (aref graph v))
-                 (declare (lca-vertex-number neighbor))
-                 (unless (= neighbor prev-v)
-                   (dfs neighbor v (+ 1 depth))))))
+               (dolist (node (aref graph v))
+                 (let ((dest (funcall key node)))
+                   (declare (lca-vertex-number dest))
+                   (unless (= dest prev-v)
+                     (dfs dest v (+ 1 depth)))))))
       (dfs root -1 0)
       (dotimes (k (- max-log-v 1))
         (dotimes (v size)
@@ -41,7 +47,8 @@
       lca-table)))
 
 (defun get-lca (u v lca-table)
-  (declare (lca-vertex-number u v))
+  (declare (optimize (speed 3))
+           (lca-vertex-number u v))
   (let* ((depths (lca-depths lca-table))
          (parents (lca-parents lca-table))
          (max-log-v (array-dimension parents 1)))
@@ -59,6 +66,7 @@
               finally (return (aref parents u 0))))))
 
 (defun distance-on-tree (u v lca-table)
+  (declare (optimize (speed 3)))
   (let ((depths (lca-depths lca-table))
         (lca (get-lca u v lca-table)))
     (+ (- (aref depths u) (aref depths lca))
