@@ -13,6 +13,7 @@
 (defparameter *inv* (make-array +binom-size+ :element-type '(unsigned-byte 32)))
 
 (defun initialize-binom ()
+  (declare (optimize (speed 3) (safety 0)))
   (setf (aref *fact* 0) 1
         (aref *fact* 1) 1
         (aref *fact-inv* 0) 1
@@ -20,9 +21,10 @@
         (aref *inv* 1) 1)
   (loop for i from 2 below +binom-size+
         do (setf (aref *fact* i) (mod (* i (aref *fact* (- i 1))) +binom-mod+)
-                 (aref *inv* i) (mod (- (* (aref *inv* (rem +binom-mod+ i))
-                                           (floor +binom-mod+ i)))
-                                     +binom-mod+)
+                 (aref *inv* i) (- +binom-mod+
+                                   (mod (* (aref *inv* (rem +binom-mod+ i))
+                                           (floor +binom-mod+ i))
+                                        +binom-mod+))
                  (aref *fact-inv* i) (mod (* (aref *inv* i)
                                              (aref *fact-inv* (- i 1)))
                                           +binom-mod+))))
