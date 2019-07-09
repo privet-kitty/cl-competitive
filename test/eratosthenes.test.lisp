@@ -14,6 +14,11 @@
   (loop for b across (make-prime-table 200)
         for i below 200
         when (= b 1)
+        do (assert (sb-int:positive-primep i)))
+  ;; word boundary
+  (loop for b across (make-prime-table 64)
+        for i below 64
+        when (= b 1)
         do (assert (sb-int:positive-primep i))))
 
 (with-test (:name make-prime-sequence)
