@@ -1,5 +1,5 @@
 ;;;
-;;; Lowest common anscestor of tree (binary lifting)
+;;; Lowest common anscestor of tree by binary lifting
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;

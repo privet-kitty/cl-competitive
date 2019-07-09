@@ -1,7 +1,7 @@
 ;;;
 ;;; Extended Eratosthenes' sieve (osa_k's method)
 ;;;
-;;; build: O(n)
+;;; build: O(nloglogn)
 ;;; With this sieve each prime factorization can be executed in O(log(n)), which
 ;;; is faster than the well known one in O(N/log(n) + log(n)).
 ;;; Reference: http://www.osak.jp/diary/diary_201310.html#20131017
@@ -29,8 +29,9 @@ prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.)"
 (declaim (inline factorize))
 (defun factorize (x minfactor-table)
   "Returns the associative list of prime factors of X, which is composed
-of (<prime> . <exponent>). E.g. (factorize 100 <minfactor-table>) => '((2 . 2) (5
-. 5)). The returned list is in ascending order w.r.t. prime.
+of (<prime> . <exponent>). E.g. (factorize 100 <minfactor-table>) => '((2
+. 2) (5 . 5)). The returned list is in ascending order
+w.r.t. prime. Corner case: (factorize 0 table) => NIL.
 
 MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal prime factor of k)"
   (declare (fixnum x)
