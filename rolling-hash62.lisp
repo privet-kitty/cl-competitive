@@ -3,7 +3,6 @@
 ;;;
 
 ;; Reference: https://www.mii.lt/olympiads_in_informatics/pdf/INFOL119.pdf
-;; TODO: get the hash value of a given string or char
 
 (defstruct (rhash (:constructor %make-rhash (mod1 cumul1 powers1 mod2 cumul2 powers2)))
   ;; lower 31-bit value

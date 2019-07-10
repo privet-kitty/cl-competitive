@@ -254,35 +254,42 @@ each time."
                         (itreap-insert itreap position (car list))))))
     (recur args 0 nil)))
 
-(defun make-itreap (size)
+(defun %heapify (top)
+  "Properly swaps the priorities of the node and its two children."
+  (declare (optimize (speed 3) (safety 0)))
+  (when top
+    (let ((high-priority-node top))
+      (when (and (%itreap-left top)
+                 (> (%itreap-priority (%itreap-left top))
+                    (%itreap-priority high-priority-node)))
+        (setq high-priority-node (%itreap-left top)))
+      (when (and (%itreap-right top)
+                 (> (%itreap-priority (%itreap-right top))
+                    (%itreap-priority high-priority-node)))
+        (setq high-priority-node (%itreap-right top)))
+      (unless (eql high-priority-node top)
+        (rotatef (%itreap-priority high-priority-node)
+                 (%itreap-priority top))
+        (%heapify high-priority-node)))))
+
+(declaim (inline make-itreap))
+(defun make-itreap (size &key initial-contents)
   "Makes a treap of SIZE in O(SIZE) time. The values are filled with the
-identity element."
-  (labels ((heapify (top)
-             (when top
-               (let ((high-priority-node top))
-                 (when (and (%itreap-left top)
-                            (> (%itreap-priority (%itreap-left top))
-                               (%itreap-priority high-priority-node)))
-                   (setq high-priority-node (%itreap-left top)))
-                 (when (and (%itreap-right top)
-                            (> (%itreap-priority (%itreap-right top))
-                               (%itreap-priority high-priority-node)))
-                   (setq high-priority-node (%itreap-right top)))
-                 (unless (eql high-priority-node top)
-                   (rotatef (%itreap-priority high-priority-node)
-                            (%itreap-priority top))
-                   (heapify high-priority-node)))))
-           (build (l r)
+identity element unless INITIAL-CONTETS are supplied."
+  (declare ((or null vector) initial-contents))
+  (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= l r)
                  nil
                  (let* ((mid (ash (+ l r) -1))
-                        (node (%make-itreap +op-identity+
+                        (node (%make-itreap (if initial-contents
+                                                (aref initial-contents mid)
+                                                +op-identity+)
                                            (random most-positive-fixnum))))
                    (setf (%itreap-left node) (build l mid))
                    (setf (%itreap-right node) (build (+ mid 1) r))
-                   (heapify node)
-                   (update-count node)
+                   (%heapify node)
+                   (force-self node)
                    node))))
     (build 0 size)))
 
