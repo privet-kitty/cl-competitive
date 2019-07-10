@@ -8,9 +8,15 @@ of length n to the integers 0, ..., n-1."
 
 (declaim (inline make-ordered-inverse-table!))
 (defun make-ordered-inverse-table! (vector &key (test #'eql) (order #'<))
+  "Sorts VECTOR, deletes all adjacent duplicates, and returns a hash-table that
+assigns each value of the vector to the integers 0, 1, ..."
+  (declare (function test order)
+           (vector vector)
+           (inline sort))
   (setq vector (sort vector order))
   (let ((table (make-hash-table :test test :size (length vector)))
         (index 0))
+    (declare ((integer 0 #.most-positive-fixnum) index))
     (dotimes (pos (length vector))
       (when (or (zerop pos)
                 (not (funcall test (aref vector pos) (aref vector (- pos 1)))))

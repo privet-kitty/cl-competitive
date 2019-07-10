@@ -1,3 +1,4 @@
+;; better to use binomial-coefficient-mod
 (defun mod-factorial (n divisor)
   (declare (optimize (speed 3)) ; TCO
            ((integer 0) n divisor))
