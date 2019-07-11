@@ -5,7 +5,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
 
-;; KLUDGE: a variant of dpb that handles a 64-bit word efficiently
+;; KLUDGE: a variant of DPB that handles a 64-bit word efficiently
 (defmacro u64-dpb (new spec int)
   (destructuring-bind (byte s p) spec
     (assert (eql 'byte byte))
@@ -16,7 +16,7 @@
          (logior (the (unsigned-byte 64) (ash (logand ,new ,mask) ,posn))
                  (the (unsigned-byte 64) (logand ,int (lognot (ash ,mask ,posn)))))))))
 
-(defconstant +max-word+ #.(- (ash 1 64) 1))
+(defconstant +most-positive-word+ #.(- (ash 1 64) 1))
 
 (defun bit-not! (sb-vector &optional (start 0) end)
   "Destructively flips the bits in the range [START, END)."
@@ -32,28 +32,28 @@
       (if (= start/64 end/64)
           (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
                 (u64-dpb (ldb (byte (- end%64 start%64) start%64)
-                              (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector start/64)))
+                              (logxor +most-positive-word+ (sb-kernel:%vector-raw-bits sb-vector start/64)))
                          (byte (- end%64 start%64) start%64)
                          (sb-kernel:%vector-raw-bits sb-vector start/64)))
           (progn
             (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
                   (dpb (sb-kernel:%vector-raw-bits sb-vector start/64)
                        (byte start%64 0)
-                       (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector start/64))))
+                       (logxor +most-positive-word+ (sb-kernel:%vector-raw-bits sb-vector start/64))))
             (loop for i from (+ 1 start/64) below end/64
                   do (setf (sb-kernel:%vector-raw-bits sb-vector i)
-                           (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector i))))
+                           (logxor +most-positive-word+ (sb-kernel:%vector-raw-bits sb-vector i))))
             (unless (zerop end%64)
               (setf (sb-kernel:%vector-raw-bits sb-vector end/64)
-                    (dpb (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector end/64))
+                    (dpb (logxor +most-positive-word+ (sb-kernel:%vector-raw-bits sb-vector end/64))
                          (byte end%64 0)
                          (sb-kernel:%vector-raw-bits sb-vector end/64))))))))
   sb-vector)
 
 ;; (count 1 simple-bit-vector) is sufficiently fast on SBCL when handling whole
-;; vector. If START or END are specified, however, it is slow as transformer for
-;; COUNT doesn't work. See
-;; https://github.com/sbcl/sbcl/blob/cd7af0d5b15e98e21ace8ef164e0f39019e5ed4b/src/compiler/generic/vm-tran.lisp#L445-L482
+;; vector. If START or END are specified, however, it is slow as the transformer
+;; for COUNT doesn't work. See
+;; https://github.com/sbcl/sbcl/blob/cd7af0d5b15e98e21ace8ef164e0f39019e5ed4b/src/compiler/generic/vm-tran.lisp#L484-L527
 (defun bit-count (sb-vector &optional (start 0) end)
   "Counts 1's in the range [START, END)."
   (declare (optimize (speed 3))
