@@ -2,6 +2,10 @@
 ;; Complement to the bitwise operations in CLHS
 ;;
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (assert (= sb-vm:n-word-bits 64)))
+
+;; KLUDGE: a variant of dpb that handles a 64-bit word efficiently
 (defmacro u64-dpb (new spec int)
   (destructuring-bind (byte s p) spec
     (assert (eql 'byte byte))
@@ -46,6 +50,10 @@
                          (sb-kernel:%vector-raw-bits sb-vector end/64))))))))
   sb-vector)
 
+;; (count 1 simple-bit-vector) is sufficiently fast on SBCL when handling whole
+;; vector. If START or END are specified, however, it is slow as transformer for
+;; COUNT doesn't work. See
+;; https://github.com/sbcl/sbcl/blob/cd7af0d5b15e98e21ace8ef164e0f39019e5ed4b/src/compiler/generic/vm-tran.lisp#L445-L482
 (defun bit-count (sb-vector &optional (start 0) end)
   "Counts 1's in the range [START, END)."
   (declare (optimize (speed 3))
@@ -68,7 +76,7 @@
                   do (incf result (logcount (sb-kernel:%vector-raw-bits sb-vector i))))
             (unless (zerop end%64)
               (incf result (logcount (ldb (byte end%64 0)
-                                       (sb-kernel:%vector-raw-bits sb-vector end/64)))))
+                                          (sb-kernel:%vector-raw-bits sb-vector end/64)))))
             result)))))
 
 ;; unfinished
