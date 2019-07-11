@@ -1,6 +1,6 @@
 ;; unfinished.
 
-(defun find-optimum (sequence predicate &key (start 0) end)
+(defun find-argopt (sequence predicate &key (start 0) end)
   "Returns an index x that satisfies (NOT (FUNCALL PREDICATE SEQUENCE[y]
 SEQUENCE[x])) (i.e. SEQUENCE[x] >= SEQUENCE[y]) for all the indices y and
 returns SEQUENCE[x] as the second value."
