@@ -2,7 +2,6 @@
 ;; Complement to the bitwise operations in CLHS
 ;;
 
-;; TODO: We could make it faster by preparing MASK in advance.
 (defmacro u64-dpb (new spec int)
   (destructuring-bind (byte s p) spec
     (assert (eql 'byte byte))
@@ -12,6 +11,65 @@
               (,mask (ldb (byte ,size 0) -1)))
          (logior (the (unsigned-byte 64) (ash (logand ,new ,mask) ,posn))
                  (the (unsigned-byte 64) (logand ,int (lognot (ash ,mask ,posn)))))))))
+
+(defconstant +max-word+ #.(- (ash 1 64) 1))
+
+(defun bit-not! (sb-vector &optional (start 0) end)
+  "Destructively flips the bits in the range [START, END)."
+  (declare (optimize (speed 3))
+           (simple-bit-vector sb-vector)
+           ((integer 0 #.most-positive-fixnum) start)
+           ((or null (integer 0 #.most-positive-fixnum)) end))
+  (setq end (or end (length sb-vector)))
+  (assert (<= start end (length sb-vector)))
+  (multiple-value-bind (start/64 start%64) (floor start 64)
+    (multiple-value-bind (end/64 end%64) (floor end 64)
+      (declare (optimize (safety 0)))
+      (if (= start/64 end/64)
+          (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
+                (u64-dpb (ldb (byte (- end%64 start%64) start%64)
+                              (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector start/64)))
+                         (byte (- end%64 start%64) start%64)
+                         (sb-kernel:%vector-raw-bits sb-vector start/64)))
+          (progn
+            (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
+                  (dpb (sb-kernel:%vector-raw-bits sb-vector start/64)
+                       (byte start%64 0)
+                       (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector start/64))))
+            (loop for i from (+ 1 start/64) below end/64
+                  do (setf (sb-kernel:%vector-raw-bits sb-vector i)
+                           (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector i))))
+            (unless (zerop end%64)
+              (setf (sb-kernel:%vector-raw-bits sb-vector end/64)
+                    (dpb (logxor +max-word+ (sb-kernel:%vector-raw-bits sb-vector end/64))
+                         (byte end%64 0)
+                         (sb-kernel:%vector-raw-bits sb-vector end/64))))))))
+  sb-vector)
+
+(defun bit-count (sb-vector &optional (start 0) end)
+  "Counts 1's in the range [START, END)."
+  (declare (optimize (speed 3))
+           (simple-bit-vector sb-vector)
+           ((integer 0 #.most-positive-fixnum) start)
+           ((or null (integer 0 #.most-positive-fixnum)) end))
+  (setq end (or end (length sb-vector)))
+  (assert (<= start end (length sb-vector)))
+  (multiple-value-bind (start/64 start%64) (floor start 64)
+    (multiple-value-bind (end/64 end%64) (floor end 64)
+      (declare (optimize (safety 0)))
+      (if (= start/64 end/64)
+          (logcount (ldb (byte (- end%64 start%64) start%64)
+                         (sb-kernel:%vector-raw-bits sb-vector start/64)))
+          (let ((result 0))
+            (declare ((integer 0 #.most-positive-fixnum) result))
+            (incf result (logcount (ldb (byte (- 64 start%64) start%64)
+                                        (sb-kernel:%vector-raw-bits sb-vector start/64))))
+            (loop for i from (+ 1 start/64) below end/64
+                  do (incf result (logcount (sb-kernel:%vector-raw-bits sb-vector i))))
+            (unless (zerop end%64)
+              (incf result (logcount (ldb (byte end%64 0)
+                                       (sb-kernel:%vector-raw-bits sb-vector end/64)))))
+            result)))))
 
 ;; unfinished
 ;; (defun bit-shift (bit-vector delta &optional result-vector)
