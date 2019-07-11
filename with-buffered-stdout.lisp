@@ -1,4 +1,4 @@
-(defmacro with-output-buffer (&body body)
+(defmacro with-buffered-stdout (&body body)
   "Buffers all outputs to *STANDARD-OUTPUT* in BODY and flushes them to
 *STANDARD-OUTPUT* after BODY has been done (without error). Note that only
 BASE-CHAR is allowed."
