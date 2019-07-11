@@ -1,6 +1,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../bitset.lisp"))
+  (load "../bit-basher.lisp"))
 
 (use-package :test-util)
 
