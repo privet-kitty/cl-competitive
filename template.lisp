@@ -34,7 +34,7 @@
 (defun main ()
   (let* ()))
 
-#-swank(main)
+#-swank (main)
 
 
 ;; For Test

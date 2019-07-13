@@ -1,6 +1,12 @@
-(setf *print-circle* t)
+;;;
+;;; Implicit treap
+;;; (treap with implicit key)
+;;;
 
-;; Treap with implicit key for updating and querying interval.
+;; Note:
+;; - You cannot rely on the side effect when you call any destructive operations
+;; on a treap. Always use the returned value.
+;; - An empty treap is NIL.
 
 (defconstant +op-identity+ most-positive-fixnum)
 
@@ -17,12 +23,12 @@ and B is operand."
   (+ a b))
 
 (declaim (inline modifier-op))
-(defun modifier-op (a b size)
-  "Is the operator to update ACCUMULATOR (and VALUE) based on LAZY value. A is
-the current ACCUMULATOR value and B is the LAZY value. SIZE is the length of the
+(defun modifier-op (acc x size)
+  "Is the operator to update ACCUMULATOR (and VALUE) based on LAZY value. ACC is
+the current ACCUMULATOR value and X is the LAZY value. SIZE is the length of the
 specified interval."
   (declare (ignorable size))
-  (+ a b))
+  (+ acc x))
 
 (defstruct (itreap (:constructor %make-itreap (value priority &key left right (count 1) (accumulator value) (lazy +updater-identity+) reversed))
                   (:copier nil)
@@ -119,7 +125,8 @@ specified interval."
 (defun itreap-split (itreap index)
   "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N), where N
   is the number of elements of the ITREAP."
-  (declare ((integer 0 #.most-positive-fixnum) index))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :index index :itreap itreap))
   (labels ((recur (itreap ikey)
@@ -142,7 +149,8 @@ specified interval."
 
 (defun itreap-merge (left right)
   "Destructively merges two ITREAPs."
-  (declare ((or null itreap) left right))
+  (declare (optimize (speed 3))
+           ((or null itreap) left right))
   (cond ((null left) (when right (force-down right) (force-self right)) right)
         ((null right) (when left (force-down left) (force-self left)) left)
         (t (force-down left)
@@ -187,10 +195,10 @@ specified interval."
 ;;         (itreap-split itreap index)
 ;;       (itreap-merge (itreap-merge left obj-itreap) right))))
 
-(declaim (inline itreap-insert))
 (defun itreap-insert (itreap index obj)
   "Destructively inserts OBJ into ITREAP and returns the resultant treap."
-  (declare ((or null itreap) itreap)
+  (declare (optimize (speed 3))
+           ((or null itreap) itreap)
            ((integer 0 #.most-positive-fixnum) index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
@@ -215,15 +223,18 @@ specified interval."
                      itreap))))
       (recur itreap index))))
 
+(declaim (inline itreap-map))
 (defun itreap-map (function itreap)
   "Successively applies FUNCTION to ITREAP[0], ..., ITREAP[SIZE-1]."
   (declare (function function))
-  (when itreap
-    (force-down itreap)
-    (itreap-map function (%itreap-left itreap))
-    (funcall function (%itreap-value itreap))
-    (itreap-map function (%itreap-right itreap))
-    (force-self itreap)))
+  (labels ((recur (node)
+             (when node
+               (force-down node)
+               (recur (%itreap-left node))
+               (funcall function (%itreap-value node))
+               (recur (%itreap-right node))
+               (force-self node))))
+    (recur itreap)))
 
 (defmethod print-object ((object itreap) stream)
   (print-unreadable-object (object stream :type t)
@@ -243,8 +254,7 @@ each time."
      ,result))
 
 (defun itreap (&rest args)
-  ;; TODO: Currently it takes O(nlog(n)) time though it can be reduced to
-  ;; O(n). Use MAKE-ITREAP for now.
+  ;; NOTE: It takes O(nlog(n)). Use MAKE-ITREAP for efficiency.
   (labels ((recur (list position itreap)
              (declare ((integer 0 #.most-positive-fixnum) position))
              (if (null list)
@@ -275,7 +285,7 @@ each time."
 (declaim (inline make-itreap))
 (defun make-itreap (size &key initial-contents)
   "Makes a treap of SIZE in O(SIZE) time. The values are filled with the
-identity element unless INITIAL-CONTETS are supplied."
+identity element unless INITIAL-CONTENTS are supplied."
   (declare ((or null vector) initial-contents))
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
@@ -293,9 +303,9 @@ identity element unless INITIAL-CONTETS are supplied."
                    node))))
     (build 0 size)))
 
-(declaim (inline itreap-delete))
 (defun itreap-delete (itreap index)
-  (declare ((integer 0 #.most-positive-fixnum) index))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
   (multiple-value-bind (itreap1 itreap2)
@@ -420,7 +430,8 @@ identity element unless INITIAL-CONTETS are supplied."
 (defun itreap-bisect-left (itreap threshold order)
   "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= THRESHOLD, where >= is the complement of ORDER. Returns the
-size of ITREAP if ITREAP[size-1] < THRESHOLD. The time complexity is O(log(n))."
+size of ITREAP if ITREAP[length-1] < THRESHOLD. The time complexity is
+O(log(n))."
   (declare (function order))
   (labels ((recur (count itreap)
              (declare ((integer 0 #.most-positive-fixnum) count))
