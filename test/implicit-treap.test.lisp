@@ -40,6 +40,13 @@
       (recur itreap)
       (reverse res))))
 
+(defun itreap-tree (itreap)
+  (if (null itreap)
+      nil
+      (cons (%itreap-value itreap)
+            (cons (itreap-tree (%itreap-left itreap))
+                  (itreap-tree (%itreap-right itreap))))))
+
 (declaim (notinline itreap-insert itreap-query itreap-ref itreap-update itreap-bisect-left))
 
 (with-test (:name implicit-treap-sanity)

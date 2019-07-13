@@ -1,6 +1,6 @@
 ;; DEFINE-INTEGER-PACK and DEFINE-CONS-PACK are so to say poor man's variants of
-;; DEFSTRUCT. Both `structures' can only have slots of unsigned bytes of fixed
-;; length. DEFINE-INTEGER-PACK handles the concatenated slots as UNSIGNED-BYTE
+;; DEFSTRUCT. Both "structures" can only have slots of fixed unsigned
+;; bytes. DEFINE-INTEGER-PACK handles the concatenated slots as UNSIGNED-BYTE
 ;; and DEFINE-CONS-PACK does as (CONS (UNSIGNED-BYTE 62) (UNSIGNED-BYTE 62)).
 
 ;; Example:
