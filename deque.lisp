@@ -22,10 +22,12 @@
         (push-back (intern (format nil "~A-PUSH-BACK" name)))
         (pop-front (intern (format nil "~A-POP-FRONT" name)))
         (pop-back (intern (format nil "~A-POP-BACK" name)))
+        (empty-p (intern (format nil "~A-EMPTY-P" name)))
         (data-getter (intern (format nil "~A-DATA" name)))
         (front-getter (intern (format nil "~A-FRONT" name)))
         (end-getter (intern (format nil "~A-END" name)))
-        (constructor (intern (format nil "MAKE-~A" name))))
+        (constructor (intern (format nil "MAKE-~A" name)))
+        (reinitializer (intern (format nil "~A-REINITIALIZE" name))))
     `(progn
        (defstruct (,name (:constructor ,constructor
                              (size &aux
@@ -86,6 +88,17 @@
              (when (= front next)
                (error 'deque-empty-error :queue ,name))
              (setq end next)
-             (aref data next)))))))
+             (aref data next))))
+
+       (declaim (inline ,empty-p))
+       (defun ,empty-p (,name)
+         (= (mod (+ (,front-getter ,name) 1) (length (,data-getter ,name)))
+            (,end-getter ,name)))
+
+       (declaim (inline ,reinitializer))
+       (defun ,reinitializer (,name)
+         (setf (,end-getter ,name)
+               (mod (+ (,front-getter ,name) 1)
+                    (length (,data-getter ,name))))))))
 
 (define-deque deque :element-type fixnum)
