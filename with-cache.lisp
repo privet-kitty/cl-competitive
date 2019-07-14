@@ -112,11 +112,11 @@
                   (labels ((,name-alias ,args ,@body))
                     (declare (inline ,name-alias))
                     ,(make-cache-check-form cache-type name args))))))
-          ((nlet)
+          ((nlet sb-int:named-let)
            (destructuring-bind (_ name bindings &body body) def-form
              (declare (ignore _))
              `(let ((,cache ,cache-form))
-                (nlet ,name ,bindings
+                (,(car def-form) ,name ,bindings
                   ,@(extract-declarations body)
                   ,(let ((args (mapcar (lambda (x) (if (atom x) x (car x))) bindings)))
                      `(labels ((,name-alias ,args ,@body))
