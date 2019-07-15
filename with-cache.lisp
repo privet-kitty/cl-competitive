@@ -112,7 +112,7 @@
                   (labels ((,name-alias ,args ,@body))
                     (declare (inline ,name-alias))
                     ,(make-cache-check-form cache-type name args))))))
-          ((nlet sb-int:named-let)
+          ((nlet #+sbcl sb-int:named-let)
            (destructuring-bind (_ name bindings &body body) def-form
              (declare (ignore _))
              `(let ((,cache ,cache-form))

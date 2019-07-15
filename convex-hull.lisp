@@ -1,11 +1,16 @@
+;;;
+;;; 2D convex hull of points (Monotone Chain Algorithm)
+;;; Complexity: O(nlog(n))
+;;;
+
 (declaim (inline make-convex-hull!))
 (defun make-convex-hull! (points &optional (eps 0))
-  "Returns the vector of the vertices of the convex hull. This function sorts
-POINTS as a side effect. The time complexity is O(nlog(n)).
+  "Returns the vector of the vertices of the convex hull, which are in the
+anticlockwise direction. This function sorts POINTS as a side effect.
 
-If EPS is non-negative (and the calculation error can be ignored), three
-vertices in a straight line are excluded. On the other hand, they are allowed if
-EPS is a negative number.
+If EPS is non-negative, three vertices in a straight line are excluded (when the
+calculation error is within EPS, of course); they are allowed if EPS is
+negative.
 
 POINTS := vector of complex number"
   (declare (inline sort)
