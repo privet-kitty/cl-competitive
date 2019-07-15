@@ -5,8 +5,9 @@
 
 (declaim (inline make-convex-hull!))
 (defun make-convex-hull! (points &optional (eps 0))
-  "Returns the vector of the vertices of the convex hull, which are in the
-anticlockwise direction. This function sorts POINTS as a side effect.
+  "Returns the vector of the vertices of the convex hull, which are sorted in
+the anticlockwise direction around the perimeter. This function sorts POINTS as
+a side effect.
 
 If EPS is non-negative, three vertices in a straight line are excluded (when the
 calculation error is within EPS, of course); they are allowed if EPS is
