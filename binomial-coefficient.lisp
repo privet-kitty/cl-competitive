@@ -1,9 +1,8 @@
 ;;;
 ;;; Compute binomial coefficient by direct bignum arithmetic
 ;;;
-;;; This code ist almost the same as that of alexandria.
-;;;
 
+;; from alexandria
 (declaim (inline %multiply-range))
 (defun %multiply-range (i j)
   (labels ((bisect (j k)
@@ -25,20 +24,22 @@
 
 (declaim (inline factorial))
 (defun factorial (n)
-  (%multiply-range 1 n))
+  (cond ((< n 0) 0)
+        ((zerop n) 1)
+        (t (%multiply-range 1 n))))
 
 (defun binomial-coefficient (n k)
-  (declare ((integer 0 (#.most-positive-fixnum)) n k))
-  (assert (>= n k))
-  (if (or (zerop k) (= n k))
-      1
-      (let ((n-k (- n k)))
-        (when (< k n-k)
-          (rotatef k n-k))
-        (if (= 1 n-k)
-            n
-            (floor (%multiply-range (+ k 1) n)
-	           (%multiply-range 1 n-k))))))
+  (declare (fixnum n k))
+  (cond ((or (< n 0) (< k 0) (< n k)) 0)
+        ((or (zerop k) (= n k)) 1)
+        (t (let ((n-k (- n k)))
+             (when (< k n-k)
+               (rotatef k n-k))
+             (if (= 1 n-k)
+                 n
+                 (floor (%multiply-range (+ k 1) n)
+	                (%multiply-range 1 n-k)))))))
 
-(defun multiset-coefficient (n k)
+(declaim (inline multichoose))
+(defun multichoose (n k)
   (binomial-coefficient (+ n k -1) k))
