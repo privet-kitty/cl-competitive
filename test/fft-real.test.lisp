@@ -31,13 +31,13 @@
 		                 (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
                                  res))))
 
-  (assert (with-fixed-base 8
+  (assert (with-fixed-length-fft 8
             (fft-array=
              (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
         	         (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
              #(-1 -3 -6 -10 -9 -7 -4 0))))
 
-  (assert (with-fixed-base 16
+  (assert (with-fixed-length-fft 16
             (fft-array=
              (convolute! (to-fft-array #(1 2 3 4 0 0 0 0 0 0 0 0 0 0 0 0))
         	         (to-fft-array #(-1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 0)))
@@ -45,7 +45,7 @@
 
   ;; base table doesn't have right length
   (signals simple-error
-    (with-fixed-base 16 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))
+    (with-fixed-length-fft 16 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))
 
   ;; not power of two
   (signals simple-error (dft! (to-fft-array #(1 2 3 4 0 0 0))))

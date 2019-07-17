@@ -132,7 +132,7 @@
 (defparameter *cos-table* nil)
 (defparameter *sin-table* nil)
 
-(defmacro with-fixed-base (size &body body)
+(defmacro with-fixed-length-fft (size &body body)
   "Makes FFT faster when the SIZE of target vectors is fixed in BODY. This macro
 computes and holds the roots of unity for SIZE, which DFT! and INVERSE-DFT!
 called in BODY automatically detects; they will signal an error when they
