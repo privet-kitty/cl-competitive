@@ -36,45 +36,6 @@ Example: (make-prime-table 10) => #*0011010100"
                (incf index))
       result)))
 
-(declaim (ftype (function * (values list &optional)) factorize-with-table))
-(defun factorize-with-table (x prime-table)
-  "Returns the associative list of prime factors of X, which is composed
-of (<prime> . <exponent>). E.g. (factorize 100 <prime-table>) => '((2 . 2) (5
-. 5)).
-
-PRIME-TABLE := simple-bit-vector (PRIME-TABLE[k] = 1 iff k is prime)
-
-Note that the returned list is NOT guaranteed to be in ascending order."
-  (declare (integer x)
-           (simple-bit-vector prime-table))
-  (assert (>= (length prime-table) 3))
-  (setq x (abs x))
-  (if (zerop x)
-      nil
-      (append
-       (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
-             while (evenp x)
-             do (setq x (ash x -1))
-             finally (return
-                       (when (> exponent 0)
-                         (list (cons 2 exponent)))))
-       (loop for prime from 3 to (min x (- (length prime-table) 1)) by 2
-             for factor-cons =
-                (when (= 1 (sbit prime-table prime))
-                  (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
-                        do (multiple-value-bind (quot rem) (floor x prime)
-                             (if (zerop rem)
-                                 (setf x quot)
-                                 (return
-                                   (when (> exponent 0)
-                                     (cons prime exponent)))))))
-             when factor-cons
-             collect factor-cons into res
-             finally (return
-                       (if (= x 1)
-                           res
-                           (cons (cons x 1) res)))))))
-
 ;; TODO: enable to take a list as PRIME-SEQ
 (declaim (inline factorize)
          (ftype (function * (values list &optional)) factorize))
