@@ -37,8 +37,8 @@ in addition."
     (push ret (aref graph to-idx))))
 
 (defun %fill-dist-table (src graph dist-table queue)
-  "Does BFS and sets the distance between SRC and each vertex of GRAPH to
-DIST-TABLE, where an edge of zero capacity is regarded as disconnected."
+  "Does BFS and sets DIST-TABLE to the distance between SRC and each vertex of
+GRAPH, where an edge of zero capacity is regarded as disconnected."
   (declare (optimize (speed 3) (safety 0))
            ((integer 0 #.most-positive-fixnum) src)
            ((simple-array list (*)) graph)

@@ -65,7 +65,7 @@
 (defparameter *exp-table-* nil)
 
 (defmacro with-fixed-length-fft (size &body body)
-  "Makes FFT faster when the SIZE of target vectors is fixed in BODY. This macro
+  "Makes FFT faster when the size of target vectors is fixed in BODY. This macro
 computes and holds the roots of unity for SIZE, which DFT! and INVERSE-DFT!
 called in BODY automatically uses; they will signal an error when they receive a
 vector of different size."
