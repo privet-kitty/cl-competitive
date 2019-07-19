@@ -36,7 +36,6 @@ Example: (make-prime-table 10) => #*0011010100"
                (incf index))
       result)))
 
-;; TODO: enable to take a list as PRIME-SEQ
 (declaim (inline factorize)
          (ftype (function * (values list &optional)) factorize))
 (defun factorize (x prime-seq)

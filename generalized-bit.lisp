@@ -2,8 +2,6 @@
 ;;; 1-dimensional binary indexed tree
 ;;;
 
-;; TODO: multidimensional BIT
-
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'>))
   "OPERATOR := binary operator (on a commutative monoid)
 IDENTITY := object (identity element of the monoid)

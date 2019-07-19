@@ -2,6 +2,7 @@
 ;;; Trie
 ;;;
 
+;; ASCII code:
 ;; #\A: 65
 ;; #\a: 97
 ;; #\0: 48
@@ -11,7 +12,7 @@
 
 (defconstant +trie-alphabet-size+ 26)
 
-;; TODO: enable to set trie-node to NIL by distinguishing null and unbound.
+;; TODO: enable to set VALUE to NIL by distinguishing null and unbound.
 (declaim (inline %make-trie-node))
 (defstruct (trie-node (:constructor %make-trie-node
                           (&optional value

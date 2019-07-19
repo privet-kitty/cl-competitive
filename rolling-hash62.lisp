@@ -83,7 +83,7 @@
 (defun make-rhash (vector &key (key #'char-code) mod1 mod2 base1 base2)
   "Returns the table of rolling-hash of VECTOR modulo MOD1 and MOD2. KEY is
 applied to each element of VECTOR prior to computing the hash value. If moduli
-and bases are NIL, this function randomly chooses them appropriately.
+and bases are NIL, this function randomly chooses them.
 
 MOD[1|2] := NIL | unsigned 31-bit prime number
 BASE1 := NIL | 1 | 2 | ... | MOD1 - 1
@@ -217,3 +217,21 @@ at START1 and START2."
                              (bisect ok mid))))))
           (bisect 0 max-length)))))
 
+(defun map-prefix-hash (rhash vector function &key (start 0) end)
+  "Applies FUNCTION to the hash value of each prefix of VECTOR (in ascending
+order, including null prefix)."
+  (declare (vector vector)
+           (function function)
+           ((integer 0 #.most-positive-fixnum) start)
+           ((or null (integer 0 #.most-positive-fixnum)) end))
+  (let* ((end (or end (length vector)))
+         (mod1 (rhash-mod1 rhash))
+         (mod2 (rhash-mod2 rhash))
+         (base1 (aref (rhash-cumul1 rhash) 1))
+         (base2 (aref (rhash-cumul2 rhash) 1))
+         (lower 0)
+         (upper 0))
+    (loop for i from start below end
+          do (funcall function (dpb upper (byte 31 31) lower))
+             (setq lower (mod (* lower base1) mod1)
+                   upper (mod (* upper base2) mod2)))))

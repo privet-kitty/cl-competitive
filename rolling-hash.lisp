@@ -59,9 +59,7 @@ KEY := function returning FIXNUM"
            ((integer 0 #.most-positive-fixnum) hash2-length))
   (let* ((modulus (rhash-modulus rhash)))
     (mod (+ hash2
-            (mod (* hash1
-                    (aref (rhash-powers rhash) hash2-length))
-                 modulus))
+            (* hash1 (aref (rhash-powers rhash) hash2-length)))
          modulus)))
 
 (defun rhash-get-lcp (rhash1 start1 rhash2 start2)

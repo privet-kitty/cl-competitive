@@ -2,8 +2,8 @@
 ;; Virtually it works like std::set of C++ or TreeSet of Java. 
 
 ;; Note:
-;; - You shouldn't insert duplicate keys in a treap unless you know what you are
-;; doing.
+;; - You shouldn't insert duplicate keys into a treap unless you know what you
+;; are doing.
 ;; - You cannot rely on the side effect when you call any destructive operations
 ;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
