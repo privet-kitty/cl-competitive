@@ -14,24 +14,30 @@
        (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
                (max-flow-overflow-graph condition))))))
 
-(defstruct (edge (:constructor %make-edge))
+(defstruct (edge (:constructor %make-edge
+                     (to capacity reversed
+                      &aux (default-capacity capacity))))
   (to nil :type (integer 0 #.most-positive-fixnum))
   (capacity 0 :type (integer 0 #.most-positive-fixnum))
+  (default-capacity 0 :type (integer 0 #.most-positive-fixnum))
   (reversed nil :type (or null edge)))
 
-(defun push-edge (from-idx to-idx capacity graph &optional bidirectional)
-  "FROM-IDX, TO-IDX := index of vertex
-GRAPH := vector of lists
+(defmethod print-object ((edge edge) stream)
+  (let ((*print-circle* t))
+    (call-next-method)))
 
-If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same capacity
-in addition."
+(defun push-edge (from-idx to-idx capacity graph &key bidirectional)
+  "FROM-IDX, TO-IDX := index of vertex
+GRAPH := vector of lists of all the edges that goes from each vertex
+
+If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
+capacity in addition."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) from-idx to-idx)
            ((simple-array list (*)) graph))
-  (let* ((dep (%make-edge :to to-idx :capacity capacity))
-         (ret (%make-edge :to from-idx
-                          :capacity (if bidirectional capacity 0)
-                          :reversed dep)))
+  (let* ((dep (%make-edge to-idx capacity nil))
+         (ret (%make-edge from-idx
+                          (if bidirectional capacity 0)
+                          dep)))
     (setf (edge-reversed dep) ret)
     (push dep (aref graph from-idx))
     (push ret (aref graph to-idx))))
@@ -95,6 +101,7 @@ amount of the flow."
                      (cdr (aref tmp-graph v))))))
     (dfs src most-positive-fixnum)))
 
+(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
 (defun max-flow! (src dest graph)
   "Destructively sends the maximal flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite

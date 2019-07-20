@@ -2,12 +2,17 @@
 ;;; Ford-Fulkerson
 ;;;
 
-(setf *print-circle* t)
-
-(defstruct (edge (:constructor %make-edge))
+(defstruct (edge (:constructor %make-edge
+                     (to capacity reversed
+                      &aux (default-capacity capacity))))
   (to nil :type (integer 0 #.most-positive-fixnum))
   (capacity 0 :type (integer 0 #.most-positive-fixnum))
+  (default-capacity 0 :type (integer 0 #.most-positive-fixnum))
   (reversed nil :type (or null edge)))
+
+(defmethod print-object ((edge edge) stream)
+  (let ((*print-circle* t))
+    (call-next-method)))
 
 (defun push-edge (from-idx to-idx capacity graph &key bidirectional)
   "FROM-IDX, TO-IDX := index of vertex
@@ -17,10 +22,10 @@ If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
 capacity in addition."
   (declare (optimize (speed 3))
            ((simple-array list (*)) graph))
-  (let* ((dep (%make-edge :to to-idx :capacity capacity))
-         (ret (%make-edge :to from-idx
-                          :capacity (if bidirectional capacity 0)
-                          :reversed dep)))
+  (let* ((dep (%make-edge to-idx capacity nil))
+         (ret (%make-edge from-idx
+                          (if bidirectional capacity 0)
+                          dep)))
     (setf (edge-reversed dep) ret)
     (push dep (aref graph from-idx))
     (push ret (aref graph to-idx))))
@@ -53,10 +58,10 @@ capacity in addition."
   ((graph :initarg :graph :reader max-flow-overflow-graph))
   (:report
    (lambda (condition stream)
-     (let ((*print-circle* t))
-       (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
-               (max-flow-overflow-graph condition))))))
+     (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
+             (max-flow-overflow-graph condition)))))
 
+(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
 (defun max-flow! (src-idx dest-idx graph)
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) src-idx dest-idx)

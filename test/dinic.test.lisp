@@ -5,6 +5,13 @@
 (use-package :test-util)
 
 (with-test (:name dinic)
+  (let ((graph (make-array 2 :element-type 'list :initial-element nil)))
+    (push-edge 0 1 10 graph)
+    (assert (= 10 (max-flow! 0 1 graph)))
+    (assert (= 0 (edge-capacity (car (aref graph 0)))))
+    (assert (= 10 (edge-default-capacity (car (aref graph 0)))))
+    (assert (= 10 (edge-capacity (car (aref graph 1)))))
+    (assert (= 0 (edge-default-capacity (car (aref graph 1))))))
   (let ((graph (make-array '(5) :element-type 'list :initial-element nil)))
     (push-edge 0 1 10 graph)
     (push-edge 0 2 2 graph)
