@@ -1,6 +1,7 @@
 ;;
-;; Generate the table of binomial coefficients with mod with time and space
-;; complexity O(n^2).
+;; Obsolete. Better to use binomial-coefficient-mod. This code generates the
+;; table of binomial coefficients with mod with time and space complexity
+;; O(n^2).
 ;;
 
 (defun make-binom-table (size &optional (divisor 1000000007))
