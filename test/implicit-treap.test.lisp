@@ -86,7 +86,11 @@
   (assert (equal '(1 2 3 4 5)
                  (itreap-list (itreap-delete (itreap 1 2 3 4 5 6) 5))))
   (signals invalid-itreap-index-error (itreap-delete (itreap 1 2 3 4 5 6) 6))
-  (signals invalid-itreap-index-error (itreap-delete nil 0)))
+  (signals invalid-itreap-index-error (itreap-delete nil 0))
+  (let ((itreap (itreap 1 2 3 2 1 2 7)))
+    (assert (= 1 (itreap-query itreap 1 5)))
+    (setq itreap (itreap-delete itreap 4))
+    (assert (= 2 (itreap-query itreap 1 5)))))
 
 (with-test (:name implicit-treap)
   (dotimes (i 10)

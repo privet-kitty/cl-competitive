@@ -182,19 +182,6 @@ specified interval."
                    index
                    (invalid-itreap-index-error-itreap condition)))))))
 
-;; simple but slower insertion
-;; (declaim (inline itreap-insert))
-;; (defun itreap-insert (itreap index obj)
-;;   "Destructively inserts OBJ into ITREAP at INDEX."
-;;   (declare ((or null itreap) itreap)
-;;            ((integer 0 #.most-positive-fixnum) index))
-;;   (unless (<= index (itreap-count itreap))
-;;     (error 'invalid-itreap-index-error :itreap itreap :index index))
-;;   (let ((obj-itreap (%make-itreap obj (random most-positive-fixnum))))
-;;     (multiple-value-bind (left right)
-;;         (itreap-split itreap index)
-;;       (itreap-merge (itreap-merge left obj-itreap) right))))
-
 (defun itreap-insert (itreap index obj)
   "Destructively inserts OBJ into ITREAP and returns the resultant treap."
   (declare (optimize (speed 3))

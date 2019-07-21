@@ -1,3 +1,4 @@
+;; Should we do this with UNWIND-PROTECT?
 (defmacro with-buffered-stdout (&body body)
   "Buffers all outputs to *STANDARD-OUTPUT* in BODY and flushes them to
 *STANDARD-OUTPUT* after BODY has been done (without error). Note that only
