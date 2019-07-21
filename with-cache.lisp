@@ -1,6 +1,6 @@
-;;;                                        ;
+;;;
 ;;; Memoization macro
-;;; 
+;;;
 
 ;; TODO: detailed documentation
 
@@ -54,8 +54,8 @@
                                           ,obj)))
                             (format t "~A~A: (~A ~{~A~^ ~}) => ~A~%"
                                     (make-string *recursion-depth*
-                                               :element-type 'base-char
-                                               :initial-element #\ )
+                                                 :element-type 'base-char
+                                                 :initial-element #\ )
                                     *recursion-depth*
                                     ',name
                                     (list ,@args)
@@ -117,11 +117,11 @@
              (declare (ignore _))
              `(let ((,cache ,cache-form))
                 (,(car def-form) ,name ,bindings
-                  ,@(extract-declarations body)
-                  ,(let ((args (mapcar (lambda (x) (if (atom x) x (car x))) bindings)))
-                     `(labels ((,name-alias ,args ,@body))
-                        (declare (inline ,name-alias))
-                        ,(make-cache-check-form cache-type name args)))))))
+                 ,@(extract-declarations body)
+                 ,(let ((args (mapcar (lambda (x) (if (atom x) x (car x))) bindings)))
+                    `(labels ((,name-alias ,args ,@body))
+                       (declare (inline ,name-alias))
+                       ,(make-cache-check-form cache-type name args)))))))
           ((labels flet)
            (destructuring-bind (_ definitions &body labels-body) def-form
              (declare (ignore _))

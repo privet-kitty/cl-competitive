@@ -2,7 +2,9 @@
 ;;; Rolling hash (62-bit)
 ;;;
 
-;; Reference: https://www.mii.lt/olympiads_in_informatics/pdf/INFOL119.pdf
+;; Reference:
+;; https://www.mii.lt/olympiads_in_informatics/pdf/INFOL119.pdf
+;; https://ei1333.github.io/luzhiled/snippets/string/rolling-hash.html
 
 (defstruct (rhash (:constructor %make-rhash (mod1 cumul1 powers1 mod2 cumul2 powers2)))
   ;; lower 31-bit value
