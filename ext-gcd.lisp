@@ -16,7 +16,7 @@
 ;; TODO: deal with bignums
 (declaim (inline ext-gcd))
 (defun ext-gcd (a b)
-  "Returns two integers X and Y where AX + BY = gcd(A, B) holds."
+  "Returns two integers X and Y which satisfies AX + BY = gcd(A, B)."
   (declare ((integer #.(- most-positive-fixnum) #.most-positive-fixnum) a b))
   (if (>= a 0)
       (if (>= b 0)
@@ -32,13 +32,24 @@
             (declare (fixnum x y))
             (values (- x) (- y))))))
 
+;; better to use binomial-coefficient-mod
+(declaim (inline mod-factorial))
+(defun mod-factorial (n divisor)
+  (declare ((integer 0 #.most-positive-fixnum) n divisor))
+  (labels ((recur (n result)
+             (declare ((integer 0 #.most-positive-fixnum) n result))
+             (if (zerop n)
+                 result
+                 (recur (- n 1) (mod (* result n) divisor)))))
+    (recur n 1)))
+
 (declaim (inline mod-inverse)
          (ftype (function * (values (mod #.most-positive-fixnum) &optional)) mod-inverse))
 (defun mod-inverse (a modulus)
   "Solves ax ≡ 1 mod m. A and M must be coprime."
   (declare (integer a)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (mod (ext-gcd (mod a modulus) modulus) modulus))
+  (mod (%gcd (mod a modulus) modulus) modulus))
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
 (defun mod-log (x y modulus)
