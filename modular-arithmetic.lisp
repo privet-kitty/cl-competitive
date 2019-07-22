@@ -32,15 +32,15 @@
             (declare (fixnum x y))
             (values (- x) (- y))))))
 
-;; better to use binomial-coefficient-mod
 (declaim (inline mod-factorial))
-(defun mod-factorial (n divisor)
-  (declare ((integer 0 #.most-positive-fixnum) n divisor))
+(defun mod-factorial (n modulus)
+  "Returns N! mod MODULUS."
+  (declare ((integer 0 #.most-positive-fixnum) n modulus))
   (labels ((recur (n result)
              (declare ((integer 0 #.most-positive-fixnum) n result))
              (if (zerop n)
                  result
-                 (recur (- n 1) (mod (* result n) divisor)))))
+                 (recur (- n 1) (mod (* result n) modulus)))))
     (recur n 1)))
 
 (declaim (inline mod-inverse)
@@ -52,6 +52,7 @@
   (mod (%gcd (mod a modulus) modulus) modulus))
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
+
 (defun mod-log (x y modulus)
   "Returns the smallest positive integer k that satiefies x^k ≡ y mod p.
 Returns NIL if it is infeasible."
@@ -59,11 +60,12 @@ Returns NIL if it is infeasible."
            (integer x y)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((x (mod x modulus))
-        (y (mod y modulus)))
+        (y (mod y modulus))
+        (g (gcd x modulus)))
     (declare (optimize (safety 0))
-             ((mod #.most-positive-fixnum) x y))
-    (if (= 1 (gcd x modulus))
-        ;; coprime
+             ((mod #.most-positive-fixnum) x y g))
+    (if (= g 1)
+        ;; coprime case
         (let* ((m (+ 1 (isqrt (- modulus 1)))) ; smallest integer equal to or
                                                ; larger than sqrt(p)
                (x^m (loop for i below m
@@ -89,21 +91,19 @@ Returns NIL if it is infeasible."
         ;; If x and p are not coprime, let g := gcd(x, p), x := gx', y := gy', p
         ;; := gp' and solve x^(k-1) ≡ y'x'^(-1) mod p' instead. See
         ;; https://math.stackexchange.com/questions/131127/ for the detail.
-        (let ((g (gcd x modulus)))
-          (declare ((integer 0 #.most-positive-fixnum) g))
-          ;; Below is tha special treatment for the case x ≡ y. Without this
-          ;; (mod-log 4 0 4) returns not 1 but 2.
-          (when (= x y)
-            (return-from mod-log 1))
-          (multiple-value-bind (y-prime rem) (floor y g)
-            (if (zerop rem)
-                (let* ((x-prime (floor x g))
-                       (p-prime (floor modulus g))
-                       (next-rhs (mod (* y-prime (mod-inverse x-prime p-prime)) p-prime))
-                       (res (mod-log x next-rhs p-prime)))
-                  (declare ((integer 0 #.most-positive-fixnum) x-prime p-prime next-rhs))
-                  (if res (+ 1 res) nil))
-                nil))))))
+        (if (= x y)
+            ;; This is tha special treatment for the case x ≡ y. Without this
+            ;; (mod-log 4 0 4) returns not 1 but 2.
+            1
+            (multiple-value-bind (y-prime rem) (floor y g)
+              (if (zerop rem)
+                  (let* ((x-prime (floor x g))
+                         (p-prime (floor modulus g))
+                         (next-rhs (mod (* y-prime (mod-inverse x-prime p-prime)) p-prime))
+                         (res (mod-log x next-rhs p-prime)))
+                    (declare ((integer 0 #.most-positive-fixnum) x-prime p-prime next-rhs))
+                    (if res (+ 1 res) nil))
+                  nil))))))
 
 (declaim (inline %calc-min-factor))
 (defun %calc-min-factor (x alpha)
@@ -159,8 +159,8 @@ condition exists."
 ;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800
 (declaim (inline mod-echelon!))
 (defun mod-echelon! (matrix modulus &optional extended)
-  "Returns the row echelon form of MATRIX by gaussian elimination. Returns the
-rank as the second value.
+  "Returns the row echelon form of MATRIX by gaussian elimination and returns
+the rank as the second value.
 
 This function destructively modifies MATRIX."
   (declare ((integer 1 #.most-positive-fixnum) modulus))
