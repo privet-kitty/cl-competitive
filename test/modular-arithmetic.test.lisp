@@ -1,6 +1,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../ext-gcd.lisp"))
+  (load "../modular-arithmetic.lisp"))
 
 (use-package :test-util)
 

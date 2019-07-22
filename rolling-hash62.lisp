@@ -6,13 +6,15 @@
 ;; https://www.mii.lt/olympiads_in_informatics/pdf/INFOL119.pdf
 ;; https://ei1333.github.io/luzhiled/snippets/string/rolling-hash.html
 
-(defstruct (rhash (:constructor %make-rhash (mod1 cumul1 powers1 mod2 cumul2 powers2)))
+(defstruct (rhash (:constructor %make-rhash (mod1 base1 cumul1 powers1 mod2 base2 cumul2 powers2)))
   ;; lower 31-bit value
-  (mod1 1000000007 :type (unsigned-byte 31))
+  (mod1 2147483647 :type (unsigned-byte 31))
+  (base1 1059428526 :type (unsigned-byte 31))
   (cumul1 nil :type (simple-array (unsigned-byte 31) (*)))
   (powers1 nil :type (simple-array (unsigned-byte 31) (*)))
   ;; upper 31-bit value
-  (mod2 1000000009 :type (unsigned-byte 31))
+  (mod2 2147483629 :type (unsigned-byte 31))
+  (base2 2090066834 :type (unsigned-byte 31))
   (cumul2 nil :type (simple-array (unsigned-byte 31) (*)))
   (powers2 nil :type (simple-array (unsigned-byte 31) (*))))
 
@@ -55,9 +57,15 @@
  1821151471 2037700892 1646950698 1517859810 1099233635 1004913731 1653443892
  1782112665 1018916580)))
 
-(defun %choose-moduli (mod1 mod2 base1 base2)
+(defun %choose-moduli (mod1 mod2 base1 base2 rhash)
   "Chooses two appropriate pairs of moduli and bases."
   (declare ((or null (unsigned-byte 31)) mod1 mod2 base1 base2))
+  (when rhash
+    (return-from %choose-moduli
+      (values (rhash-mod1 rhash)
+              (rhash-mod2 rhash)
+              (rhash-base1 rhash)
+              (rhash-base2 rhash))))
   (let* ((rand1 (random (length *moduli-table*)))
          (rand2 (loop (let ((tmp (random (length *moduli-table*))))
                         (unless (= tmp rand1)
@@ -82,20 +90,22 @@
               (setq base2 (aref *base-table* rand2))))))
   (values mod1 mod2 base1 base2))
 
-(defun make-rhash (vector &key (key #'char-code) mod1 mod2 base1 base2)
+(defun make-rhash (vector &key (key #'char-code) mod1 mod2 base1 base2 rhash)
   "Returns the table of rolling-hash of VECTOR modulo MOD1 and MOD2. KEY is
 applied to each element of VECTOR prior to computing the hash value. If moduli
-and bases are NIL, this function randomly chooses them.
+and bases are NIL, this function randomly chooses them. If RHASH is specified,
+the same moduli and bases as RHASH is adopted.
 
 MOD[1|2] := NIL | unsigned 31-bit prime number
 BASE1 := NIL | 1 | 2 | ... | MOD1 - 1
 BASE2 := NIL | 1 | 2 | ... | MOD2 - 1
-KEY := function returning FIXNUM"
+KEY := FUNCTION returning FIXNUM
+RHASH := NIL | RHASH"
   (declare (optimize (speed 3))
            (vector vector)
            ((or null (unsigned-byte 31)) mod1 mod2 base1 base2)
            (function key))
-  (multiple-value-bind (mod1 mod2 base1 base2) (%choose-moduli mod1 mod2 base1 base2)
+  (multiple-value-bind (mod1 mod2 base1 base2) (%choose-moduli mod1 mod2 base1 base2 rhash)
     (declare ((unsigned-byte 31) mod1 mod2 base1 base2))
     (let* ((size (length vector))
            (cumul1 (make-array (+ 1 size) :element-type '(unsigned-byte 31)))
@@ -119,7 +129,7 @@ KEY := function returning FIXNUM"
                 (aref cumul2 (+ i 1)) (if (> sum2 mod2)
                                           (- sum2 mod2)
                                           sum2))))
-      (%make-rhash mod1 cumul1 powers1 mod2 cumul2 powers2))))
+      (%make-rhash mod1 base1 cumul1 powers1 mod2 base2 cumul2 powers2))))
 
 (declaim (ftype (function * (values (unsigned-byte 62) &optional)) rhash-vector-hash)
          (inline rhash-vector-hash))
@@ -130,8 +140,8 @@ KEY := function returning FIXNUM"
            (function key))
   (let* ((mod1 (rhash-mod1 rhash))
          (mod2 (rhash-mod2 rhash))
-         (base1 (aref (rhash-powers1 rhash) 1))
-         (base2 (aref (rhash-powers2 rhash) 1))
+         (base1 (rhash-base1 rhash))
+         (base2 (rhash-base2 rhash))
          (size (length vector))
          (lower 0)
          (upper 0))
@@ -229,8 +239,8 @@ order, including null prefix)."
   (let* ((end (or end (length vector)))
          (mod1 (rhash-mod1 rhash))
          (mod2 (rhash-mod2 rhash))
-         (base1 (aref (rhash-cumul1 rhash) 1))
-         (base2 (aref (rhash-cumul2 rhash) 1))
+         (base1 (rhash-base1 rhash))
+         (base2 (rhash-base2 rhash))
          (lower 0)
          (upper 0))
     (loop for i from start below end
