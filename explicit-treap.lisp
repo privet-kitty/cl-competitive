@@ -1,5 +1,3 @@
-(setf *print-circle* t)
-
 (defconstant +op-identity+ 0)
 
 (declaim (inline op))
@@ -310,7 +308,7 @@ KEY-VAR and VALUE-VAR and executes BODY."
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
   "Makes a treap using each key of the given SORTED-VECTOR in O(n). Note that
-this function doesn't check if the SORTED-VECTOR is properly sorted w.r.t. your
+this function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
 intended order. The values are filled with the identity element."
   (declare (vector sorted-vector))
   (labels ((heapify (top)

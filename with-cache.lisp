@@ -43,7 +43,7 @@
                  (let ((value (gensym)))
                    (if debug
                        `(progn
-                          (format t "~A~A: (~A ~{~A~^ ~}) =>~%"
+                          (format t "~&~A~A: (~A ~{~A~^ ~}) =>"
                                   (make-string *recursion-depth*
                                                :element-type 'base-char
                                                :initial-element #\ )
@@ -52,7 +52,7 @@
                                   (list ,@args))
                           (let ((,value (let ((*recursion-depth* (1+ *recursion-depth*)))
                                           ,obj)))
-                            (format t "~A~A: (~A ~{~A~^ ~}) => ~A~%"
+                            (format t "~&~A~A: (~A ~{~A~^ ~}) => ~A"
                                     (make-string *recursion-depth*
                                                  :element-type 'base-char
                                                  :initial-element #\ )

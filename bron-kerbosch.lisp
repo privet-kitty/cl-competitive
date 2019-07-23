@@ -1,13 +1,13 @@
 ;;;
 ;;; Bron-Kerbosch-Tomita
-;;; reference: http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf
+;;; Reference: http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf
 ;;;
 
 (declaim (inline find-max-clique))
 (defun find-max-clique (neighbors)
-  "Returns a fixnum as the bitset indicating a maximal clique. Each NEIGHBORS[i]
-must also be the bitset indicating the neighbors of the vertex i."
-  ;; (declare ((simple-array (integer 0 #.most-positive-fixnum) (*)) neighbors))
+  "Returns an unsigned fixnum as the bit-set indicating a maximal clique. Each
+NEIGHBORS[i] must also be the unsigned fixnum indicating the neighbors of the
+vertex i."
   (let ((n (length neighbors))
         (result-set 0)
         (result-size 0))

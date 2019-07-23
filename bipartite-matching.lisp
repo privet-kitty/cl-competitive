@@ -11,8 +11,8 @@ this function doesn't check if GRAPH is truly bipartite."
   (let* ((n (length graph))
          (visited (make-array n :element-type 'bit :initial-element 0))
          (matching (make-array n :element-type 'fixnum :initial-element -1))
-         (res 0))
-    (declare ((integer 0 #.most-positive-fixnum) res))
+         (count 0))
+    (declare ((integer 0 #.most-positive-fixnum) count))
     (labels ((%match (vertex) ; Returns T if VERTEX is matched.
                (setf (aref visited vertex) 1)
                (dolist (candidate (aref graph vertex))
@@ -23,8 +23,8 @@ this function doesn't check if GRAPH is truly bipartite."
                      (setf (aref matching vertex) candidate
                            (aref matching candidate) vertex)
                      (return t))))))
-      (dotimes (v n (values matching res))
+      (dotimes (v n (values matching count))
         (when (= -1 (aref matching v))
           (fill visited 0)
           (when (%match v)
-            (incf res)))))))
+            (incf count)))))))
