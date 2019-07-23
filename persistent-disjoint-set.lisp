@@ -74,7 +74,7 @@
 
 (declaim (inline pds-connected-p))
 (defun pds-connected-p (x1 x2 time disjoint-set)
-  "Checks if X1 and X2 have the same root at TIME."
+  "Returns true iff X1 and X2 have the same root at TIME."
   (= (pds-root x1 time disjoint-set) (pds-root x2 time disjoint-set)))
 
 (defun pds-opening-time (x1 x2 disjoint-set)

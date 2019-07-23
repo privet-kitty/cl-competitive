@@ -1,5 +1,5 @@
 ;;;
-;;; Arithmetic operations with dynamic mod
+;;; Arithmetic operations with dynamic modulus
 ;;;
 
 (declaim ((unsigned-byte 32) *modulus*))

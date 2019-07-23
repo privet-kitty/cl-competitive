@@ -11,7 +11,7 @@
 (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
 (defun ds-root (x disjoint-set)
   "Returns the root of X."
-  (declare (optimize (speed 3)) ; as this function cannot be inlined
+  (declare (optimize (speed 3))
            ((mod #.array-total-size-limit) x))
   (let ((data (ds-data disjoint-set)))
     (if (< (aref data x) 0)
@@ -21,8 +21,8 @@
 
 (declaim (inline ds-unite!))
 (defun ds-unite! (x1 x2 disjoint-set)
-  "Unites X1 and X2 destructively. Returns NIL iff X1 and X2 have already been
-connected."
+  "Destructively unites X1 and X2 and returns true iff X1 and X2 become
+connected for the first time."
   (let ((root1 (ds-root x1 disjoint-set))
         (root2 (ds-root x2 disjoint-set)))
     (unless (= root1 root2)
@@ -35,10 +35,11 @@ connected."
 
 (declaim (inline ds-connected-p))
 (defun ds-connected-p (x1 x2 disjoint-set)
-  "Checks if X1 and X2 have the same root."
+  "Returns true iff X1 and X2 have the same root."
   (= (ds-root x1 disjoint-set) (ds-root x2 disjoint-set)))
 
 (declaim (inline ds-size))
 (defun ds-size (x disjoint-set)
+  "Returns the size of the connected component to which X belongs."
   (- (aref (ds-data disjoint-set)
            (ds-root x disjoint-set))))
