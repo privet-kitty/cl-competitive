@@ -1,6 +1,6 @@
-;;
-;; Complement to the bitwise operations in CLHS
-;;
+;;;
+;;; Complement to the bitwise operations in CLHS
+;;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
