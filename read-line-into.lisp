@@ -1,5 +1,5 @@
 (declaim (inline read-line-into))
-(defun read-line-into (buffer-string &key (in *standard-input*) (terminate-char #\Space))
+(defun read-line-into (buffer-string &key (in *standard-input*) (term-char #\Space))
   "Receives ASCII inputs and returns multiple values: the string and the end
 position.
 
@@ -13,5 +13,5 @@ instead on SLIME because SLIME's IO is not bivalent."
         until (char= c #\Newline)
         do (setf (char buffer-string idx) c)
         finally (when (< idx (length buffer-string))
-                  (setf (char buffer-string idx) terminate-char))
+                  (setf (char buffer-string idx) term-char))
                 (return (values buffer-string idx))))

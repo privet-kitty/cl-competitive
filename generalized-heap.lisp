@@ -25,7 +25,7 @@
          (fname-reinitialize (intern (format nil "~A-REINITIALIZE" string-name)))
          (fname-empty-p (intern (format nil "~A-EMPTY-P" string-name)))
          (fname-count (intern (format nil "~A-COUNT" string-name)))
-         (fname-peak (intern (format nil "~A-PEAK" string-name)))
+         (fname-peek (intern (format nil "~A-PEEK" string-name)))
          (fname-make (intern (format nil "MAKE-~A" string-name)))
          (acc-position (intern (format nil "~A-POSITION" string-name)))
          (acc-data (intern (format nil "~A-DATA" string-name))))
@@ -109,8 +109,8 @@
          "Returns the current number of the elements in HEAP."
          (- (,acc-position heap) 1))
 
-       (declaim (inline ,fname-peak))
-       (defun ,fname-peak (heap)
+       (declaim (inline ,fname-peek))
+       (defun ,fname-peek (heap)
          "Returns the topmost element of HEAP."
          (if (= 1 (,acc-position heap))
              (error 'heap-empty-error :heap heap)

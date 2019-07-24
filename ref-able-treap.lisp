@@ -132,7 +132,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 (defun make-treap (sorted-vector)
   "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
 doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your intended
-order."
+order. The behaviour is undefined when a non-sorted vector is passed."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top

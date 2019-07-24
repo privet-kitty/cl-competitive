@@ -76,7 +76,7 @@
   (setf (heap-position heap) 1)
   heap)
 
-(defun heap-peak (heap)
+(defun heap-peek (heap)
   (if (= 1 (heap-position heap))
       (error 'heap-empty-error :heap heap)
       (aref (heap-data heap) 1)))

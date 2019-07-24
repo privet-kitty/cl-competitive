@@ -15,7 +15,7 @@
       (test-heap-push o h))
     (assert (= 7 (test-heap-count h)))
     (signals heap-full-error (test-heap-push 0 h))
-    (assert (= 6 (test-heap-peak h)))
+    (assert (= 6 (test-heap-peek h)))
     (assert (equal '(6 9 11 15 18 22 27)
                    (loop repeat 7 collect (test-heap-pop h))))
     (assert (test-heap-empty-p h))

@@ -1,5 +1,5 @@
-(defmacro buffered-read-line (&optional (buffer-size 30) (in '*standard-input*) (terminate-char #\Space))
-  "Receives ascii inputs and returns two values: the string and the end
+(defmacro buffered-read-line (&optional (buffer-size 30) (in '*standard-input*) (term-char #\Space))
+  "Reads ASCII inputs and returns two values: the string and the end
 position. Note that the returned string will be reused if this form is executed
 more than once.
 
@@ -19,5 +19,5 @@ on SLIME because SLIME's IO is not bivalent."
              until (char= ,character #\Newline)
              do (setf (schar ,buffer ,idx) ,character)
              finally (when (< ,idx ,buffer-size)
-                       (setf (schar ,buffer ,idx) ,terminate-char))
+                       (setf (schar ,buffer ,idx) ,term-char))
                      (return (values ,buffer ,idx))))))
