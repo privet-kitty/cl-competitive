@@ -27,7 +27,7 @@ connected for the first time."
         (root2 (ds-root x2 disjoint-set)))
     (unless (= root1 root2)
       (let ((data (ds-data disjoint-set)))
-        ;; guarantees the size of root1 >= the size of root2
+        ;; ensure the size of root1 >= the size of root2
         (when (> (aref data root1) (aref data root2))
           (rotatef root1 root2))
         (incf (aref data root1) (aref data root2))
