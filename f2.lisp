@@ -45,8 +45,10 @@
 (defun f2-gemm (a b)
   "Calculates A*B on GF(2). The width of A (and the height of B) must be
 multiple of 64."
-  (declare ((simple-array bit (* *)) a b))
+  (declare (optimize (speed 3))
+           ((simple-array bit (* *)) a b))
   (multiple-value-bind (length/64 rem) (floor (array-dimension a 1) 64)
+    (declare (optimize (safety 0)))
     (assert (zerop rem))
     (assert (= (array-dimension a 1) (array-dimension b 0)))
     (let* ((tb (make-array (list (array-dimension b 1) (array-dimension b 0))
@@ -55,7 +57,6 @@ multiple of 64."
                           :element-type 'bit))
            (a-storage (array-storage-vector a))
            (tb-storage (array-storage-vector tb)))
-      (declare (optimize (speed 3) (safety 0)))
       (dotimes (row (array-dimension b 0))
         (dotimes (col (array-dimension b 1))
           (setf (aref tb row col) (aref b col row))))
@@ -77,15 +78,16 @@ multiple of 64."
 (defun f2-gemv (a v)
   "Calculates A*v on GF(2). The width of A (and the length of v) must be
 multiple of 64."
-  (declare ((simple-array bit (* *)) a)
+  (declare (optimize (speed 3))
+           ((simple-array bit (* *)) a)
            ((simple-array bit (*)) v))
   (multiple-value-bind (length/64 rem) (floor (length v) 64)
+    (declare (optimize (safety 0)))
     (assert (zerop rem))
     (assert (= (array-dimension a 1) (length v)))
     (let* ((res (make-array (array-dimension a 0) :element-type 'bit))
            (a-storage (array-storage-vector a))
            (v-storage (array-storage-vector v)))
-      (declare (optimize (speed 3) (safety 0)))
       (dotimes (row (array-dimension a 0))
         (let ((value 0)
               (a-index (floor (array-row-major-index a row 0) 64)))
@@ -106,9 +108,11 @@ linear equations and is not eliminated. This function destructively modifies
 MATRIX.
 
 The width of MATRIX must be multiple of 64."
-  (declare ((simple-array bit (* *)) matrix))
+  (declare (optimize (speed 3))
+           ((simple-array bit (* *)) matrix))
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (declare (optimize (safety 0))
+             ((integer 0 #.most-positive-fixnum) m n))
     (multiple-value-bind (n/64 rem) (floor n 64)
       (assert (zerop rem))
       (let* ((storage (array-storage-vector matrix))
@@ -143,10 +147,12 @@ NIL. In addition, this function returns the rank of A as the second value. This
 function destructively modifies MATRIX and VECTOR.
 
 The width of A must be multiple of 64."
-  (declare ((simple-array bit (* *)) matrix)
+  (declare (optimize (speed 3))
+           ((simple-array bit (* *)) matrix)
            (simple-bit-vector vector))
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (declare (optimize (safety 0))
+             ((integer 0 #.most-positive-fixnum) m n))
     (multiple-value-bind (n/64 rem) (floor n 64)
       (assert (zerop rem))
       (let* ((storage (array-storage-vector matrix))

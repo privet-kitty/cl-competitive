@@ -6,6 +6,7 @@
 ;;;
 
 ;; Note: An empty heap is NIL.
+;; TODO: handle the order of heap independently
 (defstruct (pheap (:constructor %make-pheap (key))
                   (:conc-name %pheap-)
                   (:copier nil)
@@ -27,7 +28,7 @@
                (%pheap-head node1) node2)
          node1)))
 
-(declaim (inline pheap-merge-list))
+(declaim (inline %pheap-merge-list1 %pheap-merge-list2 %pheap-merge-list3))
 
 ;; NOTE: Three implementations are available for MERGE-LIST, each of which has
 ;; good points and bad points.
@@ -36,45 +37,45 @@
 ;; Pros: fastest on SBCL, no consing
 ;; Cons: there is a risk of stack exhaustion
 
-;; (defun pheap-merge-list (node order)
-;;   (labels ((recur (node)
-;;              (when node
-;;                (let* ((a node)
-;;                       (b (%pheap-next node)))
-;;                  (if b
-;;                      (let ((next (%pheap-next b)))
-;;                        (setf (%pheap-next b) nil)
-;;                        (let ((a+b (pheap-merge a b order)))
-;;                          (pheap-merge a+b (recur next) order)))
-;;                      a)))))
-;;     (recur node)))
+(defun %pheap-merge-list1 (node order)
+  (labels ((recur (node)
+             (when node
+               (let* ((a node)
+                      (b (%pheap-next node)))
+                 (if b
+                     (let ((next (%pheap-next b)))
+                       (setf (%pheap-next b) nil)
+                       (let ((a+b (pheap-merge a b order)))
+                         (pheap-merge a+b (recur next) order)))
+                     a)))))
+    (recur node)))
 
 ;; Implementation 2, manual stack by list
-;; Pros: safe
+;; Pros: stack safe
 ;; Cons: most consing, 15% slower
 
-;; (defun pheap-merge-list (node order)
-;;   (let (stack)
-;;     (loop
-;;       (unless node (return))
-;;       (let ((a node)
-;;             b)
-;;         (setf node (%pheap-next node)
-;;               (%pheap-next a) nil)
-;;         (when node
-;;           (setf b node
-;;                 node (%pheap-next node)
-;;                 (%pheap-next b) nil))
-;;         (push (pheap-merge a b order) stack)))
-;;     (dolist (part stack)
-;;       (setf node (pheap-merge part node order)))
-;;     node))
+(defun %pheap-merge-list2 (node order)
+  (let (stack)
+    (loop
+      (unless node (return))
+      (let ((a node)
+            b)
+        (setf node (%pheap-next node)
+              (%pheap-next a) nil)
+        (when node
+          (setf b node
+                node (%pheap-next node)
+                (%pheap-next b) nil))
+        (push (pheap-merge a b order) stack)))
+    (dolist (part stack)
+      (setf node (pheap-merge part node order)))
+    node))
 
 ;; Implementation 3, manual stack by PHEAP
-;; Pros: safe, no consing
-;; Cons: a bit trickey (maybe resorting to undefined behaviour), 5% slower
+;; Pros: stack safe, no consing
+;; Cons: a bit trickey, 5% slower
 
-(defun pheap-merge-list (node order)
+(defun %pheap-merge-list3 (node order)
   (let ((stack (load-time-value (sb-mop:class-prototype (find-class 'pheap)))))
     (setf (%pheap-next stack) nil)
     (loop
@@ -111,7 +112,7 @@
 (declaim (inline pheap-disj))
 (defun pheap-disj (node order)
   (declare (pheap node))
-  (pheap-merge-list (%pheap-head node) order))
+  (%pheap-merge-list3 (%pheap-head node) order))
 
 (defmacro pheap-push (key node order)
   `(setf ,node (pheap-conj ,node ,key ,order)))
