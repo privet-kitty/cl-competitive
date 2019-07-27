@@ -1,10 +1,11 @@
 ;;;
-;;; Rolling hash (31-bit)
-;;; Use 62-bit version instead. I leave it just for my reference.
+;;; Rolling hash (32-bit)
+;;; Better to use 62-bit version instead when the efficiency suffices.
 ;;;
 
-(defstruct (rhash (:constructor %make-rhash (modulus cumul powers)))
-  (modulus 1000000007 :type (unsigned-byte 32))
+(defstruct (rhash (:constructor %make-rhash (modulus base cumul powers)))
+  (modulus 4294967291 :type (unsigned-byte 32))
+  (base 2095716802 :type (unsigned-byte 32))
   (cumul nil :type (simple-array (unsigned-byte 32) (*)))
   (powers nil :type (simple-array (unsigned-byte 32) (*))))
 
@@ -36,7 +37,7 @@ KEY := function returning FIXNUM"
               (if (> sum modulus)
                   (- sum modulus)
                   sum))))
-    (%make-rhash modulus cumul powers)))
+    (%make-rhash modulus base cumul powers)))
 
 (declaim (inline rhash-query)
          (ftype (function * (values (unsigned-byte 32) &optional)) rhash-query))
@@ -61,6 +62,24 @@ KEY := function returning FIXNUM"
     (mod (+ hash2
             (* hash1 (aref (rhash-powers rhash) hash2-length)))
          modulus)))
+
+(declaim (ftype (function * (values (unsigned-byte 32) &optional)) rhash-vector-hash)
+         (inline rhash-vector-hash))
+(defun rhash-vector-hash (rhash vector &key (key #'char-code))
+  "Returns the hash code of VECTOR w.r.t. the moduli and bases of RHASH."
+  (declare (vector vector))
+  (let* ((mod (rhash-modulus rhash))
+         (base (rhash-base rhash))
+         (size (length vector))
+         (result 0))
+    (declare ((unsigned-byte 32) result))
+    (dotimes (i size)
+      ;; (2^32-1) * (2^32-1) + (2^32-1) < 2^64
+      (setq result (mod (+ (* base result)
+                           (the (unsigned-byte 32)
+                                (mod (the fixnum (funcall key (aref vector i))) mod)))
+                        mod)))
+    result))
 
 (defun rhash-get-lcp (rhash1 start1 rhash2 start2)
   (declare (optimize (speed 3))

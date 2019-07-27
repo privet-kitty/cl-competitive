@@ -16,6 +16,9 @@
     (signals error (make-rhash "error" 17 :base 19))
     (signals error (make-rhash "error" 17 :base 17))
     (signals error (make-rhash "error" 17 :base 0))
+    (assert (= (rhash-query rhash1 1 5) (rhash-vector-hash rhash1 "sddf")))
+    (assert (/= (rhash-query rhash1 5 9) (rhash-vector-hash rhash1 "dddd")))
+    (assert (zerop (rhash-vector-hash rhash1 "" :key (lambda (x) (+ 1 (char-code x))))))
 
     ;; longest common prefix
     (assert (= 0 (rhash-get-lcp rhash1 0 rhash1 3)))
