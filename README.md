@@ -80,7 +80,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/topological-sort.lisp) topological sort on DAG
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/random-graph.lisp) fast generation of random adjacency matrices
 
-## Geometry
+### Geometry
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull.lisp) 2D convex hull (monotone chain algorithm)
 
 ### String algorithms
@@ -98,7 +98,8 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [with-cache.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-cache.lisp) memoization of function
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dotimes-unroll.lisp) loop unrolling
 
-### Competition and Struggle
+### Competition and struggle
+- [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/integer-pack.lisp) `defstruct`-like macro to use an integer as a bundle of some slots
 - [increasing-stack-size.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/increase-stack-size.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/self-compile.lisp) self-rewriting compilation
