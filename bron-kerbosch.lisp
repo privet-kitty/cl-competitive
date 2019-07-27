@@ -3,6 +3,7 @@
 ;;; Reference: http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf
 ;;;
 
+;; TODO: deal with an ordinary adjacency matrix
 (declaim (inline find-max-clique))
 (defun find-max-clique (neighbors)
   "Returns an unsigned fixnum as the bit-set indicating a maximal clique. Each
