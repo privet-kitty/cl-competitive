@@ -209,7 +209,7 @@ LENGTH2 := length of the second sequence."
   "Returns the length of the longest common prefix of two suffixes which begin
 at START1 and START2."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) start1 start2))
+           ((mod #.most-positive-fixnum) start1 start2))
   (assert (and (= (rhash-mod1 rhash1) (rhash-mod1 rhash2))
                (= (rhash-mod2 rhash1) (rhash-mod2 rhash2))))
   (assert (and (< start1 (length (rhash-cumul1 rhash1)))
@@ -217,19 +217,16 @@ at START1 and START2."
   (let ((max-length (min (- (length (rhash-cumul1 rhash1)) start1 1)
                          (- (length (rhash-cumul1 rhash2)) start2 1))))
     (declare (optimize (safety 0)))
-    (if (= (rhash-query rhash1 start1 (+ start1 max-length))
-           (rhash-query rhash2 start2 (+ start2 max-length)))
-        max-length
-        (labels ((bisect (ok ng)
-                   (declare ((integer 0 #.most-positive-fixnum) ok ng))
-                   (if (<= (- ng ok) 1)
-                       ok
-                       (let ((mid (ash (+ ng ok) -1)))
-                         (if (= (rhash-query rhash1 start1 (+ start1 mid))
-                                (rhash-query rhash2 start2 (+ start2 mid)))
-                             (bisect mid ng)
-                             (bisect ok mid))))))
-          (bisect 0 max-length)))))
+    (labels ((bisect (ok ng)
+               (declare ((integer 0 #.most-positive-fixnum) ok ng))
+               (if (<= (- ng ok) 1)
+                   ok
+                   (let ((mid (ash (+ ng ok) -1)))
+                     (if (= (rhash-query rhash1 start1 (+ start1 mid))
+                            (rhash-query rhash2 start2 (+ start2 mid)))
+                         (bisect mid ng)
+                         (bisect ok mid))))))
+      (bisect 0 (+ 1 max-length)))))
 
 (defun map-prefix-hash (rhash vector function &key (start 0) end)
   "Applies FUNCTION to the hash value of each prefix of VECTOR (in ascending
