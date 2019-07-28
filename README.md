@@ -1,8 +1,15 @@
 # Common Lisp code collection for competitive programming
 [![Build Status](https://travis-ci.com/privet-kitty/cl-competitive.svg?token=Tm5zQHEnGe2GCWmpu5C3&branch=master)](https://travis-ci.com/privet-kitty/cl-competitive)
 
+This code collection is maintained mainly for competitive programming with Common Lisp.
+
 ## License
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
+
+## Style
+Currently I don't use any name spaces (package) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
+
+On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, extensible sequence, `sb-kernel:%vector-raw-bits`, `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
 ## Test environment
 - latest SBCL (x64, linux)
@@ -26,18 +33,18 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/pairing-heap.lisp) meldable heap (pairing heap)
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
-- [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key (so called Cartesian Tree)
+- [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
 
 ### General algorithms
+- [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of lower\_bound, upper\_bound
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binsort.lisp) bin sort; counting sort
-- [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) lower\_bound, upper\_bound
-- [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversion number of vector by merge sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-permutations.lisp) permutation and combination
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mo.lisp) Mo's algorithm
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power.lisp) exponentiation on arbitrary monoid
 - [2dcumul.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2dcumul.lisp) 2D cumulative sum
 - [make-inverse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/make-inverse-table.lisp) inverse lookup table of vector
 - [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/adjacent-duplicates.lisp) deletion of adjacent duplicates; run-length encoding
+- [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversion number of vector by merge sort
 
 ### Arithmetic
 - [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination
@@ -89,17 +96,18 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/trie.lisp) Trie
 
 ### I/O
-- [buffered-read-line.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/buffered-read-line.lisp), [read-line-into.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-line-into.lisp) `read-line` into a given string
+- [read-line-into.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-line-into.lisp) `read-line` into a given string
+- [buffered-read-line.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/buffered-read-line.lisp) `read-line` into a recycled string
 - [read-fixnum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-fixnum.lisp) faster `read` for fixnum
 - [read-bignum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-bignum.lisp) faster `read` for bignum
 - [with-buffered-stdout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-buffered-stdout.lisp) buffering macro for `*standard-output*`
 
 ### Other utilities
+- [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
 - [with-cache.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-cache.lisp) memoization of function
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dotimes-unroll.lisp) loop unrolling
 
-### Competition and struggle
-- [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
+### Weird things
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/integer-pack.lisp) `defstruct`-like macro to use an integer as a bundle of some slots
 - [increasing-stack-size.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/increase-stack-size.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/self-compile.lisp) self-rewriting compilation

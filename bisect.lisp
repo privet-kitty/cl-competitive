@@ -3,11 +3,11 @@
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogy of lower_bound of C++ or bisect_left of Python: Returns the smallest
+Analogue of lower_bound of C++ or bisect_left of Python: Returns the smallest
 index (or input) i that fulfills TARGET[i] >= VALUE, where '>=' is the
-complement of ORDER. In other words, this function returns the leftmost
-index at which VALUE can be inserted with keeping the order. Therefore, TARGET
-must be monotonically non-decreasing with respect to ORDER.
+complement of ORDER. In other words, this function returns the leftmost index at
+which VALUE can be inserted with keeping the order. Therefore, TARGET must be
+monotonically non-decreasing with respect to ORDER.
 
 This function returns END if VALUE exceeds TARGET[END-1]. Note that the range
 [START, END) is half-open. END must be explicitly specified if TARGET is
@@ -47,11 +47,10 @@ function. KEY is applied to each element of TARGET before comparison."
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogy of upper_bound of C++ or bisect_right of Python: Returns the smallest
+Analogue of upper_bound of C++ or bisect_right of Python: Returns the smallest
 index (or input) i that fulfills TARGET[i] > VALUE. In other words, this
 function returns the rightmost index at which VALUE can be inserted with keeping
-the order. TARGET must be monotonically non-decreasing with respect to
-ORDER.
+the order. TARGET must be monotonically non-decreasing with respect to ORDER.
 
 This function returns END if VALUE >= TARGET[END-1]. Note that the range [START,
 END) is half-open. END must be explicitly specified if TARGET is function. KEY

@@ -1,11 +1,12 @@
 ;; DEFINE-INTEGER-PACK and DEFINE-CONS-PACK are so to say poor man's variants of
 ;; DEFSTRUCT. Both "structures" can only have slots of fixed unsigned
 ;; bytes. DEFINE-INTEGER-PACK handles the concatenated slots as UNSIGNED-BYTE
-;; and DEFINE-CONS-PACK does as (CONS (UNSIGNED-BYTE 62) (UNSIGNED-BYTE 62)).
+;; and DEFINE-CONS-PACK handles them as (CONS (UNSIGNED-BYTE 62) (UNSIGNED-BYTE
+;; 62)).
 
 ;; Example:
-;; The following form defines the type NODE as (UNSIGNED-BYTE 8):
-;; (define-integer-pack node (slot1 3) (slot2 4) (slot3 1))
+;; The following form defines the type NODE as (UNSIGNED-BYTE 9):
+;; (define-integer-pack node (slot1 3) (slot2 5) (slot3 1))
 ;; This macro in addition defines relevant utilities: NODE-SLOT1, NODE-SLOT2,
 ;; NODE-SLOT3, setters and getters, PACK-NODE, the constructor, and
 ;; WITH-UNPACKING-NODE, the destructuring-bind-style macro.
@@ -105,7 +106,7 @@
            (slots (append car-slots cdr-slots)))
       (assert (= (+ (length car-slots) (length cdr-slots))
                  (length slot-descriptions))
-              () "Size restriction iviolated: each cell <= 62 bit, total size <= 124 bit")
+              () "Size restriction violated: each cell <= 62 bit, total size <= 124 bit")
       (unless (> (length cdr-slots) 0)
         (error "Whole size is too small. Use DEFINE-INTEGER-PACK instead."))
       (let ((car-width (+ (second (first car-revslots))
