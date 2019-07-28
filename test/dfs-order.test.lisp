@@ -1,0 +1,17 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../dfs-order.lisp"))
+
+(use-package :test-util)
+
+(with-test (:name make-dfs-order)
+  (multiple-value-bind (in out)
+      (make-dfs-order #((1.1 2.1) (3.1) (4.1) () ()) :key #'round)
+    (assert (equalp in #(0 1 5 2 6)))
+    (assert (equalp out #(9 4 8 3 7))))
+  (multiple-value-bind (in out)
+      (make-dfs-order #((1 2) (0 3) (0 4) (1) (2)) :root 1)
+    (assert (equalp in #(1 0 2 7 3)))
+    (assert (equalp out #(6 9 5 8 4))))
+  (assert (equalp '(#() #())
+                  (multiple-value-list (make-dfs-order #())))))

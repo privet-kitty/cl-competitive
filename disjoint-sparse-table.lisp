@@ -42,8 +42,8 @@
 
 (declaim (inline dst-query))
 (defun dst-query (table binop left right)
-  "Queries the interval [LEFT, RIGHT). Note that LEFT = RIGHT is not allowed as
-disjoint sparse table deals with a semigroup."
+  "Queries the interval [LEFT, RIGHT). Note that a null interval [x, x) is not
+allowed as disjoint sparse table deals with a semigroup."
   (declare ((integer 0 #.most-positive-fixnum) left right)
            ((simple-array * (* *)) table))
   (assert (< left right))
