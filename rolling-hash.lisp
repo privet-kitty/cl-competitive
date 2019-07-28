@@ -1,6 +1,6 @@
 ;;;
 ;;; Rolling hash (32-bit)
-;;; Better to use 62-bit version instead when the efficiency suffices.
+;;; Better to use 62-bit version when the efficiency suffices.
 ;;;
 
 (defstruct (rhash (:constructor %make-rhash (modulus base cumul powers)))

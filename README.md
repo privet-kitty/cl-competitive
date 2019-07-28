@@ -53,7 +53,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/divisor.lisp) enumeration of divisors
 - [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/enum-quotients.lisp) enumeration of truncated quotients
 - [f2.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/f2.lisp) linear algebra on GF(2)
-- [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/walsh-hadamard.lisp) Fast Walsh-Hadamard Transform
+- [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/walsh-hadamard.lisp) fast Walsh-Hadamard transform
 
 ### Real and complex
 - [fft.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/fft.lisp) complex FFT (radix-2)
