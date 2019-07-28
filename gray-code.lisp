@@ -9,5 +9,5 @@
   (do ((pos (- (integer-length x) 2) (- pos 1)))
       ((< pos 0) x)
     (setf (ldb (byte 1 pos) x)
-                 (logxor (ldb (byte 1 pos) x)
-                         (ldb (byte 1 (+ pos 1)) x)))))
+          (logxor (ldb (byte 1 pos) x)
+                  (ldb (byte 1 (+ pos 1)) x)))))

@@ -8,6 +8,9 @@ on Euler tour; OUT[i] is the second index.
 KEY is called to each node of adjacency list and must return the index number of
 the vertex.
 
+Note that this function doesn't check if TREE is really a tree. The behaviour
+for a non-tree is undefined.
+
 TREE := vector of adjacency lists"
   (declare (vector tree)
            (function key)
