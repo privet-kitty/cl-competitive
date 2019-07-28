@@ -1,3 +1,7 @@
+;;;
+;;; Bucket sort and counting sort
+;;;
+
 ;; TODO: enable to deal with any ordered sets.
 
 (declaim (inline map-binsort))

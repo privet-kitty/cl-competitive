@@ -15,7 +15,7 @@
   "Returns a topologically sorted array of all the vertex in GRAPH. This
 function signals CYCLE-DETECTED-ERROR when it detects a cycle.
 
-GRAPH := adjacency list."
+GRAPH := vector of adjacency lists."
   (declare ((array list (*)) graph))
   (let* ((n (length graph))
          (tmp-marked (make-array n :element-type 'bit :initial-element 0))

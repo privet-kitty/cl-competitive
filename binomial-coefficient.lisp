@@ -2,7 +2,7 @@
 ;;; Compute binomial coefficient by direct bignum arithmetic
 ;;;
 
-;; from alexandria
+;; dead copy of alexandria
 (declaim (inline %multiply-range))
 (defun %multiply-range (i j)
   (labels ((bisect (j k)

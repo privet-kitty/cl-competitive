@@ -31,8 +31,7 @@
       (setq result (+ mid-result (* result (expt 10 index-mod18))))
       (if minusp (- result) result))))
 
-
-;; test
+;; I leave test code as there's no test for read-bignum.
 ;; (dotimes (i 1000)
 ;;   (let* ((num (* (if (zerop (random 2)) -1 1)
 ;;                  (random (expt 10 100))))
