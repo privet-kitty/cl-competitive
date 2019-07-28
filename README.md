@@ -7,7 +7,7 @@ This code collection is maintained mainly for competitive programming with Commo
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
 
 ## Style
-Currently I don't use any name spaces (package) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
+Currently I don't use any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
 
 On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, extensible sequence, `sb-kernel:%vector-raw-bits`, `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
@@ -36,7 +36,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
 
 ### General algorithms
-- [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of lower\_bound, upper\_bound
+- [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binsort.lisp) bin sort; counting sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-permutations.lisp) permutation and combination
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mo.lisp) Mo's algorithm
@@ -93,7 +93,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 ### String algorithms
 - [rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/rolling-hash.lisp) 32-bit rolling hash
 - [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/rolling-hash62.lisp) 62-bit rolling hash
-- [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/trie.lisp) Trie
+- [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/trie.lisp) trie
 
 ### I/O
 - [read-line-into.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-line-into.lisp) `read-line` into a given string
@@ -108,6 +108,6 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dotimes-unroll.lisp) loop unrolling
 
 ### Weird things
-- [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/integer-pack.lisp) `defstruct`-like macro to use an integer as a bundle of some slots
+- [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a bundle of some slots
 - [increasing-stack-size.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/increase-stack-size.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/self-compile.lisp) self-rewriting compilation
