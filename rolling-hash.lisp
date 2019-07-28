@@ -1,6 +1,7 @@
 ;;;
 ;;; Rolling hash (32-bit)
-;;; Better to use 62-bit version when the efficiency suffices.
+;;; NOTE: 32-bit doesn't suffice especially when the strong collision resistance
+;;; is required. Better to use 62-bit version instead.
 ;;;
 
 (defstruct (rhash (:constructor %make-rhash (modulus base cumul powers)))
@@ -100,4 +101,3 @@ KEY := function returning FIXNUM"
                          (bisect mid ng)
                          (bisect ok mid))))))
       (bisect 0 (+ 1 max-length)))))
-

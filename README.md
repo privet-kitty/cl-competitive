@@ -7,7 +7,7 @@ This code collection is maintained mainly for competitive programming with Commo
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
 
 ## Style
-Currently I don't use any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
+Currently I don't introduce any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
 
 On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, extensible sequence, `sb-kernel:%vector-raw-bits`, `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
@@ -34,6 +34,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
+- [disjoint-sparse-table](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-sparse-table.lisp) disjoint sparse table
 
 ### General algorithms
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
