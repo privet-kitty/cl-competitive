@@ -192,14 +192,12 @@ LENGTH2 := length of the second sequence."
          (mod1 (rhash-mod1 rhash))
          (mod2 (rhash-mod2 rhash))
          (res-lower (mod (+ hash2-lower
-                            (mod (* hash1-lower
-                                    (aref (rhash-powers1 rhash) length2))
-                                 mod1))
+                            (* hash1-lower
+                               (aref (rhash-powers1 rhash) length2)))
                          mod1))
          (res-upper (mod (+ hash2-upper
-                            (mod (* hash1-upper
-                                    (aref (rhash-powers2 rhash) length2))
-                                 mod2))
+                            (* hash1-upper
+                               (aref (rhash-powers2 rhash) length2)))
                          mod2)))
     (declare ((unsigned-byte 31) res-lower res-upper))
     (dpb res-upper (byte 31 31) res-lower)))
