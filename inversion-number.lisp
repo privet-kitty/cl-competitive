@@ -2,25 +2,6 @@
 ;;; Calculate inversion number by merge sort
 ;;;
 
-;; Introduce INIT-VECTOR for better type-propagation on SBCL
-#+sbcl
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown init-vector (vector)
-      vector (sb-c:flushable)
-    :overwrite-fndb-silently t)
-
-  (sb-c:defoptimizer (init-vector sb-c:derive-type) ((template))
-    (let* ((template-type (sb-c::lvar-type template))
-           (spec `(,(if (sb-kernel:array-type-complexp template-type) 'array 'simple-array)
-                   ,(sb-kernel:type-specifier (sb-kernel:array-type-element-type template-type))
-                   (*))))
-      (sb-c::careful-specifier-type spec))))
-
-(defun init-vector (template)
-  "Returns a newly initialized vector of the same type as TEMPLATE."
-  (declare (optimize (speed 3)))
-  (make-array (length template) :element-type (array-element-type template)))
-
 (declaim (inline %merge-count))
 (defun %merge-count (l mid r source-vec dest-vec predicate)
   (declare ((integer 0 #.array-total-size-limit) l mid r)
@@ -58,18 +39,6 @@
                                    (the ,fixnum+ ,f2)))
 	           (cdr form)))))
 
-;; (declaim (inline %calc-by-bubble-sort!))
-;; (defun %calc-by-bubble-sort! (vec predicate l r)
-;;   (declare (function predicate)
-;;            ((integer 0 #.array-total-size-limit) l r))
-;;   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
-;;         for end from r above l
-;;         do (loop for i from l below (- end 1)
-;;                  do (when (funcall predicate (aref vec (+ i 1)) (aref vec i))
-;;                       (rotatef (aref vec i) (aref vec (+ i 1)))
-;;                       (incf inv-count)))
-;;         finally (return inv-count)))
-
 (declaim (inline %calc-by-insertion-sort!))
 (defun %calc-by-insertion-sort! (vec predicate l r)
   (declare (function predicate)
@@ -82,6 +51,8 @@
                     (incf inv-count))
         finally (return inv-count)))
 
+;; NOTE: It is slow on SBCL version earlier than 1.5.0 as constant-folding of
+;; ARRAY-ELEMENT-TYPE doesn't work. Use array-element-type.lisp if necessary.
 (declaim (inline calc-inversion-number!))
 (defun calc-inversion-number! (vector predicate &key (start 0) end)
   "Calculates the inversion number of VECTOR w.r.t. the strict order
@@ -91,7 +62,7 @@ PREDICATE. This function sorts VECTOR as a side effect."
   (let ((end (or end (length vector))))
     (declare ((integer 0 #.array-total-size-limit) start end))
     (assert (<= start end))
-    (let ((buffer (init-vector vector)))
+    (let ((buffer (make-array end :element-type (array-element-type vector))))
       (labels
           ((recurse (l r merge-to-vec1-p)
              (declare (optimize (safety 0))
@@ -115,14 +86,3 @@ PREDICATE. This function sorts VECTOR as a side effect."
                                  (%merge-count l mid r buffer vector predicate)
                                  (%merge-count l mid r vector buffer predicate)))))))))
         (recurse start end t)))))
-
-;; (defun bench ()
-;;   (let* ((seed (seed-random-state 0))
-;;          (vector (make-array 1000000 :element-type 'fixnum)))
-;;     (declare (optimize (speed 3))
-;;              ((simple-array fixnum (1000000)) vector))
-;;     (gc :full t)
-;;     (time (loop repeat 20
-;;                 do (dotimes (i 1000000)
-;;                      (setf (aref vector i) (random #.(expt 2 32) seed)))
-;;                 sum (calc-inversion-number! vector #'>) of-type fixnum))))
