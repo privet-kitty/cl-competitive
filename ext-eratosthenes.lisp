@@ -1,9 +1,9 @@
 ;;;
-;;; Extended Eratosthenes' sieve (osa_k's method)
+;;; Extended Eratosthenes' sieve (aka osa_k's method in Japanese community)
 ;;;
 ;;; build: O(nloglogn)
 ;;; With this sieve each prime factorization can be executed in O(log(n)), which
-;;; is faster than the well known one in O(N/log(n) + log(n)).
+;;; is faster than the naive known one in O(N/log(n) + log(n)).
 ;;; Reference: http://www.osak.jp/diary/diary_201310.html#20131017
 ;;;
 
