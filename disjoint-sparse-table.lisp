@@ -5,7 +5,7 @@
 ;;; Reference:
 ;;; https://discuss.codechef.com/questions/117696/tutorial-disjoint-sparse-table
 ;;; http://noshi91.hatenablog.com/entry/2018/05/08/183946 (Japanese)
-;;; http://drken1215.hatenablog.com/entry/2018/09/08/162600
+;;; http://drken1215.hatenablog.com/entry/2018/09/08/162600 (Japanese)
 
 (declaim (inline make-disjoint-sparse-table))
 (defun make-disjoint-sparse-table (vector binop)

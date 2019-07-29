@@ -120,7 +120,8 @@ Returns NIL if it is infeasible."
       (ceiling (- x) alpha)))
 
 (defun solve-bezout (a b c &optional min max)
-  "Returns an integer solution of a*x+b*y = c, if it exists.
+  "Returns an integer solution of a*x+b*y = c if it exists, otherwise
+returns (VALUES NIL NIL).
 
 If MIN is specified and MAX is null, the returned x is the smallest integer
 equal or larger than MIN. If MAX is specified and MIN is null, x is the largest
@@ -228,15 +229,15 @@ returns NIL otherwise. This function destructively modifies MATRIX."
             (dotimes (i n)
               (unless (or (= i target) (zerop (aref matrix i target)))
                 (let ((factor (aref matrix i target)))
-                  (loop for j from 0 below n
-                        do (setf (aref matrix i j)
-                                 (mod (- (aref matrix i j)
-                                         (mod (* (aref matrix target j) factor) modulus))
-                                      modulus))
-                           (setf (aref result i j)
-                                 (mod (- (aref result i j)
-                                         (mod (* (aref result target j) factor) modulus))
-                                      modulus)))))))))
+                  (dotimes (j n)
+                    (setf (aref matrix i j)
+                          (mod (- (aref matrix i j)
+                                  (mod (* (aref matrix target j) factor) modulus))
+                               modulus))
+                    (setf (aref result i j)
+                          (mod (- (aref result i j)
+                                  (mod (* (aref result target j) factor) modulus))
+                               modulus)))))))))
       result)))
 
 (declaim (inline mod-solve-linear-system))

@@ -1,7 +1,7 @@
 # Common Lisp code collection for competitive programming
 [![Build Status](https://travis-ci.com/privet-kitty/cl-competitive.svg?token=Tm5zQHEnGe2GCWmpu5C3&branch=master)](https://travis-ci.com/privet-kitty/cl-competitive)
 
-This code collection is maintained mainly for competitive programming with Common Lisp.
+This code collection is maintained mainly for competitive programming, and partly for understanding algorithms.
 
 ## License
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
@@ -9,7 +9,7 @@ The greater part of this library is distributed as public domain, or licensed un
 ## Style
 Currently I don't introduce any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
 
-On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, extensible sequence, `sb-kernel:%vector-raw-bits`, `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
+On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent streams, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
 ## Test environment
 - latest SBCL (x64, linux)
@@ -21,16 +21,16 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 ## Contents
 
 ### General data structures
-- [generalized-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/generalized-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
-- [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binary-indexed-tree.lisp) binary indexed tree (specialized for ordinary `+`)
-- [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2d-bit.lisp) 2D binary indexed tree
 - [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/queue.lisp) queue by singly-linked list
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/deque.lisp) double-ended queue by ring buffer
-- [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-set.lisp) disjoint set by Union-Find algorithm
-- [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/persistent-disjoint-set.lisp) partially persistent disjoint set by Union-Find algorithm
 - [generalized-heap](https://github.com/privet-kitty/cl-competitive/blob/master/generalized-heap.lisp) binary heap for static order function
 - [heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/heap.lisp) binary heap for dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/pairing-heap.lisp) meldable heap (pairing heap)
+- [generalized-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/generalized-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
+- [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binary-indexed-tree.lisp) binary indexed tree (specialized for ordinary `+`)
+- [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2d-bit.lisp) 2D binary indexed tree
+- [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-set.lisp) disjoint set by Union-Find algorithm
+- [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/persistent-disjoint-set.lisp) partially persistent disjoint set by Union-Find algorithm
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
