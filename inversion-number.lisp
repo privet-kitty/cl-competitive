@@ -1,5 +1,5 @@
 ;;;
-;;; Calculate inversion number by merge sort
+;;; Compute inversion number by merge sort
 ;;;
 
 (declaim (inline %merge-count))
@@ -51,8 +51,9 @@
                     (incf inv-count))
         finally (return inv-count)))
 
-;; NOTE: It is slow on SBCL version earlier than 1.5.0 as constant-folding of
-;; ARRAY-ELEMENT-TYPE doesn't work. Use array-element-type.lisp if necessary.
+;; NOTE: This function is slow on SBCL version earlier than 1.5.0 as
+;; constant-folding of ARRAY-ELEMENT-TYPE doesn't work. Use
+;; array-element-type.lisp if necessary.
 (declaim (inline calc-inversion-number!))
 (defun calc-inversion-number! (vector predicate &key (start 0) end)
   "Calculates the inversion number of VECTOR w.r.t. the strict order

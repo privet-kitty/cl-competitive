@@ -43,8 +43,7 @@
   "Passes IN-STRING to *STANDARD-INPUT*, executes FUNC, and returns true if the
 string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
   (labels ((ensure-last-lf (s)
-             (if (and (> (length s) 0)
-                      (eql (char s (- (length s) 1)) #\Linefeed))
+             (if (eql (uiop:last-char s) #\Linefeed)
                  s
                  (uiop:strcat s uiop:+lf+))))
     (equal (ensure-last-lf out-string)

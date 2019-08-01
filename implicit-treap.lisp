@@ -8,19 +8,22 @@
 ;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
 
-(defconstant +op-identity+ most-positive-fixnum)
-
 (declaim (inline op))
 (defun op (a b)
+  "Is a binary operator on a monoid."
   (min a b))
 
-(defconstant +updater-identity+ 0)
+(defconstant +op-identity+ most-positive-fixnum
+  "identity element w.r.t. OP")
 
 (declaim (inline updater-op))
 (defun updater-op (a b)
   "Is the operator to compute and update LAZY value. A is the current LAZY value
 and B is operand."
   (+ a b))
+
+(defconstant +updater-identity+ 0
+  "identity element w.r.t. UPDATER-OP")
 
 (declaim (inline modifier-op))
 (defun modifier-op (acc x size)
@@ -271,7 +274,7 @@ each time."
 
 (declaim (inline make-itreap))
 (defun make-itreap (size &key initial-contents)
-  "Makes a treap of SIZE in O(SIZE) time. The values are filled with the
+  "Makes a treap of SIZE in O(SIZE) time. Its values are filled with the
 identity element unless INITIAL-CONTENTS are supplied."
   (declare ((or null vector) initial-contents))
   (labels ((build (l r)
@@ -316,6 +319,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (declaim (inline itreap-ref))
 (defun itreap-ref (itreap index)
+  "getter"
   (declare ((integer 0 #.most-positive-fixnum) index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
@@ -334,6 +338,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (declaim (inline (setf itreap-ref)))
 (defun (setf itreap-ref) (new-value itreap index)
+  "setter"
   (declare ((integer 0 #.most-positive-fixnum) index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
@@ -400,6 +405,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (declaim (inline itreap-reverse))
 (defun itreap-reverse (itreap l r)
+  "Destructively reverses the order of the interval [L, R) in O(log(n)) time."
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
