@@ -65,7 +65,7 @@ PREDICATE. This function sorts VECTOR as a side effect."
     (assert (<= start end))
     (let ((buffer (make-array end :element-type (array-element-type vector))))
       (labels
-          ((recurse (l r merge-to-vec1-p)
+          ((recur (l r merge-to-vec1-p)
              (declare (optimize (safety 0))
                       ((integer 0 #.array-total-size-limit) l r))
              (cond ((= l r) 0)
@@ -77,13 +77,13 @@ PREDICATE. This function sorts VECTOR as a side effect."
                    ;; by default, however, because that makes it hard to
                    ;; change the code to fit some special settings.
                    ;; ((and (<= (- r l) 24) merge-to-vec1-p)
-                   ;;  (%calc-by-insertion-sort! vec1 predicate l r))
+                   ;;  (%calc-by-insertion-sort! vector predicate l r))
                    (t
                     (let ((mid (floor (+ l r) 2)))
                       (with-fixnum+
-                          (+ (recurse l mid (not merge-to-vec1-p))
-                             (recurse mid r (not merge-to-vec1-p))
+                          (+ (recur l mid (not merge-to-vec1-p))
+                             (recur mid r (not merge-to-vec1-p))
                              (if merge-to-vec1-p
                                  (%merge-count l mid r buffer vector predicate)
                                  (%merge-count l mid r vector buffer predicate)))))))))
-        (recurse start end t)))))
+        (recur start end t)))))
