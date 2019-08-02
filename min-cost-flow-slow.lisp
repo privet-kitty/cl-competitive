@@ -1,14 +1,10 @@
 ;;;
-;;; Minimum cost flow
+;;; Minimum cost flow (O(FEV))
 ;;;
-
-;; This is the naivest implementation of minimum cost flow by Ford-Fulkerson and
-;; Bellman-Ford, whose time complexity is O(FEV). I leave it just for my
-;; reference. Please use the Dijkstra version instead.
 
 (setf *print-circle* t)
 
-(defconstant +inf-dist+ most-positive-fixnum)
+(defconstant +inf-distance+ most-positive-fixnum)
 
 (defstruct (edge (:constructor %make-edge))
   (to nil :type fixnum)
@@ -26,7 +22,18 @@ GRAPH := vector of list of all the edges that goes from the vertex"
     (push dep (aref graph from-idx))
     (push ret (aref graph to-idx))))
 
-(defun min-cost-flow (src-idx dest-idx flow graph)
+(define-condition not-enough-capacity-error (simple-error)
+  ((graph :initarg :graph :reader not-enough-capacity-error-graph)
+   (flow :initarg :flow :reader not-enough-capacity-error-flow))
+  (:report
+   (lambda (c s)
+     (format s "Cannot send ~A units of flow on graph ~A due to not enough capacity."
+             (not-enough-capacity-error-flow c)
+             (not-enough-capacity-error-graph c)))))
+
+(defun min-cost-flow! (src-idx dest-idx flow graph)
+  "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
+GRAPH. Destructively modifies GRAPH."
   (declare (fixnum flow)
            ((simple-array list (*)) graph))
   (let* ((size (length graph))
@@ -36,34 +43,34 @@ GRAPH := vector of list of all the edges that goes from the vertex"
          (res 0))
     (declare (fixnum res))
     (loop while (> flow 0)
-          for update = t
-          do (fill dist +inf-dist+)
+          for updated = t
+          do (fill dist +inf-distance+)
              (setf (aref dist src-idx) 0)
-             (loop while update
-                   do (setf update nil)
-                      (loop for v below size
-                            unless (= (aref dist v) +inf-dist+)
-                            do (dolist (edge (aref graph v))
-                                 (let ((cost-sum (+ (aref dist v) (edge-cost edge))))
-                                   (when (and (> (edge-capacity edge) 0)
-                                              (> (aref dist (edge-to edge)) cost-sum))
-                                     (setf (aref dist (edge-to edge)) cost-sum
-                                           (aref prev-vertices (edge-to edge)) v
-                                           (aref prev-edges (edge-to edge)) edge
-                                           update t))))))
-             (if (= (aref dist dest-idx) +inf-dist+)
-                 (error "Cannot flows ~A units due to not enough capacity." flow)
-                 (let ((max-flow flow))
-                   (declare (fixnum max-flow))
-                   (do ((v dest-idx (aref prev-vertices v)))
-                       ((= v src-idx))
-                     (setf max-flow (min max-flow (edge-capacity (aref prev-edges v)))))
-                   (decf flow max-flow)
-                   (incf res (the fixnum (* max-flow (aref dist dest-idx))))
-                   (do ((v dest-idx (aref prev-vertices v)))
-                       ((= v src-idx))
-                     (decf (edge-capacity (aref prev-edges v)) max-flow)
-                     (incf (edge-capacity (edge-reversed (aref prev-edges v))) max-flow)))))
+             (loop while updated
+                   do (setf updated nil)
+                      (dotimes (v size)
+                        (unless (= (aref dist v) +inf-distance+)
+                          (dolist (edge (aref graph v))
+                            (let ((cost-sum (+ (aref dist v) (edge-cost edge))))
+                              (when (and (> (edge-capacity edge) 0)
+                                         (> (aref dist (edge-to edge)) cost-sum))
+                                (setf (aref dist (edge-to edge)) cost-sum
+                                      (aref prev-vertices (edge-to edge)) v
+                                      (aref prev-edges (edge-to edge)) edge
+                                      updated t)))))))
+             (when (= (aref dist dest-idx) +inf-distance+)
+               (error 'not-enough-capacity-error :flow flow :graph graph))
+             (let ((max-flow flow))
+               (declare (fixnum max-flow))
+               (do ((v dest-idx (aref prev-vertices v)))
+                   ((= v src-idx))
+                 (setf max-flow (min max-flow (edge-capacity (aref prev-edges v)))))
+               (decf flow max-flow)
+               (incf res (the fixnum (* max-flow (aref dist dest-idx))))
+               (do ((v dest-idx (aref prev-vertices v)))
+                   ((= v src-idx))
+                 (decf (edge-capacity (aref prev-edges v)) max-flow)
+                 (incf (edge-capacity (edge-reversed (aref prev-edges v))) max-flow))))
     res))
 
 ;; For test
@@ -76,4 +83,4 @@ GRAPH := vector of list of all the edges that goes from the vertex"
   (push-edge 3 2 3 3 *graph*)
   (push-edge 3 4 8 6 *graph*)
   (push-edge 2 4 5 2 *graph*)
-  (assert (= 80 (min-cost-flow 0 4 9 *graph*))))
+  (assert (= 80 (min-cost-flow! 0 4 9 *graph*))))
