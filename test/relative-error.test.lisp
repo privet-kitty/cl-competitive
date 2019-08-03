@@ -1,0 +1,17 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../relative-error.lisp"))
+
+(use-package :test-util)
+
+(with-test (:name relative-error)
+  (assert (relative-error<= 10000000000d0 10000000001d0 1d-9))
+  (assert (relative-error<= 10000000001d0 10000000000d0 1d-9))
+  (assert (relative-error<= 10000000000d0 10000000001d0 1f-9))
+  (assert (relative-error<= 10000000001d0 10000000000d0 1f-9))
+  (assert (not (relative-error<= 1d-30 1d-25 1d-9)))
+  (assert (not (relative-error<= 1d-25 1d-30 1d-9)))
+  (assert (not (relative-error<= 0 1d-30 1d-9)))
+  (assert (not (relative-error<= 1d-30 0 1d-9)))
+  (assert (error<= 1d-30 1d-25 1d-9))
+  (assert (error<= 1d-25 1d-30 1d-9)))
