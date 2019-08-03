@@ -23,10 +23,12 @@
     (assert (= 5 (dst-query table #'* 4 5))))
   (assert (equalp #2a() (make-disjoint-sparse-table #() #'gcd)))
 
-  (let* ((seq #(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20))
+  (let* ((state (sb-ext:seed-random-state 0))
+         (n 30)
+         (seq (apply #'vector (loop repeat n collect (random 1000))))
          (table (make-disjoint-sparse-table seq #'+)))
-    (dotimes (l 20)
-      (loop for r from (+ l 1) to 20
+    (dotimes (l n)
+      (loop for r from (+ l 1) to n
 	    do (assert (= (loop for i from l below r sum (aref seq i))
                           (dst-query table #'+ l r)))))))
 
