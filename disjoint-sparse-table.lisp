@@ -7,8 +7,14 @@
 ;;; http://noshi91.hatenablog.com/entry/2018/05/08/183946 (Japanese)
 ;;; http://drken1215.hatenablog.com/entry/2018/09/08/162600 (Japanese)
 
+;; NOTE: This constructor is slow on SBCL version earlier than 1.5.6 as the type
+;; propagation of MAKE-ARRAY doesn't work. The following files are required to
+;; enable the optimization.
+;; version < 1.5.0: array-element-type.lisp, make-array-header.lisp
+;; version < 1.5.6: make-array-header.lisp
 (declaim (inline make-disjoint-sparse-table))
-(defun make-disjoint-sparse-table (vector binop)
+(defun make-disjoint-sparse-table (vector op)
+  "BINOP := binary operator (comprising a semigroup)"
   (let* ((n (length vector))
          (height (integer-length (- n 1)))
          (table (make-array (list height n) :element-type (array-element-type vector))))
