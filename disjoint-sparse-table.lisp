@@ -16,7 +16,7 @@
       (setf (aref table 0 j) (aref vector j)))
     (do ((i 1 (+ i 1)))
         ((>= i height))
-      (let* ((width/2 (* i 2))
+      (let* ((width/2 (ash 1 i))
              (width (* width/2 2)))
         (do ((j 0 (+ j width)))
             ((>= j n))
