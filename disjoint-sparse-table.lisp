@@ -13,7 +13,7 @@
 ;; version < 1.5.0: array-element-type.lisp, make-array-header.lisp
 ;; version < 1.5.6: make-array-header.lisp
 (declaim (inline make-disjoint-sparse-table))
-(defun make-disjoint-sparse-table (vector op)
+(defun make-disjoint-sparse-table (vector binop)
   "BINOP := binary operator (comprising a semigroup)"
   (let* ((n (length vector))
          (height (integer-length (- n 1)))
