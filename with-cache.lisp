@@ -24,9 +24,9 @@
 ;;
 ;; If you want to ignore some arguments, you can use `*' in dimensions:
 ;; (with-cache (:array (10 10 * 10) :initial-element -1)
-;;   (defun foo (a b c d) ...)) ; => C is ignored when querying and storing cache
+;;   (defun foo (a b c d) ...)) ; => C is ignored when querying or storing cache
 ;;
-;; Possible definition forms in WITH-CACHE are DEFUN, LABELS, FLET, and
+;; Available definition forms in WITH-CACHE are DEFUN, LABELS, FLET, and
 ;; SB-INT:NAMED-LET.
 ;;
 ;; You can debug the memoized function by :DEBUG option:

@@ -1,15 +1,18 @@
-(defconstant +op-identity+ 0)
-
 (declaim (inline op))
 (defun op (x y)
+  "Is the operator comprising a monoid"
   (min x y))
 
-(defconstant +updater-identity+ 0)
+(defconstant +op-identity+ 0
+  "identity element w.r.t. OP")
 
 (declaim (inline updater-op))
 (defun updater-op (a b)
   "Is the operator to compute and update LAZY value."
   (+ a b))
+
+(defconstant +updater-identity+ 0
+  "identity element w.r.t. UPDATER-OP")
 
 (declaim (inline modifier-op))
 (defun modifier-op (a b size)

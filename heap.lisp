@@ -1,5 +1,5 @@
 ;;;
-;;; This is a slow implementation of binary heap. Please use generalized-heap
+;;; This is a slow implementation of binary heap. Please use abstract-heap
 ;;; instead. I leave it just for my reference.
 ;;;
 

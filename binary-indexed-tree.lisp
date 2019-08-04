@@ -1,6 +1,6 @@
 ;;;
 ;;; This is an implementation of binary indexed tree, specialized for the
-;;; ordinary `+' operation. You had better to use the generalized-bit instead. I
+;;; ordinary `+' operation. You had better to use the abstract-bit instead. I
 ;;; leave it just for my reference.
 ;;;
 
