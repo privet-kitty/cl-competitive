@@ -23,10 +23,10 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 ### General data structures
 - [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/queue.lisp) queue by singly-linked list
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/deque.lisp) double-ended queue by ring buffer
-- [generalized-heap](https://github.com/privet-kitty/cl-competitive/blob/master/generalized-heap.lisp) binary heap for static order function
+- [abstract-heap](https://github.com/privet-kitty/cl-competitive/blob/master/abstract-heap.lisp) binary heap for static order function
 - [heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/heap.lisp) binary heap for dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/pairing-heap.lisp) meldable heap (pairing heap)
-- [generalized-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/generalized-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
+- [abstract-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/abstract-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
 - [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binary-indexed-tree.lisp) binary indexed tree (specialized for ordinary `+`)
 - [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2d-bit.lisp) 2D binary indexed tree
 - [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-set.lisp) disjoint set by Union-Find algorithm

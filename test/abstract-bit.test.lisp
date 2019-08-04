@@ -1,6 +1,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../generalized-bit.lisp"))
+  (load "../abstract-bit.lisp"))
 
 (use-package :test-util)
 

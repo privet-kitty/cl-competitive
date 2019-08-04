@@ -18,6 +18,10 @@
              (heap-full-error-heap condition)))))
 
 (defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
+  "Defines the binary heap specialized for the given order and the element
+type. This macro defines a structure of the name NAME and relevant functions:
+MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
+<NAME>-COUNT, and <NAME>-PEEK."
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -101,7 +105,7 @@
 
        (declaim (inline ,fname-empty-p))
        (defun ,fname-empty-p (heap)
-         "Returns true if HEAP is empty."
+         "Returns true iff HEAP is empty."
          (= 1 (,acc-position heap)))
 
        (declaim (inline ,fname-count))
