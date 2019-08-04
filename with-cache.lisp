@@ -2,29 +2,52 @@
 ;;; Memoization macro
 ;;;
 
-;; TODO: detailed documentation
-
-;; Usage example:
+;;
+;; Basic usage:
 ;; (with-cache (:hash-table :test #'equal :key #'cons)
-;;   (defun ...))
-;; (with-cache (:array (10 10 * 10) :initial-element -1 :element-type 'fixnum)
-;;   (defun foo (a b c d) ...)) ; => C is ignored.
-;; (with-cache (:array (10 10) :initial-element -1 :element-type 'fixnum :debug t)
-;;   (defun foo (x y) ...)) ; executes with trace of foo
+;;   (defun add (a b)
+;;     (+ a b)))
+;; This function caches the returned values for already passed combinations of
+;; arguments. In this case ADD stores the key (CONS A B) and the corresponding
+;; value to a hash-table when evaluating (ADD A B) for the first time; ADD
+;; returns the stored value when it is called with the same arguments
+;; (w.r.t. EQUAL) again.
+;;
+;; The storage for the cache can be hash-table or array. Let's see an example
+;; for array:
+;; (with-cache (:array (10 20 30) :initial-element -1 :element-type 'fixnum)
+;;   (defun foo (a b c) ... ))
+;; This form caches the value of FOO in the array created by (make-array (list
+;; 10 20 30) :initial-element -1 :element-type 'fixnum). Note that
+;; INITIAL-ELEMENT must always be given here as it is used as the flag for `not
+;; yet stored'. (Therefore INITIAL-ELEMENT should be a value FOO doesn't take.)
+;;
+;; If you want to ignore some arguments, you can use `*' in dimensions:
+;; (with-cache (:array (10 10 * 10) :initial-element -1)
+;;   (defun foo (a b c d) ...)) ; => C is ignored when querying and storing cache
+;;
+;; Possible definition forms in WITH-CACHE are DEFUN, LABELS, FLET, and
+;; SB-INT:NAMED-LET.
+;;
+;; You can debug the memoized function by :DEBUG option:
+;; (with-cache (:array (10 10) :initial-element -1 :debug t)
+;;   (defun foo (x y) ...))
+;; Then FOO is traced as with CL:TRACE.
+;;
 
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
 
-(defmacro with-cache (cache-attribs def-form)
-  (let* ((cache-attribs (if (atom cache-attribs) (list cache-attribs) cache-attribs))
-         (cache-type (first cache-attribs))
-         (dimensions-with-* (when (eql cache-type :array) (second cache-attribs)))
+(defmacro with-cache ((cache-type &rest cache-attribs) def-form)
+  "CACHE-TYPE := :HASH-TABLE | :ARRAY"
+  (assert (member cache-type '(:hash-table :array)))
+  (let* ((dimensions-with-* (when (eql cache-type :array) (first cache-attribs)))
          (dimensions (remove '* dimensions-with-*))
          (rank (length dimensions))
          (rest-attribs (ecase cache-type
-                         (:hash-table (cdr cache-attribs))
-                         (:array (cddr cache-attribs))))
+                         (:hash-table cache-attribs)
+                         (:array (cdr cache-attribs))))
          (key (prog1 (getf rest-attribs :key) (remf rest-attribs :key)))
          (debug (prog1 (getf rest-attribs :debug) (remf rest-attribs :debug)))
          (cache-form (case cache-type
@@ -33,7 +56,7 @@
          (initial-element (when (eql cache-type :array)
                             (assert (member :initial-element rest-attribs))
                             (getf rest-attribs :initial-element))))
-    (let ((cache (gensym))
+    (let ((cache (gensym "CACHE"))
           (value (gensym))
 	  (present-p (gensym))
           (name-alias (gensym))
