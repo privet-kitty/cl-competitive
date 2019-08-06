@@ -2,9 +2,14 @@
 ;; Matrix multiplication over semiring
 ;;
 
+;; NOTE: These funcions are slow on SBCL version earlier than 1.5.6 as the type
+;; propagation of MAKE-ARRAY doesn't work. The following files are required to
+;; enable the optimization.
+;; version < 1.5.0: array-element-type.lisp, make-array-header.lisp
+;; version < 1.5.6: make-array-header.lisp
 (defun gemm! (a b c &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates C := A*B. Destructively modifies C. (OP+, OP*) must form a
-semiring. IDENTITY+ is the identity element w.r.t. OP+."
+  "Calculates C := A*B. This function destructively modifies C. (OP+, OP*) must
+comprise a semiring. IDENTITY+ is the identity element w.r.t. OP+."
   (declare ((simple-array * (* *)) a b c))
   (dotimes (row (array-dimension a 0))
     (dotimes (col (array-dimension b 1))
@@ -15,11 +20,10 @@ semiring. IDENTITY+ is the identity element w.r.t. OP+."
         (setf (aref c row col) res))))
   c)
 
-
 (declaim (inline gemm))
 (defun gemm (a b &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates A*B. (OP+, OP*) must form a semiring. IDENTITY+ is the identity
-element w.r.t. OP+."
+  "Calculates A*B. (OP+, OP*) must comprise a semiring. IDENTITY+ is the
+identity element w.r.t. OP+."
   (declare ((simple-array * (* *)) a b)
            (function op+ op*))
   (let ((c (make-array (list (array-dimension a 0) (array-dimension b 1))

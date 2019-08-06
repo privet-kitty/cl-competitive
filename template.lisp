@@ -39,18 +39,19 @@
 
 ;; For Test
 #+swank
-(defun io-equal (in-string out-string &optional (func #'main))
-  "Passes IN-STRING to *STANDARD-INPUT*, executes FUNC, and returns true if the
+(defun io-equal (in-string out-string &key (target #'main) (test #'equal))
+  "Passes IN-STRING to *STANDARD-INPUT*, executes TARGET, and returns true if the
 string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
   (labels ((ensure-last-lf (s)
              (if (eql (uiop:last-char s) #\Linefeed)
                  s
                  (uiop:strcat s uiop:+lf+))))
-    (equal (ensure-last-lf out-string)
-           (with-output-to-string (out)
-             (let ((*standard-output* out))
-               (with-input-from-string (*standard-input* (ensure-last-lf in-string))
-                 (funcall func)))))))
+    (funcall test
+             (ensure-last-lf out-string)
+             (with-output-to-string (out)
+               (let ((*standard-output* out))
+                 (with-input-from-string (*standard-input* (ensure-last-lf in-string))
+                   (funcall target)))))))
 
 #+swank
 (defun get-clipbrd ()
@@ -62,16 +63,22 @@ string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
 
 #+swank
 (defun run (&optional thing (out *standard-output*))
+  "THING := null | string | symbol | pathname
+
+null: run #'MAIN using the text on clipboard as input;
+string: run #'MAIN using the string as input;
+symbol: alias of FIVEAM:RUN!;
+pathname: run #'MAIN using the text file as input."
   (let ((*standard-output* out))
     (etypecase thing
-      (null ; Runs #'MAIN with the string on clipboard
+      (null
        (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
          (main)))
       (string
        (with-input-from-string (*standard-input* (delete #\Return thing))
          (main)))
       (symbol (5am:run! thing))
-      (pathname ; Runs #'MAIN with the string in a text file
+      (pathname
        (with-open-file (*standard-input* thing)
          (main))))))
 
