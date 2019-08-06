@@ -8,30 +8,30 @@
 ;;; P(n, k) = P(n, n) (k > n)
 ;;;
 
-(defconstant +partition-size+ 1100)
+(defconstant +partition-sum-sup+ 1100) ; exclusive upper bound of n
+(defconstant +partition-sup+ 1100) ; exclusive upper bound of k
 (defconstant +partition-mod+ #.(+ (expt 10 9) 7))
 
-(declaim ((simple-array (unsigned-byte 32) (#.+partition-size+ #.+partition-size+)) *partition*))
+(declaim ((simple-array (unsigned-byte 32) (#.+partition-sum-sup+ #.+partition-sup+)) *partition*))
 (defparameter *partition*
-  (make-array (list +partition-size+ +partition-size+)
+  (make-array (list +partition-sum-sup+ +partition-sup+)
               :element-type '(unsigned-byte 32)
               :initial-element 0))
 
 (defun initialize-partition ()
   "Fills *PARTITION* using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
 k)."
-  (dotimes (k +partition-size+)
+  (dotimes (k +partition-sup+)
     (setf (aref *partition* 0 k) 1))
-  (loop for n from 1 below +partition-size+
-        do (setf (aref *partition* n 0) 0)
-           (loop for k from 1 to n
-                 do (setf (aref *partition* n k)
-                          (mod (+ (aref *partition* n (- k 1))
-                                  (aref *partition* (- n k) k))
-                               +partition-mod+)))
-           (loop for k from (+ n 1) below +partition-size+
-                 do (setf (aref *partition* n k)
-                          (aref *partition* n n)))))
+  (loop for n from 1 below +partition-sum-sup+
+        do (loop for k from 1 below +partition-sup+
+                 do (if (> k n)
+                        (setf (aref *partition* n k)
+                              (aref *partition* n n))
+                        (setf (aref *partition* n k)
+                              (mod (+ (aref *partition* n (- k 1))
+                                      (aref *partition* (- n k) k))
+                                   +partition-mod+))))))
 
 (initialize-partition)
 
