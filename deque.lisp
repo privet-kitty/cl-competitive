@@ -17,6 +17,7 @@
              (deque-full-error-item condition)
              (deque-full-error-queue condition)))))
 
+;; TODO: add documentation
 (defmacro define-deque (name &key (element-type 'fixnum))
   (let ((push-front (intern (format nil "~A-PUSH-FRONT" name)))
         (push-back (intern (format nil "~A-PUSH-BACK" name)))

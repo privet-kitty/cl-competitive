@@ -8,6 +8,7 @@
 ;;; P(n, k) = P(n, n) (k > n)
 ;;;
 
+;: TODO: non-global handling
 (defconstant +partition-sum-sup+ 1100) ; exclusive upper bound of n
 (defconstant +partition-sup+ 1100) ; exclusive upper bound of k
 (defconstant +partition-mod+ #.(+ (expt 10 9) 7))

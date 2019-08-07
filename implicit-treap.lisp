@@ -86,12 +86,14 @@ specified interval."
 
 (declaim (inline force-self))
 (defun force-self (itreap)
+  "Propagates up the information from children."
   (declare (itreap itreap))
   (update-count itreap)
   (update-accumulator itreap))
 
 (declaim (inline force-down))
 (defun force-down (itreap)
+  "Propagates down the information to children."
   (declare (itreap itreap))
   (when (%itreap-reversed itreap)
     (setf (%itreap-reversed itreap) nil)
@@ -359,6 +361,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 ;; FIXME: might be problematic when two priorities collide.
 (declaim (inline itreap-query))
 (defun itreap-query (itreap l r)
+  "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))

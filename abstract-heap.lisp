@@ -43,7 +43,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
          (data #() :type (simple-array ,element-type (*)) :read-only t)
          (position 1 :type (integer 1 #.most-positive-fixnum)))
 
-       (declaim (sb-ext:maybe-inline ,fname-push))
+       (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
        (defun ,fname-push (obj heap)
          "Adds OBJ to the end of HEAP."
          (declare (optimize (speed 3))
@@ -64,9 +64,8 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
                (update position)
                (incf position)
                heap))))
-       (declaim (notinline ,fname-push))
 
-       (declaim (sb-ext:maybe-inline ,fname-pop))
+       (declaim #+sbcl (sb-ext:maybe-inline ,fname-pop))
        (defun ,fname-pop (heap)
          "Pops an element from the top of HEAP."
          (declare (optimize (speed 3))

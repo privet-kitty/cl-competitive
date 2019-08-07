@@ -1,7 +1,7 @@
 # Common Lisp code collection for competitive programming
 [![Build Status](https://travis-ci.com/privet-kitty/cl-competitive.svg?token=Tm5zQHEnGe2GCWmpu5C3&branch=master)](https://travis-ci.com/privet-kitty/cl-competitive)
 
-This code collection is maintained mainly for competitive programming, and partly for understanding algorithms.
+This code collection is maintained mainly for competitive programming, and partly for just understanding algorithms.
 
 ## License
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
@@ -9,7 +9,7 @@ The greater part of this library is distributed as public domain, or licensed un
 ## Style
 Currently I don't introduce any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
 
-On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent streams, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
+On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent stream, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
 ## Test environment
 - latest SBCL (x64, linux)
