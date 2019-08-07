@@ -1,3 +1,13 @@
+;;;
+;;; Treap with explicit key
+;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
+;;;
+
+
+;; Tips to use this structure as multiset: Just define OP as (defun op (x y) (+
+;; x y)) and insert each element by (treap-ensure-key <treap> <key> 1 :if-exists
+;; #'1+) instead of TREAP-INSERT.
+
 (declaim (inline op))
 (defun op (x y)
   "Is the operator comprising a monoid"
@@ -75,12 +85,14 @@
 
 (declaim (inline force-self))
 (defun force-self (treap)
+  "Propagates up the information from children."
   (declare (treap treap))
   (update-count treap)
   (update-accumulator treap))
 
 (declaim (inline force-down))
 (defun force-down (treap)
+  "Propagates down the information to children."
   (declare (treap treap))
   (unless (eql +updater-identity+ (%treap-lazy treap))
     (when (%treap-left treap)
@@ -105,7 +117,7 @@
                        1))
     (setf (%treap-lazy treap) +updater-identity+)))
 
-(defun treap-find (key treap &key (order #'<))
+(defun treap-find (treap key &key (order #'<))
   "Finds the key that satisfies (and (not (funcall order key (%treap-key
 sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and returns KEY
 and the assigned value. Returns NIL if KEY is not contained."
@@ -113,12 +125,12 @@ and the assigned value. Returns NIL if KEY is not contained."
            ((or null treap) treap))
   (cond ((null treap) (values nil nil))
         ((funcall order key (%treap-key treap))
-         (treap-find key (%treap-left treap) :order order))
+         (treap-find (%treap-left treap) key :order order))
         ((funcall order (%treap-key treap) key)
-         (treap-find key (%treap-right treap) :order order))
+         (treap-find (%treap-right treap) key :order order))
         (t (values key (%treap-value treap)))))
 
-(defun treap-bisect-right-1 (key treap &key (order #'<))
+(defun treap-bisect-right-1 (treap key &key (order #'<))
   "Returns the largest key equal to or smaller than KEY and the assigned
 value. Returns NIL if KEY is smaller than any keys in TREAP."
   (declare ((or null treap) treap)
@@ -135,7 +147,7 @@ value. Returns NIL if KEY is smaller than any keys in TREAP."
           (values (%treap-key result) (%treap-value result))
           (values nil nil)))))
 
-(defun treap-bisect-left (key treap &key (order #'<))
+(defun treap-bisect-left (treap key &key (order #'<))
   "Returns the smallest key equal to or larger than KEY and the assigned
 value. Returns NIL if KEY is larger than any keys in TREAP."
   (declare ((or null treap) treap)
@@ -153,7 +165,7 @@ value. Returns NIL if KEY is larger than any keys in TREAP."
           (values nil nil)))))
 
 (declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
-(defun treap-split (key treap &key (order #'<))
+(defun treap-split (treap key &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   (declare (function order)
@@ -164,22 +176,22 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
         (force-down treap)
         (if (funcall order (%treap-key treap) key)
             (multiple-value-bind (left right)
-                (treap-split key (%treap-right treap) :order order)
+                (treap-split (%treap-right treap) key :order order)
               (setf (%treap-right treap) left)
               (force-self treap)
               (values treap right))
             (multiple-value-bind (left right)
-                (treap-split key (%treap-left treap) :order order)
+                (treap-split (%treap-left treap) key :order order)
               (setf (%treap-left treap) right)
               (force-self treap)
               (values left treap))))))
 
 (declaim (inline treap-insert))
-(defun treap-insert (key value treap &key (order #'<))
+(defun treap-insert (treap key value &key (order #'<))
   "Destructively inserts KEY into TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value.
 
-The behavior is undefined when duplicated keys are inserted."
+The behavior is undefined when duplicate keys are inserted."
   (declare ((or null treap) treap)
            (function order))
   (labels ((recur (node treap)
@@ -189,7 +201,7 @@ The behavior is undefined when duplicated keys are inserted."
              (if (> (%treap-priority node) (%treap-priority treap))
                  (progn
                    (setf (values (%treap-left node) (%treap-right node))
-                         (treap-split (%treap-key node) treap :order order))
+                         (treap-split treap (%treap-key node) :order order))
                    (force-self node)
                    node)
                  (progn
@@ -203,12 +215,12 @@ The behavior is undefined when duplicated keys are inserted."
     (recur (%make-treap key (random most-positive-fixnum) value) treap)))
 
 (declaim (inline treap-ensure-key))
-(defun treap-ensure-key (key value treap &key (order #'<) if-exists)
+(defun treap-ensure-key (treap key value &key (order #'<) if-exists)
   "IF-EXISTS := nil | function
 
 Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
-false. If IF-EXISTS is function and TREAP contains KEY, TREAP-ENSURE-KEY updates
-the value by the function instead of overwriting it with VALUE."
+false. If IF-EXISTS is function and TREAP already contains KEY, TREAP-ENSURE-KEY
+updates the value by the function instead of overwriting it with VALUE."
   (declare (function order)
            ((or null treap) treap))
   (labels ((find-and-update (treap)
@@ -231,7 +243,7 @@ the value by the function instead of overwriting it with VALUE."
                       t))))
     (if (find-and-update treap)
         treap
-        (treap-insert key value treap :order order))))
+        (treap-insert treap key value :order order))))
 
 (defun treap-merge (left right)
   "Destructively merges two treaps. Assumes that all keys of LEFT are smaller
@@ -254,7 +266,7 @@ the value by the function instead of overwriting it with VALUE."
                (force-self right)
                right)))))
 
-(defun treap-delete (key treap &key (order #'<))
+(defun treap-delete (treap key &key (order #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant
 treap. Returns the unmodified TREAP If KEY doesn't exist. You cannot rely on the
 side effect. Use the returned value.
@@ -267,12 +279,12 @@ exist.)"
     (force-down treap)
     (cond ((funcall order key (%treap-key treap))
            (setf (%treap-left treap)
-                 (treap-delete key (%treap-left treap) :order order))
+                 (treap-delete (%treap-left treap) key :order order))
            (force-self treap)
            treap)
           ((funcall order (%treap-key treap) key)
            (setf (%treap-right treap)
-                 (treap-delete key (%treap-right treap) :order order))
+                 (treap-delete (%treap-right treap) key :order order))
            (force-self treap)
            treap)
           (t
@@ -384,20 +396,20 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
       (if (null right)
           (treap-accumulator treap)
           (multiple-value-bind (treap-0-r treap-r-n)
-              (treap-split right treap :order order)
+              (treap-split treap right :order order)
             (prog1 (treap-accumulator treap-0-r)
               (treap-merge treap-0-r treap-r-n))))
       (if (null right)
           (multiple-value-bind (treap-0-l treap-l-n)
-              (treap-split left treap :order order)
+              (treap-split treap left :order order)
             (prog1 (treap-accumulator treap-l-n)
               (treap-merge treap-0-l treap-l-n)))
           (progn
             (assert (not (funcall order right left)))
             (multiple-value-bind (treap-0-l treap-l-n)
-                (treap-split left treap :order order)
+                (treap-split treap left :order order)
               (multiple-value-bind (treap-l-r treap-r-n)
-                  (treap-split right treap-l-n :order order)
+                  (treap-split treap-l-n right :order order)
                 (prog1 (treap-accumulator treap-l-r)
                   (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))))))
 
