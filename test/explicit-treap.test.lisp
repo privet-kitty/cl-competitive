@@ -21,9 +21,9 @@
                  (treap-count (%treap-left treap))
                  (treap-count (%treap-right treap))))
            (= (%treap-accumulator treap)
-              (+ (%treap-value treap)
-                 (treap-accumulator (%treap-left treap))
-                 (treap-accumulator (%treap-right treap))))
+              (op (op (treap-accumulator (%treap-left treap))
+                      (%treap-value treap))
+                  (treap-accumulator (%treap-right treap))))
            (treap-sane-p (%treap-left treap))
            (treap-sane-p (%treap-right treap)))))
 
