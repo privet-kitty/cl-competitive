@@ -119,6 +119,11 @@
       (setf itreap1 (itreap-update itreap1 -10 3 5))
       (assert (equal '(1 2 3 -8 -9 2 7) (itreap-list itreap1)))
       (assert (= -8 (itreap-query itreap1 2 4)))
+      (assert (= 3 (itreap-query itreap1 2 3)))
+      ;; range update (for null range)
+      (setf itreap1 (itreap-update itreap1 -10 3 3))
+      (assert (equal '(1 2 3 -8 -9 2 7) (itreap-list itreap1)))
+      (assert (= -8 (itreap-query itreap1 2 4)))
       (assert (= 3 (itreap-query itreap1 2 3))))))
 
 (with-test (:name implicit-treap-ordered)

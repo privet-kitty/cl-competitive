@@ -416,20 +416,53 @@ identity element unless INITIAL-CONTENTS are supplied."
       (setf (%itreap-reversed itreap-l-r) (not (%itreap-reversed itreap-l-r)))
       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
+;; (declaim (inline itreap-update))
+;; (defun itreap-update (itreap operand l r)
+;;   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
+;;   (declare ((integer 0 #.most-positive-fixnum) l r))
+;;   (unless (<= l r (itreap-count itreap))
+;;     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
+;;   (multiple-value-bind (itreap-0-l itreap-l-n)
+;;       (itreap-split itreap l)
+;;     (multiple-value-bind (itreap-l-r itreap-r-n)
+;;         (itreap-split itreap-l-n (- r l))
+;;       (when itreap-l-r
+;;         (setf (%itreap-lazy itreap-l-r)
+;;               (updater-op (%itreap-lazy itreap-l-r) operand)))
+;;       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
+
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-  (multiple-value-bind (itreap-0-l itreap-l-n)
-      (itreap-split itreap l)
-    (multiple-value-bind (itreap-l-r itreap-r-n)
-        (itreap-split itreap-l-n (- r l))
-      (when itreap-l-r
-        (setf (%itreap-lazy itreap-l-r)
-              (updater-op (%itreap-lazy itreap-l-r) operand)))
-      (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
+  (labels
+      ((recur (itreap l r)
+         (declare ((integer 0 #.most-positive-fixnum) l r))
+         (when itreap
+           (if (and (zerop l) (= r (%itreap-count itreap)))
+               (progn
+                 (setf (%itreap-lazy itreap)
+                       (updater-op (%itreap-lazy itreap) operand))
+                 (force-down itreap))
+               (let ((left-count (itreap-count (%itreap-left itreap))))
+                 (force-down itreap)
+                 (if (<= l left-count)
+                     (if (< left-count r)
+                         ;; LEFT-COUNT is in [L, R)
+                         (progn
+                           (recur (%itreap-left itreap) l (min r left-count))
+                           (setf (%itreap-value itreap)
+                                 (modifier-op (%itreap-value itreap) operand 1))
+                           (recur (%itreap-right itreap) 0 (- r left-count 1)))
+                         ;; LEFT-COUNT is in [R, END)
+                         (recur (%itreap-left itreap) l (min r left-count)))
+                     ;; LEFT-COUNT is in [0, L)
+                     (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))
+           (force-self itreap))))
+    (recur itreap l r)
+    itreap))
 
 (declaim (inline itreap-bisect-left))
 (defun itreap-bisect-left (itreap threshold order)
