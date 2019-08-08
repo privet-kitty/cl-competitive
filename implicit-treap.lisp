@@ -47,6 +47,7 @@ specified interval."
 
 (declaim (inline itreap-count))
 (defun itreap-count (itreap)
+  "Returns the length of ITREAP."
   (declare ((or null itreap) itreap))
   (if itreap
       (%itreap-count itreap)
@@ -54,6 +55,8 @@ specified interval."
 
 (declaim (inline itreap-accumulator))
 (defun itreap-accumulator (itreap)
+  "Returns the sum (w.r.t. OP) of the whole ITREAP:
+ITREAP[0]+ITREAP[1]+...+ITREAP[SIZE-1]."
   (declare ((or null itreap) itreap))
   (if itreap
       (%itreap-accumulator itreap)
@@ -128,8 +131,8 @@ specified interval."
     (setf (%itreap-lazy itreap) +updater-identity+)))
 
 (defun itreap-split (itreap index)
-  "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N), where N
-  is the number of elements of the ITREAP."
+  "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N),
+where N is the number of elements of the ITREAP."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index))
   (unless (<= index (itreap-count itreap))
@@ -321,7 +324,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (declaim (inline itreap-ref))
 (defun itreap-ref (itreap index)
-  "getter"
+  "Returns the element ITREAP[INDEX]."
   (declare ((integer 0 #.most-positive-fixnum) index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
@@ -340,7 +343,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (declaim (inline (setf itreap-ref)))
 (defun (setf itreap-ref) (new-value itreap index)
-  "setter"
+  "Sets ITREAP[INDEX] to the given value."
   (declare ((integer 0 #.most-positive-fixnum) index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
@@ -357,22 +360,6 @@ identity element unless INITIAL-CONTENTS are supplied."
                (force-self itreap))))
     (%set itreap index)
     new-value))
-
-;; FIXME: might be problematic when two priorities collide.
-;; (declaim (inline itreap-query))
-;; (defun itreap-query (itreap l r)
-;;   "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
-;;   (declare ((integer 0 #.most-positive-fixnum) l r))
-;;   (unless (<= l r (itreap-count itreap))
-;;     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-;;   (if (= l r)
-;;       +op-identity+
-;;       (multiple-value-bind (itreap-0-l itreap-l-n)
-;;           (itreap-split itreap l)
-;;         (multiple-value-bind (itreap-l-r itreap-r-n)
-;;             (itreap-split itreap-l-n (- r l))
-;;           (prog1 (%itreap-accumulator itreap-l-r)
-;;             (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))))
 
 (declaim (inline itreap-query))
 (defun itreap-query (itreap l r)
@@ -403,6 +390,23 @@ identity element unless INITIAL-CONTENTS are supplied."
            (force-self itreap))))
     (recur itreap l r)))
 
+;; merge/split version of itreap-query (a bit slower but simpler)
+;; FIXME: might be problematic when two priorities collide.
+;; (declaim (inline itreap-query))
+;; (defun itreap-query (itreap l r)
+;;   "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
+;;   (declare ((integer 0 #.most-positive-fixnum) l r))
+;;   (unless (<= l r (itreap-count itreap))
+;;     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
+;;   (if (= l r)
+;;       +op-identity+
+;;       (multiple-value-bind (itreap-0-l itreap-l-n)
+;;           (itreap-split itreap l)
+;;         (multiple-value-bind (itreap-l-r itreap-r-n)
+;;             (itreap-split itreap-l-n (- r l))
+;;           (prog1 (%itreap-accumulator itreap-l-r)
+;;             (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))))
+
 (declaim (inline itreap-reverse))
 (defun itreap-reverse (itreap l r)
   "Destructively reverses the order of the interval [L, R) in O(log(n)) time."
@@ -415,21 +419,6 @@ identity element unless INITIAL-CONTENTS are supplied."
         (itreap-split itreap-l-n (- r l))
       (setf (%itreap-reversed itreap-l-r) (not (%itreap-reversed itreap-l-r)))
       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
-
-;; (declaim (inline itreap-update))
-;; (defun itreap-update (itreap operand l r)
-;;   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
-;;   (declare ((integer 0 #.most-positive-fixnum) l r))
-;;   (unless (<= l r (itreap-count itreap))
-;;     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-;;   (multiple-value-bind (itreap-0-l itreap-l-n)
-;;       (itreap-split itreap l)
-;;     (multiple-value-bind (itreap-l-r itreap-r-n)
-;;         (itreap-split itreap-l-n (- r l))
-;;       (when itreap-l-r
-;;         (setf (%itreap-lazy itreap-l-r)
-;;               (updater-op (%itreap-lazy itreap-l-r) operand)))
-;;       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
@@ -463,6 +452,22 @@ identity element unless INITIAL-CONTENTS are supplied."
            (force-self itreap))))
     (recur itreap l r)
     itreap))
+
+;; merge/split version of itreap-update (a bit slower but simpler)
+;; (declaim (inline itreap-update))
+;; (defun itreap-update (itreap operand l r)
+;;   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
+;;   (declare ((integer 0 #.most-positive-fixnum) l r))
+;;   (unless (<= l r (itreap-count itreap))
+;;     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
+;;   (multiple-value-bind (itreap-0-l itreap-l-n)
+;;       (itreap-split itreap l)
+;;     (multiple-value-bind (itreap-l-r itreap-r-n)
+;;         (itreap-split itreap-l-n (- r l))
+;;       (when itreap-l-r
+;;         (setf (%itreap-lazy itreap-l-r)
+;;               (updater-op (%itreap-lazy itreap-l-r) operand)))
+;;       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
 (declaim (inline itreap-bisect-left))
 (defun itreap-bisect-left (itreap threshold order)
