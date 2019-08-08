@@ -403,38 +403,6 @@ identity element unless INITIAL-CONTENTS are supplied."
            (force-self itreap))))
     (recur itreap l r)))
 
-(defun itreap-query (itreap l r)
-  "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
-  (unless (<= l r (itreap-count itreap))
-    (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-  (labels ((recur (itreap l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
-             ;; (dbg itreap l r)
-             (unless itreap
-               (return-from recur +op-identity+))
-             (force-down itreap)
-             (if (and (zerop l) (= r (%itreap-count itreap)))
-                 (progn
-                   (force-self itreap)
-                   (itreap-accumulator itreap))
-                 (let ((left-count (itreap-count (%itreap-left itreap)))
-                       (res +op-identity+))
-                   (when (<= l left-count)
-                     (setq res (op (recur (%itreap-left itreap)
-                                          l
-                                          (min r left-count))
-                                   res)))
-                   (when (and (<= l left-count) (< left-count r))
-                     (setq res (op res (%itreap-value itreap))))
-                   (when (< left-count r)
-                     (setq res (op res (recur (%itreap-right itreap)
-                                              (max 0 (- l left-count 1))
-                                              (- r left-count 1)))))
-                   (force-self itreap)
-                   res))))
-    (recur itreap l r)))
-
 (declaim (inline itreap-reverse))
 (defun itreap-reverse (itreap l r)
   "Destructively reverses the order of the interval [L, R) in O(log(n)) time."
