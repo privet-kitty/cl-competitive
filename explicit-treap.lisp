@@ -13,7 +13,7 @@
   "Is the operator comprising a monoid"
   (min x y))
 
-(defconstant +op-identity+ 0
+(defconstant +op-identity+ most-positive-fixnum
   "identity element w.r.t. OP")
 
 (declaim (inline updater-op))
