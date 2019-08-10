@@ -1,5 +1,5 @@
 ;;;
-;;; Disjoint sparse table
+;;; Disjoint sparse table on arbitrary semigroup
 ;;;
 
 ;;; Reference:
