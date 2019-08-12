@@ -118,12 +118,12 @@
 ;; For FFT of fixed length, preparing the table of cos(i*theta) and sin
 ;; (i*theta) will be efficient.
 (defun %make-trifunc-table (n)
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) n))
+  (declare (optimize (speed 3) (safety 0)))
+  (check-type n (integer 0 #.most-positive-fixnum))
   (assert (power2-p n))
-  (let* ((cos-table (make-array (ash n -2) :element-type 'fft-float))
-         (sin-table (make-array (ash n -2) :element-type 'fft-float))
-         (theta (/ (coerce (* 2 pi) 'fft-float) n)))
+  (let ((cos-table (make-array (ash n -2) :element-type 'fft-float))
+        (sin-table (make-array (ash n -2) :element-type 'fft-float))
+        (theta (/ (coerce (* 2 pi) 'fft-float) n)))
     (dotimes (i (ash n -2))
       (setf (aref cos-table i) (cos (* i theta))
             (aref sin-table i) (sin (* i theta))))
@@ -278,30 +278,30 @@ receive a vector of different size."
             (setf (aref f i) (* (aref f i) factor))))))))
 
 (declaim (inline convolute!))
-(defun convolute! (g h &optional result-vector)
-  "Returns the convolution of two vectors G and H. A new vector is created when
-RESULT-VECTOR is null. This function destructively modifies G and H. (They can
+(defun convolute! (f1 f2 &optional result-vector)
+  "Returns the convolution of two vectors F1 and F2. A new vector is created when
+RESULT-VECTOR is null. This function destructively modifies F1 and F2. (They can
 be restored by INVERSE-DFT!.)"
-  (declare ((simple-array fft-float (*)) g h)
+  (declare ((simple-array fft-float (*)) f1 f2)
            ((or null (simple-array fft-float (*))) result-vector))
-  (let ((n (length g)))
+  (let ((n (length f1)))
     (assert (and (power2-p n)
-                 (= n (length h))))
-    (dft! g)
-    (dft! h)
+                 (= n (length f2))))
+    (dft! f1)
+    (dft! f2)
     (let ((f (or result-vector (make-array n :element-type 'fft-float))))
       (unless (zerop n)
         (setf (aref f 0)
-              (* (aref g 0) (aref h 0)))
+              (* (aref f1 0) (aref f2 0)))
         (setf (aref f (ash n -1))
-              (* (aref g (ash n -1)) (aref h (ash n -1)))))
+              (* (aref f1 (ash n -1)) (aref f2 (ash n -1)))))
       (loop for i from 1 below (ash n -1)
             for value1 of-type fft-float
-               = (- (* (aref g i) (aref h i))
-                    (* (aref g (- n i)) (aref h (- n i))))
+               = (- (* (aref f1 i) (aref f2 i))
+                    (* (aref f1 (- n i)) (aref f2 (- n i))))
             for value2 of-type fft-float
-               = (+ (* (aref g i) (aref h (- n i)))
-                    (* (aref g (- n i)) (aref h i)))
+               = (+ (* (aref f1 i) (aref f2 (- n i)))
+                    (* (aref f1 (- n i)) (aref f2 i)))
             do (setf (aref f i) value1)
                (setf (aref f (- n i)) value2))
       (inverse-dft! f))))

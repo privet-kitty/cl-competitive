@@ -2,6 +2,52 @@
 ;;; Range tree (unfinished)
 ;;;
 
+(declaim (inline %bisect-left))
+(defun %bisect-left (vector value)
+  "analogue of std::lower_bound()"
+  (declare (vector vector)
+           (fixnum value))
+  (labels
+      ((recur (left ok)
+         (declare ((integer 0 #.most-positive-fixnum) left ok))
+         ;; VECTOR[OK] >= VALUE always holds (assuming
+         ;; VECTOR[END] = +infinity)
+         (let ((mid (ash (+ left ok) -1)))
+           (if (= mid left)
+               (if (< (aref vector left) value)
+                   ok
+                   left)
+               (if (< (aref vector mid) value)
+                   (recur mid ok)
+                   (recur left mid))))))
+    (let ((end (length vector)))
+      (if (zerop end)
+          0
+          (recur 0 end)))))
+
+(declaim (inline %bisect-right))
+(defun %bisect-right (vector value)
+  "analogue of std::upper_bound()"
+  (declare (vector vector)
+           (fixnum value))
+  (labels
+      ((recur (left ok)
+         (declare ((integer 0 #.most-positive-fixnum) left ok))
+         ;; VECTOR[OK] > VALUE always holds (assuming
+         ;; VECTOR[END] = +infinity)
+         (let ((mid (ash (+ left ok) -1)))
+           (if (= mid left)
+               (if (< value (aref vector left))
+                   left
+                   ok)
+               (if (< value (aref vector mid))
+                   (recur left mid)
+                   (recur mid ok))))))
+    (let ((end (length vector)))
+      (if (zerop end)
+          0
+          (recur 0 end)))))
+
 (defstruct (xnode (:constructor make-xnode (key ynode left right))
                   (:conc-name %xnode-)
                   (:copier nil))
@@ -101,6 +147,22 @@
                          (%ynode-to-path ynode2)
                          :order order)
      (the fixnum length))))
+
+;; (defun %build-ynode (vector l r)
+;;   (declare (vector vector))
+;;   (labels ((build (l r)
+;;              (declare ((integer 0 #.most-positive-fixnum) l r))
+;;              (cond ((= r l) nil)
+;;                    ((= (- r l) 1)
+;;                     (make-ynode (cdr (aref vector l)) nil nil))
+;;                    (t (let* ((mid (ash (+ l r) -1))
+;;                              (med (cdr (aref vector mid)))
+;;                              (left (build l mid))
+;;                              (right (build (+ mid 1) r))
+;;                              (node (make-ynode med left right)))
+;;                         (ynode-update-count node)
+;;                         node)))))
+;;     (build l r)))
 
 (defun make-range-tree (vector)
   (declare (vector vector))
