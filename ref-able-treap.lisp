@@ -164,7 +164,7 @@ order. The behaviour is undefined when a non-sorted vector is passed."
     (build 0 (length sorted-vector))))
 
 (defun treap-merge (left right)
-  "Destructively merges two treaps. Assumes that all keys of LEFT are
+  "Destructively concatenates two treaps. Assumes that all keys of LEFT are
 smaller (or larger, depending on the order) than those of RIGHT."
   (declare (optimize (speed 3))
            ((or null treap) left right))
@@ -245,3 +245,19 @@ take one argument."
                       (%ref (%treap-right treap) (- index left-count 1)))
                      (t (%treap-key treap))))))
     (%ref treap index)))
+
+(declaim (inline treap-unite))
+(defun treap-unite (treap1 treap2 &key (order #'<))
+  "Merges two trees with keeping the order."
+  (labels
+      ((recur (l r)
+         (cond ((null l) r)
+               ((null r) l)
+               (t (when (< (%treap-priority l) (%treap-priority r))
+                    (rotatef l r))
+                  (multiple-value-bind (lchild rchild)
+                      (treap-split (%treap-key l) r :order order)
+                    (setf (%treap-left l) (recur (%treap-left l) lchild)
+                          (%treap-right l) (recur (%treap-right l) rchild))
+                    l)))))
+    (recur treap1 treap2)))

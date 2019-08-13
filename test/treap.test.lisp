@@ -15,6 +15,16 @@
                    :right (copy-treap (%treap-right treap))
                    :count (%treap-count treap))))
 
+(defun treap-list (treap)
+  (let (res)
+    (labels ((recur (treap)
+               (when treap
+                 (recur (%treap-left treap))
+                 (push (%treap-key treap) res)
+                 (recur (%treap-right treap)))))
+      (recur treap)
+      (reverse res))))
+
 (defun treap-priority (treap)
   (declare ((or null treap) treap))
   (if (null treap)
@@ -90,7 +100,19 @@
       (assert (= 100 (treap-ref treap 6)))
       (assert (= 200 (treap-ref treap 7))))))
 
-(with-test (:name treap)
+(with-test (:name treap-ref)
   (let ((treap (make-treap #(1 2 3 5 7))))
     (assert (= 7 (treap-ref treap 4)))
     (assert (= 1 (treap-ref treap 0)))))
+
+(with-test (:name treap-unite)
+  (assert (equalp
+           '(10 10 8 8 4 3 2 1 0 -1)
+           (treap-list (treap-unite (treap #'> 10 8 3 2 1)
+                                    (treap #'> 10 8 4 0 -1)
+                                    :order #'>))))
+  (assert (equalp '(1 2 3 8 10)
+                  (treap-list (treap-unite (treap #'< 1 2 3 8 10) nil))))
+  (assert (equalp '(1 2 3 3 10)
+                  (treap-list (treap-unite nil (treap #'< 1 2 3 3 10)))))
+  (assert (null (treap-unite nil nil :order #'string<))))
