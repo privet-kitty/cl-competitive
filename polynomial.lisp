@@ -37,7 +37,7 @@ created."
       (loop with coef of-type (integer 0 #.most-positive-fixnum) = 0
             for i from (max 0 (- d deg2)) to (min d deg1)
             for j = (- d i)
-            do (setq coef (mod (+ coef (mod (* (aref u i) (aref v j)) modulus))
+            do (setq coef (mod (+ coef (* (aref u i) (aref v j)))
                                modulus))
             finally (setf (aref res d) coef)))))
 
@@ -93,8 +93,7 @@ Note that MODULUS and V[deg(V)] must be coprime."
                    (mod (* (aref u (+ n k)) inv) modulus))
              (loop for j from (+ n k -1) downto k
                    do (setf (aref u j)
-                            (mod (- (aref u j)
-                                    (mod (* (aref quot k) (aref v (- j k))) modulus))
+                            (mod (- (aref u j) (* (aref quot k) (aref v (- j k))))
                                  modulus))))
     (loop for i from (- (length u) 1) downto n
           do (setf (aref u i) 0)
@@ -122,11 +121,9 @@ destructively modifies POLY."
              = (mod (* (aref poly pivot-deg) inv) modulus)
           do (loop for delta from 0 to n
                    do (setf (aref poly (- pivot-deg delta))
-                            (mod
-                             (- (aref poly (- pivot-deg delta))
-                                (mod (* factor (aref divisor (- n delta)))
-                                     modulus))
-                             modulus))))
+                            (mod (- (aref poly (- pivot-deg delta))
+                                    (* factor (aref divisor (- n delta))))
+                                 modulus))))
     poly))
 
 (defun poly-power (poly exponent divisor modulus)
@@ -139,7 +136,7 @@ destructively modifies POLY."
                ((oddp power)
                 (poly-mod! (poly-mult poly (recur (- power 1)) modulus)
                            divisor modulus))
-               ((let ((subpoly (recur (floor power 2))))
-                  (poly-mod! (poly-mult subpoly subpoly modulus)
+               ((let ((res (recur (floor power 2))))
+                  (poly-mod! (poly-mult res res modulus)
                              divisor modulus))))))
     (recur exponent)))
