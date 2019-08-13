@@ -2,16 +2,37 @@
 ;;; Modular arithmetic
 ;;;
 
-(declaim (ftype (function * (values fixnum fixnum &optional)) %gcd))
-(defun %gcd (a b)
+;; Blankinship algorithm
+;; Reference: https://topcoder.g.hatena.ne.jp/spaghetti_source/20130126/1359171466 (Japanese)
+(declaim (ftype (function * (values fixnum fixnum &optional)) %ext-gcd))
+(defun %ext-gcd (a b)
   (declare (optimize (speed 3) (safety 0))
            (fixnum a b))
-  (if (zerop b)
-      (values 1 0)
-      (multiple-value-bind (p q) (floor a b) ; a = pb + q
-        (multiple-value-bind (v u) (%gcd b q)
-          (declare (fixnum u v))
-          (values u (the fixnum (- v (the fixnum (* p u)))))))))
+  (let ((y 1)
+        (x 0)
+        (u 1)
+        (v 0))
+    (declare (fixnum y x u v))
+    (loop (when (zerop a)
+            (return (values x y)))
+          (let ((q (floor b a)))
+            (decf x (the fixnum (* q u)))
+            (rotatef x u)
+            (decf y (the fixnum (* q v)))
+            (rotatef y v)
+            (decf b (the fixnum (* q a)))
+            (rotatef b a)))))
+
+;; recursive version
+;; (defun %ext-gcd (a b)
+;;   (declare (optimize (speed 3) (safety 0))
+;;            (fixnum a b))
+;;   (if (zerop b)
+;;       (values 1 0)
+;;       (multiple-value-bind (p q) (floor a b) ; a = pb + q
+;;         (multiple-value-bind (v u) (%ext-gcd b q)
+;;           (declare (fixnum u v))
+;;           (values u (the fixnum (- v (the fixnum (* p u)))))))))
 
 ;; TODO: deal with bignums
 (declaim (inline ext-gcd))
@@ -20,15 +41,15 @@
   (declare ((integer #.(- most-positive-fixnum) #.most-positive-fixnum) a b))
   (if (>= a 0)
       (if (>= b 0)
-          (%gcd a b)
-          (multiple-value-bind (x y) (%gcd a (- b))
+          (%ext-gcd a b)
+          (multiple-value-bind (x y) (%ext-gcd a (- b))
             (declare (fixnum x y))
             (values x (- y))))
       (if (>= b 0)
-          (multiple-value-bind (x y) (%gcd (- a) b)
+          (multiple-value-bind (x y) (%ext-gcd (- a) b)
             (declare (fixnum x y))
             (values (- x) y))
-          (multiple-value-bind (x y) (%gcd (- a) (- b))
+          (multiple-value-bind (x y) (%ext-gcd (- a) (- b))
             (declare (fixnum x y))
             (values (- x) (- y))))))
 
@@ -38,7 +59,7 @@
   "Solves ax ≡ 1 mod m. A and M must be coprime."
   (declare (integer a)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (mod (%gcd (mod a modulus) modulus) modulus))
+  (mod (%ext-gcd (mod a modulus) modulus) modulus))
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
 
