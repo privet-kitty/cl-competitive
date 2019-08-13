@@ -3,7 +3,7 @@
 ;;;
 
 (declaim (inline %bisect-left))
-(defun %bisect-left (vector value)
+(defun %bisect-left (vector value &key (key #'identity))
   "analogue of std::lower_bound()"
   (declare (vector vector)
            (fixnum value))
@@ -14,10 +14,10 @@
          ;; VECTOR[END] = +infinity)
          (let ((mid (ash (+ left ok) -1)))
            (if (= mid left)
-               (if (< (aref vector left) value)
+               (if (< (funcall key (aref vector left)) value)
                    ok
                    left)
-               (if (< (aref vector mid) value)
+               (if (< (funcall key (aref vector mid)) value)
                    (recur mid ok)
                    (recur left mid))))))
     (let ((end (length vector)))
@@ -26,7 +26,7 @@
           (recur 0 end)))))
 
 (declaim (inline %bisect-right))
-(defun %bisect-right (vector value)
+(defun %bisect-right (vector value &key (key #'identity))
   "analogue of std::upper_bound()"
   (declare (vector vector)
            (fixnum value))
@@ -37,10 +37,10 @@
          ;; VECTOR[END] = +infinity)
          (let ((mid (ash (+ left ok) -1)))
            (if (= mid left)
-               (if (< value (aref vector left))
+               (if (< value (funcall key (aref vector left)))
                    left
                    ok)
-               (if (< value (aref vector mid))
+               (if (< value (funcall key (aref vector mid)))
                    (recur left mid)
                    (recur mid ok))))))
     (let ((end (length vector)))

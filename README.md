@@ -11,6 +11,8 @@ Currently I don't introduce any name spaces (packages) in each file. This is due
 
 On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent stream, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
+Every data structure and algorithm handles a 0-based index and a half-open interval unless otherwise noted.
+
 ## Test environment
 - latest SBCL (x64, linux)
 - SBCL 1.3.3 (x64, linux) &mdash; CS Academy's version
