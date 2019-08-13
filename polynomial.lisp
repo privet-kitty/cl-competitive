@@ -93,7 +93,8 @@ Note that MODULUS and V[deg(V)] must be coprime."
                    (mod (* (aref u (+ n k)) inv) modulus))
              (loop for j from (+ n k -1) downto k
                    do (setf (aref u j)
-                            (mod (- (aref u j) (* (aref quot k) (aref v (- j k))))
+                            (mod (- (aref u j)
+                                    (* (aref quot k) (aref v (- j k))))
                                  modulus))))
     (loop for i from (- (length u) 1) downto n
           do (setf (aref u i) 0)
