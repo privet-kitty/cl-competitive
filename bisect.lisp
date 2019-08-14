@@ -50,7 +50,8 @@ ORDER := strict order
 Analogue of upper_bound of C++ or bisect_right of Python: Returns the smallest
 index (or input) i that fulfills TARGET[i] > VALUE. In other words, this
 function returns the rightmost index at which VALUE can be inserted with keeping
-the order. TARGET must be monotonically non-decreasing with respect to ORDER.
+the order. Therefore, TARGET must be monotonically non-decreasing with respect
+to ORDER.
 
 This function returns END if VALUE >= TARGET[END-1]. Note that the range [START,
 END) is half-open. END must be explicitly specified if TARGET is function. KEY

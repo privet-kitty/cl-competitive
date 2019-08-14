@@ -17,7 +17,8 @@
 
 (declaim (inline dequeue))
 (defun dequeue (queue)
-  "Pops an element from the front of QUEUE. Returns NIL if QUEUE is empty."
+  "Removes and returns the element at the front of QUEUE. Returns NIL if QUEUE
+is empty."
   (pop (queue-list queue)))
 
 (declaim (inline queue-empty-p))

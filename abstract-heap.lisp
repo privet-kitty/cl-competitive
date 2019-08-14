@@ -67,7 +67,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-pop))
        (defun ,fname-pop (heap)
-         "Pops an element from the top of HEAP."
+         "Removes and returns the element at the top of HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))
