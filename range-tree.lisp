@@ -2,61 +2,19 @@
 ;;; Range tree (unfinished)
 ;;;
 
-(declaim (inline %bisect-left))
-(defun %bisect-left (vector value &key (key #'identity))
-  "analogue of std::lower_bound()"
-  (declare (vector vector)
-           (fixnum value))
-  (labels
-      ((recur (left ok)
-         (declare ((integer 0 #.most-positive-fixnum) left ok))
-         ;; VECTOR[OK] >= VALUE always holds (assuming
-         ;; VECTOR[END] = +infinity)
-         (let ((mid (ash (+ left ok) -1)))
-           (if (= mid left)
-               (if (< (funcall key (aref vector left)) value)
-                   ok
-                   left)
-               (if (< (funcall key (aref vector mid)) value)
-                   (recur mid ok)
-                   (recur left mid))))))
-    (let ((end (length vector)))
-      (if (zerop end)
-          0
-          (recur 0 end)))))
-
-(declaim (inline %bisect-right))
-(defun %bisect-right (vector value &key (key #'identity))
-  "analogue of std::upper_bound()"
-  (declare (vector vector)
-           (fixnum value))
-  (labels
-      ((recur (left ok)
-         (declare ((integer 0 #.most-positive-fixnum) left ok))
-         ;; VECTOR[OK] > VALUE always holds (assuming
-         ;; VECTOR[END] = +infinity)
-         (let ((mid (ash (+ left ok) -1)))
-           (if (= mid left)
-               (if (< value (funcall key (aref vector left)))
-                   left
-                   ok)
-               (if (< value (funcall key (aref vector mid)))
-                   (recur left mid)
-                   (recur mid ok))))))
-    (let ((end (length vector)))
-      (if (zerop end)
-          0
-          (recur 0 end)))))
-
-(defstruct (xnode (:constructor make-xnode (key ynode left right))
+(defstruct (xnode (:constructor make-xnode (xkey ykey ynode left right))
                   (:conc-name %xnode-)
                   (:copier nil))
-  (key 0 :type fixnum) ynode left right)
+  (xkey 0 :type fixnum)
+  (ykey 0 :type fixnum)
+  ynode
+  left right)
 
-(defstruct (ynode (:constructor make-ynode (key left right &optional (count 1)))
+(defstruct (ynode (:constructor make-ynode (xkey ykey left right &key (count 1)))
                   (:conc-name %ynode-)
                   (:copier nil))
-  (key 0 :type fixnum)
+  (xkey 0 :type fixnum)
+  (ykey 0 :type fixnum)
   left
   right
   (count 1 :type (integer 0 #.most-positive-fixnum)))
@@ -88,7 +46,7 @@
     (labels ((recur (node)
                (when node
                  (recur (%ynode-left node))
-                 (setq res (make-ynode (%ynode-key node) nil res))
+                 (setq res (make-ynode (%ynode-xkey node) (%ynode-ykey node) nil res))
                  (recur (%ynode-right node)))))
       (recur ynode)
       res)))
@@ -96,7 +54,6 @@
 (declaim (inline %ynode-merge-path!))
 (defun %ynode-merge-path! (ypath1 ypath2 &key (order #'<))
   "Destructively merges two pathes in reverse order."
-  (declare (inline make-ynode))
   (let ((res nil))
     (macrolet ((%push (y)
                  `(let ((rest (%ynode-right ,y)))
@@ -115,6 +72,7 @@
       res)))
 
 (defun %path-to-ynode! (ypath length)
+  "Destructively transforms a path to a balanced binary tree."
   (declare ((integer 0 #.most-positive-fixnum) length))
   (let* ((max-depth (- (integer-length length) 1)))
     (macrolet ((%pop ()
@@ -148,36 +106,20 @@
                          :order order)
      (the fixnum length))))
 
-;; (defun %build-ynode (vector l r)
-;;   (declare (vector vector))
-;;   (labels ((build (l r)
-;;              (declare ((integer 0 #.most-positive-fixnum) l r))
-;;              (cond ((= r l) nil)
-;;                    ((= (- r l) 1)
-;;                     (make-ynode (cdr (aref vector l)) nil nil))
-;;                    (t (let* ((mid (ash (+ l r) -1))
-;;                              (med (cdr (aref vector mid)))
-;;                              (left (build l mid))
-;;                              (right (build (+ mid 1) r))
-;;                              (node (make-ynode med left right)))
-;;                         (ynode-update-count node)
-;;                         node)))))
-;;     (build l r)))
-
 (defun make-range-tree (vector)
   (declare (vector vector))
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= (- r l) 1)
                  (let ((cell (aref vector l)))
-                   (make-xnode (car cell)
-                               (make-ynode (cdr cell) nil nil)
+                   (make-xnode (car cell) (cdr cell)
+                               (make-ynode (car cell) (cdr cell) nil nil)
                                nil nil))
                  (let* ((mid (ash (+ l r) -1))
-                        (med (car (aref vector mid)))
+                        (med (aref vector mid))
                         (left (build l mid))
                         (right (build mid r)))
-                   (make-xnode med
+                   (make-xnode (car med) (cdr med)
                                (ynode-merge (%xnode-ynode left)
                                             (%xnode-ynode right))
                                left right)))))
@@ -192,7 +134,12 @@
 
 (defun rt-count (range-tree x1 y1 x2 y2)
   "Returns the number of the nodes in the rectangle [x1, y1)*[x2, y2)"
-  (declare (optimize (speed 3)))
+  (declare (optimize (speed 3))
+           ((or null fixnum) x1 y1 x2 y2))
+  (setq x1 (or x1 +neg-inf+)
+        x2 (or x2 +pos-inf+)
+        y1 (or y1 +neg-inf+)
+        y2 (or y2 +pos-inf+))
   (labels ((xrecur (xnode x1 x2)
              (declare ((or null xnode) xnode)
                       (fixnum x1 x2))
@@ -236,13 +183,13 @@
                (declare ((integer 0 #.most-positive-fixnum) depth))
                (when list
                  (if (= depth max-depth)
-                     (make-ynode (pop list) nil nil)
+                     (make-ynode 0 (pop list) nil nil)
                      (let ((left (build (+ 1 depth))))
                        (if (null list)
                            left
                            (let* ((med (pop list))
                                   (right (build (+ 1 depth)))
-                                  (node (make-ynode med left right)))
+                                  (node (make-ynode 0 med left right)))
                              (ynode-update-count node)
                              node)))))))
       (build 0))))
