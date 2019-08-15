@@ -10,7 +10,7 @@
 
 (declaim (inline op))
 (defun op (a b)
-  "Is a binary operator on a monoid."
+  "Is a binary operator comprising a monoid."
   (min a b))
 
 (defconstant +op-identity+ most-positive-fixnum
