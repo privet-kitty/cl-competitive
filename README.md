@@ -37,6 +37,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
+- [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/range-tree.lisp) 2D range tree on arbitrary commutative monoid
 
 ### General algorithms
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
