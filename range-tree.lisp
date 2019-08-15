@@ -8,7 +8,7 @@
 ;;; https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf
 ;;;
 
-;; TODO: map points in the given rectangle
+;; TODO: map all the points in a given rectangle
 ;; TODO: k-dimensional range tree
 
 (declaim (inline op))
@@ -93,9 +93,9 @@
       (recur ynode)
       res)))
 
+(declaim (inline %ynode-merge-path!))
 (defun %ynode-merge-path! (ypath1 ypath2)
   "Destructively merges two pathes in reverse order."
-  (declare (optimize (speed 3)))
   (let ((res nil))
     (macrolet ((%push (y)
                  `(let ((rest (%ynode-right ,y)))
@@ -116,10 +116,10 @@
                 (%push ypath1)))
       res)))
 
+(declaim (inline %path-to-ynode!))
 (defun %path-to-ynode! (ypath length)
   "Destructively transforms a path to a balanced binary tree."
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) length))
+  (declare ((integer 0 #.most-positive-fixnum) length))
   (let* ((max-depth (- (integer-length length) 1)))
     (macrolet ((%pop ()
                  `(let ((rest (%ynode-right ypath))
@@ -143,9 +143,9 @@
                                node)))))))
         (build 0)))))
 
-(declaim (inline ynode-merge))
-(defun ynode-merge (ynode1 ynode2)
-  "Merges two YNODEs non-destructively."
+(defun %ynode-merge (ynode1 ynode2)
+  "Merges two YNODEs non-destructively in O(n)."
+  (declare (optimize (speed 3) (safety 0)))
   (let* ((length (+ (ynode-count ynode1) (ynode-count ynode2))))
     (declare (fixnum length))
     (%path-to-ynode!
@@ -153,19 +153,44 @@
                          (%ynode-to-path ynode2))
      length)))
 
-(declaim (inline make-range-tree))
-(defun make-range-tree (size xs ys &optional values)
-  "XS, YS := (FUNCTION (FIXNUM) FIXNUM)
 
-Points must be sorted w.r.t. lexicographical order and must not contain
-duplicate points. (Duplicate coordinates are allowed.) E.g. (-1, 3), (-1,
-4), (-1, 7) (0, 1) (0, 3) (2, -1) (2, 1))."
+;; (declaim (inline make-range-tree))
+;; (defun make-range-tree (points &key (xkey #'car) (ykey #'cdr))
+;;   (labels ((build (l r)
+;;              (declare ((integer 0 #.most-positive-fixnum) l r))
+;;              (if (= (- r l) 1)
+;;                  (let* ((point (aref points l))
+;;                         (x (funcall xkey point))
+;;                         (y (funcall ykey point)))
+;;                    (make-xnode x (make-ynode x y nil nil)
+;;                                nil nil))
+;;                  (let* ((mid (ash (+ l r) -1))
+;;                         (left (build l mid))
+;;                         (right (build mid r)))
+;;                    (make-xnode (funcall xkey (aref points mid))
+;;                                (%ynode-merge (%xnode-ynode left)
+;;                                              (%xnode-ynode right))
+;;                                left right)))))
+;;     (build 0 (length points))))
+
+(declaim (inline make-range-tree))
+(defun make-range-tree (points &key (xkey #'car) (ykey #'cdr) value-key)
+  "points := vector of poins
+
+Makes a range tree from the points. These points must be sorted
+w.r.t. lexicographical order and must not contain duplicate points. (Duplicate
+coordinates are allowed.) E.g. (-1, 3), (-1, 4), (-1, 7) (0, 1) (0, 3) (2,
+-1) (2, 1)).
+
+If the function VALUE-KEY is given, the i-th point is bounded to the
+value (FUNCALL VALUE-KEY POINTS[i]), otherwise to the value +OP-IDENTITY+."
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= (- r l) 1)
-                 (let ((x (funcall xs l))
-                       (y (funcall ys l))
-                       (value (if values (funcall values l) +op-identity+)))
+                 (let* ((point (aref points l))
+                        (x (funcall xkey point))
+                        (y (funcall ykey point))
+                        (value (if value-key (funcall value-key l) +op-identity+)))
                    (make-xnode x (make-ynode x y nil nil
                                              :value value
                                              :accumulator value)
@@ -173,11 +198,11 @@ duplicate points. (Duplicate coordinates are allowed.) E.g. (-1, 3), (-1,
                  (let* ((mid (ash (+ l r) -1))
                         (left (build l mid))
                         (right (build mid r)))
-                   (make-xnode (funcall xs mid)
-                               (ynode-merge (%xnode-ynode left)
-                                            (%xnode-ynode right))
+                   (make-xnode (funcall xkey (aref points mid))
+                               (%ynode-merge (%xnode-ynode left)
+                                             (%xnode-ynode right))
                                left right)))))
-    (build 0 size)))
+    (build 0 (length points))))
 
 (defconstant +neg-inf+ most-negative-fixnum)
 (defconstant +pos-inf+ most-positive-fixnum)
@@ -237,7 +262,7 @@ positive infinity."
     ;; (declare (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) xrecur yrecur))
     (xrecur range-tree x1 x2)))
 
-;; Below is almost the same as rt-count. Is it better to integrate them?
+;; Below is almost the same as RT-COUNT. Is it better to integrate them?
 (defun rt-query (range-tree x1 y1 x2 y2)
   "Queries the `sum' of the nodes in the rectangle [x1, y1)*[x2, y2). A part or
 all of these coordinates can be NIL: then they are regarded as the negative or

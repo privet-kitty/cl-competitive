@@ -15,10 +15,7 @@
 ;; 012345
 (with-test (:name range-tree)
   (let* ((points #((1 . 1) (1 . 4) (3 . 4) (3 . 6) (3 . 7) (4 . 1) (4 . 4) (5 . 2)))
-         (rt (make-range-tree 8
-                              (lambda (i) (car (aref points i)))
-                              (lambda (i) (cdr (aref points i)))
-                              (constantly 1))))
+         (rt (make-range-tree points :value-key (constantly 1))))
     (assert (= 8 (rt-count rt nil nil nil nil)))
     (assert (= 8 (rt-count rt 1 1 nil nil)))
     (assert (= 8 (rt-count rt 1 1 6 8)))
