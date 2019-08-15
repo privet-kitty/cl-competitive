@@ -156,7 +156,7 @@ where N is the number of elements of the ITREAP."
     (recur itreap index)))
 
 (defun itreap-merge (left right)
-  "Destructively merges two ITREAPs."
+  "Destructively concatenates two ITREAPs."
   (declare (optimize (speed 3))
            ((or null itreap) left right))
   (cond ((null left) (when right (force-down right) (force-self right)) right)

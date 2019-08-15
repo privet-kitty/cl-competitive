@@ -89,8 +89,8 @@ order. FUNCTION must take one argument."
                  object))))
 
 (defun treap-merge (left right)
-  "Destructively merges two treaps. Assumes that all keys of LEFT are smaller (or larger,
-depending on the order) than those of RIGHT."
+  "Destructively concatenates two treaps. Assumes that all keys of LEFT are
+smaller (or larger, depending on the order) than those of RIGHT."
   (declare (optimize (speed 3))
            ((or null treap) left right))
   (cond ((null left) right)
