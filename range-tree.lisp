@@ -153,26 +153,6 @@
                          (%ynode-to-path ynode2))
      length)))
 
-
-;; (declaim (inline make-range-tree))
-;; (defun make-range-tree (points &key (xkey #'car) (ykey #'cdr))
-;;   (labels ((build (l r)
-;;              (declare ((integer 0 #.most-positive-fixnum) l r))
-;;              (if (= (- r l) 1)
-;;                  (let* ((point (aref points l))
-;;                         (x (funcall xkey point))
-;;                         (y (funcall ykey point)))
-;;                    (make-xnode x (make-ynode x y nil nil)
-;;                                nil nil))
-;;                  (let* ((mid (ash (+ l r) -1))
-;;                         (left (build l mid))
-;;                         (right (build mid r)))
-;;                    (make-xnode (funcall xkey (aref points mid))
-;;                                (%ynode-merge (%xnode-ynode left)
-;;                                              (%xnode-ynode right))
-;;                                left right)))))
-;;     (build 0 (length points))))
-
 (declaim (inline make-range-tree))
 (defun make-range-tree (points &key (xkey #'car) (ykey #'cdr) value-key)
   "points := vector of poins
@@ -182,8 +162,9 @@ w.r.t. lexicographical order and must not contain duplicate points. (Duplicate
 coordinates are allowed.) E.g. (-1, 3), (-1, 4), (-1, 7) (0, 1) (0, 3) (2,
 -1) (2, 1)).
 
-If the function VALUE-KEY is given, the i-th point is bounded to the
-value (FUNCALL VALUE-KEY POINTS[i]), otherwise to the value +OP-IDENTITY+."
+If VALUE-KEY is given, the i-th point is bounded to the value (FUNCALL VALUE-KEY
+POINTS[i]), otherwise to the value +OP-IDENTITY+."
+  (declare (vector points))
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= (- r l) 1)

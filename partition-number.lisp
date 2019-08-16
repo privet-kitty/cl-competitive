@@ -35,4 +35,3 @@ k)."
                                    +partition-mod+))))))
 
 (initialize-partition)
-

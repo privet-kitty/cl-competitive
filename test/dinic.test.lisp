@@ -20,6 +20,9 @@
     (push-edge 3 2 3 graph)
     (push-edge 3 4 8 graph)
     (push-edge 2 4 5 graph)
+    (assert (= 11 (max-flow! 0 4 graph)))
+    (assert (= 0 (max-flow! 0 4 graph)))
+    (reinitialize-flow-network graph)
     (assert (= 11 (max-flow! 0 4 graph))))
   ;; Example from https://www.geeksforgeeks.org/max-flow-problem-introduction/
   (let ((graph (make-array 6 :element-type 'list :initial-element nil)))

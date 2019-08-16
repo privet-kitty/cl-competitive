@@ -1,4 +1,4 @@
-;; This is actually not trisection but bisection though I add this here as the
+;; This is actually not trisection but bisection though I put this here as the
 ;; goal is the same; it is an alternative of integer trisection.
 (declaim (inline trisect-left))
 (defun trisect-left (target start end &key maximum)
@@ -32,4 +32,3 @@ Note that this function searches the optimal value in the **closed** interval
                         (funcall target mid))
                     (setq ok mid)
                     (setq ng mid))))))))
-

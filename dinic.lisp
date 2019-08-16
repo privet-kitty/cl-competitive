@@ -126,3 +126,9 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
             do (when (>= (+ result delta) most-positive-fixnum)
                  (error 'max-flow-overflow :graph graph))
                (incf result delta)))))
+
+(declaim (inline reinitialize-flow-network))
+(defun reinitialize-flow-network (graph)
+  (loop for edges across graph
+        do (dolist (edge edges)
+             (setf (edge-capacity edge) (edge-default-capacity edge)))))
