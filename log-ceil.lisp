@@ -1,8 +1,9 @@
 (declaim (inline log2-ceil))
 (defun log2-ceil (x)
   "Rounds up log2(x)."
-  (assert (>= x 0))
-  (integer-length (- (ceiling x) 1)))
+  (let ((ceil (ceiling x)))
+    (declare ((integer 0) ceil))
+    (integer-length (- ceil 1))))
 
 (declaim (inline log-ceil))
 (defun log-ceil (x base)

@@ -12,7 +12,7 @@
 
 (defconstant +trie-alphabet-size+ 26)
 
-;; TODO: enable to set VALUE to NIL by distinguishing null and unbound.
+;; TODO: enable it to set VALUE to NIL by distinguishing null and unbounded.
 (declaim (inline %make-trie-node))
 (defstruct (trie-node (:constructor %make-trie-node
                           (&optional value
@@ -65,7 +65,7 @@ takes two arguments: the end position and the assigned value."
 
 (defun trie-get (trie-node string &key (start 0) end)
   "Finds STRING in TRIE-NODE and returns the assigned value if it exists,
-  otherwise NIL."
+otherwise NIL."
   (declare (vector string)
            ((integer 0 #.most-positive-fixnum) start)
            ((or null (integer 0 #.most-positive-fixnum)) end))

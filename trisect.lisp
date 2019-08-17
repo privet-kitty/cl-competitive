@@ -7,8 +7,8 @@
 Returns the leftmost index at which TARGET takes the minimum. TARGET must
 satisfy the following condition: the signs of TARGET[i+1] - TARGET[i] are
 monotone, i.e. -, -, ..., -, 0, 0, ..., 0, +, +, ..., + for i = START, START+1,
-..., END-1; convexity or unimodality is sufficient. (If MAXIMUM is true, the
-signs are reversed.)
+..., END-1; convexity or unimodality is sufficient. (If MAXIMUM is true, these
+behaviours are so replaced.)
 
 Note that this function searches the optimal value in the **closed** interval
 [START, END]."

@@ -129,6 +129,9 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
 
 (declaim (inline reinitialize-flow-network))
 (defun reinitialize-flow-network (graph)
+  "Sets the current CAPACITY of every edge in GRAPH to the
+DEFAULT-CAPACITY. That is, this function reinitialize the graph network prior to
+sending flow."
   (loop for edges across graph
         do (dolist (edge edges)
              (setf (edge-capacity edge) (edge-default-capacity edge)))))
