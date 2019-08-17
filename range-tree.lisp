@@ -171,7 +171,7 @@ POINTS[i]), otherwise to the value +OP-IDENTITY+."
                  (let* ((point (aref points l))
                         (x (funcall xkey point))
                         (y (funcall ykey point))
-                        (value (if value-key (funcall value-key l) +op-identity+)))
+                        (value (if value-key (funcall value-key point) +op-identity+)))
                    (make-xnode x (make-ynode x y nil nil
                                              :value value
                                              :accumulator value)
