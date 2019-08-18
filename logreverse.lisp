@@ -18,16 +18,18 @@
     (setq x (logior (ash x -8) (ldb (byte 16 0) (ash x 8))))
     (setf (aref *bit-reverse-table* idx) x)))
 
+(declaim (inline logreverse))
 (defun logreverse (x size)
   "Returns the bit-reversal in the range [0, SIZE) of X."
   (declare ((unsigned-byte 64) x)
            ((integer 0 64) size))
-  (ash (logior
-        (ash (aref *bit-reverse-table* (logand x #xffff)) 48)
-        (ash (aref *bit-reverse-table* (logand (ash x -16) #xffff)) 32)
-        (ash (aref *bit-reverse-table* (logand (ash x -32) #xffff)) 16)
-        (aref *bit-reverse-table* (logand (ash x -48) #xffff)))
-       (- size 64)))
+  (let ((table *bit-reverse-table*))
+    (ash (logior
+          (ash (aref table (logand x #xffff)) 48)
+          (ash (aref table (logand (ash x -16) #xffff)) 32)
+          (ash (aref table (logand (ash x -32) #xffff)) 16)
+          (aref table (logand (ash x -48) #xffff)))
+         (- size 64))))
 
 ;; Below is a somewhat slower but space efficient bit-reversal
 ;; (declaim (inline logreverse))
@@ -52,11 +54,11 @@
 ;;         (ash (logior (ash x -32) (ldb (byte 64 0) (ash x 32)))
 ;;              (- size 64)))))
 
-;; (defun bench (sample)
-;;   (declare (fixnum sample)
-;;            (optimize (speed 3) (safety 0)))
-;;   (let ((res 0))
-;;     (declare (fixnum res))
-;;     (dotimes (i sample)
-;;       (setf res
-;;             (logxor res (ldb (byte 1 0) (logreverse (if (oddp i) #x0123456789abcde #xedcba9876543210) 64)))))))
+(defun bench (sample)
+  (declare (fixnum sample)
+           (optimize (speed 3) (safety 0)))
+  (let ((res 0))
+    (declare (fixnum res))
+    (dotimes (i sample)
+      (setf res
+            (logxor res (ldb (byte 1 0) (logreverse (if (oddp i) #x0123456789abcde #xedcba9876543210) 64)))))))

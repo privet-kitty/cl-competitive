@@ -8,7 +8,7 @@
 ;; #\0: 48
 (declaim (inline trie-char-encode))
 (defun trie-char-encode (x)
-  (- (char-code x) 97))
+  (- (char-code x) #.(char-code #\a)))
 
 (defconstant +trie-alphabet-size+ 26)
 
