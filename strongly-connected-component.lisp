@@ -4,10 +4,15 @@
 
 (defstruct (scc (:constructor %make-scc (graph revgraph posts result sizes count)))
   graph
+  ;; graph of reversed edges
   revgraph
+  ;; vertices in the post order
   posts
+  ;; result[i] := strongly connected component of the i-th vertex
   (result nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  ;; sizes[i] := size of the i-th strongly connected component
   (sizes nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  ;; the number of strongly connected components
   (count 0 :type (integer 0 #.most-positive-fixnum)))
 
 (declaim (inline %make-revgraph))
@@ -21,8 +26,8 @@
 
 (defun make-scc (graph &optional revgraph)
   (declare (optimize (speed 3))
-           ((simple-array list (*)) graph)
-           ((or null (simple-array list (*))) revgraph))
+           (vector graph)
+           ((or null vector) revgraph))
   (let* ((revgraph (or revgraph (%make-revgraph graph)))
          (n (length graph))
          (visited (make-array n :element-type 'bit :initial-element 0))
