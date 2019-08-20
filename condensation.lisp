@@ -4,7 +4,7 @@
 
 (defstruct (scc (:constructor %make-scc (graph revgraph posts result sizes count)))
   graph
-  ;; graph of reversed edges
+  ;; reversed graph
   revgraph
   ;; vertices in the post order
   posts
@@ -25,6 +25,8 @@
     revgraph))
 
 (defun make-scc (graph &optional revgraph)
+  "GRAPH := vector of adjacency lists
+REVGRAPH := NIL | reversed graph of GRAPH"
   (declare (optimize (speed 3))
            (vector graph)
            ((or null vector) revgraph))
