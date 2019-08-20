@@ -1,10 +1,12 @@
 (declaim (inline natural-to-gray))
 (defun natural-to-gray (x)
+  "Encodes X into Gray code."
   (declare (unsigned-byte x))
   (logxor x (ash x -1)))
 
 (declaim (inline natural-to-gray))
 (defun gray-to-natural (x)
+  "Decodes X from Gray code."
   (declare (unsigned-byte x))
   (do ((pos (- (integer-length x) 2) (- pos 1)))
       ((< pos 0) x)
