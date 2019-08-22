@@ -28,7 +28,14 @@
 
 ;; TODO: detailed documentation
 (defmacro define-deque (name &key (element-type 'fixnum))
-  "Defines deque for given ELEMENT-TYPE."
+  "Defines deque for given ELEMENT-TYPE.
+
+constructor: MAKE-<NAME>.
+basic operations: <NAME>-PUSH-FRONT, <NAME>-PUSH-BACK, <NAME>-POP-FRONT,
+<NAME>-POP-BACK.
+accessor: <NAME>-REF.
+utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
+"
   (let ((push-front (intern (format nil "~A-PUSH-FRONT" name)))
         (push-back (intern (format nil "~A-PUSH-BACK" name)))
         (pop-front (intern (format nil "~A-POP-FRONT" name)))
