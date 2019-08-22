@@ -1,4 +1,3 @@
-
 ;;;
 ;;; Memoization macro
 ;;;
@@ -64,7 +63,7 @@
            ,value))))
 
   (defun %extract-declarations (body)
-    (remove-if-not (lambda (form) (eql 'declare (car (if (listp form) form (list form)))))
+    (remove-if-not (lambda (form) (and (consp form) (eql 'declare (car form))))
                    body))
 
   (defun %parse-cache-form (cache-specifier)
