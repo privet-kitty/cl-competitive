@@ -1,5 +1,5 @@
-;; This is a makeshift implementation of float parser. It doesn't serve a
-;; serious purpose.
+;; This is a makeshift implementation of float parser. Use read-float.lisp
+;; instead.
 (defun parse-double-float (string &key (start 0) end (declare-fixnum t))
   (declare ((integer 0 #.most-positive-fixnum) start)
            (simple-base-string string))
