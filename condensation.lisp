@@ -2,14 +2,14 @@
 ;;; Strongly connected components (unfinished)
 ;;;
 
-(defstruct (scc (:constructor %make-scc (graph revgraph posts result sizes count)))
+(defstruct (scc (:constructor %make-scc (graph revgraph posts components sizes count)))
   graph
   ;; reversed graph
   revgraph
-  ;; vertices in the post order
+  ;; vertices by post-order DFS
   posts
-  ;; result[i] := strongly connected component of the i-th vertex
-  (result nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  ;; components[i] := strongly connected component of the i-th vertex
+  (components nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; sizes[i] := size of the i-th strongly connected component
   (sizes nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; the number of strongly connected components
@@ -34,7 +34,7 @@ REVGRAPH := NIL | reversed graph of GRAPH"
          (n (length graph))
          (visited (make-array n :element-type 'bit :initial-element 0))
          (posts (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
-         (result (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
+         (components (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (sizes (make-array n :element-type '(integer 0 #.most-positive-fixnum)
                             :initial-element 0))
          (pointer 0)
@@ -51,7 +51,7 @@ REVGRAPH := NIL | reversed graph of GRAPH"
                (incf pointer))
              (reversed-dfs (v ord)
                (setf (aref visited v) 1
-                     (aref result v) ord)
+                     (aref components v) ord)
                (incf (aref sizes ord))
                (dolist (neighbor (aref revgraph v))
                  (when (zerop (aref visited neighbor))
@@ -65,4 +65,4 @@ REVGRAPH := NIL | reversed graph of GRAPH"
             when (zerop (aref visited v))
             do (reversed-dfs v ord)
                (incf ord))
-      (%make-scc graph revgraph posts result sizes ord))))
+      (%make-scc graph revgraph posts components sizes ord))))
