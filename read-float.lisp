@@ -1,5 +1,6 @@
-;; This is an efficient float reader specialized for the numbers that can be
-;; handled within the range of FIXNUM.
+;; This is an efficient float reader specialized for the inputs that can be
+;; handled within the range of FIXNUM. The implementation is based on
+;; SB-IMPL::MAKE-FLOAT.
 (defun read-simple-float (&optional (in *standard-input*))
   "Reads a fixed point float in the format of *READ-DEFAULT-FLOAT-FORMAT*.
 
