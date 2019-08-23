@@ -134,6 +134,52 @@
                     #'make-reset-form
                     #'make-cache-querier)))))))
 
+(defmacro with-cache ((cache-type &rest cache-attribs) def-form)
+  "CACHE-TYPE := :HASH-TABLE | :ARRAY.
+DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
+  (multiple-value-bind (cache-symbol cache-form cache-type name-alias
+                        make-reset-name make-reset-form
+                        make-cache-querier)
+      (%parse-cache-form (cons cache-type cache-attribs))
+    (ecase (car def-form)
+      ((defun)
+       (destructuring-bind (_ name args &body body) def-form
+         (declare (ignore _))
+         `(let ((,cache-symbol ,cache-form))
+            (defun ,(funcall make-reset-name name) ()
+              ,(funcall make-reset-form cache-type))
+            (defun ,name ,args
+              ,@(%extract-declarations body)
+              (labels ((,name-alias ,args ,@body))
+                (declare (inline ,name-alias))
+                ,(funcall make-cache-querier cache-type name args))))))
+      ((labels flet)
+       (destructuring-bind (_ definitions &body labels-body) def-form
+         (declare (ignore _))
+         (destructuring-bind (name args &body body) (car definitions)
+           `(let ((,cache-symbol ,cache-form))
+              (,(car def-form)
+               ((,(funcall make-reset-name name) ()
+                 ,(funcall make-reset-form cache-type))
+                (,name ,args
+                       ,@(%extract-declarations body)
+                       (labels ((,name-alias ,args ,@body))
+                         (declare (inline ,name-alias))
+                         ,(funcall make-cache-querier cache-type name args)))
+                ,@(cdr definitions))
+               (declare (ignorable #',(funcall make-reset-name name)))
+               ,@labels-body)))))
+      ((nlet #+sbcl sb-int:named-let)
+       (destructuring-bind (_ name bindings &body body) def-form
+         (declare (ignore _))
+         `(let ((,cache-symbol ,cache-form))
+            (,(car def-form) ,name ,bindings
+             ,@(%extract-declarations body)
+             ,(let ((args (mapcar (lambda (x) (if (atom x) x (car x))) bindings)))
+                `(labels ((,name-alias ,args ,@body))
+                   (declare (inline ,name-alias))
+                   ,(funcall make-cache-querier cache-type name args))))))))))
+
 (defmacro with-caches (cache-specs def-form)
   "DEF-FORM := definition form by LABELS or FLET.
 
