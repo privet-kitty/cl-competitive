@@ -1,5 +1,5 @@
 ;;;
-;;; Strongly connected components (unfinished)
+;;; Strongly connected components
 ;;;
 
 (defstruct (scc (:constructor %make-scc (graph revgraph posts components sizes count)))

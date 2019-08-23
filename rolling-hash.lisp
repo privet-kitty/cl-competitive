@@ -22,7 +22,7 @@ KEY := function returning FIXNUM"
            ((unsigned-byte 32) modulus)
            ((or null (unsigned-byte 32)) base)
            (function key))
-  (assert (sb-int:positive-primep modulus))
+  #+sbcl (assert (sb-int:positive-primep modulus))
   (let* ((base (or base (+ 1 (random (- modulus 1)))))
          (size (length vector))
          (cumul (make-array (+ 1 size) :element-type '(unsigned-byte 32)))

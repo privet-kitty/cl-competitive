@@ -72,7 +72,7 @@
                           (return tmp))))))
     (if mod1
         (progn
-          (assert (sb-int:positive-primep mod1))
+          #+sbcl (assert (sb-int:positive-primep mod1))
           (setq base1 (or base1 (+ 1 (random (- mod1 1))))))
         (progn
           (setq mod1 (or mod1 (aref *moduli-table* rand1)))
@@ -81,7 +81,7 @@
               (setq base1 (aref *base-table* rand1)))))
     (if mod2
         (progn
-          (assert (sb-int:positive-primep mod2))
+          #+sbcl (assert (sb-int:positive-primep mod2))
           (setq base2 (or base2 (+ 1 (random (- mod2 1))))))
         (progn
           (setq mod2 (or mod2 (aref *moduli-table* rand2)))
