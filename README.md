@@ -100,6 +100,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 ### String algorithms
 - [rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/rolling-hash.lisp) 32-bit rolling hash
 - [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/rolling-hash62.lisp) 62-bit rolling hash
+- [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2d-rolling-hash.lisp) 2D 32-bit rolling hash
 - [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/trie.lisp) trie
 
 ### I/O

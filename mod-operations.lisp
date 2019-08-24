@@ -24,6 +24,9 @@
        (lambda (x y divisor) (mod (+ x y) divisor)))
 
      (define-modify-macro decfmod (delta divisor)
-       (lambda (x y divisor) (mod (- x y) divisor)))))
+       (lambda (x y divisor) (mod (- x y) divisor)))
+
+     (define-modify-macro mulfmod (multiplier divisor)
+       (lambda (x y divisor) (mod (* x y) divisor)))))
 
 (define-mod-operations)
