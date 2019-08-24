@@ -51,7 +51,10 @@
                  (position base2 *base-table*))))
 
     (make-rhash "")
-    (dotimes (i 1000) (make-rhash "a"))
+    (let ((*random-state* (seed-random-state 0)))
+      (dotimes (i 1000)
+        (let ((rhash (make-rhash "a")))
+          (assert (/= (rhash-mod1 rhash) (rhash-mod2 rhash))))))
     
     ;; longest common prefix
     (assert (= 0 (rhash-get-lcp rhash1 0 rhash1 3)))
