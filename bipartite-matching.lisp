@@ -1,5 +1,5 @@
 ;;;
-;;; Maximum bipartite matching by Ford-Fulkerson
+;;; Maximum bipartite matching (Ford-Fulkerson)
 ;;;
 
 (declaim (ftype (function * (values (or null (simple-array fixnum (*))) (integer 0 #.most-positive-fixnum) &optional)) find-matching))

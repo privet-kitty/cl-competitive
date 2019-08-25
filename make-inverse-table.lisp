@@ -6,8 +6,8 @@ of length n to the integers 0, ..., n-1."
     (dotimes (i (length vector) table)
       (setf (gethash (aref vector i) table) i))))
 
-(declaim (inline make-ordered-inverse-table!))
-(defun make-ordered-inverse-table! (vector &key (test #'eql) (order #'<))
+(declaim (inline make-monotone-inverse-table!))
+(defun make-monotone-inverse-table! (vector &key (test #'eql) (order #'<))
   "Sorts VECTOR, deletes all adjacent duplicates, and returns a hash-table that
 assigns each value of the vector to the integers 0, 1, ..."
   (declare (function test order)

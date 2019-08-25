@@ -85,8 +85,8 @@
   (values mod1 mod2 base1 base2))
 
 (defun make-rhash2d (matrix h w &key (key #'identity) mod1 mod2 base1 base2 rhash2d)
-  "Returns the table of the hash value of each rectangle of size H * W on MATRIX
-modulo MOD1 and MOD2.
+  "Returns the table of the hash value of each subrectangle of size H * W on
+MATRIX modulo MOD1 and MOD2.
 
 KEY is applied to each element of MATRIX prior to computing the hash value. If
 moduli and bases are NIL, this function randomly chooses them. If RHASH2D is
@@ -185,7 +185,7 @@ RHASH2D := NIL | RHASH2D"
 (declaim (inline rhash2d-query)
          (ftype (function * (values (unsigned-byte 32) &optional)) rhash2d-query))
 (defun rhash2d-query (rhash2d i j)
-  "Returns the hash value of the rectangle whose upper left corner is at
+  "Returns the hash value of the subrectangle whose upper left corner is at
 (i, j)."
   (declare ((integer 0 #.most-positive-fixnum) i j))
   (aref (rhash2d-table rhash2d) i j))
