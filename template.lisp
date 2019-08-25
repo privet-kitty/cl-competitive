@@ -1,10 +1,12 @@
 ;; -*- coding: utf-8 -*-
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter OPT
+  (sb-int:defconstant-eqx OPT
     #+swank '(optimize (speed 3) (safety 2))
-    #-swank '(optimize (speed 3) (safety 0) (debug 0)))
-  #+swank (ql:quickload '(:cl-debug-print :fiveam))
-  #-swank (set-dispatch-macro-character #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil (values) t))))
+    #-swank '(optimize (speed 3) (safety 0) (debug 0))
+    #'equal)
+  #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
+  #-swank (set-dispatch-macro-character
+           #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil (values) t))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 #-swank (disable-debugger) ; for CS Academy
 
@@ -29,7 +31,9 @@
 
 (defconstant +mod+ 1000000007)
 
-;; Body
+;;;
+;;; Body
+;;;
 
 (defun main ()
   (let* ()))
@@ -39,9 +43,9 @@
 
 ;; For Test
 #+swank
-(defun io-equal (in-string out-string &key (target #'main) (test #'equal))
-  "Passes IN-STRING to *STANDARD-INPUT*, executes TARGET, and returns true if the
-string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
+(defun io-equal (in-string out-string &key (function #'main) (test #'equal))
+  "Passes IN-STRING to *STANDARD-INPUT*, executes FUNCTION, and returns true if
+the string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
   (labels ((ensure-last-lf (s)
              (if (eql (uiop:last-char s) #\Linefeed)
                  s
@@ -51,7 +55,7 @@ string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
              (with-output-to-string (out)
                (let ((*standard-output* out))
                  (with-input-from-string (*standard-input* (ensure-last-lf in-string))
-                   (funcall target)))))))
+                   (funcall function)))))))
 
 #+swank
 (defun get-clipbrd ()
@@ -65,9 +69,9 @@ string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
 (defun run (&optional thing (out *standard-output*))
   "THING := null | string | symbol | pathname
 
-null: run #'MAIN using the text on clipboard as input;
-string: run #'MAIN using the string as input;
-symbol: alias of FIVEAM:RUN!;
+null: run #'MAIN using the text on clipboard as input.
+string: run #'MAIN using the string as input.
+symbol: alias of FIVEAM:RUN!.
 pathname: run #'MAIN using the text file as input."
   (let ((*standard-output* out))
     (etypecase thing
