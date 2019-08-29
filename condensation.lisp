@@ -66,3 +66,28 @@ REVGRAPH := NIL | reversed graph of GRAPH"
             do (reversed-dfs v ord)
                (incf ord))
       (%make-scc graph revgraph posts components sizes ord))))
+
+(declaim (ftype (function * (values (simple-array t (*)) &optional)) condense-graph))
+(defun condense-graph (graph scc)
+  "Does graph condensation.
+
+This function is non-destructive. The resultant graph doesn't contain self-loops
+even if the given graph does."
+  (declare (optimize (speed 3))
+           (vector graph))
+  (let* ((n (length graph))
+         (comp-n (scc-count scc))
+         (components (scc-components scc))
+         (condensed (make-array comp-n :element-type t)))
+    (dotimes (i comp-n)
+      (setf (aref condensed i) (make-hash-table :test #'eq)))
+    (dotimes (i n)
+      (let ((i-comp (aref components i)))
+        (dolist (neighbor (aref graph i))
+          (let ((neighbor-comp (aref components neighbor)))
+            (unless (= i-comp neighbor-comp)
+              (setf (gethash neighbor-comp (aref condensed i-comp)) t))))))
+    (dotimes (i comp-n)
+      (setf (aref condensed i)
+            (loop for x being each hash-key of (aref condensed i) collect x)))
+    condensed))

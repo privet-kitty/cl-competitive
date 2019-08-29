@@ -11,7 +11,7 @@
 
 (defun %fill-levels (graph boundary levels matching queue)
   "Does BFS and fills LEVELS."
-  (declare (optimize (speed 3))
+  (declare (optimize (speed 3) (safety 0))
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) levels queue)
            ((simple-array fixnum (*)) matching)
@@ -48,7 +48,7 @@
 
 (defun %find-matching (src graph levels matching)
   "Does DFS and makes matching greedily on the residual network."
-  (declare (optimize (speed 3))
+  (declare (optimize (speed 3) (safety 0))
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) levels)
            ((simple-array fixnum (*)) matching)

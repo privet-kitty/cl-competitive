@@ -194,7 +194,7 @@ POINTS[i]), otherwise to the value +OP-IDENTITY+."
 
 (defun rt-count (range-tree x1 y1 x2 y2)
   "Returns the number of the nodes in the rectangle [x1, y1)*[x2, y2). A part or
-all of these coordinates can be NIL: then they are regarded as the negative or
+all of these coordinates can be NIL; then they are regarded as the negative or
 positive infinity."
   (declare (optimize (speed 3))
            ((or null fixnum) x1 y1 x2 y2))
@@ -246,7 +246,7 @@ positive infinity."
 ;; Below is almost the same as RT-COUNT. Is it better to integrate them?
 (defun rt-query (range-tree x1 y1 x2 y2)
   "Queries the `sum' of the nodes in the rectangle [x1, y1)*[x2, y2). A part or
-all of these coordinates can be NIL: then they are regarded as the negative or
+all of these coordinates can be NIL; then they are regarded as the negative or
 positive infinity."
   (declare (optimize (speed 3))
            ((or null fixnum) x1 y1 x2 y2))

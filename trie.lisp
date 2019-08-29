@@ -12,7 +12,7 @@
 
 (defconstant +trie-alphabet-size+ 26)
 
-;; TODO: enable it to set VALUE to NIL by distinguishing null and unbounded.
+;; TODO: enable it to set VALUE to NIL by distinguishing null and unbound.
 (declaim (inline %make-trie-node))
 (defstruct (trie-node (:constructor %make-trie-node
                           (&optional value
