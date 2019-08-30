@@ -5,6 +5,7 @@
 (use-package :test-util)
 
 (with-test (:name chinese-rem)
+  ;; Below are the sample cases on https://yukicoder.me/problems/447
   (assert (= 10 (chinese-rem #(10 10 10) #(20 30 40))))
   (assert (= 70 (chinese-rem #(10 10 30) #(20 30 40))))
   (assert (equalp '(nil nil) (multiple-value-list (chinese-rem #(1 0 5) #(2 4 17)))))

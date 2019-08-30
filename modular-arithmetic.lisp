@@ -37,7 +37,7 @@
 ;; TODO: deal with bignums
 (declaim (inline ext-gcd))
 (defun ext-gcd (a b)
-  "Returns two integers X and Y which satisfies AX + BY = gcd(A, B)."
+  "Returns two integers X and Y which satisfy AX + BY = gcd(A, B)."
   (declare ((integer #.(- most-positive-fixnum) #.most-positive-fixnum) a b))
   (if (>= a 0)
       (if (>= b 0)
