@@ -3,11 +3,10 @@
 (declaim (inline find-argopt))
 (defun find-argopt (sequence predicate &key (start 0) end (key #'identity))
   "Returns an index x that satisfies (NOT (FUNCALL PREDICATE SEQUENCE[y]
-SEQUENCE[x])) (i.e. SEQUENCE[x] >= SEQUENCE[y]) for all the indices y and
-returns SEQUENCE[x] as the second value."
+SEQUENCE[x])) (i.e. SEQUENCE[x] >= SEQUENCE[y] for #'<) for all the indices y
+and returns SEQUENCE[x] as the second value."
   (declare ((or null (integer 0 #.most-positive-fixnum)) end)
            ((integer 0 #.most-positive-fixnum) start)
-           (function predicate)
            (sequence sequence))
   (labels ((invalid-range-error ()
              (error "Can't find optimal value in null interval [~A, ~A) on ~A" start end sequence)))

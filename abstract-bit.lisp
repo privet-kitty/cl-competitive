@@ -12,7 +12,7 @@ Defines no structure; BIT is just a vector. This macro defines the three
 function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. If ORDER is
 specified, this macro defines the bisection function <NAME>-BISECT-LEFT in
 addition. (Note that the -BISECT-LEFT function works only when the sequence of
-prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotonous.)
+prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotone.)
 
 SUM-TYPE is used only for the type declaration: each sum
 VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. (The
