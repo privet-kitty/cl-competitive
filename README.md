@@ -47,7 +47,8 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power.lisp) exponentiation on arbitrary monoid
 - [2dcumul.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2dcumul.lisp) 2D cumulative sum
 - [make-inverse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/make-inverse-table.lisp) inverse lookup table of vector
-- [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/adjacent-duplicates.lisp) deletion of adjacent duplicates; run-length encoding
+- [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/adjacent-duplicates.lisp) deletion of adjacent duplicates
+- [map-run-length.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-run-length.lisp) run-length encoding
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversion number of vector by merge sort
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mex.lisp) minimum excludant on non-negative integers
 
