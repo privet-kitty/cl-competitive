@@ -97,8 +97,7 @@ amount of the flow."
                        (decf (edge-capacity edge) result)
                        (incf (edge-capacity (edge-reversed edge)) result)
                        (return result)))))
-               (setf (aref tmp-graph v)
-                     (cdr (aref tmp-graph v))))))
+               (pop (aref tmp-graph v)))))
     (dfs src most-positive-fixnum)))
 
 (declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
@@ -117,7 +116,8 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
     (declare ((integer 0 #.most-positive-fixnum) result))
     (loop
       (%fill-dist-table src graph dist-table queue)
-      (when (= (aref dist-table dest) +graph-inf-distance+) ; not (or no longer) connected
+      (when (= (aref dist-table dest) +graph-inf-distance+)
+        ;; SRC and DEST are not connected on the current residual network.
         (return result))
       (dotimes (i n)
         (setf (aref tmp-graph i) (aref graph i)))
@@ -129,9 +129,9 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
 
 (declaim (inline reinitialize-flow-network))
 (defun reinitialize-flow-network (graph)
-  "Sets the current CAPACITY of every edge in GRAPH to the
-DEFAULT-CAPACITY. That is, this function reinitialize the graph network prior to
-sending flow."
+  "Sets the current CAPACITY of every edge in GRAPH to the default
+capacity. That is, this function reinitialize the graph network to the state
+prior to sending flow."
   (loop for edges across graph
         do (dolist (edge edges)
              (setf (edge-capacity edge) (edge-default-capacity edge)))))

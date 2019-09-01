@@ -73,8 +73,8 @@
 
 ;;
 ;; Merging w.r.t. Y-axis in O(n) time:
-;; 1. transform two trees to two pathes (with copying);
-;; 2. merge the two pathes into a path (destructively);
+;; 1. transform two trees to two paths (with copying);
+;; 2. merge the two paths into a path (destructively);
 ;; 3. transform the path to a tree (destructively);
 ;;
 

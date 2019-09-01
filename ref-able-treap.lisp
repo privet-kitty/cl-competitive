@@ -35,9 +35,10 @@
 
 (declaim (inline treap-find))
 (defun treap-find (key treap &key (order #'<))
-  "Finds the sub-treap of TREAP whose key satisfies (and (not (funcall order
-key (%treap-key sub-treap))) (not (funcall order (%treap-key sub-treap) key)))
-and returns KEY. It returns NIL instead if KEY is not contained."
+  "Returns KEY if TREAP contains it, otherwise NIL.
+
+An element in TREAP is considered to be equal to KEY iff (and (not (funcall
+order key <element>)) (not (funcall order <element> key))) is true."
   (declare (function order)
            ((or null treap) treap))
   (labels ((recur (treap)
@@ -132,7 +133,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 (defun make-treap (sorted-vector)
   "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
 doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your intended
-order. The behaviour is undefined when a non-sorted vector is passed."
+order. The consequence is undefined when a non-sorted vector is passed."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
@@ -165,7 +166,10 @@ order. The behaviour is undefined when a non-sorted vector is passed."
 
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
-smaller (or larger, depending on the order) than those of RIGHT."
+smaller (or larger, depending on the order) than those of RIGHT.
+
+Note that this `merge' is different from CL:MERGE and rather close to
+CL:CONCATENATE. (TREAP-UNITE is the analogue of the former.)"
   (declare (optimize (speed 3))
            ((or null treap) left right))
   (cond ((null left) right)

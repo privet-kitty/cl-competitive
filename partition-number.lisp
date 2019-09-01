@@ -20,7 +20,7 @@
               :initial-element 0))
 
 (defun initialize-partition ()
-  "Fills *PARTITION* using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
+  "Fills *PARTITION* by using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
 k)."
   (dotimes (k +partition-sup+)
     (setf (aref *partition* 0 k) 1))
