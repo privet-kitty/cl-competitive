@@ -5,9 +5,9 @@
 
 (declaim (inline make-convex-hull!))
 (defun make-convex-hull! (points &optional (eps 0))
-  "Returns the vector of the vertices of the convex hull, which are sorted in
-the anticlockwise direction around the perimeter. This function sorts POINTS as
-a side effect.
+  "Returns the vector of the vertices comprising the convex hull, which are
+sorted in the anticlockwise direction around the perimeter. This function sorts
+POINTS as a side effect.
 
 If EPS is non-negative, three vertices in a straight line are excluded (when the
 calculation error is within EPS, of course); they are allowed if EPS is
@@ -16,6 +16,9 @@ negative.
 POINTS := vector of complex number"
   (declare (inline sort)
            (vector points))
+  ;; FIXME: the returned vector may contain duplicate vertices in a degenerative
+  ;; case: E.g. (make-convex-hull! #(#c(1 2) #c(1 2) #c(1 2) #c(1 2)) 1d-9) |->
+  ;; #(#C(1 2) #C(1 2))
   (macrolet ((outer (p1 p2)
                `(let ((c1 ,p1)
                       (c2 ,p2))

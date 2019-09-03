@@ -6,7 +6,7 @@
     #'equal)
   #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
   #-swank (set-dispatch-macro-character
-           #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil (values) t))))
+           #\# #\> (lambda (s c p) (declare (ignore c p)) (read s nil nil t))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 #-swank (disable-debugger) ; for CS Academy
 

@@ -1,4 +1,4 @@
-;; analogy of DOTIMES and ordinary range() function
+;; analogue of DOTIMES and ordinary range() function
 (defmacro dorange ((var begin end &optional step) &body body)
   (check-type step (or null (and integer (not (integer 0 0)))))
   (check-type var symbol)

@@ -1,17 +1,18 @@
 ;;;
-;;; 1-dimensional binary indexed tree
+;;; 1-dimensional binary indexed tree on arbitrary commutative monoid
 ;;;
 
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'>))
-  "OPERATOR := binary operator (on a commutative monoid)
+  "OPERATOR := binary operator (comprising a commutative monoid)
 IDENTITY := object (identity element of the monoid)
 ORDER := nil | strict comparison operator on the monoid
 SUM-TYPE := nil | type specifier
 
 Defines no structure; BIT is just a vector. This macro defines the three
-function: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!. If ORDER is
-specified, this macro defines the bisection function <NAME>-BISECT-LEFT in
-addition. (Note that the -BISECT-LEFT function works only when the sequence of
+function: <NAME>-UPDATE!, point-update function, <NAME>-SUM, query function for
+prefix sum, and COERCE-TO-<NAME>!, constructor. If ORDER is specified, this
+macro in addition defines <NAME>-BISECT-LEFT, the bisection function for prefix
+sums. (Note that the -BISECT-LEFT function works only when the sequence of
 prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotone.)
 
 SUM-TYPE is used only for the type declaration: each sum
@@ -48,7 +49,9 @@ DELTA"
 
        (declaim (inline ,fname-coerce))
        (defun ,fname-coerce (vector)
-         "Destructively constructs BIT from VECTOR."
+         "Destructively constructs BIT from VECTOR. (You will not need to call
+this constructor if what you need is a `zero-filled' BIT because a vector filled
+with the identity elements is a valid BIT as it is.)"
          (loop with len = (length vector)
                for i below len
                for dest-i = (logior i (+ i 1))
@@ -60,7 +63,7 @@ DELTA"
        ,@(when order
            `((declaim (inline ,fname-bisect-left))
              (defun ,fname-bisect-left (bitree value)
-               "Returns the smallest index that fulfills VECTOR[0]+ ... +
+               "Returns the smallest index that satisfies VECTOR[0]+ ... +
 VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
 ... +VECTOR[length-1] < VALUE."
                (declare (vector bitree))
@@ -86,7 +89,7 @@ VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
                                (incf index+1 delta)))))))))
              (declaim (inline ,fname-bisect-right))
              (defun ,fname-bisect-right (bitree value)
-               "Returns the smallest index that fulfills VECTOR[0]+ ... +
+               "Returns the smallest index that satisfies VECTOR[0]+ ... +
 VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
 ... +VECTOR[length-1] <= VALUE."
                (declare (vector bitree))
@@ -117,25 +120,25 @@ VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
   :sum-type fixnum
   :order #'>)
 
-;; Example: inversion number
-;; (declaim (inline make-reverse-lookup-table))
-;; (defun make-reverse-lookup-table (vector &key (test #'eql))
+;; Example: compute the number of inversions in a sequence
+;; (declaim (inline make-inverse-lookup-table))
+;; (defun make-inverse-lookup-table (vector &key (test #'eql))
 ;;   "Assigns each value of the (usually sorted) VECTOR of length n to the integers
 ;; 0, ..., n-1."
 ;;   (let ((table (make-hash-table :test test :size (length vector))))
 ;;     (dotimes (i (length vector) table)
 ;;       (setf (gethash (aref vector i) table) i))))
 
-;; (defun calc-inversion-number (vector &key (test #'<))
+;; (defun calc-inversion-number (vector &key (order #'<))
 ;;   (declare (vector vector))
 ;;   (let* ((len (length vector))
-;;          (rev-lookup-table (make-reverse-lookup-table (sort (copy-seq vector) test)))
+;;          (inv-lookup-table (make-inverse-lookup-table (sort (copy-seq vector) order)))
 ;;          (bitree (make-array len :element-type '(integer 0 #.most-positive-fixnum)))
 ;;          (inversion-number 0))
 ;;     (declare (integer inversion-number))
 ;;     (loop for j below len
 ;;           for element = (aref vector j)
-;;           for compressed = (gethash element rev-lookup-table)
+;;           for compressed = (gethash element inv-lookup-table)
 ;;           for delta of-type integer = (- j (bitree-sum bitree (1+ compressed)))
 ;;           do (incf inversion-number delta)
 ;;              (bitree-update! bitree compressed 1))

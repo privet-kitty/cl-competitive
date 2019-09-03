@@ -80,7 +80,7 @@ even if the given graph does."
          (components (scc-components scc))
          (condensed (make-array comp-n :element-type t)))
     (dotimes (i comp-n)
-      (setf (aref condensed i) (make-hash-table :test #'eq)))
+      (setf (aref condensed i) (make-hash-table :test #'eql)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))
         (dolist (neighbor (aref graph i))
