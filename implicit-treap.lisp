@@ -87,8 +87,8 @@ ITREAP[0]+ITREAP[1]+...+ITREAP[SIZE-1]."
                     (%itreap-accumulator (%itreap-right itreap)))
                 (%itreap-value itreap)))))
 
-(declaim (inline force-self))
-(defun force-self (itreap)
+(declaim (inline force-up))
+(defun force-up (itreap)
   "Propagates up the information from children."
   (declare (itreap itreap))
   (update-count itreap)
@@ -146,12 +146,12 @@ where N is the number of elements of the ITREAP."
                    (multiple-value-bind (left right)
                        (itreap-split (%itreap-left itreap) ikey)
                      (setf (%itreap-left itreap) right)
-                     (force-self itreap)
+                     (force-up itreap)
                      (values left itreap))
                    (multiple-value-bind (left right)
                        (itreap-split (%itreap-right itreap) (- ikey left-count 1))
                      (setf (%itreap-right itreap) left)
-                     (force-self itreap)
+                     (force-up itreap)
                      (values itreap right))))))
     (recur itreap index)))
 
@@ -159,20 +159,20 @@ where N is the number of elements of the ITREAP."
   "Destructively concatenates two ITREAPs."
   (declare (optimize (speed 3))
            ((or null itreap) left right))
-  (cond ((null left) (when right (force-down right) (force-self right)) right)
-        ((null right) (when left (force-down left) (force-self left)) left)
+  (cond ((null left) (when right (force-down right) (force-up right)) right)
+        ((null right) (when left (force-down left) (force-up left)) left)
         (t (force-down left)
            (force-down right)
            (if (> (%itreap-priority left) (%itreap-priority right))
                (progn
                  (setf (%itreap-right left)
                        (itreap-merge (%itreap-right left) right))
-                 (force-self left)
+                 (force-up left)
                  left)
                (progn
                  (setf (%itreap-left right)
                        (itreap-merge left (%itreap-left right)))
-                 (force-self right)
+                 (force-up right)
                  right)))))
 
 (define-condition invalid-itreap-index-error (type-error)
@@ -206,7 +206,7 @@ where N is the number of elements of the ITREAP."
                    (progn
                      (setf (values (%itreap-left node) (%itreap-right node))
                            (itreap-split itreap ikey))
-                     (force-self node)
+                     (force-up node)
                      node)
                    (let ((left-count (itreap-count (%itreap-left itreap))))
                      (if (<= ikey left-count)
@@ -214,7 +214,7 @@ where N is the number of elements of the ITREAP."
                                (recur (%itreap-left itreap) ikey))
                          (setf (%itreap-right itreap)
                                (recur (%itreap-right itreap) (- ikey left-count 1))))
-                     (force-self itreap)
+                     (force-up itreap)
                      itreap))))
       (recur itreap index))))
 
@@ -228,7 +228,7 @@ where N is the number of elements of the ITREAP."
                (recur (%itreap-left node))
                (funcall function (%itreap-value node))
                (recur (%itreap-right node))
-               (force-self node))))
+               (force-up node))))
     (recur itreap)))
 
 (defmethod print-object ((object itreap) stream)
@@ -294,7 +294,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                    (setf (%itreap-left node) (build l mid))
                    (setf (%itreap-right node) (build (+ mid 1) r))
                    (%heapify node)
-                   (force-self node)
+                   (force-up node)
                    node))))
     (build 0 size)))
 
@@ -311,12 +311,12 @@ identity element unless INITIAL-CONTENTS are supplied."
                (cond ((< ikey left-count)
                       (setf (%itreap-left itreap)
                             (recur (%itreap-left itreap) ikey))
-                      (force-self itreap)
+                      (force-up itreap)
                       itreap)
                      ((> ikey left-count)
                       (setf (%itreap-right itreap)
                             (recur (%itreap-right itreap) (- ikey left-count 1)))
-                      (force-self itreap)
+                      (force-up itreap)
                       itreap)
                      (t
                       (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
@@ -338,7 +338,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                          ((> index left-count)
                           (%ref (%itreap-right itreap) (- index left-count 1)))
                          (t (%itreap-value itreap))))
-               (force-self itreap))))
+               (force-up itreap))))
     (%ref itreap index)))
 
 (declaim (inline (setf itreap-ref)))
@@ -357,7 +357,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                          ((> index left-count)
                           (%set (%itreap-right itreap) (- index left-count 1)))
                          (t (setf (%itreap-value itreap) new-value))))
-               (force-self itreap))))
+               (force-up itreap))))
     (%set itreap index)
     new-value))
 
@@ -387,7 +387,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                            (recur (%itreap-left itreap) l (min r left-count)))
                        ;; LEFT-COUNT is in [0, L)
                        (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))
-           (force-self itreap))))
+           (force-up itreap))))
     (recur itreap l r)))
 
 ;; merge/split version of itreap-query (a bit slower but simpler)
@@ -449,7 +449,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                          (recur (%itreap-left itreap) l (min r left-count)))
                      ;; LEFT-COUNT is in [0, L)
                      (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))
-           (force-self itreap))))
+           (force-up itreap))))
     (recur itreap l r)
     itreap))
 

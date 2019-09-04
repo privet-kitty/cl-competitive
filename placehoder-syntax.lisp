@@ -30,16 +30,16 @@
                (loop for i from arity below pos
                      do (vector-push-extend (gensym) args))
                (setq arity (max arity pos)))
-             (recur (x)
+             (parse (x)
                (cond ((and (symbolp x)
                            (placeholder-p x))
                       (let ((pos (get-place-number x))) ; 1-based
                         (push-arg pos)
                         (aref args (- pos 1))))
                      ((consp x)
-                      (mapcar #'recur x))
+                      (mapcar #'parse x))
                      (t x))))
-      (let ((body (recur form)))
+      (let ((body (parse form)))
         `(lambda ,(coerce args 'list)
            ,body)))))
 

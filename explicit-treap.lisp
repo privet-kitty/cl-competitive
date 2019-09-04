@@ -83,8 +83,8 @@
                     (%treap-accumulator (%treap-right treap)))
                 (%treap-value treap)))))
 
-(declaim (inline force-self))
-(defun force-self (treap)
+(declaim (inline force-up))
+(defun force-up (treap)
   "Propagates up the information from children."
   (declare (treap treap))
   (update-count treap)
@@ -178,12 +178,12 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
             (multiple-value-bind (left right)
                 (treap-split (%treap-right treap) key :order order)
               (setf (%treap-right treap) left)
-              (force-self treap)
+              (force-up treap)
               (values treap right))
             (multiple-value-bind (left right)
                 (treap-split (%treap-left treap) key :order order)
               (setf (%treap-left treap) right)
-              (force-self treap)
+              (force-up treap)
               (values left treap))))))
 
 (declaim (inline treap-insert))
@@ -202,7 +202,7 @@ The behavior is undefined when duplicate keys are inserted."
                  (progn
                    (setf (values (%treap-left node) (%treap-right node))
                          (treap-split treap (%treap-key node) :order order))
-                   (force-self node)
+                   (force-up node)
                    node)
                  (progn
                    (if (funcall order (%treap-key node) (%treap-key treap))
@@ -210,7 +210,7 @@ The behavior is undefined when duplicate keys are inserted."
                              (recur node (%treap-left treap)))
                        (setf (%treap-right treap)
                              (recur node (%treap-right treap))))
-                   (force-self treap)
+                   (force-up treap)
                    treap))))
     (recur (%make-treap key (random most-positive-fixnum) value) treap)))
 
@@ -229,17 +229,17 @@ updates the value by the function instead of overwriting it with VALUE."
              (force-down treap)
              (cond ((funcall order key (%treap-key treap))
                     (when (find-and-update (%treap-left treap))
-                      (force-self treap)
+                      (force-up treap)
                       t))
                    ((funcall order (%treap-key treap) key)
                     (when (find-and-update (%treap-right treap))
-                      (force-self treap)
+                      (force-up treap)
                       t))
                    (t (setf (%treap-value treap)
                             (if if-exists
                                 (funcall if-exists (%treap-value treap))
                                 value))
-                      (force-self treap)
+                      (force-up treap)
                       t))))
     (if (find-and-update treap)
         treap
@@ -250,20 +250,20 @@ updates the value by the function instead of overwriting it with VALUE."
 smaller (or larger, depending on the order) than those of RIGHT."
   (declare (optimize (speed 3))
            ((or null treap) left right))
-  (cond ((null left) (when right (force-down right) (force-self right)) right)
-        ((null right) (when left (force-down left) (force-self left)) left)
+  (cond ((null left) (when right (force-down right) (force-up right)) right)
+        ((null right) (when left (force-down left) (force-up left)) left)
         (t (force-down left)
            (force-down right)
          (if (> (%treap-priority left) (%treap-priority right))
              (progn
                (setf (%treap-right left)
                      (treap-merge (%treap-right left) right))
-               (force-self left)
+               (force-up left)
                left)
              (progn
                (setf (%treap-left right)
                      (treap-merge left (%treap-left right)))
-               (force-self right)
+               (force-up right)
                right)))))
 
 (defun treap-delete (treap key &key (order #'<))
@@ -280,12 +280,12 @@ exist.)"
     (cond ((funcall order key (%treap-key treap))
            (setf (%treap-left treap)
                  (treap-delete (%treap-left treap) key :order order))
-           (force-self treap)
+           (force-up treap)
            treap)
           ((funcall order (%treap-key treap) key)
            (setf (%treap-right treap)
                  (treap-delete (%treap-right treap) key :order order))
-           (force-self treap)
+           (force-up treap)
            treap)
           (t
            (treap-merge (%treap-left treap) (%treap-right treap))))))
@@ -299,7 +299,7 @@ take two arguments: KEY and VALUE."
     (treap-map function (%treap-left treap))
     (funcall function (%treap-key treap) (%treap-value treap))
     (treap-map function (%treap-right treap))
-    (force-self treap)))
+    (force-up treap)))
 
 (defmethod print-object ((object treap) stream)
   (print-unreadable-object (object stream :type t)
@@ -384,7 +384,7 @@ intended order. The values are filled with the identity element."
                          ((> index left-count)
                           (%ref (%treap-right treap) (- index left-count 1)))
                          (t (values (%treap-key treap) (%treap-value treap)))))
-               (force-self treap))))
+               (force-up treap))))
     (%ref treap index)))
 
 ;; FIXME: might be problematic when two priorities collide.

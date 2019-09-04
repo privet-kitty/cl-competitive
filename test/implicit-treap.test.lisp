@@ -36,7 +36,7 @@
                  (recur (%itreap-left itreap))
                  (push (%itreap-value itreap) res)
                  (recur (%itreap-right itreap))
-                 (force-self itreap))))
+                 (force-up itreap))))
       (recur itreap)
       (reverse res))))
 
