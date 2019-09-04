@@ -116,6 +116,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
 - [with-cache.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-cache.lisp) memoization of function
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dotimes-unroll.lisp) loop unrolling
+- [placeholder-syntax.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/placeholder-syntax.lisp) Clojure-style placeholder syntax
 
 ### Weird things
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a bundle of some slots

@@ -1,5 +1,5 @@
 ;;;
-;;; Clojure-like placehoder syntax
+;;; Clojure-style placehoder syntax
 ;;;
 ;;; Examples:
 ;;; #%(+ %1 %3) is expanded into (LAMBDA (#:G1 #:G2 #:G3) (+ #:G1 #:G3)).
