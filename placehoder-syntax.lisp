@@ -39,8 +39,10 @@
                      ((consp x)
                       (mapcar #'parse x))
                      (t x))))
-      (let ((body (parse form)))
-        `(lambda ,(coerce args 'list)
+      (let ((body (parse form))
+            (lambda-list (coerce args 'list)))
+        `(lambda ,lambda-list
+           (declare (ignorable ,@lambda-list))
            ,body)))))
 
 (defun read-placeholder-form (s c p)
