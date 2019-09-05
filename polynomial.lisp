@@ -13,10 +13,10 @@
       (setq x^i (mod (* x^i x) modulus)))
     res))
 
-;; naive multiplication
+;; naive multiplication in O(n^2)
 (declaim (inline poly-mult))
 (defun poly-mult (u v modulus &optional result-vector)
-  "Multiplies u(x) and v(x) on Z/nZ in O(deg(u)deg(v)) time.
+  "Multiplies u(x) and v(x) over Z/nZ in O(deg(u)deg(v)) time.
 
 The result is stored in RESULT-VECTOR if it is given, otherwise a new vector is
 created."
@@ -58,13 +58,13 @@ created."
                      (values u (the fixnum (- v (the fixnum (* p u))))))))))
     (mod (%gcd (mod a modulus) modulus) modulus)))
 
-;; Naive division
+;; naive division in O(n^2)
 ;; Reference: http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf
 (declaim (inline poly-floor!))
 (defun poly-floor! (u v modulus &optional quotient)
-  "Returns the quotient q(x) and the remainder r(x) on Z/nZ: u(x) = q(x)v(x) + r(x),
-deg(r) < deg(v). This function destructively modifies U. The time complexity is
-O((deg(u)-deg(v))deg(v)).
+  "Returns the quotient q(x) and the remainder r(x) over Z/nZ: u(x) = q(x)v(x) +
+r(x), deg(r) < deg(v). This function destructively modifies U. The time
+complexity is O((deg(u)-deg(v))deg(v)).
 
 The quotient is stored in QUOTIENT if it is given, otherwise a new vector is
 created.
@@ -100,9 +100,9 @@ Note that MODULUS and V[deg(V)] must be coprime."
           do (setf (aref u i) 0)
           finally (return (values quot u)))))
 
-;; Naive division
+;; naive division in O(n^2)
 (defun poly-mod! (poly divisor modulus)
-  "Returns the remainder of POLY divided by DIVISOR on Z/nZ. This function
+  "Returns the remainder of POLY divided by DIVISOR over Z/nZ. This function
 destructively modifies POLY."
   (declare (vector poly divisor)
            ((integer 1 #.most-positive-fixnum) modulus))
@@ -128,7 +128,10 @@ destructively modifies POLY."
     poly))
 
 (defun poly-power (poly exponent divisor modulus)
-  "Returns POLY to the power of EXPONENT modulo DIVISOR on Z/nZ."
+  "Returns POLY to the power of EXPONENT modulo DIVISOR over Z/nZ."
+  (declare (vector poly divisor)
+           ((integer 0 #.most-positive-fixnum) exponent)
+           ((integer 1 #.most-positive-fixnum) modulus))
   (labels
       ((recur (power)
          (declare ((integer 0 #.most-positive-fixnum) power))
