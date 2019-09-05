@@ -31,6 +31,19 @@
 (defun zero-vector (template-vector)
   (make-array (length template-vector) :element-type 'bit :initial-element 0))
 
+(defun random-test-lshift (size sample)
+  (let ((exemplar (make-array size :element-type 'bit :initial-element 0))
+        (vec1 (make-array size :element-type 'bit))
+        (vec2 (make-array size :element-type 'bit)))
+    (dotimes (i size)
+      (setf (aref exemplar i) (random 2)))
+    (dotimes (_ sample)
+      (fill vec2 0)
+      (let ((delta (random 150)))
+        (dotimes (i (max 0 (- size delta)))
+          (setf (aref vec2 (+ i delta)) (aref exemplar i)))
+        (assert (equal vec2 (bit-lshift exemplar delta vec1)))))))
+
 (with-test (:name bit-lshift)
   ;; basic case
   (assert (equalp *seq+1* (bit-lshift (copy-seq *seq*) 1)))
@@ -76,7 +89,11 @@
   (assert (equalp #*00101 (bit-lshift *seq* 1 #*00000)))
   (assert (equalp #*00001 (bit-lshift *seq* 3 #*00000)))
   (assert (equalp #*00000 (bit-lshift *seq* 4 #*00000)))
-  (assert (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000))))
+  (assert (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000)))
+
+  (random-test-lshift 140 1000)
+  (random-test-lshift 64 1000)
+  (random-test-lshift 128 1000))
 
 (with-test (:name bitwise-operations)
   (let ((target (make-array 140 :element-type 'bit :initial-element 0))

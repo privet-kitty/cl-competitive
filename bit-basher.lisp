@@ -130,11 +130,9 @@
 ;;                        (sb-kernel:%vector-raw-bits bit-vector end/64)))))))
 ;;     result-vector))
 
-;; TODO: benchmark
 ;; TODO: right shift
 (defun bit-lshift (bit-vector delta &optional result-vector end)
   "Left-shifts BIT-VECTOR by DELTA bits and fills the new bits with zero.
-
 The behaviour is the same as the bit-wise operations in CLHS: The result is
 copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
 is NIL, a new bit-vector of the same length is created. If END is specified,
@@ -161,24 +159,33 @@ range [0, END+DELTA) of RESULT-VECTOR."
       (unless (zerop end%64)
         (let ((word (sb-kernel:%vector-raw-bits bit-vector end/64)))
           (setf (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))
-                (u64-dpb (ldb (byte (min end%64 (- 64 d%64)) 0) word)
+                (u64-dpb word
                          (byte (min end%64 (- 64 d%64)) d%64)
                          (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))))
           (when (> end%64 (- 64 d%64))
             (setf (ldb (byte (- end%64 (- 64 d%64)) 0)
                        (sb-kernel:%vector-raw-bits result-vector (+ 1 end/64 d/64)))
                   (ldb (byte (- end%64 (- 64 d%64)) (- 64 d%64)) word)))))
-      (do ((i (- end/64 1) (- i 1)))
-          ((< i 0))
-        (let ((word (sb-kernel:%vector-raw-bits bit-vector i)))
-          (declare ((unsigned-byte 64) word))
-          (setf (sb-kernel:%vector-raw-bits result-vector (+ i d/64))
-                (u64-dpb (ldb (byte (- 64 d%64) 0) word)
-                         (byte (- 64 d%64) d%64)
-                         (sb-kernel:%vector-raw-bits result-vector (+ i d/64))))
-          (setf (ldb (byte d%64 0)
-                     (sb-kernel:%vector-raw-bits result-vector (+ 1 i d/64)))
-                (ldb (byte d%64 (- 64 d%64)) word))))
+      ;; Body. We avoid LDB and DPB for efficiency.
+      (let* ((mask0 (ldb (byte 64 0) (lognot (ldb (byte d%64 0) -1))))
+             (mask1-lo (ldb (byte (- 64 d%64) 0) -1))
+             (mask1-hi (ldb (byte 64 0) (lognot (ash mask1-lo d%64)))))
+        (declare ((unsigned-byte 64) mask0 mask1-lo mask1-hi))
+        (do ((i (- end/64 1) (- i 1)))
+            ((< i 0))
+          (let ((word (sb-kernel:%vector-raw-bits bit-vector i))
+                (i+d/64 (+ i d/64)))
+            (declare ((unsigned-byte 64) word)
+                     ((mod #.most-positive-fixnum) i+d/64))
+            (setf (sb-kernel:%vector-raw-bits result-vector i+d/64)
+                  (logior (the (unsigned-byte 64)
+                               (ash (logand word mask1-lo) d%64))
+                          (logand (sb-kernel:%vector-raw-bits result-vector i+d/64)
+                                  mask1-hi)))
+            (setf (sb-kernel:%vector-raw-bits result-vector (+ 1 i+d/64))
+                  (logior (ash word (- d%64 64))
+                          (logand (sb-kernel:%vector-raw-bits result-vector (+ 1 i+d/64))
+                                  mask0))))))
       ;; zero padding
       (when (< d/64 (ceiling (length result-vector) 64))
         (setf (ldb (byte d%64 0) (sb-kernel:%vector-raw-bits result-vector d/64)) 0))
@@ -188,9 +195,22 @@ range [0, END+DELTA) of RESULT-VECTOR."
         (setf (sb-kernel:%vector-raw-bits result-vector i) 0))
       result-vector)))
 
+;; We must implement the right shift beforehand.
+;; (defun bit-rotate (bit-vector delta &optional result-vector)
+;;   (declare (optimize (speed 3))
+;;            ((integer 0 #.most-positive-fixnum) delta)
+;;            (simple-bit-vector bit-vector)
+;;            ((or null simple-bit-vector) result-vector))
+;;   (assert (not (eql bit-vector result-vector)))
+;;   (let* ((end (length bit-vector))
+;;          (result-vector (or result-vector (make-array end :element-type 'bit)))
+;;          (delta (mod delta end)))
+;;     :unfinished))
+
 (defun bench (size sample)
   (declare ((unsigned-byte 32) size sample))
   (let ((seq (make-array size :element-type 'bit))
         (state (sb-ext:seed-random-state 0)))
+    (gc :full t)
     (time (loop repeat sample
                 sum (aref (bit-lshift seq (random 128 state)) 0) of-type bit))))
