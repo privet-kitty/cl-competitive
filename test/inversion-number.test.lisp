@@ -5,7 +5,7 @@
 (use-package :test-util)
 
 ;; test
-(defun calc-inversion-number-by-bubble-sort! (vec predicate)
+(defun count-inversions-by-bubble-sort! (vec predicate)
   "PREDICATE must be strict order."
   (loop for end from (length vec) above 0
         sum (loop with inv-count = 0
@@ -19,5 +19,5 @@
   (let ((vec (make-array 200 :element-type 'fixnum)))
     (declare ((simple-array fixnum (200)) vec))
     (dotimes (i (length vec)) (setf (aref vec i) (random 20)))
-    (assert (= (calc-inversion-number! (copy-seq vec) #'<)
-               (calc-inversion-number-by-bubble-sort! (copy-seq vec) #'<)))))
+    (assert (= (count-inversions! (copy-seq vec) #'<)
+               (count-inversions-by-bubble-sort! (copy-seq vec) #'<)))))

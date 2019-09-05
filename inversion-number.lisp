@@ -54,9 +54,9 @@
 ;; NOTE: This function is slow on SBCL version earlier than 1.5.0 as
 ;; constant-folding of ARRAY-ELEMENT-TYPE doesn't work. Use
 ;; array-element-type.lisp if necessary.
-(declaim (inline calc-inversion-number!))
-(defun calc-inversion-number! (vector predicate &key (start 0) end)
-  "Calculates the inversion number of VECTOR w.r.t. the strict order
+(declaim (inline count-inversions!))
+(defun count-inversions! (vector predicate &key (start 0) end)
+  "Calculates the number of the inversions of VECTOR w.r.t. the strict order
 PREDICATE. This function sorts VECTOR as a side effect."
   (declare (vector vector)
            (function predicate))
