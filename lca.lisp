@@ -21,8 +21,9 @@
   (parents nil :type (simple-array lca-vertex-number (* *))))
 
 (defun build-lca-table (root graph &key (key #'identity))
+  "GRAPH := vector of adjacency lists"
   (declare (optimize (speed 3))
-           ((simple-array list (*)) graph)
+           (vector graph)
            (function key))
   (let* ((size (length graph))
          (lca-table (make-lca-table size))
@@ -47,6 +48,7 @@
       lca-table)))
 
 (defun get-lca (u v lca-table)
+  "Returns the lowest common anscestor of the vertices U and V."
   (declare (optimize (speed 3))
            (lca-vertex-number u v))
   (let* ((depths (lca-depths lca-table))
@@ -66,6 +68,7 @@
               finally (return (aref parents u 0))))))
 
 (defun distance-on-tree (u v lca-table)
+  "Returns the distance of U and V."
   (declare (optimize (speed 3)))
   (let ((depths (lca-depths lca-table))
         (lca (get-lca u v lca-table)))

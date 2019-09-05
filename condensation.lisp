@@ -1,18 +1,18 @@
 ;;;
-;;; Strongly connected components
+;;; Strongly connected components of directed graph
 ;;;
 
 (defstruct (scc (:constructor %make-scc (graph revgraph posts components sizes count)))
-  graph
+  (graph nil :type vector)
   ;; reversed graph
-  revgraph
+  (revgraph nil :type vector)
   ;; vertices by post-order DFS
   posts
   ;; components[i] := strongly connected component of the i-th vertex
   (components nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
-  ;; sizes[i] := size of the i-th strongly connected component
+  ;; sizes[k] := size of the k-th strongly connected component
   (sizes nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
-  ;; the number of strongly connected components
+  ;; the total number of strongly connected components
   (count 0 :type (integer 0 #.most-positive-fixnum)))
 
 (declaim (inline %make-revgraph))
@@ -67,15 +67,15 @@ REVGRAPH := NIL | reversed graph of GRAPH"
                (incf ord))
       (%make-scc graph revgraph posts components sizes ord))))
 
-(declaim (ftype (function * (values (simple-array t (*)) &optional)) condense-graph))
-(defun condense-graph (graph scc)
+(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-condensed-graph))
+(defun make-condensed-graph (scc)
   "Does graph condensation.
 
 This function is non-destructive. The resultant graph doesn't contain self-loops
 even if the given graph does."
-  (declare (optimize (speed 3))
-           (vector graph))
-  (let* ((n (length graph))
+  (declare (optimize (speed 3)))
+  (let* ((graph (scc-graph scc))
+         (n (length graph))
          (comp-n (scc-count scc))
          (components (scc-components scc))
          (condensed (make-array comp-n :element-type t)))
