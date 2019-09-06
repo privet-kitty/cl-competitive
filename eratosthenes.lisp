@@ -34,23 +34,30 @@ Example: (make-prime-table 10) => #*0011010100"
             when (= 1 (sbit table x))
             do (setf (aref result index) x)
                (incf index))
-      result)))
+      (values result table))))
+
+(defstruct (prime-data (:constructor %make-prime-data (seq table)))
+  (seq nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  (table nil :type simple-bit-vector))
+
+(defun make-prime-data (sup)
+  (multiple-value-call #'%make-prime-data (make-prime-sequence sup)))
 
 (declaim (inline factorize)
          (ftype (function * (values list &optional)) factorize))
-(defun factorize (x prime-seq)
+(defun factorize (x prime-data)
   "Returns the associative list of prime factors of X, which is composed
 of (<prime> . <exponent>). E.g. (factorize 100 <prime-table>) => '((2 . 2) (5
 . 5)).
 
-PRIME-SEQ := vector (composed only of not duplicated primes)
-Note that the returned list is NOT guaranteed to be in ascending order."
-  (declare (integer x)
-           (vector prime-seq))
+- Any numbers beyond the range of PRIME-DATA are regarded as prime.
+- The returned list is in descending order w.r.t. prime factors."
+  (declare (integer x))
   (setq x (abs x))
   (when (<= x 1)
     (return-from factorize nil))
-  (let (result)
+  (let ((prime-seq (prime-data-seq prime-data))
+        result)
     (loop for prime of-type unsigned-byte across prime-seq
           do (when (= x 1)
                (return-from factorize result))
@@ -66,11 +73,12 @@ Note that the returned list is NOT guaranteed to be in ascending order."
         result
         (cons (cons x 1) result))))
 
-(defun make-omega-table (sup prime-seq)
+(defun make-omega-table (sup prime-data)
   "Returns the table of prime omega function on {0, 1, ..., SUP-1}."
   (declare ((integer 0 #.most-positive-fixnum) sup))
   ;; (assert (>= (expt (aref prime-seq (- (length prime-seq) 1)) 2) (- sup 1)))
-  (let ((table (make-array sup :element-type '(unsigned-byte 32)))
+  (let ((prime-seq (prime-data-seq prime-data))
+        (table (make-array sup :element-type '(unsigned-byte 32)))
         (res (make-array sup :element-type '(unsigned-byte 8))))
     (dotimes (i (length table))
       (setf (aref table i) i))

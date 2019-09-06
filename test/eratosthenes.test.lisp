@@ -41,10 +41,12 @@
          (loop for x in list2 always (gethash x table1)))))
 
 (with-test (:name factorize)
-  (assert (set-equal '((2 . 2) (3 . 2) (7 . 1))
-                     (factorize 252 (make-prime-sequence 20))))
-  (assert (set-equal '((2 . 2) (3 . 2) (7 . 1))
-                     (factorize 252 (make-prime-sequence 7))))
-  (assert (set-equal '((2 . 2) (7 . 1) (9 . 1))
-                     (factorize 252 #(2 7)))))
+  (assert (equal '((7 . 1) (3 . 2) (2 . 2))
+                 (factorize 252 (make-prime-data 20))))
+  (assert (equal '((7 . 1) (3 . 2) (2 . 2))
+                 (factorize 252 (make-prime-data 7))))
+  (assert (equal '((7 . 1) (3 . 2) (2 . 2))
+                 (factorize 252 (make-prime-data 4))))
+  (assert (equal '((63 . 1) (2 . 2))
+                 (factorize 252 (make-prime-data 3)))))
  
