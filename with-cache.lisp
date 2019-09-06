@@ -35,6 +35,9 @@
 ;; Then FOO is traced as with CL:TRACE.
 ;;
 
+;; TODO & NOTE: Currently a memoized function is not enclosed with a block of
+;; the function name.
+
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)

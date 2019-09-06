@@ -4,7 +4,9 @@
 ;;; build: O(nloglogn)
 ;;; With this sieve each prime factorization can be executed in O(log(n)), which
 ;;; is faster than the naive known one in O(N/log(n) + log(n)).
-;;; Reference: http://www.osak.jp/diary/diary_201310.html#20131017
+;;; Reference:
+;;; http://www.osak.jp/diary/diary_201310.html#20131017 (Japanese)
+;;; https://cp-algorithms.com/algebra/prime-sieve-linear.html
 ;;;
 
 (defun make-minfactor-table (sup)
