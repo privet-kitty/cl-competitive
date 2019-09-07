@@ -4,10 +4,9 @@
 
 (declaim (inline power))
 (defun power (base exponent op identity)
-  "OP := binary operation (on a monoid)
+  "OP := binary operation (comprising a monoid)
 IDENTITY := identity element w.r.t. OP"
-  (declare ((integer 0) exponent)
-           (function op))
+  (declare ((integer 0) exponent))
   (labels ((recur (x p)
              (declare ((integer 0 #.most-positive-fixnum) p))
              (cond ((zerop p) identity)
