@@ -40,8 +40,10 @@
 
 #-swank (main)
 
+;;;
+;;; Test and benchmark
+;;;
 
-;; For Test
 #+swank
 (defun io-equal (in-string out-string &key (function #'main) (test #'equal))
   "Passes IN-STRING to *STANDARD-INPUT*, executes FUNCTION, and returns true if

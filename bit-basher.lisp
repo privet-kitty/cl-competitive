@@ -137,7 +137,10 @@ The behaviour is the same as the bit-wise operations in CLHS: The result is
 copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
 is NIL, a new bit-vector of the same length is created. If END is specified,
 this function shifts only the range [0, END) of BIT-VECTOR and copies it to the
-range [0, END+DELTA) of RESULT-VECTOR."
+range [0, END+DELTA) of RESULT-VECTOR.
+
+Note that here `left' means the direction from a smaller index to a larger one,
+i.e. (bit-lshift #*1011000 2) |-> #*0010110"
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
@@ -166,7 +169,8 @@ range [0, END+DELTA) of RESULT-VECTOR."
             (setf (ldb (byte (- end%64 (- 64 d%64)) 0)
                        (sb-kernel:%vector-raw-bits result-vector (+ 1 end/64 d/64)))
                   (ldb (byte (- end%64 (- 64 d%64)) (- 64 d%64)) word)))))
-      ;; Body. We avoid LDB and DPB for efficiency.
+      ;; Body. We avoid LDB and DPB here for efficiency, though this seems to
+      ;; be somewhat incomprehensible...
       (let* ((mask0 (ldb (byte 64 0) (lognot (ldb (byte d%64 0) -1))))
              (mask1-lo (ldb (byte (- 64 d%64) 0) -1))
              (mask1-hi (ldb (byte 64 0) (lognot (ash mask1-lo d%64)))))
