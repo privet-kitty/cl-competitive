@@ -20,7 +20,10 @@
     (assert (= 60 (dst-query table #'* 2 5)))
     (assert (= 4 (dst-query table #'* 3 4)))
     (assert (= 20 (dst-query table #'* 3 5)))
-    (assert (= 5 (dst-query table #'* 4 5))))
+    (assert (= 5 (dst-query table #'* 4 5)))
+    (assert (null (dst-query table #'* 4 4)))
+    (assert (= 0 (dst-query table #'* 4 4 0)))
+    (signals error (dst-query table #'* 4 3)))
   (assert (equalp #2a() (make-disjoint-sparse-table #() #'gcd)))
 
   (let* ((state (sb-ext:seed-random-state 0))

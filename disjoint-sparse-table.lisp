@@ -47,12 +47,14 @@
     table))
 
 (declaim (inline dst-query))
-(defun dst-query (table binop left right)
-  "Queries the interval [LEFT, RIGHT). Note that a null interval [x, x) is not
-allowed as disjoint sparse table deals with a semigroup."
+(defun dst-query (table binop left right &optional identity)
+  "Queries the interval [LEFT, RIGHT). Returns IDENTITY for a null interval [x,
+x)."
   (declare ((integer 0 #.most-positive-fixnum) left right)
            ((simple-array * (* *)) table))
-  (assert (< left right))
+  (when (>= left right)
+    (assert (= left right))
+    (return-from dst-query identity))
   (setq right (- right 1)) ;; change to closed interval
   (if (= left right)
       (aref table 0 left)
