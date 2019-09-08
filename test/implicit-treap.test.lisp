@@ -130,4 +130,7 @@
   (let ((itreap (itreap 3 3 2 2 2 2 1 1 1)))
     (assert (= 6 (itreap-bisect-left itreap 1 #'>)))
     (assert (= 9 (itreap-bisect-left itreap 0 #'>)))
-    (assert (= 0 (itreap-bisect-left itreap 4 #'>)))))
+    (assert (= 0 (itreap-bisect-left itreap 4 #'>)))
+    (assert (= 0 (itreap-bisect-right itreap 4 #'>)))
+    (assert (= 2 (itreap-bisect-right itreap 3 #'>)))
+    (assert (= 9 (itreap-bisect-right itreap 1 #'>)))))

@@ -4,8 +4,6 @@
 ;;;
 
 ;; Note:
-;; - You cannot rely on the side effect when you call any destructive operations
-;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
 
 (declaim (inline op))
@@ -47,7 +45,7 @@ specified interval."
 
 (declaim (inline itreap-count))
 (defun itreap-count (itreap)
-  "Returns the length of ITREAP."
+  "Returns the number of the elements."
   (declare ((or null itreap) itreap))
   (if itreap
       (%itreap-count itreap)
@@ -130,6 +128,60 @@ ITREAP[0]+ITREAP[1]+...+ITREAP[SIZE-1]."
                        1))
     (setf (%itreap-lazy itreap) +updater-identity+)))
 
+(defun %heapify (top)
+  "Properly swaps the priorities of the node and its two children."
+  (declare (optimize (speed 3) (safety 0)))
+  (when top
+    (let ((high-priority-node top))
+      (when (and (%itreap-left top)
+                 (> (%itreap-priority (%itreap-left top))
+                    (%itreap-priority high-priority-node)))
+        (setq high-priority-node (%itreap-left top)))
+      (when (and (%itreap-right top)
+                 (> (%itreap-priority (%itreap-right top))
+                    (%itreap-priority high-priority-node)))
+        (setq high-priority-node (%itreap-right top)))
+      (unless (eql high-priority-node top)
+        (rotatef (%itreap-priority high-priority-node)
+                 (%itreap-priority top))
+        (%heapify high-priority-node)))))
+
+(declaim (inline make-itreap))
+(defun make-itreap (size &key initial-contents)
+  "Makes a treap of SIZE in O(SIZE) time. Its values are filled with the
+identity element unless INITIAL-CONTENTS are supplied."
+  (declare ((or null vector) initial-contents))
+  (labels ((build (l r)
+             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (if (= l r)
+                 nil
+                 (let* ((mid (ash (+ l r) -1))
+                        (node (%make-itreap (if initial-contents
+                                                (aref initial-contents mid)
+                                                +op-identity+)
+                                           (random most-positive-fixnum))))
+                   (setf (%itreap-left node) (build l mid))
+                   (setf (%itreap-right node) (build (+ mid 1) r))
+                   (%heapify node)
+                   (force-up node)
+                   node))))
+    (build 0 size)))
+
+(define-condition invalid-itreap-index-error (type-error)
+  ((itreap :initarg :itreap :reader invalid-itreap-index-error-itreap)
+   (index :initarg :index :reader invalid-itreap-index-error-index))
+  (:report
+   (lambda (condition stream)
+     (let ((index (invalid-itreap-index-error-index condition)))
+       (if (consp index)
+           (format stream "Invalid range [~W, ~W) for itreap ~W."
+                   (car index)
+                   (cdr index)
+                   (invalid-itreap-index-error-itreap condition))
+           (format stream "Invalid index ~W for itreap ~W."
+                   index
+                   (invalid-itreap-index-error-itreap condition)))))))
+
 (defun itreap-split (itreap index)
   "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N),
 where N is the number of elements of the ITREAP."
@@ -175,23 +227,10 @@ where N is the number of elements of the ITREAP."
                  (force-up right)
                  right)))))
 
-(define-condition invalid-itreap-index-error (type-error)
-  ((itreap :initarg :itreap :reader invalid-itreap-index-error-itreap)
-   (index :initarg :index :reader invalid-itreap-index-error-index))
-  (:report
-   (lambda (condition stream)
-     (let ((index (invalid-itreap-index-error-index condition)))
-       (if (consp index)
-           (format stream "Invalid range [~W, ~W) for itreap ~W."
-                   (car index)
-                   (cdr index)
-                   (invalid-itreap-index-error-itreap condition))
-           (format stream "Invalid index ~W for itreap ~W."
-                   index
-                   (invalid-itreap-index-error-itreap condition)))))))
-
 (defun itreap-insert (itreap index obj)
-  "Destructively inserts OBJ into ITREAP and returns the resultant treap."
+  "Destructively inserts OBJ into ITREAP and returns the resultant treap.
+
+You cannot rely on the side effect. Use the returned value."
   (declare (optimize (speed 3))
            ((or null itreap) itreap)
            ((integer 0 #.most-positive-fixnum) index))
@@ -217,6 +256,41 @@ where N is the number of elements of the ITREAP."
                      (force-up itreap)
                      itreap))))
       (recur itreap index))))
+
+(defun itreap-delete (itreap index)
+  "Destructively deletes the object at INDEX in ITREAP.
+
+You cannot rely on the side effect. Use the returned value."
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) index))
+  (unless (< index (itreap-count itreap))
+    (error 'invalid-itreap-index-error :itreap itreap :index index))
+  (labels ((recur (itreap ikey)
+             (declare ((integer 0 #.most-positive-fixnum) ikey))
+             (force-down itreap)
+             (let ((left-count (itreap-count (%itreap-left itreap))))
+               (cond ((< ikey left-count)
+                      (setf (%itreap-left itreap)
+                            (recur (%itreap-left itreap) ikey))
+                      (force-up itreap)
+                      itreap)
+                     ((> ikey left-count)
+                      (setf (%itreap-right itreap)
+                            (recur (%itreap-right itreap) (- ikey left-count 1)))
+                      (force-up itreap)
+                      itreap)
+                     (t
+                      (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
+    (recur itreap index)))
+
+(defmacro itreap-push (obj itreap pos)
+  `(setf ,itreap (itreap-insert ,itreap ,pos ,obj)))
+
+(defmacro itreap-pop (itreap pos)
+  (let ((p (gensym)))
+    `(let ((,p ,pos))
+       (prog1 (itreap-ref ,itreap ,p)
+         (setf ,itreap (itreap-delete ,itreap ,p))))))
 
 (declaim (inline itreap-map))
 (defun itreap-map (function itreap)
@@ -258,69 +332,6 @@ each time."
                         (1+ position)
                         (itreap-insert itreap position (car list))))))
     (recur args 0 nil)))
-
-(defun %heapify (top)
-  "Properly swaps the priorities of the node and its two children."
-  (declare (optimize (speed 3) (safety 0)))
-  (when top
-    (let ((high-priority-node top))
-      (when (and (%itreap-left top)
-                 (> (%itreap-priority (%itreap-left top))
-                    (%itreap-priority high-priority-node)))
-        (setq high-priority-node (%itreap-left top)))
-      (when (and (%itreap-right top)
-                 (> (%itreap-priority (%itreap-right top))
-                    (%itreap-priority high-priority-node)))
-        (setq high-priority-node (%itreap-right top)))
-      (unless (eql high-priority-node top)
-        (rotatef (%itreap-priority high-priority-node)
-                 (%itreap-priority top))
-        (%heapify high-priority-node)))))
-
-(declaim (inline make-itreap))
-(defun make-itreap (size &key initial-contents)
-  "Makes a treap of SIZE in O(SIZE) time. Its values are filled with the
-identity element unless INITIAL-CONTENTS are supplied."
-  (declare ((or null vector) initial-contents))
-  (labels ((build (l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
-             (if (= l r)
-                 nil
-                 (let* ((mid (ash (+ l r) -1))
-                        (node (%make-itreap (if initial-contents
-                                                (aref initial-contents mid)
-                                                +op-identity+)
-                                           (random most-positive-fixnum))))
-                   (setf (%itreap-left node) (build l mid))
-                   (setf (%itreap-right node) (build (+ mid 1) r))
-                   (%heapify node)
-                   (force-up node)
-                   node))))
-    (build 0 size)))
-
-(defun itreap-delete (itreap index)
-  "Destructively deletes the object at INDEX in ITREAP."
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index))
-  (unless (< index (itreap-count itreap))
-    (error 'invalid-itreap-index-error :itreap itreap :index index))
-  (labels ((recur (itreap ikey)
-             (declare ((integer 0 #.most-positive-fixnum) ikey))
-             (force-down itreap)
-             (let ((left-count (itreap-count (%itreap-left itreap))))
-               (cond ((< ikey left-count)
-                      (setf (%itreap-left itreap)
-                            (recur (%itreap-left itreap) ikey))
-                      (force-up itreap)
-                      itreap)
-                     ((> ikey left-count)
-                      (setf (%itreap-right itreap)
-                            (recur (%itreap-right itreap) (- ikey left-count 1)))
-                      (force-up itreap)
-                      itreap)
-                     (t
-                      (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
-    (recur itreap index)))
 
 (declaim (inline itreap-ref))
 (defun itreap-ref (itreap index)
@@ -407,19 +418,6 @@ identity element unless INITIAL-CONTENTS are supplied."
 ;;           (prog1 (%itreap-accumulator itreap-l-r)
 ;;             (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))))
 
-(declaim (inline itreap-reverse))
-(defun itreap-reverse (itreap l r)
-  "Destructively reverses the order of the interval [L, R) in O(log(n)) time."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
-  (unless (<= l r (itreap-count itreap))
-    (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-  (multiple-value-bind (itreap-0-l itreap-l-n)
-      (itreap-split itreap l)
-    (multiple-value-bind (itreap-l-r itreap-r-n)
-        (itreap-split itreap-l-n (- r l))
-      (setf (%itreap-reversed itreap-l-r) (not (%itreap-reversed itreap-l-r)))
-      (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
-
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
@@ -469,13 +467,32 @@ identity element unless INITIAL-CONTENTS are supplied."
 ;;               (updater-op (%itreap-lazy itreap-l-r) operand)))
 ;;       (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
 
-(declaim (inline itreap-bisect-left))
+(declaim (inline itreap-reverse))
+(defun itreap-reverse (itreap l r)
+  "Destructively reverses the order of the interval [L, R) in O(log(n)) time.
+
+You cannot rely on the side effect. Use the returned value."
+  (declare ((integer 0 #.most-positive-fixnum) l r))
+  (unless (<= l r (itreap-count itreap))
+    (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
+  (multiple-value-bind (itreap-0-l itreap-l-n)
+      (itreap-split itreap l)
+    (multiple-value-bind (itreap-l-r itreap-r-n)
+        (itreap-split itreap-l-n (- r l))
+      (setf (%itreap-reversed itreap-l-r) (not (%itreap-reversed itreap-l-r)))
+      (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
+
+;;;
+;;; Utilities for sorted treap
+;;;
+
+(declaim (inline itreap-bisect-left)
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-left))
 (defun itreap-bisect-left (itreap threshold order)
   "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= THRESHOLD, where >= is the complement of ORDER. Returns the
 size of ITREAP if ITREAP[length-1] < THRESHOLD. The time complexity is
 O(log(n))."
-  (declare (function order))
   (labels ((recur (count itreap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null itreap) nil)
@@ -485,6 +502,24 @@ O(log(n))."
                     (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
                       (or (recur left-count (%itreap-left itreap))
                           left-count))))))
+    (or (recur (itreap-count itreap) itreap)
+        (itreap-count itreap))))
+
+(declaim (inline itreap-bisect-right)
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-right))
+(defun itreap-bisect-right (itreap threshold order)
+  "Takes a **sorted** treap and returns the smallest index that satisfies
+THRESHOLD < ITREAP[index], where < is ORDER. Returns the size of ITREAP if
+ITREAP[length-1] <= THRESHOLD. The time complexity is O(log(n))."
+  (labels ((recur (count itreap)
+             (declare ((integer 0 #.most-positive-fixnum) count))
+             (cond ((null itreap) nil)
+                   ((funcall order threshold (%itreap-value itreap))
+                    (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
+                      (or (recur left-count (%itreap-left itreap))
+                          left-count)))
+                   (t
+                    (recur count (%itreap-right itreap))))))
     (or (recur (itreap-count itreap) itreap)
         (itreap-count itreap))))
 
