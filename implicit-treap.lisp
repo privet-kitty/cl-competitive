@@ -284,9 +284,11 @@ You cannot rely on the side effect. Use the returned value."
     (recur itreap index)))
 
 (defmacro itreap-push (obj itreap pos)
+  "Pushes OBJ to ITREAP at POS."
   `(setf ,itreap (itreap-insert ,itreap ,pos ,obj)))
 
 (defmacro itreap-pop (itreap pos)
+  "Returns the object at POS and deletes it."
   (let ((p (gensym)))
     `(let ((,p ,pos))
        (prog1 (itreap-ref ,itreap ,p)
