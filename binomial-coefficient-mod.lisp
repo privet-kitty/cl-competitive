@@ -4,6 +4,8 @@
 ;;; query: O(1)
 ;;;
 
+;; TODO: non-global handling
+
 (defconstant +binom-size+ 510000)
 (defconstant +binom-mod+ #.(+ (expt 10 9) 7))
 
@@ -50,6 +52,8 @@
       0
       (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +binom-mod+)))
 
+;; TODO: compiler macro or source-transform
+(declaim (inline multinomial))
 (defun multinomial (&rest ks)
   "Returns the multinomial coefficient K!/k_1!k_2!...k_n! for K = k_1 + k_2 +
 ... + k_n. K must be equal to or smaller than
