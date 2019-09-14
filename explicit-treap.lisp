@@ -290,16 +290,18 @@ exist.)"
           (t
            (treap-merge (%treap-left treap) (%treap-right treap))))))
 
+(declaim (inline treap-map))
 (defun treap-map (function treap)
   "Successively applies FUNCTION to TREAP[0], ..., TREAP[SIZE-1]. FUNCTION must
 take two arguments: KEY and VALUE."
-  (declare (function function))
-  (when treap
-    (force-down treap)
-    (treap-map function (%treap-left treap))
-    (funcall function (%treap-key treap) (%treap-value treap))
-    (treap-map function (%treap-right treap))
-    (force-up treap)))
+  (labels ((recur (treap)
+             (when treap
+               (force-down treap)
+               (recur (%treap-left treap))
+               (funcall function (%treap-key treap) (%treap-value treap))
+               (recur (%treap-right treap))
+               (force-up treap))))
+    (recur treap)))
 
 (defmethod print-object ((object treap) stream)
   (print-unreadable-object (object stream :type t)

@@ -40,7 +40,7 @@
                   :right (copy-treap (%treap-right treap))
                   :count (%treap-count treap))))
 
-(declaim (notinline make-treap treap-insert))
+(declaim (notinline make-treap treap-insert treap-map))
 
 (with-test (:name explicit-treap-sanity)
   (loop repeat 10
