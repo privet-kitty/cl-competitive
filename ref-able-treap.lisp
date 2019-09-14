@@ -39,8 +39,7 @@
 
 An element in TREAP is considered to be equal to KEY iff (and (not (funcall
 order key <element>)) (not (funcall order <element> key))) is true."
-  (declare (function order)
-           ((or null treap) treap))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
                    ((funcall order key (%treap-key treap))
@@ -50,13 +49,30 @@ order key <element>)) (not (funcall order <element> key))) is true."
                    (t key))))
     (recur treap)))
 
+(declaim (inline treap-position))
+(defun treap-position (key treap &key (order #'<))
+  "Returns the index if TREAP contains KEY, otherwise NIL.
+
+An element in TREAP is considered to be equal to KEY iff (and (not (funcall
+order key <element>)) (not (funcall order <element> key))) is true."
+  (declare ((or null treap) treap))
+  (labels ((recur (count treap)
+             (declare ((integer 0 #.most-positive-fixnum) count))
+             (cond ((null treap) nil)
+                   ((funcall order (%treap-key treap) key)
+                    (recur count (%treap-right treap)))
+                   ((funcall order key (%treap-key treap))
+                    (let ((left-count (- count (treap-count (%treap-right treap)) 1)))
+                      (recur left-count (%treap-left treap))))
+                   (t (- count (treap-count (%treap-right treap)) 1)))))
+    (recur (treap-count treap) treap)))
+
 (declaim (inline treap-bisect-left)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional)) treap-bisect-left))
 (defun treap-bisect-left (value treap &key (order #'<))
   "Returns the smallest index and the corresponding key that satisfies
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
 VALUE."
-  (declare (function order))
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -80,8 +96,7 @@ VALUE."
 (defun treap-split (key treap &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function order)
-           ((or null treap) treap))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap)
                     (values nil nil))
@@ -100,8 +115,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 (declaim (inline treap-insert))
 (defun treap-insert (key treap &key (order #'<))
   "Destructively inserts KEY into TREAP and returns the resultant treap."
-  (declare ((or null treap) treap)
-           (function order))
+  (declare ((or null treap) treap))
   (let ((node (%make-treap key (random most-positive-fixnum))))
     (labels ((recur (treap)
                (declare (treap node))
@@ -188,8 +202,7 @@ CL:CONCATENATE. (TREAP-UNITE is the analogue of the former.)"
 (declaim (inline treap-delete))
 (defun treap-delete (key treap &key (order #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant treap."
-  (declare ((or null treap) treap)
-           (function order))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
                    ((funcall order key (%treap-key treap))
