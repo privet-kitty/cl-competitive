@@ -2,7 +2,7 @@
 ;;; 1-dimensional binary indexed tree on arbitrary commutative monoid
 ;;;
 
-(defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'>))
+(defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'<))
   "OPERATOR := binary operator (comprising a commutative monoid)
 IDENTITY := object (identity element of the monoid)
 ORDER := nil | strict comparison operator on the monoid
@@ -11,9 +11,9 @@ SUM-TYPE := nil | type specifier
 Defines no structure; BIT is just a vector. This macro defines the three
 function: <NAME>-UPDATE!, point-update function, <NAME>-SUM, query function for
 prefix sum, and COERCE-TO-<NAME>!, constructor. If ORDER is specified, this
-macro in addition defines <NAME>-BISECT-LEFT, the bisection function for prefix
-sums. (Note that the -BISECT-LEFT function works only when the sequence of
-prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotone.)
+macro in addition defines <NAME>-BISECT-LEFT and <NAME>-BISECT-RIGHT, the
+bisection functions for prefix sums. (Note that these functions work only when
+the sequence of prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotone.)
 
 SUM-TYPE is used only for the type declaration: each sum
 VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. (The
@@ -67,7 +67,7 @@ with the identity elements is a valid BIT as it is.)"
 VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
 ... +VECTOR[length-1] < VALUE."
                (declare (vector bitree))
-               (if (not (funcall ,order value ,identity))
+               (if (not (funcall ,order ,identity value))
                    0
                    (let ((len (length bitree))
                          (index+1 0)
@@ -84,7 +84,7 @@ VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
                            (let ((next-cumul (funcall ,operator cumul (aref bitree next-index))))
                              ,@(when sum-type
                                  `((declare (type ,sum-type next-cumul))))
-                             (when (funcall ,order value next-cumul)
+                             (when (funcall ,order next-cumul value)
                                (setf cumul next-cumul)
                                (incf index+1 delta)))))))))
              (declaim (inline ,fname-bisect-right))
@@ -93,7 +93,7 @@ VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
 VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
 ... +VECTOR[length-1] <= VALUE."
                (declare (vector bitree))
-               (if (funcall ,order ,identity value)
+               (if (funcall ,order value ,identity)
                    0
                    (let ((len (length bitree))
                          (index+1 0)
@@ -110,7 +110,7 @@ VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
                            (let ((next-cumul (funcall ,operator cumul (aref bitree next-index))))
                              ,@(when sum-type
                                  `((declare (type ,sum-type next-cumul))))
-                             (unless (funcall ,order next-cumul value)
+                             (unless (funcall ,order value next-cumul)
                                (setf cumul next-cumul)
                                (incf index+1 delta))))))))))))))
 
@@ -118,7 +118,7 @@ VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
   :operator #'+
   :identity 0
   :sum-type fixnum
-  :order #'>)
+  :order #'<)
 
 ;; Example: compute the number of inversions in a sequence
 ;; (declaim (inline make-inverse-lookup-table))

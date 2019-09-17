@@ -4,7 +4,7 @@
 
 (use-package :test-util)
 
-(with-test (:name generalized-bit)
+(with-test (:name abstract-bit)
   (let ((tree (coerce-to-bitree! (vector 10 2 0 0 1 2 2)))
         (tree2 (coerce-to-bitree! (vector 1 0 0 1))))
     (assert (= 0 (bitree-bisect-left tree -1)))
