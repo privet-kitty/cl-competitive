@@ -47,7 +47,7 @@
             (cons (itreap-tree (%itreap-left itreap))
                   (itreap-tree (%itreap-right itreap))))))
 
-(declaim (notinline itreap-insert itreap-query itreap-ref itreap-update itreap-bisect-left))
+(declaim (notinline itreap-insert itreap-query itreap-ref itreap-update itreap-bisect-left itreap-range-bisect-left))
 
 (with-test (:name implicit-treap-sanity)
   (assert (loop for i below 100 always (itreap-sane-p (make-itreap i)))))
@@ -125,6 +125,41 @@
       (assert (equal '(1 2 3 -8 -9 2 7) (itreap-list itreap1)))
       (assert (= -8 (itreap-query itreap1 2 4)))
       (assert (= 3 (itreap-query itreap1 2 3))))))
+
+(with-test (:name implicit-treap-range-bisect)
+  (let ((itreap (itreap 5 2 4 2 1 4 2 1 -1)))
+    (assert (= 0 (itreap-range-bisect-left itreap 6 #'>)))
+    (assert (= 0 (itreap-range-bisect-left itreap 5 #'>)))
+    (assert (= 1 (itreap-range-bisect-left itreap 4 #'>)))
+    (assert (= 1 (itreap-range-bisect-left itreap 3 #'>)))
+    (assert (= 1 (itreap-range-bisect-left itreap 2 #'>)))
+    (assert (= 4 (itreap-range-bisect-left itreap 1 #'>)))
+    (assert (= 8 (itreap-range-bisect-left itreap 0 #'>)))
+    (assert (= 8 (itreap-range-bisect-left itreap -1 #'>)))
+    (assert (= 9 (itreap-range-bisect-left itreap -2 #'>)))
+
+    ;; START arg
+    (assert (= 3 (itreap-range-bisect-left itreap 6 #'> 3)))
+    (assert (= 3 (itreap-range-bisect-left itreap 5 #'> 3)))
+    (assert (= 3 (itreap-range-bisect-left itreap 4 #'> 3)))
+    (assert (= 3 (itreap-range-bisect-left itreap 3 #'> 3)))
+    (assert (= 3 (itreap-range-bisect-left itreap 2 #'> 3)))
+    (assert (= 4 (itreap-range-bisect-left itreap 1 #'> 3)))
+    (assert (= 8 (itreap-range-bisect-left itreap 0 #'> 3)))
+    (assert (= 8 (itreap-range-bisect-left itreap -1 #'> 3)))
+    (assert (= 9 (itreap-range-bisect-left itreap -2 #'> 3)))
+
+    (assert (= 8 (itreap-range-bisect-left itreap 6 #'> 8)))
+    (assert (= 8 (itreap-range-bisect-left itreap -1 #'> 8)))
+    (assert (= 9 (itreap-range-bisect-left itreap -2 #'> 8)))
+
+    (assert (= 9 (itreap-range-bisect-left itreap -10 #'> 9)))
+    (assert (= 9 (itreap-range-bisect-left itreap 10 #'> 9)))
+
+    (signals invalid-itreap-index-error (itreap-range-bisect-left itreap 10 #'> 10))
+
+    ;; null case
+    (assert (zerop (itreap-range-bisect-left nil 10 #'<)))))
 
 (with-test (:name implicit-treap-ordered)
   (let ((itreap (itreap 3 3 2 2 2 2 1 1 1)))

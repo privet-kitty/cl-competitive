@@ -376,7 +376,7 @@ each time."
 
 (declaim (inline itreap-query))
 (defun itreap-query (itreap l r)
-  "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
+  "Queries the `sum' (w.r.t. OP) of the range ITREAP[L, R)."
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
@@ -402,6 +402,50 @@ each time."
                        (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))
            (force-up itreap))))
     (recur itreap l r)))
+
+;; FIXME: might be problematic when two priorities collide and START is not
+;; zero. (It will be negligible from the viewpoint of probability, however.)
+(declaim (inline itreap-range-bisect-left))
+(defun itreap-range-bisect-left (itreap value order &optional (start 0))
+  "Returns the smallest index that satisfies ITREAP[START]+ ITREAP[START+1] +
+... + ITREAP[index] >= VALUE (if ORDER is #'<).
+
+Note:
+- This function handles a **closed** interval.
+- This function returns the length of ITREAP instead if ITREAP[START]+
+... +ITREAP[length-1] < VALUE.
+- The prefix sums of ITREAP, (ITREAP[START], ITREAP[START]+ITREAP[START+1], ...)
+  must be monotone w.r.t. ORDER.
+- ORDER must be a strict order"
+  (declare ((integer 0 #.most-positive-fixnum) start))
+  (multiple-value-bind (itreap-prefix itreap)
+      (if (zerop start)
+          (values nil itreap)
+          (itreap-split itreap start))
+    (labels
+        ((recur (itreap offset prev-sum)
+           (declare ((integer 0 #.most-positive-fixnum) offset)
+                    #+sbcl (values (integer 0 #.most-positive-fixnum)))
+           (unless itreap
+             (return-from recur offset))
+           (force-down itreap)
+           (let ((sum prev-sum))
+             (prog1
+                 (cond ((not (funcall order
+                                      (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))
+                                      value))
+                        (recur (%itreap-left itreap) offset prev-sum))
+                       ((not (funcall order
+                                      (setq sum (op sum (%itreap-value itreap)))
+                                      value))
+                        (+ offset (itreap-count (%itreap-left itreap))))
+                       (t
+                        (recur (%itreap-right itreap)
+                               (+ offset (itreap-count (%itreap-left itreap)) 1)
+                               sum)))
+               (force-up itreap)))))
+      (prog1 (+ start (recur itreap 0 +op-identity+))
+        (itreap-merge itreap-prefix itreap)))))
 
 ;; merge/split version of itreap-query (a bit slower but simpler)
 ;; FIXME: might be problematic when two priorities collide.
