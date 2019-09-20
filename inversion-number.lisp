@@ -1,11 +1,10 @@
 ;;;
-;;; Compute inversion number by merge sort
+;;; Count the number of inversions in a vector by merge sort
 ;;;
 
 (declaim (inline %merge-count))
-(defun %merge-count (l mid r source-vec dest-vec predicate)
-  (declare ((integer 0 #.array-total-size-limit) l mid r)
-           (function predicate))
+(defun %merge-count (l mid r source-vec dest-vec predicate key)
+  (declare ((integer 0 #.array-total-size-limit) l mid r))
   (loop with count of-type (integer 0 #.most-positive-fixnum) = 0
         with i = l
         with j = mid
@@ -23,8 +22,8 @@
                           (aref source-vec i))
                  finally (return-from %merge-count count))
         do (if (funcall predicate
-                        (aref source-vec j)
-                        (aref source-vec i))
+                        (funcall key (aref source-vec j))
+                        (funcall key (aref source-vec i)))
                (setf (aref dest-vec idx) (aref source-vec j)
                      j (1+ j)
                      count (+ count (- mid i)))
@@ -40,13 +39,14 @@
 	           (cdr form)))))
 
 (declaim (inline %calc-by-insertion-sort!))
-(defun %calc-by-insertion-sort! (vec predicate l r)
-  (declare (function predicate)
-           ((integer 0 #.array-total-size-limit) l r))
+(defun %calc-by-insertion-sort! (vec predicate l r key)
+  (declare ((integer 0 #.array-total-size-limit) l r))
   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
         for end from (+ l 1) below r
         do (loop for i from end above l
-                 while (funcall predicate (aref vec i) (aref vec (- i 1)))
+                 while (funcall predicate
+                                (funcall key (aref vec i))
+                                (funcall key (aref vec (- i 1))))
                  do (rotatef (aref vec (- i 1)) (aref vec i))
                     (incf inv-count))
         finally (return inv-count)))
@@ -55,11 +55,10 @@
 ;; constant-folding of ARRAY-ELEMENT-TYPE doesn't work. Use
 ;; array-element-type.lisp if necessary.
 (declaim (inline count-inversions!))
-(defun count-inversions! (vector predicate &key (start 0) end)
+(defun count-inversions! (vector predicate &key (start 0) end (key #'identity))
   "Calculates the number of the inversions of VECTOR w.r.t. the strict order
 PREDICATE. This function sorts VECTOR as a side effect."
-  (declare (vector vector)
-           (function predicate))
+  (declare (vector vector))
   (let ((end (or end (length vector))))
     (declare ((integer 0 #.array-total-size-limit) start end))
     (assert (<= start end))
@@ -84,6 +83,6 @@ PREDICATE. This function sorts VECTOR as a side effect."
                           (+ (recur l mid (not merge-to-vec1-p))
                              (recur mid r (not merge-to-vec1-p))
                              (if merge-to-vec1-p
-                                 (%merge-count l mid r buffer vector predicate)
-                                 (%merge-count l mid r vector buffer predicate)))))))))
+                                 (%merge-count l mid r buffer vector predicate key)
+                                 (%merge-count l mid r vector buffer predicate key)))))))))
         (recur start end t)))))
