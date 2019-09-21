@@ -24,7 +24,14 @@
     (assert (null (dst-query table #'* 4 4)))
     (assert (= 0 (dst-query table #'* 4 4 0)))
     (signals error (dst-query table #'* 4 3)))
-  (assert (equalp #2a() (make-disjoint-sparse-table #() #'gcd)))
+  ;; no element
+  (let ((table0 (make-disjoint-sparse-table #() #'gcd)))
+    (assert (equalp #2a(()) table0))
+    (assert (zerop (dst-query table0 #'gcd 0 0 0))))
+  ;; one element
+  (let ((table1 (make-disjoint-sparse-table #(1) #'min)))
+    (assert (= 1 (dst-query table1 #'min 0 1)))
+    (assert (null (dst-query table1 #'min 0 0))))
 
   (let* ((state (sb-ext:seed-random-state 0))
          (n 30)

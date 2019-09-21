@@ -16,7 +16,7 @@
 (defun make-disjoint-sparse-table (vector binop)
   "BINOP := binary operator (comprising a semigroup)"
   (let* ((n (length vector))
-         (height (integer-length (- n 1)))
+         (height (max 1 (integer-length (- n 1))))
          (table (make-array (list height n) :element-type (array-element-type vector))))
     (dotimes (j n)
       (setf (aref table 0 j) (aref vector j)))
