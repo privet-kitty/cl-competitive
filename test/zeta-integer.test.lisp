@@ -4,6 +4,8 @@
 
 (use-package :test-util)
 
+(declaim (notinline divisor-transform! inverse-divisor-transform! multiple-transform! inverse-multiple-transform!))
+
 (with-test (:name divisor/multiple-transform)
   (assert (equalp #(10 1 2 2 3 2 4 2 4 3) (divisor-transform! (vector 1 1 1 1 1 1 1 1 1 1))))
   (assert (equalp #(11 1 2 2 3 2 4 2 4 3 4) (divisor-transform! (vector 1 1 1 1 1 1 1 1 1 1 1))))
