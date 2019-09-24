@@ -91,6 +91,8 @@
       (defconstant +rhash-base1+ base1)
       (defconstant +rhash-base2+ base2))))
 
+;; KLUDGE: Type derivation of MOD fails in some cases on SBCL. See
+;; https://bugs.launchpad.net/sbcl/+bug/1843108
 (declaim (inline %mod))
 (defun %mod (number divisor)
   (nth-value 1 (floor number divisor)))
