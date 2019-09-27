@@ -18,4 +18,6 @@
     (ds-unite! dset 0 4)
     (assert (ds-connected-p dset 1 3))
     (assert (= 4 (ds-size dset 0)))
-    (assert (= 1 (ds-size dset 2)))))
+    (assert (= 1 (ds-size dset 2))))
+  (make-disjoint-set 0)
+  (make-disjoint-set 1))
