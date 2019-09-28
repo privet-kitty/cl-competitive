@@ -22,4 +22,4 @@ assigns each value of the vector to the integers 0, 1, ..."
                 (not (funcall test (aref vector pos) (aref vector (- pos 1)))))
         (setf (gethash (aref vector pos) table) index)
         (incf index)))
-    table))
+    (values table index)))

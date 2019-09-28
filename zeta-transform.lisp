@@ -1,5 +1,12 @@
+;;;
+;;; Zeta/Moebius transforms w.r.t. subsets and supersets
+;;;
+
+;; TODO: Should we integrate zeta- and moebius- into a function?
+
 (declaim (inline zeta-subtransform!))
 (defun zeta-subtransform! (vector &optional (plus #'+))
+  "Does the fast zeta transform w.r.t. subsets."
   (declare (vector vector))
   (let* ((n (length vector))
          ;; cardinality of the underlying set
@@ -17,6 +24,7 @@
 
 (declaim (inline zeta-supertransform!))
 (defun zeta-supertransform! (vector &optional (plus #'+))
+  "Does the fast zeta transform w.r.t. supersets."
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))
@@ -33,6 +41,7 @@
 
 (declaim (inline moebius-subtransform!))
 (defun moebius-subtransform! (vector &optional (minus #'-))
+  "Does the inverse of ZETA-SUBTRANSFORM!"
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))
@@ -49,6 +58,7 @@
 
 (declaim (inline moebius-supertransform!))
 (defun moebius-supertransform! (vector &optional (minus #'-))
+  "Does the inverse of ZETA-SUPERTRANSFORM!."
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))

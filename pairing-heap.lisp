@@ -28,8 +28,6 @@
                (%pheap-head node1) node2)
          node1)))
 
-(declaim (inline %pheap-merge-list1 %pheap-merge-list2 %pheap-merge-list3))
-
 ;; NOTE: Three implementations are available for MERGE-LIST, each of which has
 ;; good points and bad points.
 
@@ -37,6 +35,7 @@
 ;; Pros: fastest on SBCL, no consing
 ;; Cons: there is a risk of stack exhaustion
 
+(declaim (inline %pheap-merge-list1))
 (defun %pheap-merge-list1 (node order)
   (labels ((recur (node)
              (when node
@@ -54,6 +53,7 @@
 ;; Pros: stack safe
 ;; Cons: most consing, 15% slower
 
+(declaim (inline %pheap-merge-list2))
 (defun %pheap-merge-list2 (node order)
   (let (stack)
     (loop
@@ -75,6 +75,7 @@
 ;; Pros: stack safe, no consing
 ;; Cons: a bit trickey, 5% slower
 
+(declaim (inline %pheap-merge-list3))
 (defun %pheap-merge-list3 (node order)
   (let ((stack (load-time-value (sb-mop:class-prototype (find-class 'pheap)))))
     (setf (%pheap-next stack) nil)
