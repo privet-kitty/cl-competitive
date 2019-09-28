@@ -68,6 +68,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/gemm.lisp) matrix multiplication over semiring
 - [f2.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/f2.lisp) linear algebra on GF(2)
 - [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/walsh-hadamard.lisp) fast Walsh-Hadamard transform
+- [zeta-transform.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/zeta-transform.lisp) Fast Zeta/Möbius transform
 - [zeta-integer.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/zeta-integer.lisp) Fast Zeta/Möbius transform w.r.t. divisors or multiples of integer
 
 ### Real and complex
