@@ -19,9 +19,14 @@
 ;;; LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 ;;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+(declaim (inline split-string))
 (defun split-string (string &key max (separator '(#\Space #\Tab)))
+  (declare (string string))
   (block ()
-    (let ((list nil) (words 0) (end (length string)))
+    (let ((list nil)
+          (words 0)
+          (end (length string)))
+      (declare ((integer 0 #.most-positive-fixnum) words end))
       (when (zerop end) (return nil))
       (flet ((separatorp (char) (find char separator))
              (done () (return (cons (subseq string 0 end) list))))
@@ -33,3 +38,4 @@
               (push (subseq string (1+ start) end) list)
               (incf words)
               (setf end start))))))
+
