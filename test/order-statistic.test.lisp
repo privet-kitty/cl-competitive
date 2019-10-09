@@ -1,0 +1,21 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../order-statistic.lisp"))
+
+(use-package :test-util)
+
+(with-test (:name select-ith!)
+  (let ((vector (make-array 500 :element-type 'fixnum)))
+    (dotimes (i (length vector))
+      (setf (aref vector i) (random 10)))
+    (let ((sorted (sort (copy-seq vector) #'>)))
+      (dotimes (i (length vector))
+        (assert (= (aref sorted i)
+                   (select-ith! (copy-seq vector) #'> i))))))
+  (let ((vector (vector 1 1 1 1 1 1 1)))
+    (dotimes (i (length vector))
+      (assert (= (aref vector i)
+                 (select-ith! (copy-seq vector) #'> i)))))
+  ;; empty case
+  (signals error (select-ith! (vector) #'< 0))
+  (assert (= 10 (select-ith! (vector 10) #'< 0))))
