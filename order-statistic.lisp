@@ -1,5 +1,5 @@
 ;;;
-;;; Select i-th order statistic (unfinished)
+;;; Select i-th order statistic in O(n) (unfinished)
 ;;;
 
 ;; REVIEW: Is the average time complexity of SELECT-ITH! really O(n)?

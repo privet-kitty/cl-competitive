@@ -5,9 +5,10 @@
 (use-package :test-util)
 
 (with-test (:name select-ith!)
-  (let ((vector (make-array 500 :element-type 'fixnum)))
+  (let ((vector (make-array 500 :element-type 'fixnum))
+        (state (sb-ext:seed-random-state 0)))
     (dotimes (i (length vector))
-      (setf (aref vector i) (random 10)))
+      (setf (aref vector i) (random 10 state)))
     (let ((sorted (sort (copy-seq vector) #'>)))
       (dotimes (i (length vector))
         (assert (= (aref sorted i)
