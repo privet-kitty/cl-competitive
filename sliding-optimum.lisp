@@ -1,5 +1,10 @@
+;;;;
+;;;; Sliding window optimum
+;;;;
+
+
 ;;;
-;;; Sliding window optimum
+;;; For windows of fixed width
 ;;;
 
 (declaim (inline calc-sliding-opt))
@@ -54,3 +59,59 @@ ORDER := strict order (#'< corresponds to slide min. and #'> to slide max.)"
             finally (setf (aref res (- i width))
                           (aref vector (peek-front))))
       res)))
+
+;;;
+;;; For windows of variable width
+;;;
+
+(defstruct (sliding-window (:constructor make-sliding-window
+                               (size &aux
+                                     (times (make-array size :element-type 'fixnum))
+                                     (values (make-array size :element-type 'fixnum))))
+                           (:conc-name %swindow-)
+                           (:copier nil))
+  (front-pos 0 :type (integer 0 #.most-positive-fixnum))
+  (end-pos -1 :type (integer -1 #.most-positive-fixnum))
+  (times nil :type (simple-array fixnum (*)))
+  (values nil :type (simple-array fixnum (*))))
+
+(defun %swindow-push-back (time value sw)
+  (let ((new-end-pos (+ 1 (%swindow-end-pos sw))))
+    (setf (aref (%swindow-times sw) new-end-pos) time
+          (aref (%swindow-values sw) new-end-pos) value
+          (%swindow-end-pos sw) new-end-pos)))
+
+(defun %swindow-pop-back (sw)
+  (decf (%swindow-end-pos sw)))
+
+(defun %swindow-pop-front (sw)
+  (incf (%swindow-front-pos sw)))
+
+(declaim (inline swindow-extend))
+(defun swindow-extend (time value sw order)
+  "ORDER := #'< => minimum
+ORDER := #'> => maximum"
+  (let ((values (%swindow-values sw)))
+    (loop while (and (<= (%swindow-front-pos sw) (%swindow-end-pos sw))
+                     (not (funcall order
+                                   (aref values (%swindow-end-pos sw))
+                                   value)))
+          do (%swindow-pop-back sw))
+    (%swindow-push-back time value sw)))
+
+(declaim (inline swindow-shrink))
+(defun swindow-shrink (time sw)
+  (let ((times (%swindow-times sw)))
+    (loop while (and (<= (%swindow-front-pos sw) (%swindow-end-pos sw))
+                     (< (aref times (%swindow-front-pos sw)) time))
+          do (%swindow-pop-front sw))))
+
+(declaim (inline swindow-empty-p))
+(defun swindow-empty-p (sw)
+  (> (%sw-front-pos sw) (%sw-end-pos sw)))
+
+(declaim (inline swindow-get-opt))
+(defun swindow-get-opt (sw)
+  (assert (not (swindow-empty-p sw)))
+  (let ((front-pos (%sw-front-pos sw)))
+    (aref (%sw-values sw) front-pos)))
