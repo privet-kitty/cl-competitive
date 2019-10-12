@@ -4,7 +4,7 @@
 
 
 ;;;
-;;; For windows of fixed width
+;;; For window of fixed width
 ;;;
 
 (declaim (inline calc-sliding-opt))
@@ -61,7 +61,7 @@ ORDER := strict order (#'< corresponds to slide min. and #'> to slide max.)"
       res)))
 
 ;;;
-;;; For windows of variable width
+;;; For window of variable width
 ;;;
 
 (defstruct (sliding-window (:constructor make-sliding-window

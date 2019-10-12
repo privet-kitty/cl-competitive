@@ -1,10 +1,10 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../sliding-optimum.lisp"))
+  (load "../sliding-window.lisp"))
 
 (use-package :test-util)
 
-(with-test (:name sliding-optimum)
+(with-test (:name sliding-window)
   (assert (equalp #(1 1 2 2 3 -1) (calc-sliding-opt #(5 1 4 2 3 5 7 -1) 3 #'<)))
   (assert (equalp #(5 4 4 5 7 7) (calc-sliding-opt #(5 1 4 2 3 5 7 -1) 3 #'>)))
   (assert (equalp #(-1) (calc-sliding-opt #(5 1 4 2 3 5 7 -1) 8 #'<)))
