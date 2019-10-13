@@ -8,15 +8,6 @@
    (lambda (condition stream)
      (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
 
-(define-condition heap-full-error (simple-error)
-  ((heap :initarg :heap :reader heap-full-error-heap)
-   (item :initarg :item :reader heap-full-error-item))
-  (:report
-   (lambda (condition stream)
-     (format stream "Attempted to push item ~W to full heap ~W"
-             (heap-full-error-item condition)
-             (heap-full-error-heap condition)))))
-
 (defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
   "Defines the binary heap specialized for the given order and the element
 type. This macro defines a structure of the name NAME and relevant functions:
@@ -40,7 +31,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
                         &aux (data ,(if (eql element-type '*)
                                         `(make-array (1+ size))
                                         `(make-array (1+ size) :element-type ',element-type))))))
-         (data #() :type (simple-array ,element-type (*)) :read-only t)
+         (data #() :type (simple-array ,element-type (*)))
          (position 1 :type (integer 1 #.most-positive-fixnum)))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
@@ -49,6 +40,9 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))
+           (when (>= position (length (,acc-data heap)))
+             (setf (,acc-data heap)
+                   (adjust-array (,acc-data heap) (* position 2))))
            (let ((data (,acc-data heap)))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((update (pos)
@@ -58,8 +52,6 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
                             (when (funcall ,order (aref data pos) (aref data parent-pos))
                               (rotatef (aref data pos) (aref data parent-pos))
                               (update parent-pos))))))
-               (unless (< position (length data))
-                 (error 'heap-full-error :heap heap :item obj))
                (setf (aref data position) obj)
                (update position)
                (incf position)
