@@ -11,3 +11,10 @@
   (assert (= 1 (binom 0 0)))
   (assert (= 10 (binom 5 2)))
   (assert (= 962556519 (binom 1000 400))))
+
+(with-test (:name catalan)
+  (assert (= 1 (catalan 0)))
+  (assert (= 1 (catalan 1)))
+  (assert (= 429 (catalan 7)))
+  (assert (= (mod 6564120420 +binom-mod+)
+             (catalan 20))))

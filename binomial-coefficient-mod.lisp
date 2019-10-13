@@ -66,3 +66,13 @@ MOST-POSITIVE-FIXNUM. (multinomial) returns 1."
       (setq result
             (mod (* result (aref *fact-inv* k)) +binom-mod+)))
     (mod (* result (aref *fact* sum)) +binom-mod+)))
+
+(declaim (inline catalan))
+(defun catalan (n)
+  "Returns the N-th Catalan number."
+  (declare ((integer 0 #.most-positive-fixnum) n))
+  (mod (* (aref *fact* (* 2 n))
+          (mod (* (aref *fact-inv* (+ n 1))
+                  (aref *fact-inv* n))
+               +binom-mod+))
+       +binom-mod+))
