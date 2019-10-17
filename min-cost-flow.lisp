@@ -33,13 +33,18 @@ GRAPH := vector of list of all the edges that goes from the vertex"
                           (size
                            &aux (costs (make-array (1+ size) :element-type 'cost-type))
                                 (vertices (make-array (1+ size) :element-type 'fixnum)))))
-  (costs nil :type (simple-array cost-type (*)) :read-only t)
-  (vertices nil :type (simple-array fixnum (*)) :read-only t)
+  (costs nil :type (simple-array cost-type (*)))
+  (vertices nil :type (simple-array fixnum (*)))
   (position 1 :type (integer 1 #.most-positive-fixnum)))
 
 (defun fheap-push (cost vertex fheap)
   (declare (optimize (speed 3)))
   (symbol-macrolet ((position (fheap-position fheap)))
+    (when (>= position (length (fheap-costs fheap)))
+      (setf (fheap-costs fheap)
+            (adjust-array (fheap-costs fheap) (* position 2))
+            (fheap-vertices fheap)
+            (adjust-array (fheap-vertices fheap) (* position 2))))
     (let ((costs (fheap-costs fheap))
           (vertices (fheap-vertices fheap)))
       (labels ((update (pos)
@@ -50,7 +55,6 @@ GRAPH := vector of list of all the edges that goes from the vertex"
                        (rotatef (aref costs pos) (aref costs parent-pos))
                        (rotatef (aref vertices pos) (aref vertices parent-pos))
                        (update parent-pos))))))
-        (assert (< position (length costs)))
         (setf (aref costs position) cost
               (aref vertices position) vertex)
         (update position)
@@ -109,7 +113,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
-DENSITY := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"
+DENSITY := nil | the number of edges (assumed to be (size of GRAPH)*2 if NIL)"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) flow)
            ((simple-array list (*)) graph))
@@ -117,7 +121,7 @@ DENSITY := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"
                (reduce (lambda (x y) `(,(car form) (the cost-type ,x) (the cost-type ,y)))
 		       (cdr form))))
     (let* ((size (length graph))
-           (density (or density (* size size)))
+           (density (or density (* size 2)))
            (prev-vertices (make-array size :element-type 'fixnum :initial-element 0))
            (prev-edges (make-array size :element-type 'edge))
            (potential (make-array size :element-type 'cost-type :initial-element 0))
@@ -154,7 +158,9 @@ DENSITY := nil | the number of edges (assumed to be (size of GRAPH)^2 if NIL)"
                (let ((max-flow flow))
                  (declare (fixnum max-flow))
                  (dotimes (v size)
-                   (incf (aref potential v) (aref dist v)))
+                   (setf (aref potential v)
+                         (min +inf-cost+
+                              (+ (aref potential v) (aref dist v)))))
                  (do ((v dest-idx (aref prev-vertices v)))
                      ((= v src-idx))
                    (setf max-flow (min max-flow (edge-capacity (aref prev-edges v)))))
