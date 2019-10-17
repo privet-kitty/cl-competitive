@@ -32,3 +32,16 @@
   
   (let ((scc (make-scc #((1) (2) (0)) #((2) (0) (1)))))
     (assert (equalp #(0 0 0) (scc-components scc)))))
+
+(with-test (:name 2sat)
+  (2sat-solve (make-2sat 0))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat 0 (negate 0))
+    (assert (equalp #(0) (2sat-solve 2sat))))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat (negate 0) 0)
+    (assert (equalp #(1) (2sat-solve 2sat))))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat 0 (negate 0))
+    (add-implication 2sat (negate 0) 0)
+    (assert (null (2sat-solve 2sat)))))
