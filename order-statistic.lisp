@@ -1,8 +1,9 @@
 ;;;
-;;; Select i-th order statistic in O(n) (unfinished)
+;;; Select i-th order statistic in O(n)
 ;;;
 
-;; REVIEW: Is the average time complexity of SELECT-ITH! really O(n)?
+;; REVIEW: Is the average time complexity of SELECT-ITH! with (randomized) Hoare
+;; partition really O(n)?
 
 (declaim (inline %hoare-partition!))
 (defun %hoare-partition! (vector l r pivot-idx order)
@@ -51,14 +52,12 @@ R]."
   (assert (< i (length vector)))
   (labels ((recur (l r i)
              (declare ((integer 0 #.most-positive-fixnum) l r i))
-             ;; (dbg l r i vector)
              (when (= l r)
                (return-from recur (aref vector r)))
              (let* ((pivot-idx (+ l (random (+ 1 (- r l)))))
                     (mid (%hoare-partition! vector l r pivot-idx order))
                     (delta (- mid l)))
                (declare ((integer 0 #.most-positive-fixnum) pivot-idx))
-               ;; (dbg vector)
                (cond ((= i delta)
                       (return-from recur (aref vector mid)))
                      ((< i delta)
