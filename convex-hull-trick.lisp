@@ -92,7 +92,7 @@
                  (declare ((integer 0 #.most-positive-fixnum) pos))
                  (when (>= pos (%cht-max-length cht))
                    (decf pos (%cht-max-length cht)))
-                 (values (aref slopes i) (aref intercepts i)))))
+                 (values (aref slopes pos) (aref intercepts pos)))))
       (cond ((zerop (%cht-length cht))
              (%cht-push-front cht slope intercept))
             ((>= slope (aref slopes (%cht-start cht)))
