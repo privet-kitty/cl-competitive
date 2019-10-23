@@ -1,5 +1,5 @@
-;; This is actually not trisection but bisection though I put this here as the
-;; goal is the same; it is an alternative of integer trisection.
+;; This is actually not a trisection but a bisection though I put this here as
+;; the goal is the same; it is an alternative of integer trisection.
 (declaim (inline trisect-left))
 (defun trisect-left (target start end &key maximum)
   "TARGET := function | (TODO: vector)
