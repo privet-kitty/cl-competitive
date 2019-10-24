@@ -54,7 +54,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                              (size &aux
                                    (data (progn
                                            (check-type size (integer 0))
-                                           (make-array (+ 1 size) :element-type ',element-type)))))
+                                           (make-array size :element-type ',element-type)))))
                          (:copier nil)
                          (:predicate nil))
          (data nil :type (simple-array ,element-type (*)))
@@ -70,7 +70,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                   (next (- front 1)))
              (declare ((integer -1 #.most-positive-fixnum) next))
              (when (< next 0) (incf next length))
-             (when (= (+ 1 count) length)
+             (when (= count length)
                (error 'deque-full-error :item obj :queue ,name))
              (setf (aref data front) obj)
              (setq front next)
@@ -131,8 +131,8 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
              (when (>= pos length) (decf pos length))
              (when (zerop count)
                (error 'deque-empty-error :queue ,name))
-             (prog1 (aref data pos)
-               (decf count)))))
+             (decf count)
+             (aref data pos))))
 
        (declaim (inline ,peek-back))
        (defun ,peek-back (,name)
