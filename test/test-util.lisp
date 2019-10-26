@@ -521,10 +521,10 @@
 ;; from UIOP
 (defmacro signals (condition sexp &aux (x (gensym)))
   `(block ,x
-     (handler-bind ((,condition (lambda (c) (return-from ,x))))
-       (let ((,x ,sexp))
-         (error "Expression ~S fails to raise condition ~S, instead returning~{ ~S~}"
-                ',sexp ',condition ,x)))))
+     (let ((,x (handler-bind ((,condition (lambda (c) (return-from ,x))))
+                 ,sexp)))
+       (error "Expression ~S fails to raise condition ~S, instead returning ~S"
+              ',sexp ',condition ,x))))
 
 (push (lambda ()
         (when *failures*
