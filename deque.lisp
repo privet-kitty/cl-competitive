@@ -51,10 +51,11 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
         (count-getter (intern (format nil "~A-COUNT" name))))
     `(progn
        (defstruct (,name (:constructor ,constructor
-                             (size &aux
-                                   (data (progn
-                                           (check-type size (integer 0))
-                                           (make-array size :element-type ',element-type)))))
+                             (size
+                              &aux
+                              (data (progn
+                                      (check-type size (integer 0))
+                                      (make-array size :element-type ',element-type)))))
                          (:copier nil)
                          (:predicate nil))
          (data nil :type (simple-array ,element-type (*)))

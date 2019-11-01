@@ -26,3 +26,6 @@
 
 (define-modify-macro decfmod (delta &optional (divisor '*modulus*))
   (lambda (x y divisor) (mod (- x y) divisor)))
+
+(define-modify-macro mulfmod (delta &optional (divisor '*modulus*))
+  (lambda (x y divisor) (mod (* x y) divisor)))

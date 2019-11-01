@@ -50,6 +50,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversions of vector by merge sort
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mex.lisp) minimum excludant on non-negative integers
 - [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/sliding-window.lisp) sliding window minimum (or maximum)
+- [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
 
 ### Arithmetic and algebra
 - [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination

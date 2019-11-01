@@ -1,5 +1,5 @@
 ;;;
-;;; Convex Hull Trick (unfinished)
+;;; Convex Hull Trick for monotone query (unfinished)
 ;;;
 
 (deftype cht-element-type () 'fixnum)
