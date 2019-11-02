@@ -4,6 +4,11 @@
 ;;; Succinct bit vector
 ;;;
 
+;; REVIEW: Is it really better to use the typical three-layer succint bit vector
+;; in competitive programming? It may be efficient to use a two-layer (probably
+;; not succint) bit vector preserving the original vector and the cumulative sum
+;; per 64-bit word.
+
 (defconstant +chunk-width+ (* 64 16))
 ;; This constant cannot be changed as the current implementation depends on the
 ;; assumption: +BLOCK-WIDTH+ is equal to the word size.

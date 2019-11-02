@@ -125,7 +125,7 @@
 
 (declaim (inline cht-get))
 (defun cht-get (cht x)
-  "Returns the minimum (maximum) value at X."
+  "Returns the minimum (maximum) value at X. The time complexity is O(log(n))."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((ng -1)
@@ -152,7 +152,9 @@
               (setq ng mid)))))))
 
 (declaim (inline cht-increasing-get))
-(defun cht-get-increasing (cht x)
+(defun cht-increasing-get (cht x)
+  "Returns the minimum (maximum) value at X. The time complexity is O(1), though
+X must be larger than the one given at the previous call of this function."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((slopes (%cht-slopes cht))
@@ -176,3 +178,36 @@
         (if (%cht-minimum cht)
             (calc (aref slopes start) (aref intercepts start))
             (- (calc (aref slopes start) (aref intercepts start))))))))
+
+(declaim (inline cht-decreasing-get))
+(defun cht-decreasing-get (cht x)
+  "Returns the minimum (maximum) value at X. The time complexity is O(1), though
+X must be smaller than the one given at the previous call of this function."
+  (when (zerop (%cht-length cht))
+    (error 'cht-empty-error :cht cht))
+  (let ((slopes (%cht-slopes cht))
+        (intercepts (%cht-intercepts cht)))
+    (labels ((calc (slope intercept)
+               (declare (cht-element-type slope intercept))
+               (+ (* x slope) intercept))
+             (get-last-idx ()
+               (let ((idx (+ (%cht-start cht) (%cht-length cht) -1)))
+                 (if (>= idx (%cht-max-length cht))
+                     (- idx (%cht-max-length cht))
+                     idx))))
+      (loop while (and (>= (%cht-length cht) 2)
+                       (let* ((pos (get-last-idx))
+                              (slope-1 (aref slopes pos))
+                              (intercept-1 (aref intercepts pos)))
+                         (decf pos)
+                         (when (< pos 0)
+                           (incf pos (%cht-max-length cht)))
+                         (let ((slope-2 (aref slopes pos))
+                               (intercept-2 (aref intercepts pos)))
+                           (>= (calc slope-1 intercept-1)
+                               (calc slope-2 intercept-2)))))
+            do (%cht-pop-back cht))
+      (let ((end-1 (get-last-idx)))
+        (if (%cht-minimum cht)
+            (calc (aref slopes end-1) (aref intercepts end-1))
+            (- (calc (aref slopes end-1) (aref intercepts end-1))))))))
