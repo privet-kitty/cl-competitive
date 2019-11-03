@@ -4,9 +4,9 @@
 ;;;
 
 
-;; Tips to use this structure as multiset: Just define OP as (defun op (x y) (+
-;; x y)) and insert each element by (treap-ensure-key <treap> <key> 1 :if-exists
-;; #'1+) instead of TREAP-INSERT.
+;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
+;; (+ x y)) and insert each element by (treap-ensure-key <treap> <key> 1
+;; :if-exists #'1+) instead of TREAP-INSERT.
 
 (declaim (inline op))
 (defun op (x y)

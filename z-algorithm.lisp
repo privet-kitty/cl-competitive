@@ -5,7 +5,7 @@
 (declaim (inline make-z-array))
 (defun make-z-array (vector &key (test #'eql))
   "Returns a vector Z of the same length as VECTOR. An element Z[i] is the
-length of the longest substring starting from i which is also a prefix of
+length of the longest substring starting from i which coincides with a prefix of
 VECTOR."
   (declare (vector vector))
   (let* ((size (length vector))
