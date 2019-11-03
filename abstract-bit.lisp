@@ -121,32 +121,34 @@ VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
   :order #'<)
 
 ;; Example: compute the number of inversions in a sequence
-;; (declaim (inline make-inverse-lookup-table))
-;; (defun make-inverse-lookup-table (vector &key (test #'eql))
-;;   "Assigns each value of the (usually sorted) VECTOR of length n to the integers
-;; 0, ..., n-1."
-;;   (let ((table (make-hash-table :test test :size (length vector))))
-;;     (dotimes (i (length vector) table)
-;;       (setf (gethash (aref vector i) table) i))))
+#|
+(declaim (inline make-inverse-lookup-table))
+(defun make-inverse-lookup-table (vector &key (test #'eql))
+  "Assigns each value of the (usually sorted) VECTOR of length n to the integers
+0, ..., n-1."
+  (let ((table (make-hash-table :test test :size (length vector))))
+    (dotimes (i (length vector) table)
+      (setf (gethash (aref vector i) table) i))))
 
-;; (defun calc-inversion-number (vector &key (order #'<))
-;;   (declare (vector vector))
-;;   (let* ((len (length vector))
-;;          (inv-lookup-table (make-inverse-lookup-table (sort (copy-seq vector) order)))
-;;          (bitree (make-array len :element-type '(integer 0 #.most-positive-fixnum)))
-;;          (inversion-number 0))
-;;     (declare (integer inversion-number))
-;;     (loop for j below len
-;;           for element = (aref vector j)
-;;           for compressed = (gethash element inv-lookup-table)
-;;           for delta of-type integer = (- j (bitree-sum bitree (1+ compressed)))
-;;           do (incf inversion-number delta)
-;;              (bitree-update! bitree compressed 1))
-;;     inversion-number))
+(defun calc-inversion-number (vector &key (order #'<))
+  (declare (vector vector))
+  (let* ((len (length vector))
+         (inv-lookup-table (make-inverse-lookup-table (sort (copy-seq vector) order)))
+         (bitree (make-array len :element-type '(integer 0 #.most-positive-fixnum)))
+         (inversion-number 0))
+    (declare (integer inversion-number))
+    (loop for j below len
+          for element = (aref vector j)
+          for compressed = (gethash element inv-lookup-table)
+          for delta of-type integer = (- j (bitree-sum bitree (1+ compressed)))
+          do (incf inversion-number delta)
+             (bitree-update! bitree compressed 1))
+    inversion-number))
 
-;; (progn
-;;   (assert (= 3 (calc-inversion-number #(2 4 1 3 5))))
-;;   (assert (zerop (calc-inversion-number #(0))))
-;;   (assert (zerop (calc-inversion-number #())))
-;;   (assert (zerop (calc-inversion-number #(1 2))))
-;;   (assert (= 1 (calc-inversion-number #(2 1)))))
+(progn
+  (assert (= 3 (calc-inversion-number #(2 4 1 3 5))))
+  (assert (zerop (calc-inversion-number #(0))))
+  (assert (zerop (calc-inversion-number #())))
+  (assert (zerop (calc-inversion-number #(1 2))))
+  (assert (= 1 (calc-inversion-number #(2 1)))))
+;|#
