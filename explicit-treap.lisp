@@ -3,7 +3,6 @@
 ;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
 ;;;
 
-
 ;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
 ;; (+ x y)) and insert each element by (treap-ensure-key <treap> <key> 1
 ;; :if-exists #'1+) instead of TREAP-INSERT.
@@ -30,7 +29,6 @@
   (declare (ignore size))
   (+ a b))
 
-;; Treap with explicit key
 (defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy (count 1)))
                   (:copier nil)
                   (:conc-name %treap-))
@@ -39,7 +37,7 @@
   (accumulator +op-identity+ :type fixnum)
   (lazy +updater-identity+ :type fixnum)
   (priority 0 :type (integer 0 #.most-positive-fixnum))
-  (count 0 :type (integer 0 #.most-positive-fixnum))
+  (count 0 :type (integer 0 #.most-positive-fixnum)) ; deprecated
   (left nil :type (or null treap))
   (right nil :type (or null treap)))
 
@@ -50,6 +48,11 @@
   (if (null treap)
       0
       (%treap-count treap)))
+
+(declaim (inline treap-key))
+(defun treap-key (treap)
+  "Returns the key of the (nullable) TREAP."
+  (and treap (%treap-key treap)))
 
 (declaim (inline treap-accumulator))
 (defun treap-accumulator (treap)
@@ -116,53 +119,6 @@
                        (%treap-lazy treap)
                        1))
     (setf (%treap-lazy treap) +updater-identity+)))
-
-(defun treap-find (treap key &key (order #'<))
-  "Finds the key that satisfies (and (not (funcall order key (%treap-key
-sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and returns KEY
-and the assigned value. Returns NIL if KEY is not contained."
-  (declare (function order)
-           ((or null treap) treap))
-  (cond ((null treap) (values nil nil))
-        ((funcall order key (%treap-key treap))
-         (treap-find (%treap-left treap) key :order order))
-        ((funcall order (%treap-key treap) key)
-         (treap-find (%treap-right treap) key :order order))
-        (t (values key (%treap-value treap)))))
-
-(defun treap-bisect-right-1 (treap key &key (order #'<))
-  "Returns the largest key equal to or smaller than KEY and the assigned
-value. Returns NIL if KEY is smaller than any keys in TREAP."
-  (declare ((or null treap) treap)
-           (function order))
-  (labels ((recur (treap)
-             (unless treap (return-from recur nil))
-             (force-down treap)
-             (if (funcall order key (%treap-key treap))
-                 (recur (%treap-left treap))
-                 (or (recur (%treap-right treap))
-                     treap))))
-    (let ((result (recur treap)))
-      (if result
-          (values (%treap-key result) (%treap-value result))
-          (values nil nil)))))
-
-(defun treap-bisect-left (treap key &key (order #'<))
-  "Returns the smallest key equal to or larger than KEY and the assigned
-value. Returns NIL if KEY is larger than any keys in TREAP."
-  (declare ((or null treap) treap)
-           (function order))
-  (labels ((recur (treap)
-             (unless treap (return-from recur nil))
-             (force-down treap)
-             (if (funcall order (%treap-key treap) key)
-                 (recur (%treap-right treap))
-                 (or (recur (%treap-left treap))
-                     treap))))
-    (let ((result (recur treap)))
-      (if result
-          (values (%treap-key result) (%treap-value result))
-          (values nil nil)))))
 
 (declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
 (defun treap-split (treap key &key (order #'<))
@@ -247,7 +203,10 @@ updates the value by the function instead of overwriting it with VALUE."
 
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
-smaller (or larger, depending on the order) than those of RIGHT."
+smaller (or larger, depending on the order) than those of RIGHT.
+
+Note that this `merge' is different from CL:MERGE and rather close to
+CL:CONCATENATE."
   (declare (optimize (speed 3))
            ((or null treap) left right))
   (cond ((null left) (when right (force-down right) (force-up right)) right)
@@ -320,13 +279,21 @@ KEY-VAR and VALUE-VAR and executes BODY."
      (treap-map (lambda (,key-var ,value-var) ,@body) ,treap)
      ,result))
 
+;; This function takes O(nlog(n)) time. It is just for debugging.
+(defun treap (order &rest key-and-values)
+  "Takes cons cells in the form of (<key> . <value>)."
+  (loop with res = nil
+        for (key . value) in key-and-values
+        do (setf res (treap-insert res key value :order order))
+        finally (return res)))
+
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
 ;; TODO: take a sorted list as the argument
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
-  "Makes a treap using each key of the given SORTED-VECTOR in O(n). Note that
-this function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
-intended order. The values are filled with the identity element."
+  "Makes a treap using each key of the given SORTED-VECTOR in O(n) time. Note
+that this function doesn't check if the SORTED-VECTOR is actually sorted
+w.r.t. your intended order. The values are filled with the identity element."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
@@ -368,7 +335,7 @@ intended order. The values are filled with the identity element."
              (invalid-treap-index-error-treap condition)))))
 
 (defun treap-ref (treap index)
-  "Returns the key and value corresponding to the INDEX."
+  "DEPRECATED. Returns the key and value corresponding to the INDEX."
   (declare (optimize (speed 3))
            ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
@@ -427,3 +394,81 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
         (setf (%treap-lazy treap-l-r)
               (updater-op (%treap-lazy treap-l-r) x)))
       (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))
+
+;;;
+;;; Bisection search for key
+;;;
+
+;; NOTE: These functions intentionally doesn't return the assigned value. That
+;; is for efficiency, because thereby they doesn't need to execute lazy
+;; propagation.
+
+(defun treap-find (treap key &key (order #'<))
+  "Finds the key that satisfies (AND (NOT (FUNCALL ORDER KEY (%TREAP-KEY
+<sub-treap>))) (NOT (FUNCALL ORDER (%TREAP-KEY <sub-treap>) KEY))) and returns
+KEY if it exists, otherwise returns NIL."
+  (declare (optimize (speed 3))
+           (function order)
+           ((or null treap) treap))
+  (cond ((null treap) nil)
+        ((funcall order key (%treap-key treap))
+         (treap-find (%treap-left treap) key :order order))
+        ((funcall order (%treap-key treap) key)
+         (treap-find (%treap-right treap) key :order order))
+        (t key)))
+
+(declaim (inline treap-bisect-left))
+(defun treap-bisect-left (treap key &key (order #'<))
+  "Returns the smallest key equal to or larger than KEY. Returns NIL if KEY is
+larger than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (if (funcall order (%treap-key treap) key)
+                 (recur (%treap-right treap))
+                 (or (recur (%treap-left treap))
+                     treap))))
+    (treap-key (recur treap))))
+
+(declaim (inline treap-bisect-left))
+(defun treap-bisect-right (treap key &key (order #'<))
+  "Returns the smallest key larger than KEY. Returns NIL if KEY is equal to or
+larger than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (if (funcall order key (%treap-key treap))
+                 (or (recur (%treap-left treap))
+                     treap)
+                 (recur (%treap-right treap)))))
+    (treap-key (recur treap))))
+
+(declaim (inline treap-bisect-left-1))
+(defun treap-bisect-left-1 (treap key &key (order #'<))
+  "Returns the largest key smaller than KEY. Returns NIL if KEY is equal to or
+smaller than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (if (funcall order (%treap-key treap) key)
+                 (or (recur (%treap-right treap))
+                     treap)
+                 (recur (%treap-left treap)))))
+    (treap-key (recur treap))))
+
+(declaim (inline treap-bisect-right-1))
+(defun treap-bisect-right-1 (treap key &key (order #'<))
+  "Returns the largest key equal to or smaller than KEY. Returns NIL if KEY is
+smaller than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (if (funcall order key (%treap-key treap))
+                 (recur (%treap-left treap))
+                 (or (recur (%treap-right treap))
+                     treap))))
+    (treap-key (recur treap))))
