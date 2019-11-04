@@ -334,8 +334,9 @@ w.r.t. your intended order. The values are filled with the identity element."
              (invalid-treap-index-error-index condition)
              (invalid-treap-index-error-treap condition)))))
 
+;; DEPRECATED
 (defun treap-ref (treap index)
-  "DEPRECATED. Returns the key and value corresponding to the INDEX."
+  "Returns the key and value corresponding to the INDEX."
   (declare (optimize (speed 3))
            ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))

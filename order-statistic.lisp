@@ -2,8 +2,8 @@
 ;;; Select i-th order statistic in O(n)
 ;;;
 
-;; REVIEW: Is the average time complexity of SELECT-ITH! with (randomized) Hoare
-;; partition really O(n)?
+;; REVIEW: Is the expected time complexity of SELECT-ITH! with (randomized)
+;; Hoare partition really O(n)?
 
 (declaim (inline %hoare-partition!))
 (defun %hoare-partition! (vector l r pivot-idx order)
@@ -46,7 +46,7 @@ R]."
 (declaim (inline select-ith!))
 (defun select-ith! (vector order i &optional (start 0) end)
   "Returns the (0-based) i-th smallest element of VECTOR (if order is #'<, for
-  example). Destructively modifies VECTOR."
+example). Destructively modifies VECTOR."
   (declare (vector vector)
            ((integer 0 #.most-positive-fixnum) i start))
   (assert (< i (length vector)))

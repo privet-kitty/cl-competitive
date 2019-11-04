@@ -1,5 +1,5 @@
 ;;;
-;;; Convex Hull Trick for monotone query (unfinished)
+;;; Convex Hull Trick for monotone slopes
 ;;;
 
 (deftype cht-element-type () 'fixnum)
@@ -34,7 +34,7 @@
   (length 0 :type (integer 0 #.most-positive-fixnum))
   (max-length 0 :type (integer 0 #.most-positive-fixnum)))
 
-;; four operations on deque
+;; four basic operations on deque
 (declaim (inline %cht-pop-back))
 (defun %cht-pop-back (cht)
   (decf (%cht-length cht)))
