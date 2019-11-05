@@ -105,6 +105,7 @@
                                         (setf (gethash ,args-lst ,cache)
                                               (,name-alias ,@args))))))
                               (:array
+                               (assert (= (length args) (length dims-with-*)))
                                (let ((memoized-args (loop for dimension in dims-with-*
                                                           for arg in args
                                                           unless (eql dimension '*)
