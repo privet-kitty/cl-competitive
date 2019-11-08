@@ -53,3 +53,41 @@ non-destructive."
      (map-binsort (lambda (,var) ,@body) ,sequence ,range-max
                     :from-end ,from-end :key ,key)
      ,finally))
+
+;; not tested
+(declaim (inline binsort!))
+(defun binsort! (sequence range-max &key from-end key)
+  (declare ((mod #.array-total-size-limit) range-max))
+  (if key
+      (let ((buckets (make-array (1+ range-max) :element-type 'list :initial-element nil)))
+        (sequence:dosequence (e sequence)
+          (push e (aref buckets (funcall key e))))
+        (let ((pos 0))
+          (declare ((integer 0 #.most-positive-fixnum) pos))
+          (if from-end
+              (loop for x from range-max downto 0
+                    do (dolist (e (aref buckets x))
+                         (setf (aref sequence pos) e)
+                         (incf pos)))
+              (loop for x from 0 to range-max
+                    do (dolist (e (aref buckets x))
+                         (setf (aref sequence pos) e)
+                         (incf pos))))))
+      ;; If KEY is not given, all we need is counting sort.
+      (let ((counts (make-array (1+ range-max)
+                                :element-type '(integer 0 #.most-positive-fixnum)
+                                :initial-element 0)))
+        (sequence:dosequence (e sequence)
+          (incf (aref counts e)))
+        (let ((pos 0))
+          (declare ((integer 0 #.most-positive-fixnum) pos))
+          (if from-end
+              (loop for x from range-max downto 0
+                    do (loop repeat (aref counts x)
+                             do (setf (aref sequence pos) x)
+                                (incf pos)))
+              (loop for x from 0 to range-max
+                    do (loop repeat (aref counts x)
+                             do (setf (aref sequence pos) x)
+                                (incf pos)))))))
+  sequence)

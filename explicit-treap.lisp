@@ -473,3 +473,59 @@ smaller than any keys in TREAP."
                  (or (recur (%treap-right treap))
                      treap))))
     (treap-key (recur treap))))
+
+;; not tested
+(defun treap-range-bisect (treap value &key (order #'<))
+  "Returns the smallest existing key that satisfies TREAP[<1st key>]+ ITREAP[<2nd key>] + ... + ITREAP[key] >= VALUE (if ORDER is #'<).
+
+Note:
+- This function handles a **closed** interval. 
+- This function returns NIL instead if the TREAP[<1st key>]+ ... + TREAP[<last
+key>] < VALUE.
+- The prefix sums of TTREAP, (TREAP[<1st key>], TREAP[<1st key>]+ITREAP[<2nd
+key>], ...) must be monotone w.r.t. ORDER.
+- ORDER must be a strict order"
+  (labels
+      ((recur (treap prev-sum)
+         (unless treap
+           (return-from recur))
+         (force-down treap)
+         (let ((sum prev-sum))
+           (prog1
+               (cond ((not (funcall order
+                                    (setq sum (op sum (treap-accumulator (%treap-left treap))))
+                                    value))
+                      (if (%treap-left treap)
+                          (recur (%treap-left treap) prev-sum)
+                          (%treap-key treap)))
+                     ((not (funcall order
+                                    (setq sum (op sum (%treap-value treap)))
+                                    value))
+                      (%treap-key treap))
+                     (t
+                      (recur (%treap-right treap) sum)))
+             (force-up treap)))))
+    (recur treap +op-identity+)))
+
+(defun treap-range-bisect-from-end (treap value &key (order #'<))
+  (labels
+      ((recur (treap prev-sum)
+         (unless treap
+           (return-from recur))
+         (force-down treap)
+         (let ((sum prev-sum))
+           (prog1
+               (cond ((not (funcall order
+                                    (setq sum (op (treap-accumulator (%treap-right treap)) sum))
+                                    value))
+                      (if (%treap-right treap)
+                          (recur (%treap-right treap) prev-sum)
+                          (%treap-key treap)))
+                     ((not (funcall order
+                                    (setq sum (op (%treap-value treap) sum))
+                                    value))
+                      (%treap-key treap))
+                     (t
+                      (recur (%treap-left treap) sum)))
+             (force-up treap)))))
+    (recur treap +op-identity+)))
