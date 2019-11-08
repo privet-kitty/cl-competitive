@@ -1,5 +1,5 @@
 ;;;
-;;; Lowest common ancestor of tree by binary lifting
+;;; Lowest common ancestor of tree (or forest) by binary lifting
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;
@@ -9,12 +9,14 @@
 (deftype lca-vertex-number () '(signed-byte 32))
 
 (defstruct (lca-table
-            (:constructor make-lca-table
+            (:constructor %make-lca-table
                 (size
                  &aux
                  ;; requires 1 + log_2{size-1}
                  (max-level (+ 1 (integer-length (- size 2))))
-                 (depths (make-array size :element-type 'lca-vertex-number))
+                 (depths (make-array size
+                                     :element-type 'lca-vertex-number
+                                     :initial-element -1))
                  (parents (make-array (list size max-level)
                                       :element-type 'lca-vertex-number))))
             (:conc-name lca-))
@@ -22,13 +24,19 @@
   (depths nil :type (simple-array lca-vertex-number (*)))
   (parents nil :type (simple-array lca-vertex-number (* *))))
 
-(defun build-lca-table (root graph &key (key #'identity))
-  "GRAPH := vector of adjacency lists"
+(defun make-lca-table (graph &key root (key #'identity))
+  "GRAPH := vector of adjacency lists
+ROOT := null | non-negative fixnum
+
+If ROOT is null, this function traverses each connected component of GRAPH from
+an arbitrarily picked vertex. Otherwise this function traverses GRAPH only from
+ROOT; GRAPH must be tree in the latter case."
   (declare (optimize (speed 3))
            (vector graph)
-           (function key))
+           (function key)
+           ((or null (integer 0 #.most-positive-fixnum)) root))
   (let* ((size (length graph))
-         (lca-table (make-lca-table size))
+         (lca-table (%make-lca-table size))
          (depths (lca-depths lca-table))
          (parents (lca-parents lca-table))
          (max-level (lca-max-level lca-table)))
@@ -41,12 +49,17 @@
                    (declare (lca-vertex-number dest))
                    (unless (= dest prev-v)
                      (dfs dest v (+ 1 depth)))))))
-      (dfs root -1 0)
+      (if root
+          (dfs root -1 0)
+          (dotimes (v size)
+            (when (= (aref depths v) -1)
+              (dfs v -1 0))))
       (dotimes (k (- max-level 1))
         (dotimes (v size)
           (if (= -1 (aref parents v k))
               (setf (aref parents v (+ k 1)) -1)
-              (setf (aref parents v (+ k 1)) (aref parents (aref parents v k) k)))))
+              (setf (aref parents v (+ k 1))
+                    (aref parents (aref parents v k) k)))))
       lca-table)))
 
 (defun get-lca (u v lca-table)
