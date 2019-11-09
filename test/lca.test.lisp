@@ -19,7 +19,8 @@
     (assert (= 1 (distance-on-tree 3 1 table)))
     (dotimes (u 9)
       (dotimes (v 9)
-        (assert (= (min u v) (get-lca u v table2))))))
+        (assert (= (min u v) (get-lca u v table2)))))
+    (signals type-error (get-lca -1 0 table)))
   ;; forest
   (let ((table (make-lca-table #((3) () (6) (7 0 9) (7) () (2) (4 3) () (3)))))
     (assert (equalp #(0 0 0 1 3 0 1 2 0 2) (lca-depths table)))
