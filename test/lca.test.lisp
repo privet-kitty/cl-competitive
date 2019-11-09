@@ -22,4 +22,6 @@
         (assert (= (min u v) (get-lca u v table2))))))
   ;; forest
   (let ((table (make-lca-table #((3) () (6) (7 0 9) (7) () (2) (4 3) () (3)))))
-    (assert (equalp #(0 0 0 1 3 0 1 2 0 2) (lca-depths table)))))
+    (assert (equalp #(0 0 0 1 3 0 1 2 0 2) (lca-depths table)))
+    (signals two-vertices-disconnected-error (get-lca 0 1 table))
+    (signals two-vertices-disconnected-error (distance-on-tree 1 2 table))))
