@@ -21,6 +21,10 @@ Example: (make-prime-table 10) => #*0011010100"
     table))
 
 ;; FIXME: Currently the element type of the resultant vector is (UNSIGNED-BYTE 62).
+(declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*))
+                                    simple-bit-vector
+                                    &optional))
+                make-prime-sequence))
 (defun make-prime-sequence (sup)
   "Returns the ascending sequence of primes smaller than SUP."
   (declare (optimize (speed 3) (safety 0)))
