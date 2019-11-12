@@ -2,6 +2,8 @@
 ;;; Generate random trees
 ;;;
 
+;; TODO: maybe better to use Prüfer sequence?
+
 ;; NOT TESTED
 (defun make-random-tree (size)
   "Returns an undirected random tree of the given size."
