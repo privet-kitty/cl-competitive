@@ -6,7 +6,7 @@
     #'equal)
   #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
   #-swank (set-dispatch-macro-character
-           ;; enclose the form with VALUES to avoid the capture by LOOP macro
+           ;; enclose the form with VALUES to avoid being captured by LOOP macro
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 #-swank (disable-debugger) ; for CS Academy

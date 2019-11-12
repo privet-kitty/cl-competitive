@@ -98,7 +98,8 @@ CENTROID2 := 2nd centroid (if it exists)
 CHILDS2 := associative list (if CENTROID2 exists)
 
 If component size is known, you can let it know and bypass the extra
-traverse (though you should be careful as it is dangerous.)"
+traverse (though you shouldn't use it except in urgent cases as it is
+dangerous)."
   (declare (optimize (speed 3))
            (tc-vertex-integer root)
            ((or null tc-vertex-integer) component-size))
