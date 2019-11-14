@@ -9,7 +9,7 @@ ORDER := nil | strict comparison operator on the monoid
 SUM-TYPE := nil | type specifier
 
 Defines no structure; BIT is just a vector. This macro defines the three
-function: <NAME>-UPDATE!, point-update function, <NAME>-SUM, query function for
+functions: <NAME>-UPDATE!, point-update function, <NAME>-SUM, query function for
 prefix sum, and COERCE-TO-<NAME>!, constructor. If ORDER is specified, this
 macro in addition defines <NAME>-BISECT-LEFT and <NAME>-BISECT-RIGHT, the
 bisection functions for prefix sums. (Note that these functions work only when
@@ -50,8 +50,8 @@ DELTA"
        (declaim (inline ,fname-coerce))
        (defun ,fname-coerce (vector)
          "Destructively constructs BIT from VECTOR. (You will not need to call
-this constructor if what you need is a `zero-filled' BIT because a vector filled
-with the identity elements is a valid BIT as it is.)"
+this constructor if what you need is a `zero-filled' BIT, because a vector
+filled with the identity elements is a valid BIT as it is.)"
          (loop with len = (length vector)
                for i below len
                for dest-i = (logior i (+ i 1))
@@ -65,7 +65,8 @@ with the identity elements is a valid BIT as it is.)"
              (defun ,fname-bisect-left (bitree value)
                "Returns the smallest index that satisfies VECTOR[0]+ ... +
 VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
-... +VECTOR[length-1] < VALUE."
+... +VECTOR[length-1] < VALUE. Note that this function deals with a **closed**
+interval."
                (declare (vector bitree))
                (if (not (funcall ,order ,identity value))
                    0
@@ -91,7 +92,8 @@ VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
              (defun ,fname-bisect-right (bitree value)
                "Returns the smallest index that satisfies VECTOR[0]+ ... +
 VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
-... +VECTOR[length-1] <= VALUE."
+... +VECTOR[length-1] <= VALUE. Note that this function deals with a **closed**
+interval."
                (declare (vector bitree))
                (if (funcall ,order value ,identity)
                    0
