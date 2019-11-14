@@ -54,3 +54,29 @@ universe and Q is the number of queries."
 when no queries are processed yet."
   (aref (%mo-order mo) (max 0 (- (%mo-index mo) 1))))
 
+(declaim (inline mo-process))
+(defun mo-process (mo extend shrink)
+  "Processes the next query. EXTEND and SHRINK take three arguments: the <index>
+added/removed right now, and both ends of the next range: [<left>, <right>)"
+  (declare (function extend shrink))
+  (let* ((ord (mo-get-current mo))
+         (left (aref (%mo-lefts mo) ord))
+         (right (aref (%mo-rights mo) ord))
+         (posl (%mo-posl mo))
+         (posr (%mo-posr mo)))
+    (declare ((integer 0 #.most-positive-fixnum) posl posr))
+    (loop while (< left posl)
+          do (decf posl)
+             (funcall extend posl posl posr))
+    (loop while (< posr right)
+          do (funcall extend posr posl (+ posr 1))
+             (incf posr))
+    (loop while (< posl left)
+          do (funcall shrink posl (+ posl 1) posr)
+             (incf posl))
+    (loop while (< right posr)
+          do (decf posr)
+             (funcall shrink posr posl posr))
+    (setf (%mo-posl mo) posl
+          (%mo-posr mo) posr)
+    (incf (%mo-index mo))))
