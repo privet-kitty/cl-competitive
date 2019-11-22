@@ -135,6 +135,10 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
                       treap))))
       (recur treap))))
 
+(defmacro treap-push (obj treap)
+  "Pushes OBJ to TREAP at POS."
+  `(setf ,treap (treap-insert ,obj ,treap)))
+
 ;; It takes O(nlog(n)).
 (defun treap (order &rest keys)
   (loop with res = nil
@@ -265,7 +269,7 @@ take one argument."
 
 (declaim (inline treap-unite))
 (defun treap-unite (treap1 treap2 &key (order #'<))
-  "Merges two trees with keeping the order."
+  "Merges two treaps with keeping the order."
   (labels
       ((recur (l r)
          (cond ((null l) r)
@@ -276,5 +280,18 @@ take one argument."
                       (treap-split (%treap-key l) r :order order)
                     (setf (%treap-left l) (recur (%treap-left l) lchild)
                           (%treap-right l) (recur (%treap-right l) rchild))
+                    (update-count l)
                     l)))))
     (recur treap1 treap2)))
+
+(declaim (inline treap-reverse))
+(defun treap-reverse (treap)
+  "Destructively reverses the whole treap."
+  (labels ((recur (treap)
+             (unless (null treap)
+               (let ((left (recur (%treap-left treap)))
+                     (right (recur (%treap-right treap))))
+                 (setf (%treap-left treap) right
+                       (%treap-right treap) left)
+                 treap))))
+    (recur treap)))
