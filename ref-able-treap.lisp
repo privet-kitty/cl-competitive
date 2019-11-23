@@ -222,14 +222,17 @@ CL:CONCATENATE. (TREAP-UNITE is the analogue of the former.)"
     (declare (ftype (function * (values (or null treap) &optional)) recur))
     (recur treap)))
 
+(declaim (inline treap-map))
 (defun treap-map (function treap)
   "Successively applies FUNCTION to TREAP[0], ..., TREAP[SIZE-1]. FUNCTION must
 take one argument."
   (declare (function function))
-  (when treap
-    (treap-map function (%treap-left treap))
-    (funcall function (%treap-key treap))
-    (treap-map function (%treap-right treap))))
+  (labels ((recur (treap)
+             (when treap
+               (recur (%treap-left treap))
+               (funcall function (%treap-key treap))
+               (recur (%treap-right treap)))))
+    (recur treap)))
 
 (defmethod print-object ((object treap) stream)
   (print-unreadable-object (object stream :type t)
@@ -252,7 +255,8 @@ take one argument."
 
 (defun treap-ref (treap index)
   "Index access"
-  (declare ((or null treap) treap)
+  (declare (optimize (speed 3))
+           ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
   (when (>= index (treap-count treap))
     (error 'invalid-treap-index-error :treap treap :index index))
@@ -266,6 +270,20 @@ take one argument."
                       (%ref (%treap-right treap) (- index left-count 1)))
                      (t (%treap-key treap))))))
     (%ref treap index)))
+
+(defun treap-first (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-left treap)
+      (treap-first (%treap-left treap))
+      (%treap-key treap)))
+
+(defun treap-last (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-right treap)
+      (treap-last (%treap-right treap))
+      (%treap-key treap)))
 
 (declaim (inline treap-unite))
 (defun treap-unite (treap1 treap2 &key (order #'<))
@@ -286,7 +304,7 @@ take one argument."
 
 (declaim (inline treap-reverse))
 (defun treap-reverse (treap)
-  "Destructively reverses the whole treap."
+  "Destructively reverses the order of the whole treap."
   (labels ((recur (treap)
              (unless (null treap)
                (let ((left (recur (%treap-left treap)))
