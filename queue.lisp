@@ -1,5 +1,9 @@
+;;;
+;;; Queue with singly linked list
+;;;
+
 (defstruct (queue (:constructor make-queue
-                    (&optional list &aux (tail (last list)))))
+                      (&optional list &aux (tail (last list)))))
   (list nil :type list)
   (tail nil :type (or null (cons t null))))
 

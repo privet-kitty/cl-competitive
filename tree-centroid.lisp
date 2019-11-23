@@ -97,9 +97,9 @@ CHILDS1 := associative list of (<child> . <size of the child subtree>) for CENTR
 CENTROID2 := 2nd centroid (if it exists)
 CHILDS2 := associative list (if CENTROID2 exists)
 
-If component size is known, you can let it know and bypass the extra
-traverse (though you shouldn't use it except in urgent cases as it is
-dangerous)."
+If the size of the component (to which ROOT belongs) is known, you can pass it
+and bypass the extra traverse (though you shouldn't use it except in an urgent
+case as it is dangerous)."
   (declare (optimize (speed 3))
            (tc-vertex-integer root)
            ((or null tc-vertex-integer) component-size))
