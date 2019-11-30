@@ -73,6 +73,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/walsh-hadamard.lisp) fast Walsh-Hadamard transform
 - [zeta-transform.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/zeta-transform.lisp) fast zeta/Möbius transform
 - [zeta-integer.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/zeta-integer.lisp) fast zeta/Möbius transform w.r.t. divisors or multiples of integer
+- [farey.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/farey.lisp) Farey sequence
 
 ### Real and complex
 - [fft.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/fft.lisp) complex FFT (radix-2)
