@@ -8,7 +8,7 @@ env:
   global:
     - PATH=~/.roswell/bin:$PATH
   matrix:
-    - LISP=sbcl-bin
+    - LISP=sbcl-bin/1.5.5 # yukicoder
     - LISP=sbcl-bin/1.3.3 # CS Academy
     - LISP=sbcl-bin/1.2.4 # the oldest SBCL that can be successfully installed
 
