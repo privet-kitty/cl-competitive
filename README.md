@@ -14,9 +14,9 @@ On portability: I try not to abuse non-portable code though I sometimes resort t
 Every data structure and algorithm handles a 0-based index and a half-open interval unless otherwise noted.
 
 ## Test environment
-- SBCL 1.5.5 (x64, linux) &mdash; yukicoder
-- SBCL 1.3.13 (x64, linux) &mdash; CodeChef
-- SBCL 1.3.3 (x64, linux) &mdash; CS Academy
+- SBCL 1.5.5 (x64, linux) &mdash; yukicoder's version
+- SBCL 1.3.13 (x64, linux) &mdash; CodeChef's version
+- SBCL 1.3.3 (x64, linux) &mdash; CS Academy's version
 - SBCL 1.2.6 (x64, linux) &mdash; the oldest SBCL that can be installed by roswell
 
 Note that the version of SBCL is _1.1.14_ on AtCoder.
