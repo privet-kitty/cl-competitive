@@ -11,6 +11,8 @@
              (cycle-detected-error-vertex condition)
              (cycle-detected-error-graph condition)))))
 
+(declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*)) &optional))
+                topological-sort))
 (defun topological-sort (graph)
   "Returns a topologically sorted array of all the vertices in GRAPH. This
 function signals CYCLE-DETECTED-ERROR when it detects a cycle.

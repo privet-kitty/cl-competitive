@@ -2,7 +2,7 @@
 ;;; Binary heap
 ;;;
 
-(define-condition heap-empty-error (simple-error)
+(define-condition heap-empty-error (error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report
    (lambda (condition stream)
