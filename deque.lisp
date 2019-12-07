@@ -2,13 +2,13 @@
 ;;; double-ended queue (ring buffer)
 ;;;
 
-(define-condition deque-empty-error (simple-error)
+(define-condition deque-empty-error (error)
   ((queue :initarg :queue :reader deque-empty-error-queue))
   (:report
    (lambda (condition stream)
      (format stream "Attempted to pop empty deque ~W" (deque-empty-error-queue condition)))))
 
-(define-condition deque-full-error (simple-error)
+(define-condition deque-full-error (error)
   ((queue :initarg :queue :reader deque-full-error-queue)
    (item :initarg :item :reader deque-full-error-item))
   (:report
@@ -17,7 +17,7 @@
              (deque-full-error-item condition)
              (deque-full-error-queue condition)))))
 
-(define-condition deque-invalid-index-error (simple-error)
+(define-condition deque-invalid-index-error (error)
   ((queue :initarg :queue :reader deque-invalid-index-error-queue)
    (index :initarg :index :reader deque-invalid-index-error-index))
   (:report
