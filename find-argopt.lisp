@@ -1,27 +1,29 @@
 (declaim (inline find-argopt))
-(defun find-argopt (sequence predicate &key (start 0) end (key #'identity))
-  "Returns an index x at which SEQUENCE takes the minimal (or maximal, depending
-on PREDICATE) value, and returns SEQUENCE[x] as the second value.
+(defun find-argopt (iterable predicate &key (start 0) end (key #'identity))
+  "Returns an index (or key) x at which ITERABLE takes the minimal (or maximal,
+depending on PREDICATE) value, and returns ITERABLE[x] as the second value.
 
-To explain the behaviour briefly, when (FUNCALL PREDICATE (AREF SEQUENCE
-<index>) (AREF SEQUENCE <index of current optimum>)) holds, <index> and <index
-of current optimum> are swapped."
+To explain the behaviour briefly, when (FUNCALL PREDICATE (AREF ITERABLE
+<index>) (AREF ITERABLE <index of current optimum>)) holds, <index> and <index
+of current optimum> are swapped.
+
+When ITERABLE is a hash-table, START and END are ignored."
   (declare ((or null (integer 0 #.most-positive-fixnum)) end)
            ((integer 0 #.most-positive-fixnum) start)
-           (sequence sequence))
+           ((or hash-table sequence) iterable))
   (labels ((invalid-range-error ()
-             (error "Can't find optimal value in null interval [~A, ~A) on ~A" start end sequence)))
-    (etypecase sequence
+             (error "Can't find optimal value in null interval [~A, ~A) on ~A" start end iterable)))
+    (etypecase iterable
       (list
-       (let ((sequence (nthcdr start sequence))
+       (let ((iterable (nthcdr start iterable))
              (end (or end most-positive-fixnum)))
-         (when (or (null sequence)
+         (when (or (null iterable)
                    (>= start end))
            (invalid-range-error))
-         (let ((opt-element (car sequence))
+         (let ((opt-element (car iterable))
                (opt-index start)
                (pos start))
-           (dolist (x sequence)
+           (dolist (x iterable)
              (when (>= pos end)
                (return-from find-argopt (values opt-index opt-element)))
              (when (funcall predicate (funcall key x) (funcall key opt-element))
@@ -30,15 +32,29 @@ of current optimum> are swapped."
              (incf pos))
            (values opt-index opt-element))))
       (vector
-       (let ((end (or end (length sequence))))
+       (let ((end (or end (length iterable))))
          (when (or (>= start end)
-                   (>= start (length sequence)))
+                   (>= start (length iterable)))
            (invalid-range-error))
-         (let ((opt-element (aref sequence start))
+         (let ((opt-element (aref iterable start))
                (opt-index start))
            (loop for i from start below end
-                 for x = (aref sequence i)
+                 for x = (aref iterable i)
                  do (when (funcall predicate (funcall key x) (funcall key opt-element))
                       (setq opt-element x
                             opt-index i)))
-           (values opt-index opt-element)))))))
+           (values opt-index opt-element))))
+      (hash-table
+       (when (zerop (hash-table-count iterable))
+         (invalid-range-error))
+       (let* ((opt-value (gensym))
+              (opt-key opt-value))
+         (maphash
+          (lambda (hash-key x)
+            (when (or (eq opt-key opt-value)
+                      (funcall predicate (funcall key x) (funcall key opt-value)))
+              (setq opt-value x
+                    opt-key hash-key)))
+          iterable)
+         (values opt-key opt-value))))))
+
