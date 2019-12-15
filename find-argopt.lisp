@@ -1,5 +1,5 @@
 (declaim (inline find-argopt))
-(defun find-argopt (iterable predicate &key (start 0) end (key #'identity))
+(defun find-argopt (iterable predicate &key start end (key #'identity))
   "Returns an index (or key) x at which ITERABLE takes the minimal (or maximal,
 depending on PREDICATE) value, and returns ITERABLE[x] as the second value.
 
@@ -8,15 +8,15 @@ To explain the behaviour briefly, when (FUNCALL PREDICATE (AREF ITERABLE
 of current optimum> are swapped.
 
 When ITERABLE is a hash-table, START and END are ignored."
-  (declare ((or null (integer 0 #.most-positive-fixnum)) end)
-           ((integer 0 #.most-positive-fixnum) start)
+  (declare ((or null (integer 0 #.most-positive-fixnum)) start end)
            ((or hash-table sequence) iterable))
   (labels ((invalid-range-error ()
              (error "Can't find optimal value in null interval [~A, ~A) on ~A" start end iterable)))
     (etypecase iterable
       (list
-       (let ((iterable (nthcdr start iterable))
-             (end (or end most-positive-fixnum)))
+       (let* ((start (or start 0))
+              (end (or end most-positive-fixnum))
+              (iterable (nthcdr start iterable)))
          (when (or (null iterable)
                    (>= start end))
            (invalid-range-error))
@@ -32,7 +32,8 @@ When ITERABLE is a hash-table, START and END are ignored."
              (incf pos))
            (values opt-index opt-element))))
       (vector
-       (let ((end (or end (length iterable))))
+       (let ((start (or start 0))
+             (end (or end (length iterable))))
          (when (or (>= start end)
                    (>= start (length iterable)))
            (invalid-range-error))
@@ -45,6 +46,7 @@ When ITERABLE is a hash-table, START and END are ignored."
                             opt-index i)))
            (values opt-index opt-element))))
       (hash-table
+       (assert (and (null start) (null end)))
        (when (zerop (hash-table-count iterable))
          (invalid-range-error))
        (let* ((opt-value (gensym))
