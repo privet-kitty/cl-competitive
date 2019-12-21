@@ -55,11 +55,46 @@
 
 (declaim (inline mod-inverse)
          (ftype (function * (values (mod #.most-positive-fixnum) &optional)) mod-inverse))
+;; (defun mod-inverse (a modulus)
+;;   "Solves ax ≡ 1 mod m. A and M must be coprime."
+;;   (declare (integer a)
+;;            ((integer 1 #.most-positive-fixnum) modulus))
+;;   (mod (%ext-gcd (mod a modulus) modulus) modulus))
+
 (defun mod-inverse (a modulus)
-  "Solves ax ≡ 1 mod m. A and M must be coprime."
-  (declare (integer a)
-           ((integer 1 #.most-positive-fixnum) modulus))
-  (mod (%ext-gcd (mod a modulus) modulus) modulus))
+  (declare ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((a (mod a modulus))
+        (b modulus)
+        (u 1)
+        (v 0))
+    (declare (fixnum a b u v))
+    (loop until (zerop b)
+          for quot = (floor a b)
+          do (decf a (the fixnum (* quot b)))
+             (rotatef a b)
+             (decf u (the fixnum (* quot v)))
+             (rotatef u v))
+    (setq u (mod u modulus))
+    (if (< u 0)
+        (+ u modulus)
+        u)))
+
+;; not tested
+;; TODO: move to another file
+(declaim (inline binomial))
+(defun mod-binomial (n k modulus)
+  (declare ((integer 0 #.most-positive-fixnum) modulus))
+  (if (or (< n k) (< n 0) (< k 0))
+      0
+      (let ((k (if (< k (- n k)) k (- n k)))
+            (num 1)
+            (denom 1))
+        (declare ((integer 0) k num denom))
+        (loop for x from n above (- n k)
+              do (setq num (mod (* num x) modulus)))
+        (loop for x from 1 to k
+              do (setq denom (mod (* denom x) modulus)))
+        (mod (* num (mod-inverse denom modulus)) modulus))))
 
 (declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
 

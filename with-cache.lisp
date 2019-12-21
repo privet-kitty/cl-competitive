@@ -97,7 +97,7 @@
               ((make-cache-querier (cache-type name args)
                  (let ((res (case cache-type
                               (:hash-table
-                               `(let ((,args-lst (funcall ,(or key #'list) ,@args)))
+                               `(let ((,args-lst (funcall ,(or key '#'list) ,@args)))
                                   (multiple-value-bind (,value ,present-p)
                                       (gethash ,args-lst ,cache)
                                     (if ,present-p
