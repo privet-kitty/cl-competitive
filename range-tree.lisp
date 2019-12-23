@@ -260,7 +260,7 @@ positive infinity."
                       ;; KLUDGE: declaring ftype is not sufficient for the
                       ;; optimization on SBCL 1.1.14.
                       #+sbcl (values (integer 0 #.most-positive-fixnum)))
-             (cond ((null xnode) 0)
+             (cond ((null xnode) +op-identity+)
                    ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
                     (yrecur (%xnode-ynode xnode) y1 y2))
                    (t
@@ -280,7 +280,7 @@ positive infinity."
              (declare ((or null ynode) ynode)
                       (fixnum y1 y2)
                       #+sbcl (values (integer 0 #.most-positive-fixnum)))
-             (cond ((null ynode) 0)
+             (cond ((null ynode) +op-identity+)
                    ((and (= y1 +neg-inf+) (= y2 +pos-inf+))
                     (%ynode-accumulator ynode))
                    (t
