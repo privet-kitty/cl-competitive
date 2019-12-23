@@ -1,5 +1,6 @@
 (declaim (ftype (function * (values fixnum &optional)) read-fixnum))
 (defun read-fixnum (&optional (in *standard-input*))
+  "NOTE: cannot read -2^62"
   (macrolet ((%read-byte ()
                `(the (unsigned-byte 8)
                      #+swank (char-code (read-char in nil #\Nul))
@@ -17,5 +18,6 @@
         (let* ((byte (%read-byte)))
           (if (<= 48 byte 57)
               (setq result (+ (- byte 48)
-                              (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) result))))
+                              (* 10 (the (integer 0 #.(floor most-positive-fixnum 10))
+                                         result))))
               (return (if minus (- result) result))))))))

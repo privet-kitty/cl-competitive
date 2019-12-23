@@ -22,7 +22,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
     (push dep (aref graph from-idx))
     (push ret (aref graph to-idx))))
 
-(define-condition not-enough-capacity-error (simple-error)
+(define-condition not-enough-capacity-error (error)
   ((graph :initarg :graph :reader not-enough-capacity-error-graph)
    (flow :initarg :flow :reader not-enough-capacity-error-flow))
   (:report

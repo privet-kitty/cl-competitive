@@ -100,7 +100,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
   (setf (fheap-position heap) 1)
   heap)
 
-(define-condition not-enough-capacity-error (simple-error)
+(define-condition not-enough-capacity-error (error)
   ((graph :initarg :graph :reader not-enough-capacity-error-graph)
    (flow :initarg :flow :reader not-enough-capacity-error-flow))
   (:report

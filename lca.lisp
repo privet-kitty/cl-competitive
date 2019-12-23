@@ -62,7 +62,7 @@ ROOT; GRAPH must be tree in the latter case."
                     (aref parents (aref parents v k) k)))))
       lca-table)))
 
-(define-condition two-vertices-disconnected-error (simple-error)
+(define-condition two-vertices-disconnected-error (error)
   ((lca-table :initarg :lca-table :accessor two-vertices-disconnected-error-lca-table)
    (vertex1 :initarg :vertex1 :accessor two-vertices-disconnected-error-vertex1)
    (vertex2 :initarg :vertex2 :accessor two-vertices-disconnected-error-vertex2))

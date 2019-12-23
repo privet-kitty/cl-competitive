@@ -32,7 +32,7 @@
 
 ;; FIXME: add error handling of PDS-ROOT and PDS-CONNECTED-P. (It is too slow to
 ;; naively add this error to these functions.)
-(define-condition persistent-disjoint-set-query-future (simple-error)
+(define-condition persistent-disjoint-set-query-future (error)
   ((disjoint-set :initarg :disjoint-set :reader pds-query-future-disjoint-set)
    (specified-time :initarg :specified-time :reader pds-query-future-specified-time))
   (:report

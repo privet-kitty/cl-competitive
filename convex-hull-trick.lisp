@@ -4,14 +4,14 @@
 
 (deftype cht-element-type () 'fixnum)
 
-(define-condition cht-empty-error (simple-error)
+(define-condition cht-empty-error (error)
   ((cht :initarg :cht :accessor cht-empty-error-cht))
   (:report (lambda (condition stream)
              (format stream
                      "Attempted to get a value on an empty CHT ~W"
                      (cht-empty-error-cht condition)))))
 
-(define-condition cht-full-error (simple-error)
+(define-condition cht-full-error (error)
   ((cht :initarg :cht :accessor cht-full-error-cht))
   (:report (lambda (condition stream)
              (format stream

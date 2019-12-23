@@ -54,7 +54,7 @@ capacity in addition."
                          (return flow))))))))
     (dfs src-idx most-positive-fixnum)))
 
-(define-condition max-flow-overflow (simple-error)
+(define-condition max-flow-overflow (error)
   ((graph :initarg :graph :reader max-flow-overflow-graph))
   (:report
    (lambda (condition stream)

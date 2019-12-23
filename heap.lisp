@@ -11,13 +11,13 @@
   (test #'< :type function :read-only t)
   (position 1 :type (integer 1 #.array-total-size-limit)))
 
-(define-condition heap-empty-error (simple-error)
+(define-condition heap-empty-error (error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report
    (lambda (condition stream)
      (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
 
-(define-condition heap-full-error (simple-error)
+(define-condition heap-full-error (error)
   ((heap :initarg :heap :reader heap-full-error-heap)
    (item :initarg :item :reader heap-full-error-item))
   (:report
