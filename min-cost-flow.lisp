@@ -1,5 +1,5 @@
 ;;;
-;;; Minimum cost flow (Primal-Dual, O(FElogV))
+;;; Minimum cost flow (SSP)
 ;;;
 
 (setf *print-circle* t)
@@ -130,6 +130,10 @@ DENSITY := nil | the number of edges (assumed to be (size of GRAPH)*2 if NIL)"
            (res 0))
       (declare (fixnum density)
                (cost-type res))
+      ;; FIXME: Actually we must do Bellman-Ford here to handle negative edges
+      ;; properly. (Currently this function returns the correct result also for
+      ;; a graph containing negative edges, if there are no negative cycles. In
+      ;; this case, however, the time complexity is exponential.
       (loop while (> flow 0)
             do (fill dist +inf-cost+)
                (setf (aref dist src-idx) 0)
