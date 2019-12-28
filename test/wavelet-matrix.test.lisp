@@ -121,7 +121,24 @@
     (assert (= 0
                (wavelet-kth-largest (make-wavelet 7 mitl7) 0 0 0)
                (wavelet-kth-largest (make-wavelet 7 mitl7) 0 1 1)
-               (wavelet-kth-largest (make-wavelet 7 mitl7) 0 12 12))))
+               (wavelet-kth-largest (make-wavelet 7 mitl7) 0 12 12)))
+    ;; wavelet-range-count
+    (dotimes (l 12)
+      (loop
+        for r from (+ l 1) to 12
+        do (loop
+             for lo from 0 to 7
+             do (loop
+                  for hi from lo to 7
+                  do (let* ((seq (vector 5 4 5 5 2 1 5 6 1 3 5 0)))
+                       (assert (= (wavelet-range-count w lo hi l r)
+                                  (count-if (lambda (x) (<= lo x (- hi 1)))
+                                            mitl7
+                                            :start l
+                                            :end r))))))))
+    (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 0 13))
+    (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 12 11))
+    (signals error (wavelet-range-count w 3 2)))
   ;; random case
   (let* ((vec (coerce (loop repeat 10007 collect (random 500))
                       '(simple-array (unsigned-byte 32) (*))))
