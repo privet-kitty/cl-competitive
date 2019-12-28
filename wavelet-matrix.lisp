@@ -1,5 +1,3 @@
-;;; unfinished
-
 ;;;
 ;;; Succinct bit vector
 ;;;

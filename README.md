@@ -40,6 +40,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
 - [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/range-tree.lisp) 2D range tree on arbitrary commutative monoid
 - [convex-hull-trick.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull-trick.lisp) convex hull trick
+- [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/wavelet-matrix.lisp) wavelet matrix
 
 ### General algorithms
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
