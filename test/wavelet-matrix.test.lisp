@@ -61,7 +61,9 @@
         (assert (= i (sucbv-select sucbv sum)))))))
 
 (with-test (:name wavelet-matrix)
-  (let* ((w (make-wavelet 3 #(5 4 5 5 2 1 5 6 1 3 5 0)))
+  ;; Mitl_7's example
+  (let* ((mitl7 (vector 5 4 5 5 2 1 5 6 1 3 5 0))
+         (w (make-wavelet 3 mitl7))
          (data (wavelet-data w)))
     (loop for sbv across data
           for ref-bits in '(#*110101111010 #*100100000010 #*111100110010)
@@ -69,26 +71,57 @@
     (assert (equalp #(4 9 5) (wavelet-zeros w)))
     
     ;; wavelet-ref
-    (loop for x across #(5 4 5 5 2 1 5 6 1 3 5 0)
+    (loop for x across mitl7
           for i from 0
           do (assert (= x (wavelet-ref w i))))
     (signals invalid-wavelet-index-error (wavelet-ref w 12))
+    (signals type-error (wavelet-ref w -1))
     ;; wavelet-count
     (dotimes (x 8)
       (dotimes (l 12)
         (loop for r from l to 12
               do (assert (= (wavelet-count w x l r)
                             (count x #(5 4 5 5 2 1 5 6 1 3 5 0) :start l :end r))))))
-    ;; wavelet-quantile
+    ;; wavelet-kth-smallest
     (dotimes (l 12)
       (loop for r from (+ l 1) to 12
             do (dotimes (k (- r l))
                  (let* ((seq (vector 5 4 5 5 2 1 5 6 1 3 5 0))
                         (subseq (displace seq l r)))
                    (sort subseq #'<)
-                   (assert (= (wavelet-quantile w k l r)
-                              (aref subseq k))))))))
-
+                   (assert (= (wavelet-kth-smallest w k l r)
+                              (aref subseq k)))))))
+    (signals error (wavelet-kth-smallest w 13))
+    (signals error (wavelet-kth-smallest w 1 0 0))
+    ;; Returns infinity if K is equal to the size.
+    (assert (= (- (expt 2 (wavelet-depth w)) 1)
+               (wavelet-kth-smallest w 0 0 0)
+               (wavelet-kth-smallest w 0 1 1)
+               (wavelet-kth-smallest w 0 12 12)))
+    (assert (= (- (expt 2 7) 1)
+               (wavelet-kth-smallest (make-wavelet 7 mitl7) 0 0 0)
+               (wavelet-kth-smallest (make-wavelet 7 mitl7) 0 1 1)
+               (wavelet-kth-smallest (make-wavelet 7 mitl7) 0 12 12)))
+    ;; wavelet-kth-largest
+    (dotimes (l 12)
+      (loop for r from (+ l 1) to 12
+            do (dotimes (k (- r l))
+                 (let* ((seq (vector 5 4 5 5 2 1 5 6 1 3 5 0))
+                        (subseq (displace seq l r)))
+                   (sort subseq #'>)
+                   (assert (= (wavelet-kth-largest w k l r)
+                              (aref subseq k)))))))
+    (signals error (wavelet-kth-largest w 13))
+    (signals error (wavelet-kth-largest w 1 0 0))
+    ;; Returns zero if K is equal to the size.
+    (assert (= 0
+               (wavelet-kth-largest w 0 0 0)
+               (wavelet-kth-largest w 0 1 1)
+               (wavelet-kth-largest w 0 12 12)))
+    (assert (= 0
+               (wavelet-kth-largest (make-wavelet 7 mitl7) 0 0 0)
+               (wavelet-kth-largest (make-wavelet 7 mitl7) 0 1 1)
+               (wavelet-kth-largest (make-wavelet 7 mitl7) 0 12 12))))
   ;; random case
   (let* ((vec (coerce (loop repeat 10007 collect (random 500))
                       '(simple-array (unsigned-byte 32) (*))))
