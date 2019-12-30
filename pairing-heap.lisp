@@ -29,7 +29,7 @@
          node1)))
 
 ;; NOTE: Three implementations are available for MERGE-LIST, each of which has
-;; good points and bad points.
+;; good points and bad points. Currently the third one is adopeted.
 
 ;; Implementation 1, naive recursion
 ;; Pros: fastest on SBCL, no consing

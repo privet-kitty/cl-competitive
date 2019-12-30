@@ -2,6 +2,8 @@
 ;;; Arithmetic operations with static modulus
 ;;;
 
+;; FIXME: Currently MOD* and MOD+ doesn't apply MOD when the number of
+;; parameters is one.
 (defmacro define-mod-operations (divisor)
   `(progn
      (defun mod* (&rest args)
