@@ -88,7 +88,7 @@
 
 (declaim (inline make-range-tree))
 (defun make-range-tree (points &key (xkey #'car) (ykey #'cdr))
-  "points := vector of poins
+  "points := vector of points
 
 Makes a range tree from the points. These points must be sorted
 w.r.t. lexicographical order and must not contain duplicate points. (Duplicate
