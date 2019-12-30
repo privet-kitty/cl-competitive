@@ -1,7 +1,7 @@
 ;;;
 ;;; 2D range tree on an arbitrary commutative monoid
 ;;;
-;;; build: O(nlog^2(n))
+;;; build: O(nlog(n))
 ;;; query: O(log^2(n))
 ;;;
 ;;; Reference:
@@ -165,6 +165,20 @@ coordinates are allowed.) E.g. (-1, 3), (-1, 4), (-1, 7) (0, 1) (0, 3) (2,
 If VALUE-KEY is given, the i-th point is bounded to the value (FUNCALL VALUE-KEY
 POINTS[i]), otherwise to the value +OP-IDENTITY+."
   (declare (vector points))
+  ;; assert POINTS is sorted
+  ;; TODO: do this only when safety > 0
+  (dotimes (i (- (length points) 1))
+    (let* ((point0 (aref points i))
+           (point1 (aref points (+ i 1)))
+           (x0 (funcall xkey point0))
+           (y0 (funcall ykey point0))
+           (x1 (funcall xkey point1))
+           (y1 (funcall ykey point1)))
+      (assert (or (< x0 x1)
+                  (and (= x0 x1)
+                       (< y0 y1))))))
+  (when (zerop (length points))
+    (return-from make-range-tree nil))
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= (- r l) 1)
@@ -193,9 +207,9 @@ POINTS[i]), otherwise to the value +OP-IDENTITY+."
   (and (null (%xnode-left xnode)) (null (%xnode-right xnode))))
 
 (defun rt-count (range-tree x1 y1 x2 y2)
-  "Returns the number of the nodes in the rectangle [x1, y1)*[x2, y2). A part or
-all of these coordinates can be NIL; then they are regarded as the negative or
-positive infinity."
+  "Returns the number of the nodes within the rectangle [x1, x2)*[y1, y2). A
+part or all of these coordinates can be NIL; then they are regarded as the
+negative or positive infinity."
   (declare (optimize (speed 3))
            ((or null fixnum) x1 y1 x2 y2))
   (setq x1 (or x1 +neg-inf+)
@@ -259,7 +273,7 @@ positive infinity."
                       (fixnum x1 x2)
                       ;; KLUDGE: declaring ftype is not sufficient for the
                       ;; optimization on SBCL 1.1.14.
-                      #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                      #+sbcl (values fixnum &optional))
              (cond ((null xnode) +op-identity+)
                    ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
                     (yrecur (%xnode-ynode xnode) y1 y2))
@@ -279,7 +293,7 @@ positive infinity."
            (yrecur (ynode y1 y2)
              (declare ((or null ynode) ynode)
                       (fixnum y1 y2)
-                      #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                      #+sbcl (values fixnum &optional))
              (cond ((null ynode) +op-identity+)
                    ((and (= y1 +neg-inf+) (= y2 +pos-inf+))
                     (%ynode-accumulator ynode))
