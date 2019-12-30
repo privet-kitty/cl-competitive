@@ -39,6 +39,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/implicit-treap.lisp) treap with implicit key
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
 - [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/range-tree.lisp) 2D range tree on arbitrary commutative monoid
+- [range-tree-fc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/range-tree-fc.lisp) 2D range tree with fractional cascading
 - [convex-hull-trick.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull-trick.lisp) convex hull trick
 - [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/wavelet-matrix.lisp) wavelet matrix
 
