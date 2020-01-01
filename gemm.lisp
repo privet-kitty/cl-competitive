@@ -38,7 +38,7 @@ identity element w.r.t. OP+."
     c))
 
 (declaim (inline matrix-power))
-(defun matrix-power (base power &key (op+ #'+) (op* #'op*) (identity+ 0) (identity* 1))
+(defun matrix-power (base power &key (op+ #'+) (op* #'*) (identity+ 0) (identity* 1))
   (declare ((simple-array * (* *)) base)
            (function op+ op*)
            ((integer 0 #.most-positive-fixnum) power))
