@@ -3,20 +3,21 @@
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogue of lower_bound of C++ or bisect_left of Python: Returns the smallest
-index (or input) i that fulfills TARGET[i] >= VALUE, where '>=' is the
+Analogue of lower_bound() of C++ or bisect_left() of Python: Returns the
+smallest index (or input) i that fulfills TARGET[i] >= VALUE, where '>=' is the
 complement of ORDER. In other words, this function returns the leftmost index at
 which VALUE can be inserted with keeping the order. Therefore, TARGET must be
 monotonically non-decreasing with respect to ORDER.
 
-This function returns END if VALUE exceeds TARGET[END-1]. Note that the range
-[START, END) is half-open. END must be explicitly specified if TARGET is
-function. KEY is applied to each element of TARGET before comparison."
+- This function returns END if VALUE exceeds TARGET[END-1]. 
+- The range [START, END) is half-open.
+- END must be explicitly specified if TARGET is function.
+- KEY is applied to each element of TARGET before comparison."
   (declare (function key order)
            (integer start)
            ((or null integer) end))
   (macrolet
-      ((body (accessor &optional declaration)
+      ((frob (accessor &optional declaration)
          `(progn
             (assert (<= start end))
             (if (= start end) end
@@ -24,7 +25,7 @@ function. KEY is applied to each element of TARGET before comparison."
                     ((%bisect-left (left ok)
                        ;; TARGET[OK] >= VALUE always holds (assuming
                        ;; TARGET[END] = +infinity)
-                       ,@(list declaration)
+                       ,@(when declaration (list declaration))
                        (let ((mid (ash (+ left ok) -1)))
                          (if (= mid left)
                              (if (funcall order (funcall key (,accessor target left)) value)
@@ -37,30 +38,31 @@ function. KEY is applied to each element of TARGET before comparison."
     (etypecase target
       (vector
        (let ((end (or end (length target))))
-         (body aref (declare ((integer 0 #.most-positive-fixnum) left ok)))))
+         (frob aref (declare ((integer 0 #.most-positive-fixnum) left ok)))))
       (function
        (assert end () "Requires END argument if TARGET is a function.")
-       (body funcall)))))
+       (frob funcall)))))
 
 (declaim (inline bisect-right))
 (defun bisect-right (target value &key (start 0) end (order #'<) (key #'identity))
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogue of upper_bound of C++ or bisect_right of Python: Returns the smallest
-index (or input) i that fulfills TARGET[i] > VALUE. In other words, this
-function returns the rightmost index at which VALUE can be inserted with keeping
-the order. Therefore, TARGET must be monotonically non-decreasing with respect
-to ORDER.
+Analogue of upper_bound() of C++ or bisect_right() of Python: Returns the
+smallest index (or input) i that fulfills TARGET[i] > VALUE. In other words,
+this function returns the rightmost index at which VALUE can be inserted with
+keeping the order. Therefore, TARGET must be monotonically non-decreasing with
+respect to ORDER.
 
-This function returns END if VALUE >= TARGET[END-1]. Note that the range [START,
-END) is half-open. END must be explicitly specified if TARGET is function. KEY
-is applied to each element of TARGET before comparison."
+- This function returns END if VALUE >= TARGET[END-1].
+- The range [START, END) is half-open.
+- END must be explicitly specified if TARGET is function.
+- KEY is applied to each element of TARGET before comparison."
   (declare (function key order)
            (integer start)
            ((or null integer) end))
   (macrolet
-      ((body (accessor &optional declaration)
+      ((frob (accessor &optional declaration)
          `(progn
             (assert (<= start end))
             (if (= start end)
@@ -69,7 +71,7 @@ is applied to each element of TARGET before comparison."
                     ((%bisect-right (left ok)
                        ;; TARGET[OK] > VALUE always holds (assuming
                        ;; TARGET[END] = +infinity)
-                       ,@(list declaration)
+                       ,@(when declaration (list declaration))
                        (let ((mid (ash (+ left ok) -1)))
                          (if (= mid left)
                              (if (funcall order value (funcall key (,accessor target left)))
@@ -82,9 +84,8 @@ is applied to each element of TARGET before comparison."
                   (%bisect-right start end))))))
     (etypecase target
       (vector
-       (when (null end)
-         (setf end (length target)))
-       (body aref (declare ((integer 0 #.most-positive-fixnum) left ok))))
+       (let ((end (or end (length target))))
+         (frob aref (declare ((integer 0 #.most-positive-fixnum) left ok)))))
       (function
        (assert end () "Requires END argument if TARGET is a function.")
-       (body funcall)))))
+       (frob funcall)))))

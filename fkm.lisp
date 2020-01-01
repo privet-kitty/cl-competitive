@@ -4,6 +4,16 @@
 
 (declaim (inline map-necklaces))
 (defun map-necklaces (function length alphabet-size)
+  "Example:
+> (map-necklaces #'print 4 2)
+
+#(0 0 0 0) 
+#(0 0 0 1) 
+#(0 0 1 1) 
+#(0 1 0 1) 
+#(0 1 1 1) 
+#(1 1 1 1)
+"
   (declare ((integer 1 #.most-positive-fixnum) alphabet-size)
            ((integer 0 #.most-positive-fixnum) length))
   (let ((vec (make-array length

@@ -73,6 +73,8 @@ ROOT; GRAPH must be tree in the latter case."
              (two-vertices-disconnected-error-vertex2 c)
              (two-vertices-disconnected-error-lca-table c)))))
 
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                get-lca))
 (defun get-lca (vertex1 vertex2 lca-table)
   "Returns the lowest common ancestor of the vertices VERTEX1 and VERTEX2."
   (declare (optimize (speed 3))
