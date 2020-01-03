@@ -29,6 +29,10 @@ is empty."
 (defun queue-empty-p (queue)
   (null (queue-list queue)))
 
+(declaim (inline queue-peek))
+(defun queue-peek (queue)
+  (car (queue-list queue)))
+
 (declaim (inline enqueue-front))
 (defun enqueue-front (obj queue)
   "Pushes OBJ to the front of QUEUE."
