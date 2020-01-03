@@ -1,5 +1,7 @@
-;; unfinished
+;; not tested
 
+;; NOTE: Use MAP-ALTERING-MONOTONE-SUBSEQ instead to deal with non-decreasing or
+;; non-increasing subsequence.
 (declaim (inline map-mountain))
 (defun map-mountain (function vector &key (order #'<))
   "Applies FUNCTION to each `increasing and then decreasing' subsequence of
