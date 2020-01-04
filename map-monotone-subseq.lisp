@@ -23,7 +23,7 @@ true in this range."
 (defun map-altering-monotone-subseq (function vector order)
   "Alternately applies FUNCTION to each increasing subsequence and decreasing
 one (if ORDER is #'<, for example). FUNCTION must take two arguments, L and R,
-where the interval [L, R) corresponds to a monotone subsequence.
+where the **closed** interval [L, R] corresponds to a monotone subsequence.
 
 `Decreasing and then increasing' can also be realized by passing a descending
 order (e.g. #'>) to ORDER. Non-decreasing (#'<=) and non-increasing (#'>=) are
@@ -36,11 +36,11 @@ also allowed."
       (loop for i from 1 below (length vector)
             do (if up
                    (unless (funcall order (aref vector (- i 1)) (aref vector i))
-                     (funcall function prev i)
-                     (setq prev i
+                     (funcall function prev (- i 1))
+                     (setq prev (- i 1)
                            up nil))
                    (unless (funcall order (aref vector i) (aref vector (- i 1)))
-                     (funcall function prev i)
-                     (setq prev i
+                     (funcall function prev (- i 1))
+                     (setq prev (- i 1)
                            up t)))
-            finally (funcall function prev (length vector))))))
+            finally (funcall function prev (- (length vector) 1))))))
