@@ -52,11 +52,13 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/adjacent-duplicates.lisp) deletion of adjacent duplicates
 - [map-run-length.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-run-length.lisp) run-length encoding
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversions of vector by merge sort
+- [lis.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/lis.lisp) longest increasing subsequence
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mex.lisp) minimum excludant on non-negative integers
 - [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/sliding-window.lisp) sliding window minimum (or maximum)
 - [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
 - [cyclic-permutation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/cyclic-permutation.lisp) decomposition to cyclic permutations
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
+
 
 ### Arithmetic and algebra
 - [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination
