@@ -5,8 +5,12 @@
 ;; TODO: smarter restoring
 (declaim (inline calc-lis))
 (defun calc-lis (vector order infinity &optional restore)
-  "Computes the lengths of LIS. Returns a LIS as a second value when RESTORE is
-true."
+  "Computes the length of LIS. Returns a LIS as the second value when RESTORE is true.
+
+Example:
+> (calc-lis #(1 0 -5 0 -5 4 4 -4 -1 -2) #'< most-positive-fixnum t)
+=> 3
+#(-5 -4 -2)"
   (declare (vector vector))
   (let* ((n (length vector))
          (dp (make-array (+ 1 n)
