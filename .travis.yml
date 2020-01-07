@@ -11,7 +11,7 @@ env:
     - LISP=sbcl-bin/1.5.5 # yukicoder
     - LISP=sbcl-bin/1.3.13 # CodeChef
     - LISP=sbcl-bin/1.3.3 # CS Academy
-    - LISP=sbcl-bin/1.2.4 # the oldest SBCL that can be successfully installed
+    - LISP=sbcl-bin/1.2.4 # the oldest installable SBCL
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
