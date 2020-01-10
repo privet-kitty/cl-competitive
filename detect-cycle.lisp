@@ -3,8 +3,8 @@
   "Detects a simple cycle in GRAPH and returns a list of vertices. Note that
 this function doesn't detect a cycle of length 1 (i.e. self-loop) or 2.
 
-If WRAP is true, the first and the last vertices of the returned list are the
-same."
+If WRAP is true, this function adds the same vertex to the first and the last of
+the list."
   (let ((pivot -1)
         cycle
         (marked (make-array (length graph) :element-type 'bit :initial-element 0)))
