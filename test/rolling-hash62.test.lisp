@@ -40,7 +40,7 @@
     (assert (= (position +rhash-mod2+ *moduli-table*)
                (position +rhash-base2+ *base-table*)))
 
-    (make-rhash "")
+    (assert (rhash-query (make-rhash "") 0 0))
 
     ;; hash code of a given sequence
     (assert (= (rhash-vector-hash "sddf" :key (lambda (x) (+ 1 (char-code x))))
@@ -54,4 +54,11 @@
     (assert (= 1 (rhash-get-lcp rhash1 2 rhash1 3)))
     (assert (= 0 (rhash-get-lcp rhash1 2 rhash1 4)))
     (assert (= 4 (rhash-get-lcp rhash1 2 rhash1 5)))
-    (assert (= 7 (rhash-get-lcp rhash1 2 rhash1 2)))))
+    (assert (= 7 (rhash-get-lcp rhash1 2 rhash1 2))))
+
+  ;; zero
+  (let ((rhash (make-rhash #*00000 :key #'identity)))
+    (loop for l from 0 to 5
+          do (loop for r from l to 5
+                   do (assert (zerop (rhash-query rhash l r)))))
+    (assert (zerop (rhash-vector-hash #*0000 :key #'identity)))))
