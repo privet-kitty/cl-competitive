@@ -208,7 +208,7 @@ returns 0."
                    (invalid-wavelet-index-error-wavelet condition)))))))
 
 (defun wavelet-ref (wmatrix index)
-  "Returns the value INDEX."
+  "Returns the value at INDEX."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index))
   (let ((depth (wavelet-depth wmatrix))
