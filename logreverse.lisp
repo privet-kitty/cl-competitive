@@ -54,11 +54,3 @@
 ;;         (ash (logior (ash x -32) (ldb (byte 64 0) (ash x 32)))
 ;;              (- size 64)))))
 
-(defun bench (sample)
-  (declare (fixnum sample)
-           (optimize (speed 3) (safety 0)))
-  (let ((res 0))
-    (declare (fixnum res))
-    (dotimes (i sample)
-      (setf res
-            (logxor res (ldb (byte 1 0) (logreverse (if (oddp i) #x0123456789abcde #xedcba9876543210) 64)))))))

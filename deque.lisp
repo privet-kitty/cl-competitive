@@ -27,6 +27,7 @@
              (deque-invalid-index-error-queue condition)))))
 
 ;; TODO: detailed documentation
+;; TODO: add setter; adjust if deque is full
 (defmacro define-deque (name &key (element-type 'fixnum))
   "Defines deque for given ELEMENT-TYPE.
 
