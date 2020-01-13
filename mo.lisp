@@ -45,13 +45,13 @@ universe and Q is the number of queries."
 
 (declaim (inline mo-get-current))
 (defun mo-get-current (mo)
-  "Returns the original index of the current query."
+  "Returns the original index of the current (not yet proessed) query."
   (aref (%mo-order mo) (%mo-index mo)))
 
 (declaim (inline mo-get-previous))
 (defun mo-get-previous (mo)
-  "Returns the previous index of the current query. Returns the initial index
-when no queries are processed yet."
+  "Returns the original index of the previous (= last processed) query. Returns
+the initial index instead when no queries are processed yet."
   (aref (%mo-order mo) (max 0 (- (%mo-index mo) 1))))
 
 (declaim (inline mo-process4))
@@ -67,16 +67,16 @@ added/removed right now, and both ends of the next range: [<left>, <right>)"
     (declare ((integer 0 #.most-positive-fixnum) posl posr))
     (loop while (< left posl)
           do (decf posl)
-             (funcall extend-l posl))
+             (funcall extend-l posl posl posr))
     (loop while (< posr right)
-          do (funcall extend-r posr)
+          do (funcall extend-r posr posl (+ posr 1))
              (incf posr))
     (loop while (< posl left)
-          do (funcall shrink-l posl)
+          do (funcall shrink-l posl (+ posl 1) posr)
              (incf posl))
     (loop while (< right posr)
           do (decf posr)
-             (funcall shrink-r posr))
+             (funcall shrink-r posr posl posr))
     (setf (%mo-posl mo) posl
           (%mo-posr mo) posr)
     (incf (%mo-index mo))))
