@@ -7,6 +7,9 @@
 ;; (+ x y)) and insert each element by (treap-ensure-key <treap> <key> 1
 ;; :if-exists #'1+) instead of TREAP-INSERT.
 
+;; TODO: abolish COUNT slot
+;; TODO: introduce abstraction by macro
+
 (declaim (inline op))
 (defun op (x y)
   "Is the operator comprising a monoid"
@@ -476,13 +479,13 @@ smaller than any keys in TREAP."
 
 ;; not tested
 (defun treap-range-bisect (treap value &key (order #'<))
-  "Returns the smallest existing key that satisfies TREAP[<1st key>]+ ITREAP[<2nd key>] + ... + ITREAP[key] >= VALUE (if ORDER is #'<).
+  "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
 
 Note:
 - This function handles a **closed** interval. 
-- This function returns NIL instead if the TREAP[<1st key>]+ ... + TREAP[<last
+- This function returns NIL instead if TREAP[<1st key>]+ ... + TREAP[<last
 key>] < VALUE.
-- The prefix sums of TTREAP, (TREAP[<1st key>], TREAP[<1st key>]+ITREAP[<2nd
+- The prefix sums of TTREAP, (TREAP[<1st key>], TREAP[<1st key>]+TREAP[<2nd
 key>], ...) must be monotone w.r.t. ORDER.
 - ORDER must be a strict order"
   (labels

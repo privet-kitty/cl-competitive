@@ -184,7 +184,7 @@ identity element unless INITIAL-CONTENTS are supplied."
 
 (defun itreap-split (itreap index)
   "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N),
-where N is the number of elements of the ITREAP."
+where N is the number of the elements in ITREAP."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index))
   (unless (<= index (itreap-count itreap))
@@ -325,7 +325,7 @@ each time."
      ,result))
 
 (defun itreap (&rest args)
-  ;; NOTE: It takes O(nlog(n)). Use MAKE-ITREAP for efficiency.
+  ;; NOTE: This function takes O(nlog(n)) time. Use MAKE-ITREAP for efficiency.
   (labels ((recur (list position itreap)
              (declare ((integer 0 #.most-positive-fixnum) position))
              (if (null list)
