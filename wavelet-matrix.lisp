@@ -341,6 +341,7 @@ its frequency."
       (dfs (- (wavelet-depth wmatrix) 1) start end 0))))
 
 (defun wavelet-range-count (wmatrix lo hi &optional (start 0) end)
+  "Returns the number of the integers within [LO, HI)."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) lo hi start)
            ((or null (integer 0 #.most-positive-fixnum)) end))

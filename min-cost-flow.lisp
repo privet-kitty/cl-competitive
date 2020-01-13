@@ -131,9 +131,12 @@ DENSITY := nil | the number of edges (assumed to be (size of GRAPH)*2 if NIL)"
       (declare (fixnum density)
                (cost-type res))
       ;; FIXME: Actually we must do Bellman-Ford here to handle negative edges
-      ;; properly. (Currently this function returns the correct result also for
-      ;; a graph containing negative edges, if there are no negative cycles. In
-      ;; this case, however, the time complexity is exponential.
+      ;; properly. Currently this function returns a correct result also for a
+      ;; graph containing negative edges, if no negative **cycles** are
+      ;; contained. In this case, however, the worst-case time complexity is
+      ;; exponential. If the input network is for a weighted bipartite matching
+      ;; containing negative weights, this function completely works without any
+      ;; problems.
       (loop while (> flow 0)
             do (fill dist +inf-cost+)
                (setf (aref dist src-idx) 0)

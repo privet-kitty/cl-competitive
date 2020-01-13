@@ -1,5 +1,6 @@
 ;;;
 ;;; Ford-Fulkerson
+;;; (better to use Dinic's algorithm. I leave it just for my reference.)
 ;;;
 
 (defstruct (edge (:constructor %make-edge
