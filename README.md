@@ -102,7 +102,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [ford-fulkerson.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ford-fulkerson.lisp) maximum flow (Ford-Fulkerson algorithm)
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/lca.lisp) lowest common anscestor (binary lifting)
-- [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/min-cost-flow.lisp) minimum cost flow
+- [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/min-cost-flow.lisp) minimum cost flow (SSP)
 - [prim.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/prim.lisp) minimum spanning tree (Prim's algorithm)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/topological-sort.lisp) topological sort on DAG
 - [dfs-order.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dfs-order.lisp) Euler tour of tree

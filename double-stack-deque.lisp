@@ -1,5 +1,6 @@
 ;;;
 ;;; Deque implementation with two stacks
+;;; (All the basic operations are amortized O(1))
 ;;;
 
 (defstruct (dsdeque (:constructor %make-dsdeque (stack1 stack2))
