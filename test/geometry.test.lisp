@@ -1,7 +1,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
   (load "../geometry.lisp")
-  (load "../nearly-equal.lisp"))
+  (load "./nearly-equal.lisp"))
 
 (use-package :test-util)
 
