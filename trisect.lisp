@@ -1,5 +1,6 @@
 ;; This is actually not a trisection but a bisection though I put this here as
-;; the goal is the same; it is an alternative of integer trisection.
+;; the goal is the same; it is an alternative of ternary search on an integer
+;; function.
 (declaim (inline trisect-left))
 (defun trisect-left (target start end &key maximum)
   "TARGET := function | (TODO: vector)
@@ -12,7 +13,9 @@ behaviours are so replaced.)
 
 Note that this function searches the optimal value in the **closed** interval
 [START, END]."
-  (assert (< start end))
+  (when (>= start end)
+    (assert (= start end))
+    (return-from trisect-left start))
   (let ((ng (- start 1))
         (ok end))
     (if maximum
