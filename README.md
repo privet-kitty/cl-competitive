@@ -112,6 +112,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/random-graph.lisp) fast generation of random adjacency matrices
 
 ### Geometry
+- [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull.lisp) some utilities for 2D geometry with complex number; smallest circle problem (Welzl's algorithm) 
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull.lisp) 2D convex hull (monotone chain algorithm)
 
 ### Pattern matching
