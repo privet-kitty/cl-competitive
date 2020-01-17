@@ -4,7 +4,7 @@
 
 ;; TODO: binary search
 (defmacro define-2d-bitree (name &key (operator '#'+) (identity 0) sum-type)
-  "OPERATOR := binary operator (on a commutative monoid)
+  "OPERATOR := binary operator (comprising a commutative monoid)
 IDENTITY := object (identity element of the monoid)
 SUM-TYPE := nil | type specifier
 

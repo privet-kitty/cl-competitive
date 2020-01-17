@@ -127,17 +127,19 @@ The width of MATRIX must be multiple of 64."
               (let ((pivot-row/64 (floor (array-row-major-index matrix pivot-row 0) 64))
                     (rank-row/64 (floor (array-row-major-index matrix rank 0) 64)))
                 ;; swap rows
-                (loop for k from 0 below n/64
-                      do (rotatef (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))
-                                  (sb-kernel:%vector-raw-bits storage (+ pivot-row/64 k))))
+                (loop
+                  for k from 0 below n/64
+                  do (rotatef (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))
+                              (sb-kernel:%vector-raw-bits storage (+ pivot-row/64 k))))
                 ;; eliminate the column
                 (dotimes (i m)
                   (unless (or (= i rank) (zerop (aref matrix i target-col)))
-                    (loop with base/64 = (floor (array-row-major-index matrix i 0) 64)
-                          for k below n/64
-                          do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
-                                   (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
-                                           (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
+                    (loop
+                      with base/64 = (floor (array-row-major-index matrix i 0) 64)
+                      for k below n/64
+                      do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
+                               (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
+                                       (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
               (incf rank))))
         (values matrix rank)))))
 
@@ -168,18 +170,20 @@ The width of A must be multiple of 64."
                     (rank-row/64 (floor (array-row-major-index matrix rank 0) 64)))
                 ;; swap rows
                 (rotatef (aref vector rank) (aref vector pivot-row))
-                (loop for k from 0 below n/64
-                      do (rotatef (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))
-                                  (sb-kernel:%vector-raw-bits storage (+ pivot-row/64 k))))
+                (loop
+                  for k from 0 below n/64
+                  do (rotatef (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))
+                              (sb-kernel:%vector-raw-bits storage (+ pivot-row/64 k))))
                 ;; eliminate the column
                 (dotimes (i m)
                   (unless (or (= i rank) (zerop (aref matrix i target-col)))
                     (setf (aref vector i) (logxor (aref vector i) (aref vector rank)))
-                    (loop with base/64 = (floor (array-row-major-index matrix i 0) 64)
-                          for k below n/64
-                          do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
-                                   (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
-                                           (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
+                    (loop
+                      with base/64 = (floor (array-row-major-index matrix i 0) 64)
+                      for k below n/64
+                      do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
+                               (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
+                                       (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
               (incf rank))))
         (if (loop for i from rank below m
                   always (zerop (aref vector i)))

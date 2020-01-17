@@ -7,14 +7,15 @@
                                  (* (imagpart c1) (imagpart c2)))
                               (* (abs c1) (abs c2)))))))
 
-;; The range of PHASE is (-PI, PI]
+;; The range of CL:PHASE is (-PI, PI]
 (declaim (inline calc-angle))
 (defun calc-angle (c1 c2)
   "Returns the anticlockwise angle from vector C1 to vector C2. The range is [0,
 2PI)."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
-
+;; http://www.ambrsoft.com/trigocalc/circle3d.htm
+;; FIXME: more sane handling of degeneracy
 (declaim (inline calc-circumcenter))
 (defun calc-circumcenter (p1 p2 p3)
   "Returns the center of circumcirlce if it exists, otherwise returns NIL."
