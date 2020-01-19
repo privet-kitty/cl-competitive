@@ -48,6 +48,7 @@
 ;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
 ;;;
 
+(declaim (inline %mini-disc-with-2-points))
 (defun %mini-disc-with-2-points (points end q1 q2 eps)
   "Returns the smallest circle that contains points, q1 and q2 (contains q1 and
 q2 on the circumference)."
@@ -65,11 +66,13 @@ q2 on the circumference)."
 (declaim (inline %shuffle!))
 (defun %shuffle! (vector &optional end)
   "Destructively shuffles VECTOR by Fisher-Yates algorithm."
+  (declare ((or null (integer 0 #.most-positive-fixnum)) end))
   (loop for i from (- (or end (length vector)) 1) above 0
         for j = (random (+ i 1))
         do (rotatef (aref vector i) (aref vector j)))
   vector)
 
+(declaim (inline %mini-disc-with-point))
 (defun %mini-disc-with-point (points end q eps)
   (%shuffle! points end)
   (let* ((center (* 1/2 (+ (aref points 0) q)))
@@ -81,6 +84,7 @@ q2 on the circumference)."
                    (%mini-disc-with-2-points points i (aref points i) q eps)))
     (values center radius)))
 
+(declaim (inline calc-smallest-circle))
 (defun calc-smallest-circle (points eps)
   (assert (>= (length points) 1))
   (when (= 1 (length points))

@@ -3,7 +3,8 @@
 ;;;
 
 ;; NOTE: Not tested
-;; NOTE: Not randomized; the worst case time complexity is O(n^2).
+;; NOTE: Not randomized. Shuffling prior to sorting is required to avoid getting
+;; hacked.
 
 (declaim (inline %median3))
 (defun %median3 (x y z order)

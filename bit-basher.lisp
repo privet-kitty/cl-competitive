@@ -210,11 +210,3 @@ i.e. (bit-lshift #*1011000 2) |-> #*0010110"
 ;;          (result-vector (or result-vector (make-array end :element-type 'bit)))
 ;;          (delta (mod delta end)))
 ;;     :unfinished))
-
-(defun bench (size sample)
-  (declare ((unsigned-byte 32) size sample))
-  (let ((seq (make-array size :element-type 'bit))
-        (state (sb-ext:seed-random-state 0)))
-    (gc :full t)
-    (time (loop repeat sample
-                sum (aref (bit-lshift seq (random 128 state)) 0) of-type bit))))

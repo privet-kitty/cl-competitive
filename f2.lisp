@@ -11,10 +11,6 @@
     (sb-c:foldable sb-c:flushable sb-c:movable)
   :overwrite-fndb-silently t)
 
-(sb-c:defknown popcnt ((unsigned-byte 64)) (integer 0 64)
-    (sb-c:foldable sb-c:flushable sb-c:movable)
-  :overwrite-fndb-silently t)
-
 (sb-vm::define-vop (popcnt)
   (:policy :fast-safe)
   (:translate popcnt)
