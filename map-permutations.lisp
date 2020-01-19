@@ -44,7 +44,9 @@ vector passed to FUNCTION will be recycled."
   "Applies FUNCTION to each permutation of length K of VECTOR. Note that the
 vector passed to FUNCTION will be recycled."
   (declare (vector vector))
-  (map-combinations (lambda (c) (map-permutations! function c)) vector k))
+  (map-combinations (lambda (c) (map-permutations! function c))
+                    vector
+                    (or k (length vector))))
 
 (defmacro do-permutations! ((var vector &optional (start 0) end) &body body)
   `(block nil (map-permutations! (lambda (,var) ,@body) ,vector ,start ,end)))
