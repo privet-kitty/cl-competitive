@@ -45,6 +45,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 
 ### General algorithms
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
+- [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/trisect.lisp) maximum (minimum) of unimodal function
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binsort.lisp) bin sort; counting sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-permutations.lisp) permutation and combination
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mo.lisp) Mo's algorithm
