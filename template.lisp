@@ -1,4 +1,3 @@
-;; -*- coding: utf-8 -*-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-int:defconstant-eqx OPT
     #+swank '(optimize (speed 3) (safety 2))
@@ -63,7 +62,6 @@ the string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
 #+swank
 (defun get-clipbrd ()
   (with-output-to-string (out)
-    ;; (run-program "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe" '("get-clipboard") :output out)
     (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)))
 
 #+swank (defparameter *this-pathname* (uiop:current-lisp-file-pathname))
