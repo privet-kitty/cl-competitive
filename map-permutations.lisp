@@ -5,8 +5,7 @@
 (declaim (inline map-permutations!))
 (defun map-permutations! (function vector &optional (start 0) end)
   "Destructively permutes VECTOR[START] ... VECTOR[END-1] and applies FUNCTION
-to VECTOR each time. This function itself is non-destructive (as VECTOR comes
-back to the original order in the end)."
+to VECTOR each time. VECTOR comes back to the original order in the end."
   (declare (vector vector))
   (labels ((recur (start end)
              (declare ((mod #.array-total-size-limit) start end))
@@ -28,11 +27,10 @@ back to the original order in the end)."
 vector passed to FUNCTION will be recycled. The consequence is undefined when
 the combination vector is modified in FUNCION."
   (declare (vector vector)
-           ((integer 0 #.most-positive-fixnum) length))
+           ((mod #.array-total-size-limit) length))
   (assert (<= length (length vector)))
   (let* ((n (length vector))
          (result (make-array length :element-type (array-element-type vector))))
-    (declare ((mod #.array-total-size-limit) length))
     (labels ((recur (pos prev)
                (if (= pos length)
                    (funcall function result)
