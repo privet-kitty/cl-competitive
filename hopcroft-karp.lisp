@@ -100,9 +100,8 @@
                ))
       (dfs src))))
 
-(declaim (ftype (function * (values (simple-array fixnum (*)) (simple-array fixnum (*))))
-                bgraph-max-matching))
-(defun bgraph-compute-max-matching (bgraph)
+(declaim (ftype (function * (values (unsigned-byte 32) &optional)) bgraph-build-matching!))
+(defun bgraph-build-matching! (bgraph)
   "Makes a maximum bipartite matching and returns two vectors: correspondence
 from group 1 to group 2, and correspondence from group 2 to group 1."
   (declare (optimize (speed 3)))

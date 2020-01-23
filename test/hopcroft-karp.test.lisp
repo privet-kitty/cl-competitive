@@ -16,7 +16,7 @@
                             :element-type 'list
                             :initial-contents '((6) (5 6 7 8) (6) (6) (5) (1 4) (0 1 2 3) (1) (1))))
          (bgraph (coerce-to-bgraph graph 5))
-         (count (bgraph-compute-max-matching bgraph))
+         (count (bgraph-build-matching! bgraph))
          (matching1 (bgraph-matching1 bgraph))
          (matching2 (bgraph-matching2 bgraph)))
     (loop for i below (length matching1)
@@ -30,6 +30,6 @@
                (count -1 matching2 :test-not #'=))))
   ;; empty case
   (let ((bgraph (make-bgraph 0 0)))
-    (assert (zerop (bgraph-compute-max-matching bgraph)))
+    (assert (zerop (bgraph-build-matching! bgraph)))
     (assert (equalp #() (bgraph-matching1 bgraph)))
     (assert (equalp #() (bgraph-matching2 bgraph)))))
