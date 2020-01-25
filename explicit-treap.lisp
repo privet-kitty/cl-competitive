@@ -4,8 +4,11 @@
 ;;;
 
 ;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
-;; (+ x y)) and insert each element by (treap-ensure-key <treap> <key> 1
-;; :if-exists #'1+) instead of TREAP-INSERT.
+;; (+ x y)) and insert each element by
+;;
+;; (treap-ensure-key <treap> <key> 1 :if-exists #'1+)
+;;
+;; instead of TREAP-INSERT.
 
 ;; TODO: introduce abstraction by macro
 
