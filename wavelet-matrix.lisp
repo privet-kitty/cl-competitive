@@ -55,7 +55,7 @@ vector is created."
          (bpos (ash end -6))
          (brem (logand #b111111 end)))
     (+ (aref blocks bpos)
-       (if (zerop brem)
+       (if (zerop brem) ; avoid out-of-bounds access
            0
            (logcount (ldb (byte brem 0)
                           (sb-kernel:%vector-raw-bits storage bpos)))))))
