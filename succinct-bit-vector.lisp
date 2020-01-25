@@ -1,9 +1,9 @@
 ;;;
-;;; Succinct bit vector
+;;; Succinct bit vector (select: O(log(n)))
 ;;;
 
 ;; NOTE: This code was previously in wavelet-matrix.lisp though I moved it here,
-;; because compact bit vector was better than this.
+;; because compact bit vector sufficed in competitive programming.
 
 (defconstant +chunk-width+ (* 64 16))
 ;; This constant cannot be changed as the current implementation depends on the
