@@ -7,7 +7,6 @@
 ;; (+ x y)) and insert each element by (treap-ensure-key <treap> <key> 1
 ;; :if-exists #'1+) instead of TREAP-INSERT.
 
-;; TODO: abolish COUNT slot
 ;; TODO: introduce abstraction by macro
 
 (declaim (inline op))
@@ -26,13 +25,14 @@
 (defconstant +updater-identity+ 0
   "identity element w.r.t. UPDATER-OP")
 
+;; FIXME: Should the left and right end of the target interval be included?
 (declaim (inline modifier-op))
-(defun modifier-op (a b size)
+(defun modifier-op (a b)
   "Is the operator to update ACCUMULATOR based on LAZY value."
   (declare (ignore size))
   (+ a b))
 
-(defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy (count 1)))
+(defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy))
                   (:copier nil)
                   (:conc-name %treap-))
   (key 0 :type fixnum)
@@ -40,17 +40,8 @@
   (accumulator +op-identity+ :type fixnum)
   (lazy +updater-identity+ :type fixnum)
   (priority 0 :type (integer 0 #.most-positive-fixnum))
-  (count 0 :type (integer 0 #.most-positive-fixnum)) ; deprecated
   (left nil :type (or null treap))
   (right nil :type (or null treap)))
-
-(declaim (inline treap-count))
-(defun treap-count (treap)
-  "Returns the size of the (nullable) TREAP."
-  (declare ((or null treap) treap))
-  (if (null treap)
-      0
-      (%treap-count treap)))
 
 (declaim (inline treap-key))
 (defun treap-key (treap)
@@ -63,14 +54,6 @@
   (if (null treap)
       +op-identity+
       (%treap-accumulator treap)))
-
-(declaim (inline update-count))
-(defun update-count (treap)
-  (declare (treap treap))
-  (setf (%treap-count treap)
-        (+ 1
-           (treap-count (%treap-left treap))
-           (treap-count (%treap-right treap)))))
 
 (declaim (inline update-accumulator))
 (defun update-accumulator (treap)
@@ -93,7 +76,6 @@
 (defun force-up (treap)
   "Propagates up the information from children."
   (declare (treap treap))
-  (update-count treap)
   (update-accumulator treap))
 
 (declaim (inline force-down))
@@ -107,20 +89,17 @@
                         (%treap-lazy treap)))
       (setf (%treap-accumulator (%treap-left treap))
             (modifier-op (%treap-accumulator (%treap-left treap))
-                         (%treap-lazy treap)
-                         (%treap-count (%treap-left treap)))))
+                         (%treap-lazy treap))))
     (when (%treap-right treap)
       (setf (%treap-lazy (%treap-right treap))
             (updater-op (%treap-lazy (%treap-right treap))
                         (%treap-lazy treap)))
       (setf (%treap-accumulator (%treap-right treap))
             (modifier-op (%treap-accumulator (%treap-right treap))
-                         (%treap-lazy treap)
-                         (%treap-count (%treap-right treap)))))
+                         (%treap-lazy treap))))
     (setf (%treap-value treap)
           (modifier-op (%treap-value treap)
-                       (%treap-lazy treap)
-                       1))
+                       (%treap-lazy treap)))
     (setf (%treap-lazy treap) +updater-identity+)))
 
 (declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
@@ -324,41 +303,8 @@ w.r.t. your intended order. The values are filled with the identity element."
                    (setf (%treap-left node) (build l mid))
                    (setf (%treap-right node) (build (+ mid 1) r))
                    (heapify node)
-                   (update-count node)
                    node))))
     (build 0 (length sorted-vector))))
-
-(define-condition invalid-treap-index-error (type-error)
-  ((treap :initarg :treap :reader invalid-treap-index-error-treap)
-   (index :initarg :index :reader invalid-treap-index-error-index))
-  (:report
-   (lambda (condition stream)
-     (format stream "Invalid index ~W for treap ~S."
-             (invalid-treap-index-error-index condition)
-             (invalid-treap-index-error-treap condition)))))
-
-;; DEPRECATED
-(defun treap-ref (treap index)
-  "Returns the key and value corresponding to the INDEX."
-  (declare (optimize (speed 3))
-           ((or null treap) treap)
-           ((integer 0 #.most-positive-fixnum) index))
-  (when (>= index (treap-count treap))
-    (error 'invalid-treap-index-error :treap treap :index index))
-  (labels ((%ref (treap index)
-             (declare (optimize (safety 0))
-                      (treap treap)
-                      ((integer 0 #.most-positive-fixnum) index))
-             (force-down treap)
-             (prog1
-                 (let ((left-count (treap-count (%treap-left treap))))
-                   (cond ((< index left-count)
-                          (%ref (%treap-left treap) index))
-                         ((> index left-count)
-                          (%ref (%treap-right treap) (- index left-count 1)))
-                         (t (values (%treap-key treap) (%treap-value treap)))))
-               (force-up treap))))
-    (%ref treap index)))
 
 ;; FIXME: might be problematic when two priorities collide.
 (declaim (inline treap-query))
@@ -403,9 +349,8 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
 ;;; Bisection search for key
 ;;;
 
-;; NOTE: These functions intentionally doesn't return the assigned value. That
-;; is for efficiency, because thereby they doesn't need to execute lazy
-;; propagation.
+;; NOTE: These functions intentionally don't return the assigned value. That is
+;; for efficiency, because thereby they don't need to execute lazy propagation.
 
 (defun treap-find (treap key &key (order #'<))
   "Finds the key that satisfies (AND (NOT (FUNCALL ORDER KEY (%TREAP-KEY

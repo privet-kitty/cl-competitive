@@ -18,10 +18,6 @@
                (treap-priority (%treap-left treap)))
            (>= (%treap-priority treap)
                (treap-priority (%treap-right treap)))
-           (= (%treap-count treap)
-              (+ 1
-                 (treap-count (%treap-left treap))
-                 (treap-count (%treap-right treap))))
            (= (%treap-accumulator treap)
               (op (op (treap-accumulator (%treap-left treap))
                       (%treap-value treap))
@@ -39,8 +35,7 @@
                   (%treap-value treap)
                   :accumulator (%treap-accumulator treap)
                   :left (copy-treap (%treap-left treap))
-                  :right (copy-treap (%treap-right treap))
-                  :count (%treap-count treap))))
+                  :right (copy-treap (%treap-right treap)))))
 
 (declaim (notinline make-treap treap-insert treap-map))
 
