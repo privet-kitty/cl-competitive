@@ -5,7 +5,7 @@
 (defstruct (queue (:constructor make-queue
                       (&optional list &aux (tail (last list)))))
   (list nil :type list)
-  (tail nil :type (or null (cons t null))))
+  (tail nil :type list))
 
 (declaim (inline enqueue))
 (defun enqueue (obj queue)
