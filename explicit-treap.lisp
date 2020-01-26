@@ -10,6 +10,7 @@
 ;;
 ;; instead of TREAP-INSERT.
 
+;; TODO: more tests
 ;; TODO: introduce abstraction by macro
 
 (declaim (inline op))
@@ -32,7 +33,6 @@
 (declaim (inline modifier-op))
 (defun modifier-op (a b)
   "Is the operator to update ACCUMULATOR based on LAZY value."
-  (declare (ignore size))
   (+ a b))
 
 (defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy))
@@ -309,7 +309,29 @@ w.r.t. your intended order. The values are filled with the identity element."
                    node))))
     (build 0 (length sorted-vector))))
 
-;; FIXME: might be problematic when two priorities collide.
+(defun treap-query (treap &key left right (order #'<))
+  "Queries the sum of the half-open interval specified by the keys: [LEFT,
+RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
+  (labels ((recur (treap l r)
+             (unless treap
+               (return-from recur +op-identity+))
+             (force-down treap)
+             (prog1
+                 (if (and (null l) (null r))
+                     (%treap-accumulator treap)
+                     (let ((key (%treap-key treap)))
+                       (if (or (null l) (funcall order key l)) ; L <= KEY
+                           (if (or (null r) (funcall order key r)) ; KEY < R
+                               (op (op (recur (%treap-left treap) l nil)
+                                       (%treap-value treap))
+                                   (recur (%treap-right treap) nil r))
+                               (recur (%treap-left treap) l r))
+                           (recur (%treap-right treap) l r))))
+               (force-up treap))))
+    (recur treap left right)))
+
+#|
+;; Below is a simpler but somewhat slower variant
 (declaim (inline treap-query))
 (defun treap-query (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
@@ -334,11 +356,41 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
                   (treap-split treap-l-n right :order order)
                 (prog1 (treap-accumulator treap-l-r)
                   (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))))))
+;|#
 
+(declaim (inline treap-update))
+(defun treap-update (treap x &key left right (order #'<))
+  "Updates TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r). L and/or R can
+be NIL, then it is regarded as the (negative or positive) infinity."
+  (assert (not (and left right (funcall order right left))))
+  (labels ((recur (treap l r)
+             (when treap
+               (if (and (null l) (null r))
+                   (progn
+                     (setf (%treap-lazy treap)
+                           (updater-op (%treap-lazy treap) x))
+                     (force-down treap))
+                   (let ((key (%treap-key treap)))
+                     (force-down treap)
+                     (if (or (null l) (not (funcall order key l))) ; L <= KEY
+                         (if (or (null r) (funcall order key r)) ; KEY < R
+                             (progn
+                               (recur (%treap-left treap) l nil)
+                               (setf (%treap-value treap)
+                                     (modifier-op (%treap-value treap) x))
+                               (recur (%treap-right treap) nil r))
+                             (recur (%treap-left treap) l r))
+                         (recur (%treap-right treap) l r))))
+               (force-up treap))))
+    (recur treap left right)
+    treap))
+
+#|
+;; Below is a simpler but somewhat slower variant.
 (declaim (inline treap-update))
 (defun treap-update (treap x left right &key (order #'<))
   "Updates TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r)"
-  (assert (not (funcall order left right)))
+  (assert (not (funcall order right left)))
   (multiple-value-bind (treap-0-l treap-l-n)
       (treap-split treap left :order order)
     (multiple-value-bind (treap-l-r treap-r-n)
@@ -347,6 +399,21 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
         (setf (%treap-lazy treap-l-r)
               (updater-op (%treap-lazy treap-l-r) x)))
       (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))
+;|#
+
+(declaim (inline treap-ref))
+(defun treap-ref (treap key &key (order #'<))
+  (declare ((or null treap) treap))
+  (labels ((recur (treap)
+             (when treap
+               (force-down treap)
+               (prog1 (cond ((funcall order key (%treap-key treap))
+                             (recur (%treap-left treap)))
+                            ((funcall order (%treap-key treap) key)
+                             (recur (%treap-right treap)))
+                            (t (%treap-value treap)))
+                 (force-up treap)))))
+    (recur treap)))
 
 ;;;
 ;;; Bisection search for key
