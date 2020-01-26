@@ -15,6 +15,8 @@
   (assert (= 1 (bisect-left #(#\a #\c #\c #\d) #\b :order #'char<)))
   (assert (= 1 (bisect-left #(#\a #\c #\c #\d) (char-code #\b)
                             :order #'< :key #'char-code)))
+  (assert (= 0 (bisect-left #(1 4 4 7 7 7 7 7 8) 6 :start 0 :end 0)))
+  (assert (= 1 (bisect-left #(1 4 4 7 7 7 7 7 8) 6 :start 0 :end 1)))
   (assert (= 4 (bisect-left #(nil 1 4 4 7 7 nil nil) 6 :start 1 :end 4))))
 
 (with-test (:name bisect-right)
@@ -30,4 +32,6 @@
   (assert (= 3 (bisect-right #(1 4 4 7 7 7 7 7 8) 6)))
   (assert (= 3 (bisect-right #(10 9 9 7 7 7 7 7 4) 9 :order #'>)))
   (assert (= 3 (bisect-right #(#\a #\c #\c #\d) #\c :order #'char<)))
+  (assert (= 0 (bisect-right #(1 4 4 7 7 7 7 7 8) 6 :start 0 :end 0)))
+  (assert (= 1 (bisect-left #(1 4 4 7 7 7 7 7 8) 6 :start 0 :end 1)))
   (assert (= 4 (bisect-right #(nil 1 4 4 4 4 7 7 nil nil) 4 :start 1 :end 4))))

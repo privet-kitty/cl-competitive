@@ -51,8 +51,8 @@ Example: (make-prime-table 10) => #*0011010100"
          (ftype (function * (values list &optional)) factorize))
 (defun factorize (x prime-data)
   "Returns the associative list of prime factors of X, which is composed
-of (<prime> . <exponent>). E.g. (factorize 100 <prime-table>) => '((2 . 2) (5
-. 5)).
+of (<prime> . <exponent>). E.g. (factorize 40 <prime-table>) => '((2 . 3) (5
+. 1)).
 
 - Any numbers beyond the range of PRIME-DATA are regarded as prime.
 - The returned list is in descending order w.r.t. prime factors."

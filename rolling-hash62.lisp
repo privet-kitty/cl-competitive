@@ -16,8 +16,8 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   ;; This table consists of pairs of primes less than 2^31 and the random
-  ;; primitive roots modulo them larger than 10^9. We randomly choose a pair and
-  ;; adopt the prime as modulus and the primitive root as base.
+  ;; primitive roots modulo them and larger than 10^9. We randomly choose a pair
+  ;; and adopt the prime as modulus, and the primitive root as base.
   (declaim ((simple-array (unsigned-byte 31) (100)) *moduli-table* *base-table*))
   (defparameter *moduli-table*
     (make-array 100 :element-type '(unsigned-byte 31)
