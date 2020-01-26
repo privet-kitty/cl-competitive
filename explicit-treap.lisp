@@ -313,6 +313,7 @@ w.r.t. your intended order. The values are filled with the identity element."
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
   (labels ((recur (treap l r)
+             (format t "~A ~A ~A~%" treap l r)
              (unless treap
                (return-from recur +op-identity+))
              (force-down treap)
@@ -320,7 +321,7 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
                  (if (and (null l) (null r))
                      (%treap-accumulator treap)
                      (let ((key (%treap-key treap)))
-                       (if (or (null l) (funcall order key l)) ; L <= KEY
+                       (if (or (null l) (not (funcall order key l))) ; L <= KEY
                            (if (or (null r) (funcall order key r)) ; KEY < R
                                (op (op (recur (%treap-left treap) l nil)
                                        (%treap-value treap))
