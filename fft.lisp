@@ -3,7 +3,7 @@
 ;;;
 ;;; Reference:
 ;;; http://www.prefield.com/algorithm/math/fft.html
-;;; http://techtipshoge.blogspot.com/2011/08/fft4.html
+;;; http://techtipshoge.blogspot.com/2011/08/fft4.html (Japanese)
 ;;;
 
 (deftype fft-float () 'double-float)
@@ -111,36 +111,39 @@ vector of different size."
                    (rotatef (aref f i) (aref f j))))))))
 
 (declaim (inline dft!))
-(defun dft! (f)
-  (declare ((simple-array (complex fft-float) (*)) f))
-  (if (zerop (length f))
-      f
+(defun dft! (vector)
+  (declare ((simple-array (complex fft-float) (*)) vector))
+  (if (zerop (length vector))
+      vector
       (if *exp-table+*
-          (%general-dft-cached-cis! f 1)
-          (%general-dft! f 1))))
+          (%general-dft-cached-cis! vector 1)
+          (%general-dft! vector 1))))
 
 (declaim (inline inverse-dft!))
-(defun inverse-dft! (f)
-  (declare ((simple-array (complex fft-float) (*)) f))
-  (prog1 f
-    (let ((n (length f)))
+(defun inverse-dft! (vector)
+  (declare ((simple-array (complex fft-float) (*)) vector))
+  (prog1 vector
+    (let ((n (length vector)))
       (unless (zerop n)
         (let ((/n (/ (coerce n 'fft-float))))
           (if *exp-table-*
-              (%general-dft-cached-cis! f -1)
-              (%general-dft! f -1))
+              (%general-dft-cached-cis! vector -1)
+              (%general-dft! vector -1))
           (dotimes (i n)
-            (setf (aref f i) (* (aref f i) /n))))))))
+            (setf (aref vector i) (* (aref vector i) /n))))))))
 
 (declaim (inline convolute!))
-(defun convolute! (g h)
-  (declare ((simple-array (complex fft-float) (*)) g h))
-  (let ((n (length g)))
+(defun convolute! (vector1 vector2)
+  "Returns the convolution of two vectors VECTOR1 and VECTOR2. A new vector is
+created when RESULT-VECTOR is null. This function destructively modifies VECTOR1
+and VECTOR2. (They can be restored by INVERSE-DFT!.)"
+  (declare ((simple-array (complex fft-float) (*)) vector1 vector2))
+  (let ((n (length vector1)))
     (assert (and (power2-p n)
-                 (= n (length h))))
-    (dft! g)
-    (dft! h)
-    (let ((f (make-array n :element-type '(complex fft-float))))
+                 (= n (length vector2))))
+    (dft! vector1)
+    (dft! vector2)
+    (let ((result (make-array n :element-type '(complex fft-float))))
       (dotimes (i n)
-        (setf (aref f i) (* (aref g i) (aref h i))))
-      (inverse-dft! f))))
+        (setf (aref result i) (* (aref vector1 i) (aref vector2 i))))
+      (inverse-dft! result))))
