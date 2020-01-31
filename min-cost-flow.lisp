@@ -17,7 +17,7 @@
   (cost 0 :type cost-type)
   (reversed nil :type (or null edge)))
 
-(defun push-edge (from-idx to-idx capacity cost graph)
+(defun add-edge! (from-idx to-idx capacity cost graph)
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of list of all the edges that goes from the vertex"
   (declare ((simple-array list (*)) graph)

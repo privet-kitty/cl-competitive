@@ -10,7 +10,7 @@
 ;;
 ;; instead of TREAP-INSERT.
 
-;; TODO: more tests
+;; TODO & NOTE: insufficient tests
 ;; TODO: introduce abstraction by macro
 
 (declaim (inline op))

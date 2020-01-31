@@ -1,11 +1,12 @@
 ;;;
-;;; Utilities for geometry
+;;; Utilities for 2D geometry
+;;; (better to use complex-geometry.lisp)
 ;;;
 
 (declaim (inline intersect-p))
 (defun intersect-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y &optional (eps 0))
-  "Returns true if the line segment from (P1-X, P1-Y) to (P2-X, P2-Y) intersects
-the one from (Q1-X, Q1-Y) to (Q2-X, Q2-Y), otherwise returns false."
+  "Returns true iff the line segment from (P1-X, P1-Y) to (P2-X, P2-Y)
+intersects the one from (Q1-X, Q1-Y) to (Q2-X, Q2-Y)."
   (let* ((delta-p-x (- p2-x p1-x))
          (delta-p-y (- p2-y p1-y))
          (delta-q-x (- q2-x q1-x))
@@ -15,6 +16,22 @@ the one from (Q1-X, Q1-Y) to (Q2-X, Q2-Y), otherwise returns false."
          (det2 (* (- (* delta-q-x (- p1-y q1-y)) (* delta-q-y (- p1-x q1-x)))
                   (- (* delta-q-x (- p2-y q1-y)) (* delta-q-y (- p2-x q1-x))))))
     (and (< det1 eps) (< det2 eps))))
+
+(declaim (inline parallel-p))
+(defun parallel-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y &optional (eps 0))
+  "Returns true iff the two-lines are parallel."
+  (<= (abs (- (expt (+ (* (- p1-x p2-x) (- q1-x q2-x))
+                       (* (- p1-y p2-y) (- q1-y q2-y)))
+                    2)
+              (* (+ (expt (- p1-x p2-x) 2) (expt (- p1-y p2-y) 2))
+                 (+ (expt (- q1-x q2-x) 2) (expt (- q1-y q2-y) 2)))))
+      eps))
+
+;; (declaim (inline line-coincide-p))
+;; (defun line-coincide-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y &optional (eps 0))
+;;   "Returns true iff the two lines are identical."
+;;   (and (parallel-p p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y eps)
+;;        (parallel-p p1-x p1-y q1-x q1-y q1-x q1-y q2-x q2-y eps)))
 
 (declaim (inline calc-internal-angle))
 (defun calc-internal-angle (x1 y1 x2 y2)
