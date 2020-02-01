@@ -17,9 +17,9 @@ vector is NOT sorted."
                    (vector-push-extend quot res)))))
     res))
 
-;; Below is the variant that returns a sorted list.
+;; Below is a variant that returns a sorted list.
 (defun enum-ascending-divisors (n)
-  "Returns the increasing list of all the divisors of N."
+  "Returns the ascending list of all the divisors of N."
   (declare (optimize (speed 3))
            ((integer 1 #.most-positive-fixnum) n))
   (if (= n 1)
@@ -44,12 +44,14 @@ vector is NOT sorted."
           (%enum 2 result (list n))
           result))))
 
+(declaim (ftype (function * (values (simple-array list (*)) &optional)) make-divisors-table))
 (defun make-divisors-table (sup)
   "Returns a vector of length SUP whose each cell, vector[INDEX], is the
-increasing list of every divisor of INDEX. Note that vector[0] = NIL."
-  (declare ((integer 0 #.most-positive-fixnum) sup))
+ascending list of every divisor of INDEX. Note that vector[0] = NIL."
+  (declare ((integer 0 #.most-positive-fixnum) sup)
+           #+sbcl (sb-ext:muffle-conditions style-warning))
   (let ((result (make-array sup :element-type 'list))
-        (tails (make-array sup :element-type 'list))) ; preserves the last cons
+        (tails (make-array sup :element-type 'list))) ; stores the last cons cell
     (declare (optimize (speed 3) (safety 0)))
     (loop for i from 1 below sup
           for cell = (list 1)
@@ -59,6 +61,6 @@ increasing list of every divisor of INDEX. Note that vector[0] = NIL."
       (setf (aref result 0) nil))
     (loop for divisor from 2 below sup
           do (loop for number from divisor below sup by divisor
-                   do (setf (cdr (aref tails number)) (list divisor))
-                      (setf (aref tails number) (cdr (aref tails number)))))
+                   do (setf (cdr (aref tails number)) (list divisor)
+                            (aref tails number) (cdr (aref tails number)))))
     result))
