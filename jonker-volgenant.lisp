@@ -3,6 +3,10 @@
 ;;;
 ;;; Weighted bipartite matching (Jonker-Volgenant algorithm)
 ;;;
+;;; Reference:
+;;; Jonker, Volgenant: A shortest augmenting path algorithm for dense and sparse linear assignment problems
+;;; Jonker's C++ implementaion: https://web.archive.org/web/20070613181051/http://www.magiclogic.com/assignment/lap_cpp.zip
+;;;
 
 (defconstant +lap-null-vertex+ -1)
 (defconstant +lap-null-weight+ most-positive-fixnum)
@@ -237,8 +241,8 @@ rows and rows assigned to columns."
           (setq max-weight (max max-weight (aref matrix i j))
                 min-weight (min min-weight (aref matrix i j))))))
     ;; FILL TOP LEFT
-    ;; 1. add a constant to adjust all the weights to non-negative
-    ;; 2. fill the null edge with infinite weight
+    ;; 1. add a constant to adjust all the weights to non-negative value
+    ;; 2. fill null edges with infinite weight
     (let* ((offset (max 0 (- min-weight)))
            (inf-weight (+ 1 (* (+ max-weight offset) (min size1 size2)))))
       (declare ((integer 0 #.most-positive-fixnum) offset inf-weight))
@@ -274,7 +278,7 @@ rows and rows assigned to columns."
           (values matching1 matching2))))))
 
 (defun lap-score (lap)
-  "Computes the score of the computed matching."
+  "Computes the score of the built matching."
   (let ((matching1 (%lap-matching1 lap))
         (matrix (%lap-matrix lap))
         (res 0))
