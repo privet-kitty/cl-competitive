@@ -26,6 +26,17 @@
 		         (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
              #(-1 -3 -6 -10 -9 -7 -4 0))))
 
+  ;; use RESULT-VECTOR argument
+  (let ((res (make-array 8 :element-type '(complex fft-float))))
+    (assert (fft-array=
+             (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
+		         (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
+                         res)
+             #(-1 -3 -6 -10 -9 -7 -4 0)))
+    (assert (eql res (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
+		                 (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
+                                 res))))
+
   ;; cis table doesn't have right length
   (signals simple-error
     (with-fixed-length-fft 4 (dft! (to-fft-array #(0 0 0 0 0 0 0 0)))))

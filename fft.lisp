@@ -133,17 +133,19 @@ vector of different size."
             (setf (aref vector i) (* (aref vector i) /n))))))))
 
 (declaim (inline convolute!))
-(defun convolute! (vector1 vector2)
+(defun convolute! (vector1 vector2 &optional result-vector)
   "Returns the convolution of two vectors VECTOR1 and VECTOR2. A new vector is
 created when RESULT-VECTOR is null. This function destructively modifies VECTOR1
 and VECTOR2. (They can be restored by INVERSE-DFT!.)"
-  (declare ((simple-array (complex fft-float) (*)) vector1 vector2))
+  (declare ((simple-array (complex fft-float) (*)) vector1 vector2)
+           ((or null (simple-array (complex fft-float) (*))) result-vector))
   (let ((n (length vector1)))
     (assert (and (power2-p n)
                  (= n (length vector2))))
     (dft! vector1)
     (dft! vector2)
-    (let ((result (make-array n :element-type '(complex fft-float))))
+    (let ((result (or result-vector
+                      (make-array n :element-type '(complex fft-float)))))
       (dotimes (i n)
         (setf (aref result i) (* (aref vector1 i) (aref vector2 i))))
       (inverse-dft! result))))
