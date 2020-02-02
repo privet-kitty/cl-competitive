@@ -2,8 +2,6 @@
 ;;; Max flow (Dinic's algorithm)
 ;;;
 
-(setf *print-circle* t)
-
 (defconstant +graph-inf-distance+ #xffffffff)
 
 (define-condition max-flow-overflow (error)
