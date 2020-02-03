@@ -102,7 +102,8 @@ GRAPH := vector of list of all the edges that goes from the vertex"
 
 (define-condition not-enough-capacity-error (error)
   ((graph :initarg :graph :reader not-enough-capacity-error-graph)
-   (flow :initarg :flow :reader not-enough-capacity-error-flow))
+   (flow :initarg :flow :reader not-enough-capacity-error-flow)
+   (score :initarg :score :reader not-enough-capacity-error-score))
   (:report
    (lambda (c s)
      (format s "Cannot send ~A units of flow on graph ~A due to not enough capacity."
@@ -161,7 +162,7 @@ DENSITY := nil | the number of edges (assumed to be (size of GRAPH)*2 if NIL)"
                                         (aref prev-edges next-v) edge)
                                   (fheap-push next-cost next-v pqueue)))))))
                (when (= (aref dist dest-idx) +inf-cost+)
-                 (error 'not-enough-capacity-error :flow flow :graph graph))
+                 (error 'not-enough-capacity-error :flow flow :graph graph :score res))
                (let ((max-flow flow))
                  (declare (fixnum max-flow))
                  (dotimes (v size)

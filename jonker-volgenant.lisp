@@ -240,6 +240,12 @@ rows and rows assigned to columns."
         (unless (= (aref matrix i j) +lap-null-weight+)
           (setq max-weight (max max-weight (aref matrix i j))
                 min-weight (min min-weight (aref matrix i j))))))
+    (when (= max-weight most-negative-fixnum)
+      (let ((matching1 (make-array size1 :element-type 'fixnum :initial-element +lap-null-vertex+))
+            (matching2 (make-array size2 :element-type 'fixnum :initial-element +lap-null-vertex+)))
+        (setf (%lap-matching1 lap) matching1
+              (%lap-matching2 lap) matching2)
+        (return-from lap-build (values matching1 matching2))))
     ;; FILL TOP LEFT
     ;; 1. add a constant to adjust all the weights to non-negative value
     ;; 2. fill null edges with infinite weight
