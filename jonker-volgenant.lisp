@@ -1,5 +1,3 @@
-;;; UNFINISHED
-
 ;;;
 ;;; Weighted bipartite matching (Jonker-Volgenant algorithm)
 ;;;
@@ -18,7 +16,8 @@
 (defun solve-lap-jv (cost-matrix)
   "Solves linear assignment problem. Returns two vectors: columns assigned to
 rows and rows assigned to columns."
-  (declare ((array * (* *)) cost-matrix))
+  (declare (optimize (speed 3))
+           ((simple-array fixnum (* *)) cost-matrix))
   (let* ((n (array-dimension cost-matrix 0))
          ;; rowsol[i] = column assigned to row i
          (rowsol (make-array n :element-type 'fixnum))
@@ -60,7 +59,6 @@ rows and rows assigned to columns."
                    (aref colsol j) imin)
           else
           do (setf (aref colsol j) +lap-null-vertex+))
-    ;; (dbg rowsol colsol duals)
     ;; REDUCTION TRANSFER
     (dotimes (i n)
       (case (aref matches i)
@@ -117,7 +115,6 @@ rows and rows assigned to columns."
                            (setf (aref frees k) i0))
                     (progn (setf (aref frees end-free) i0)
                            (incf end-free)))))))))
-    ;; (dbg rowsol colsol duals end-free)
     ;; AUGMENT SOLUTION for each free row
     (let ((min most-positive-fixnum))
       (declare ((integer 0 #.most-positive-fixnum) min))
@@ -136,7 +133,6 @@ rows and rows assigned to columns."
                   (aref pred j) free-row
                   (aref col-vec j) j))
           (loop
-            ;; (dbg low up unassigned-found)
             (when (= up low)
               (setq end low
                     min (aref dists (aref col-vec up)))
@@ -156,13 +152,13 @@ rows and rows assigned to columns."
                     do (setq end-of-path (aref col-vec k)
                              unassigned-found t)
                        (return)))
-            ;; (dbg low up end-of-path unassigned-found min)
             (unless unassigned-found
               (let* ((j1 (aref col-vec low))
                      (i (aref colsol j1))
                      (h (- (aref cost-matrix i j1)
                            (aref duals j1)
                            min)))
+                (declare (fixnum h))
                 (incf low)
                 (loop for k from up below n
                       for j = (aref col-vec k)
@@ -194,9 +190,7 @@ rows and rows assigned to columns."
                     end-of-path (aref rowsol i)
                     (aref rowsol i) j)
               (when (= i free-row)
-                (return)))))
-        ;; (dbg rowsol colsol duals)
-        )
+                (return))))))
       (values rowsol colsol))))
 
 (defstruct (lap (:constructor make-lap
@@ -206,6 +200,10 @@ rows and rows assigned to columns."
                                               :initial-element +lap-null-weight+))))
                 (:conc-name %lap-)
                 (:copier nil))
+  "MAKE-LAP initializes a weighted bipartite matching problem.
+SIZE1 := the number of `left' vertices
+SIZE2 := the number of `right' vertices
+MAZIMIZE := true [false] if maximization [minimization] problem"
   (matrix nil :type (simple-array fixnum (* *)))
   (maximize nil :type boolean)
   (size1 0 :type (integer 0 #.most-positive-fixnum))
@@ -220,7 +218,9 @@ rows and rows assigned to columns."
     (setf (aref (%lap-matrix lap) v1 v2) weight)))
 
 (defun lap-build (lap size)
-  "Computes a minimum (or maximum) weight matching of the specified cardinality."
+  "Computes a minimum (or maximum) weight matching of the specified
+size. Returns two vectors that expresses a matching: group 1 -> group 2, group 2
+-> group 1"
   (declare ((integer 0 #.most-positive-fixnum) size))
   (assert (<= size (min (%lap-size1 lap) (%lap-size2 lap))))
   (let* ((size1 (%lap-size1 lap))
@@ -293,5 +293,3 @@ rows and rows assigned to columns."
       (when (/= (aref matching1 i) +lap-null-vertex+)
         (incf res (aref matrix i (aref matching1 i)))))
     (if (%lap-maximize lap) (- res) res)))
-
-
