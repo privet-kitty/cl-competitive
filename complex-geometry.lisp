@@ -52,9 +52,10 @@
 (defun %mini-disc-with-2-points (points end q1 q2 eps)
   "Returns the smallest circle that contains points, q1 and q2 (contains q1 and
 q2 on the circumference)."
-  (declare ((integer 0 #.most-positive-fixnum) end))
+  (declare (vector points)
+           ((integer 0 #.most-positive-fixnum) end))
   (let* ((center (* 1/2 (+ q1 q2)))
-         (radius (abs (- q1 center))))
+         (radius (abs (coerce (- q1 center) '(complex double-float)))))
     (dotimes (i end)
       (let ((new-point (aref points i)))
         (when (>= (abs (- new-point center)) (+ radius eps))
@@ -74,9 +75,11 @@ q2 on the circumference)."
 
 (declaim (inline %mini-disc-with-point))
 (defun %mini-disc-with-point (points end q eps)
+  (declare (vector points)
+           ((integer 0 #.most-positive-fixnum) end))
   (%shuffle! points end)
   (let* ((center (* 1/2 (+ (aref points 0) q)))
-         (radius (abs (- q center))))
+         (radius (abs (coerce (- q center) '(complex double-float)))))
     (loop for i from 1 below end
           for new-point of-type complex = (aref points i)
           when (>= (abs (- new-point center)) (+ radius eps))
@@ -86,6 +89,7 @@ q2 on the circumference)."
 
 (declaim (inline calc-smallest-circle))
 (defun calc-smallest-circle (points eps)
+  (declare (vector points))
   (assert (>= (length points) 1))
   (when (= 1 (length points))
     (return-from calc-smallest-circle
@@ -96,7 +100,7 @@ q2 on the circumference)."
          (p0 (aref points 0))
          (p1 (aref points 1))
          (center (* 1/2 (+ p0 p1)))
-         (radius (abs (- p0 center))))
+         (radius (abs (coerce (- p0 center) '(complex double-float)))))
     (loop for i from 2 below (length points)
           for new-point = (aref points i)
           when (>= (abs (- new-point center)) (+ radius eps))

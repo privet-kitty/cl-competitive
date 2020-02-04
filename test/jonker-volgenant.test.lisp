@@ -56,7 +56,7 @@
     (dotimes (i size1)
       (dotimes (j size2)
         (when (< (random 1d0 *state*) rate)
-          (let ((weight (- (random 40 *state*) 10)))
+          (let ((weight (- (random 30 *state*) 10)))
             (ssp-add-edge ssp i j weight)
             (lap-add-edge lap i j weight)))))
     (values ssp lap)))
@@ -130,19 +130,19 @@
 
 (with-test (:name jonker-volgenant/random-minimize)
   ;; size1 = size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 30 30 (random 1d0 *state*))
       (let ((query-size (random 31 *state*)))
         (lap-build lap query-size)
         (assert (= (lap-score lap) (ssp-compute ssp query-size))))))
   ;; size1 < size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 20 30 (random 1d0 *state*))
       (let ((query-size (random 21 *state*)))
         (lap-build lap query-size)
         (assert (= (lap-score lap) (ssp-compute ssp query-size))))))
   ;; size1 > size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 30 20 (random 1d0 *state*))
       (let ((query-size (random 21 *state*)))
         (lap-build lap query-size)
@@ -150,19 +150,19 @@
 
 (with-test (:name jonker-volgenant/random-maximize)
   ;; size1 = size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 30 30 (random 1d0 *state*) t)
       (let ((query-size (random 31 *state*)))
         (lap-build lap query-size)
         (assert (= (lap-score lap) (ssp-compute ssp query-size))))))
   ;; size1 < size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 20 30 (random 1d0 *state*) t)
       (let ((query-size (random 21 *state*)))
         (lap-build lap query-size)
         (assert (= (lap-score lap) (ssp-compute ssp query-size))))))
   ;; size1 > size2
-  (dotimes (_ 2000)
+  (dotimes (_ 1000)
     (multiple-value-bind (ssp lap) (make-random-graph 30 20 (random 1d0 *state*) t)
       (let ((query-size (random 21 *state*)))
         (lap-build lap query-size)

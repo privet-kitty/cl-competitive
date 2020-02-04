@@ -72,7 +72,6 @@ rows and rows assigned to columns."
                        when (/= j j1)
                        minimize (- (aref cost-matrix i j) (aref duals j))
                        of-type (integer 0 #.most-positive-fixnum)))))))
-    ;; (dbg rowsol colsol duals)
     ;; AUGMENTING ROW REDUCTION
     (dotimes (_ 2)
       ;; scan all free rows
