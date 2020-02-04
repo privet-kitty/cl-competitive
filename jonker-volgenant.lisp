@@ -211,16 +211,21 @@ MAZIMIZE := true [false] if maximization [minimization] problem"
   (matching1 nil :type (or null (simple-array fixnum (*))))
   (matching2 nil :type (or null (simple-array fixnum (*)))))
 
+(declaim (inline lap-add-edge))
 (defun lap-add-edge (lap v1 v2 weight)
   (declare (fixnum weight))
   (let ((weight (if (%lap-maximize lap) (- weight) weight)))
     (assert (< (abs weight) +lap-null-weight+))
     (setf (aref (%lap-matrix lap) v1 v2) weight)))
 
+(declaim (ftype (function * (values (simple-array fixnum (*))
+                                    (simple-array fixnum (*))
+                                    &optional))
+                lap-build))
 (defun lap-build (lap size)
   "Computes a minimum (or maximum) weight matching of the specified
-size. Returns two vectors that expresses a matching: group 1 -> group 2, group 2
--> group 1"
+size. Returns two vectors that expresses an optimal matching: group 1 -> group
+2, group 2 -> group 1"
   (declare ((integer 0 #.most-positive-fixnum) size))
   (assert (<= size (min (%lap-size1 lap) (%lap-size2 lap))))
   (let* ((size1 (%lap-size1 lap))
@@ -283,13 +288,14 @@ size. Returns two vectors that expresses a matching: group 1 -> group 2, group 2
                 (%lap-matching2 lap) matching2)
           (values matching1 matching2))))))
 
+(declaim (ftype (function * (values integer &optional)) lap-score))
 (defun lap-score (lap)
   "Computes the score of the built matching."
   (let ((matching1 (%lap-matching1 lap))
         (matrix (%lap-matrix lap))
-        (res 0))
-    (declare (fixnum res))
+        (result 0))
+    (declare (integer result))
     (dotimes (i (%lap-size1 lap))
       (when (/= (aref matching1 i) +lap-null-vertex+)
-        (incf res (aref matrix i (aref matching1 i)))))
-    (if (%lap-maximize lap) (- res) res)))
+        (incf result (aref matrix i (aref matching1 i)))))
+    (if (%lap-maximize lap) (- result) result)))
