@@ -1,5 +1,9 @@
 ;;;
 ;;; Maximum bipartite matching (Ford-Fulkerson)
+;;; (better to use Hopcroft-Karp instead)
+;;;
+;;; Referene:
+;;; Akiha, Iwata, Kitagawa. Programming Contest Challenge Book (Japanese)
 ;;;
 
 (declaim (ftype (function * (values (or null (simple-array fixnum (*)))
@@ -7,7 +11,7 @@
                                     &optional))
                 find-matching))
 (defun find-matching (graph)
-  "Takes an adjacency list and returns the maximal bipartite matching. Note that
+  "Takes an adjacency list and returns the maximum bipartite matching. Note that
 this function doesn't check if GRAPH is truly bipartite."
   (declare (optimize (speed 3))
            ((simple-array list (*)) graph))

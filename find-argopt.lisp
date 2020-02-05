@@ -1,7 +1,7 @@
 (declaim (inline find-argopt))
 (defun find-argopt (iterable predicate &key start end (key #'identity))
-  "Returns an index (or key) x at which ITERABLE takes the minimal (or maximal,
-depending on PREDICATE) value, and returns ITERABLE[x] as the second value.
+  "Returns an index (or key) x at which ITERABLE takes the minimum (or maximum,
+depending on PREDICATE), and returns ITERABLE[x] as the second value.
 
 To explain the behaviour briefly, when (FUNCALL PREDICATE (AREF ITERABLE
 <index>) (AREF ITERABLE <index of current optimum>)) holds, <index> and <index

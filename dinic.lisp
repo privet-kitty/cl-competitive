@@ -73,7 +73,7 @@ GRAPH, where an edge of zero capacity is regarded as disconnected."
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) %find-path))
 (defun %find-path (src dest tmp-graph dist-table)
-  "Finds an augmenting path, sends the maximal flow through it, and returns the
+  "Finds an augmenting path, sends the maximum flow through it, and returns the
 amount of the flow."
   (declare (optimize (speed 3) (safety 0))
            ((integer 0 #.most-positive-fixnum) src dest)
@@ -100,7 +100,7 @@ amount of the flow."
 
 (declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
 (defun max-flow! (src dest graph)
-  "Destructively sends the maximal flow from SRC to DEST and returns the amount
+  "Destructively sends the maximum flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
   (declare #+sbcl (muffle-conditions style-warning)

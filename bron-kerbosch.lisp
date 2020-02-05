@@ -6,7 +6,7 @@
 ;; TODO: deal with an ordinary adjacency matrix
 (declaim (inline find-max-clique))
 (defun find-max-clique (neighbors)
-  "Returns an unsigned fixnum as the bit-set indicating a maximal clique. Each
+  "Returns an unsigned fixnum as the bit-set indicating a maximum clique. Each
 NEIGHBORS[i] must also be the unsigned fixnum indicating the neighbors of the
 vertex i."
   (let ((n (length neighbors))
