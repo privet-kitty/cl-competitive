@@ -7,13 +7,15 @@
 ;; Gauss's algorithm
 ;; https://en.wikipedia.org/wiki/Determination_of_the_day_of_the_week
 (defun get-day-of-week (day month year)
-  "Returns the day of the week (starting with Sunday) as the integer from 0 to 6.
+  "Returns the day of the week (starting with Sunday) as an integer from 0 to 6.
 Note that DAY and MONTH are 1-based."
   (declare ((integer 1 31) day)
            ((integer 1 12) month)
            (fixnum year))
-  (let ((ms #(0 3 3 6 1 4 6 2 5 0 3 5))
-        (leap-ms #(0 3 4 0 2 5 0 3 6 1 4 6)))
+  (let ((ms #.(coerce #(0 3 3 6 1 4 6 2 5 0 3 5)
+                      '(simple-array (unsigned-byte 4) (*))))
+        (leap-ms #.(coerce #(0 3 4 0 2 5 0 3 6 1 4 6)
+                           '(simple-array (unsigned-byte 4) (*)))))
     (let ((m (aref (if (leap-year-p year) leap-ms ms)
                    (- month 1))))
       (declare ((integer 0 6) m))

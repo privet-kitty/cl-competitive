@@ -9,18 +9,19 @@
 ;;   (defun add (a b)
 ;;     (+ a b)))
 ;; This function caches the returned values for already passed combinations of
-;; arguments. In this case ADD stores the key (CONS A B) and the return value to
-;; a hash-table when evaluating (ADD A B) for the first time. ADD returns the
-;; stored value when it is called with the same arguments (w.r.t. EQUAL) again.
+;; arguments. In this case ADD stores the key (CONS A B) and the returned value
+;; to a hash-table when (ADD A B) is evaluated for the first time. ADD returns
+;; the stored value when it is called with the same arguments (w.r.t. EQUAL)
+;; again.
 ;;
-;; The storage for the cache is hash-table or array. Let's see an example for
+;; The storage for cache can be hash-table or array. Let's see an example for
 ;; array:
 ;; (with-cache (:array (10 20 30) :initial-element -1 :element-type 'fixnum)
 ;;   (defun foo (a b c) ... ))
-;; This form stores the value of FOO in the array created by (make-array (list
-;; 10 20 30) :initial-element -1 :element-type 'fixnum). Note that
-;; INITIAL-ELEMENT must always be given here as it is used as the flag for `not
-;; yet stored'. (Therefore INITIAL-ELEMENT should be a value FOO never takes.)
+;; This form stores the value of FOO in an array created by (make-array (list 10
+;; 20 30) :initial-element -1 :element-type 'fixnum). Note that INITIAL-ELEMENT
+;; must always be given here as it is used as the flag for `not yet
+;; stored'. (Therefore INITIAL-ELEMENT should be a value FOO never takes.)
 ;;
 ;; If you want to ignore some arguments, you can put `*' in dimensions:
 ;; (with-cache (:array (10 10 * 10) :initial-element -1)
