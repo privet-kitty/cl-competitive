@@ -20,7 +20,7 @@
 ;;   (defun foo (a b c) ... ))
 ;; This form stores the value of FOO in an array created by (make-array (list 10
 ;; 20 30) :initial-element -1 :element-type 'fixnum). Note that INITIAL-ELEMENT
-;; must always be given here as it is used as the flag for `not yet
+;; must always be given here as it is used as the flag expressing `not yet
 ;; stored'. (Therefore INITIAL-ELEMENT should be a value FOO never takes.)
 ;;
 ;; If you want to ignore some arguments, you can put `*' in dimensions:
@@ -131,6 +131,7 @@
                  (case cache-type
                    (:hash-table `(setf ,cache (make-hash-table ,@rest-attribs)))
                    (:array `(prog1 nil
+                              ;; TODO: portable fill
                               (fill (array-storage-vector ,cache) ,initial-element)))))
                (make-reset-name (name)
                  (intern (format nil "RESET-~A" (symbol-name name)))))
