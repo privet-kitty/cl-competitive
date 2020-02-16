@@ -64,6 +64,5 @@ specified region is empty."
                           (aref table row-depth col-depth i1 j1)
                           (aref table row-depth col-depth i1 jmid))
                  (funcall binop
-                          (aref table row-depth col-depth imid j1))
-                 (funcall binop
+                          (aref table row-depth col-depth imid j1)
                           (aref table row-depth col-depth imid jmid))))))
