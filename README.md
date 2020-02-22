@@ -65,7 +65,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 
 ### Arithmetic and algebra
 - [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination
-- [power-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power-mod.lisp) modular exponentiation
+- [mod-power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mod-power.lisp) modular exponentiation
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power.lisp) exponentiation on arbitrary monoid
 - [binomial-coefficient-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient-mod.lisp) binomial coefficient with fixed modulus; building tables of inverses, factorials, and inverses of factorials in O(n)
 - [binomial-coefficient.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient.lisp) binomial coefficient by direct bignum arithmetic
