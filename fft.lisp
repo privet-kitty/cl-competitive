@@ -13,7 +13,7 @@
   "Checks if X is a power of 2."
   (zerop (logand x (- x 1))))
 
-(defun %general-dft! (f sign)
+(defun %dft! (f sign)
   (declare (optimize (speed 3) (safety 0))
            ((simple-array (complex fft-float) (*)) f)
            ((integer -1 1) sign))
@@ -75,7 +75,7 @@ vector of different size."
              (*exp-table-* (%make-exp-table ,s -1)))
          ,@body))))
 
-(defun %general-dft-cached-cis! (f sign)
+(defun %dft-cached-cis! (f sign)
   (declare (optimize (speed 3) (safety 0))
            ((simple-array (complex fft-float) (*)) f)
            ((integer -1 1) sign))
@@ -112,23 +112,25 @@ vector of different size."
 
 (declaim (inline dft!))
 (defun dft! (vector)
+  "Does DFT on VECTOR. The length of VECTOR must be a power of 2."
   (declare ((simple-array (complex fft-float) (*)) vector))
   (if (zerop (length vector))
       vector
       (if *exp-table+*
-          (%general-dft-cached-cis! vector 1)
-          (%general-dft! vector 1))))
+          (%dft-cached-cis! vector 1)
+          (%dft! vector 1))))
 
 (declaim (inline inverse-dft!))
 (defun inverse-dft! (vector)
+  "Does inverse DFT on VECTOR. The length of VECTOR must be a power of 2."
   (declare ((simple-array (complex fft-float) (*)) vector))
   (prog1 vector
     (let ((n (length vector)))
       (unless (zerop n)
         (let ((/n (/ (coerce n 'fft-float))))
           (if *exp-table-*
-              (%general-dft-cached-cis! vector -1)
-              (%general-dft! vector -1))
+              (%dft-cached-cis! vector -1)
+              (%dft! vector -1))
           (dotimes (i n)
             (setf (aref vector i) (* (aref vector i) /n))))))))
 

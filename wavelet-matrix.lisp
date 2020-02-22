@@ -2,9 +2,9 @@
 ;;; Compact bit vector
 ;;;
 
-;; NOTE: Compact bit vector with POPCNT instruction is usually better than the
-;; typical three-layer succinct bit vector (at least in competitive
-;; programming).
+;; NOTE: I adopt compact bit vector with POPCNT instruction because it is
+;; usually better than the typical three-layer succinct bit vector (at least in
+;; competitive programming).
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
