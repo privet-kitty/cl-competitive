@@ -74,8 +74,8 @@ ROOT; GRAPH must be tree in the latter case."
              (two-vertices-disconnected-error-lca-table c)))))
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                get-lca))
-(defun get-lca (vertex1 vertex2 lca-table)
+                lca-get-lca))
+(defun lca-get-lca (lca-table vertex1 vertex2)
   "Returns the lowest common ancestor of the vertices VERTEX1 and VERTEX2."
   (declare (optimize (speed 3))
            ((and lca-vertex-number (integer 0)) vertex1 vertex2))
@@ -104,11 +104,11 @@ ROOT; GRAPH must be tree in the latter case."
                                  :vertex2 vertex2)
                           (return (aref parents u 0)))))))
 
-(declaim (inline distance-on-tree))
-(defun distance-on-tree (u v lca-table)
+(declaim (inline lca-distance))
+(defun lca-distance (lca-table u v)
   "Returns the distance between two vertices U and V."
   (declare (optimize (speed 3)))
   (let ((depths (lca-depths lca-table))
-        (lca (get-lca u v lca-table)))
+        (lca (lca-get-lca lca-table u v)))
     (+ (- (aref depths u) (aref depths lca))
        (- (aref depths v) (aref depths lca)))))
