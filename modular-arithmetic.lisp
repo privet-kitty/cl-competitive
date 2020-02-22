@@ -3,7 +3,7 @@
 ;;;
 
 ;; Blankinship algorithm
-;; Reference: https://topcoder.g.hatena.ne.jp/spaghetti_source/20130126/1359171466 (Japanese)
+;; Reference: https://topcoder-g-hatena-ne-jp.jag-icpc.org/spaghetti_source/20130126/ (Japanese)
 (declaim (ftype (function * (values fixnum fixnum &optional)) %ext-gcd))
 (defun %ext-gcd (a b)
   (declare (optimize (speed 3) (safety 0))
@@ -23,7 +23,9 @@
             (decf b (the fixnum (* q a)))
             (rotatef b a)))))
 
-;; recursive version
+;; Simple recursive version. A bit slower but more comprehensible.
+;; https://cp-algorithms.com/algebra/extended-euclid-algorithm.html (English)
+;; https://drken1215.hatenablog.com/entry/2018/06/08/210000 (Japanese)
 ;; (defun %ext-gcd (a b)
 ;;   (declare (optimize (speed 3) (safety 0))
 ;;            (fixnum a b))
@@ -55,13 +57,17 @@
 
 (declaim (inline mod-inverse)
          (ftype (function * (values (mod #.most-positive-fixnum) &optional)) mod-inverse))
+
 ;; (defun mod-inverse (a modulus)
 ;;   "Solves ax ≡ 1 mod m. A and M must be coprime."
 ;;   (declare (integer a)
 ;;            ((integer 1 #.most-positive-fixnum) modulus))
 ;;   (mod (%ext-gcd (mod a modulus) modulus) modulus))
 
+;; FIXME: Perhaps no advantage in efficiency? Then I should use the above simple
+;; code.
 (defun mod-inverse (a modulus)
+  "Solves ax ≡ 1 mod m. A and M must be coprime."
   (declare ((integer 1 #.most-positive-fixnum) modulus))
   (let ((a (mod a modulus))
         (b modulus)
@@ -202,7 +208,7 @@ given condition exists."
                             (values nil nil))))))))
         (values nil nil))))
 
-;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800
+;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800 (Japanese)
 (declaim (inline mod-echelon!))
 (defun mod-echelon! (matrix modulus &optional extended)
   "Returns the row echelon form of MATRIX by gaussian elimination and returns

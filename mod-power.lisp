@@ -1,3 +1,5 @@
+;; TODO: more efficient handling when modulus is (unsigned-byte 31) or
+;; (unsigned-byte 32)
 (declaim (inline mod-power))
 (defun mod-power (base power modulus)
   "BASE := integer
