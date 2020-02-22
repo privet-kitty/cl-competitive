@@ -31,3 +31,21 @@ triangle. This function destructively modifies the array."
       (dotimes (j i)
         (setf (aref matrix i j) (aref matrix j i))))
     matrix))
+
+(defun make-random-graph (size rate &optional directed)
+  "Returns a adjacency-list representation of an random generated graph."
+  (declare ((mod #.array-total-size-limit) size)
+           ((real 0 1) rate))
+  (let ((rate (float rate 1d0))
+        (graph (make-array size :element-type 'list :initial-element nil)))
+    (dotimes (i size)
+      (if directed
+          (loop for j from 0 below size
+                when (and (/= i j)
+                          (< (random 1d0) rate))
+                do (push j (aref graph i)))
+          (loop for j from (+ i 1) below size
+                when (< (random 1d0) rate)
+                do (push j (aref graph i))
+                   (push i (aref graph j)))))
+    graph))
