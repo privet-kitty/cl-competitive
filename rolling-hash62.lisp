@@ -133,7 +133,7 @@ KEY := FUNCTION returning FIXNUM"
 (declaim (ftype (function * (values (unsigned-byte 62) &optional)) rhash-vector-hash)
          (inline rhash-vector-hash))
 (defun rhash-vector-hash (vector &key (key #'char-code))
-  "Returns the hash code of VECTOR w.r.t. the moduli and bases of RHASH."
+  "Returns the hash code of VECTOR."
   (declare (optimize (speed 3))
            (vector vector)
            (function key))
