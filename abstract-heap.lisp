@@ -9,7 +9,7 @@
      (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
 
 (defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
-  "Defines the binary heap specialized for the given order and the element
+  "Defines a binary heap specialized for the given order and the element
 type. This macro defines a structure of the name NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK."
@@ -25,14 +25,17 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
          (acc-position (intern (format nil "~A-POSITION" string-name)))
          (acc-data (intern (format nil "~A-DATA" string-name))))
     `(progn
-       (defstruct (,name
-                   (:constructor ,fname-make
-                       (size
-                        &aux (data ,(if (eql element-type '*)
-                                        `(make-array (1+ size))
-                                        `(make-array (1+ size) :element-type ',element-type))))))
-         (data #() :type (simple-array ,element-type (*)))
-         (position 1 :type (integer 1 #.most-positive-fixnum)))
+       (locally
+           ;; prevent style warnings
+           (declare #+sbcl (muffle-conditions style-warning))
+         (defstruct (,name
+                     (:constructor ,fname-make
+                         (size
+                          &aux (data ,(if (eql element-type '*)
+                                          `(make-array (1+ size))
+                                          `(make-array (1+ size) :element-type ',element-type))))))
+           (data #() :type (simple-array ,element-type (*)))
+           (position 1 :type (integer 1 #.most-positive-fixnum))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
        (defun ,fname-push (obj heap)

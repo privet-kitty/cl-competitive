@@ -8,7 +8,7 @@
   :order #'<
   :element-type (unsigned-byte 32))
 
-(with-test (:name generalized-heap)
+(with-test (:name abstract-heap)
   (let ((h (make-test-heap 7)))
     (assert (= 0 (test-heap-count h)))
     (dolist (x '(6 18 22 15 27 9 11))
