@@ -1,5 +1,5 @@
-(declaim (inline power-mod))
-(defun power-mod (base power modulus)
+(declaim (inline mod-power))
+(defun mod-power (base power modulus)
   "BASE := integer
 POWER, MODULUS := non-negative fixnum"
   (declare ((integer 0 #.most-positive-fixnum) modulus power)
