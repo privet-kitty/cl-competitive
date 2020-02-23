@@ -10,15 +10,16 @@
 ;; The range of CL:PHASE is (-PI, PI]
 (declaim (inline calc-angle))
 (defun calc-angle (c1 c2)
-  "Returns the anticlockwise angle from vector C1 to vector C2. The range is [0,
-2PI)."
+  "Returns the anticlockwise angle (in the sense of amplitude) from vector C1 to
+vector C2. The range is [0, 2PI)."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
 ;; http://www.ambrsoft.com/trigocalc/circle3d.htm
-;; FIXME: more sane handling of degeneracy
 (declaim (inline calc-circumcenter))
-(defun calc-circumcenter (p1 p2 p3)
-  "Returns the center of circumcirlce if it exists, otherwise returns NIL."
+(defun calc-circumcenter (p1 p2 p3 &optional (eps 1d-8))
+  "Returns the center of circumcirlce if it exists, otherwise returns NIL. May
+throw a floating exception if EPS is too small."
+  (declare ((real 0) eps))
   (let* ((x1 (realpart p1))
          (y1 (imagpart p1))
          (x2 (realpart p2))
@@ -35,14 +36,13 @@
          (c (+ (* (+ (* x1 x1) (* y1 y1)) (- x2 x3))
                (* (+ (* x2 x2) (* y2 y2)) (- x3 x1))
                (* (+ (* x3 x3) (* y3 y3)) (- x1 x2)))))
-    (handler-bind ((error (lambda (c)
-                            (declare (ignore c))
-                            (return-from calc-circumcenter nil))))
-      (complex (- (/ b (* 2 a)))
-               (- (/ c (* 2 a)))))))
+    (if (< a eps)
+        nil
+        (complex (- (/ b (* 2 a)))
+                 (- (/ c (* 2 a)))))))
 
 ;;;
-;;; Welzl's algorithm for smallest circle problem (unfinished; not efficient)
+;;; Welzl's algorithm for smallest circle problem (not optimized)
 ;;;
 ;;; Reference:
 ;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
