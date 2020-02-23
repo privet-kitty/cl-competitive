@@ -24,3 +24,11 @@ function is non-destructive."
              (dotimes (j w)
                (setf (aref res j (- h 1 i)) (aref matrix i j))))))
       res)))
+
+(defun matrix-transpose! (matrix)
+  (declare ((array * (* *)) matrix))
+  (destructuring-bind (h w) (array-dimensions matrix)
+    (declare ((integer 0 #.most-positive-fixnum) h w))
+    (dotimes (i h)
+      (dotimes (j w)
+        (setf (aref matrix i j) (aref matrix j i))))))

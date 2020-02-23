@@ -1,6 +1,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../cyclic-permutation.lisp")
+  (load "../symmetric-group.lisp")
   (load "set-equal.lisp"))
 
 (use-package :test-util)

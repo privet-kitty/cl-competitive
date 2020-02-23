@@ -23,7 +23,7 @@
 
 (declaim (inline perm*))
 (defun perm* (perm1 perm2)
-  "Composes two permutations. Returns perm2 ∘ perm1."
+  "Composes two permutations."
   (let* ((n (length perm1))
          (result (make-array n :element-type 'fixnum)))
     (dotimes (i n)
