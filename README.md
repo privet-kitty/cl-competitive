@@ -59,7 +59,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mex.lisp) minimum excludant on non-negative integers
 - [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/sliding-window.lisp) sliding window minimum (or maximum)
 - [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
-- [cyclic-permutation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/cyclic-permutation.lisp) decomposition to cyclic permutations
+- [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
 
 
