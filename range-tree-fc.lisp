@@ -8,7 +8,6 @@
 ;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
 ;;;
 
-;; TODO: map all the points in a given rectangle
 ;; TODO: introduce abelian group
 
 (defstruct (ynode (:constructor make-ynode (xkeys ykeys lpointers rpointers))
@@ -199,3 +198,82 @@ negative or positive infinity."
       (let ((start (bisect-left y1))
             (end (bisect-left y2)))
         (recur range-tree x1 x2 start end)))))
+
+;; not tested
+(defun rt-map (function range-tree x1 y1 x2 y2)
+  "Applies FUNCTION to all the points within the rectangle [x1, x2)*[y1, y2)."
+  (declare (optimize (speed 3))
+           ((or null fixnum) x1 y1 x2 y2)
+           (function function))
+  (setq x1 (or x1 +neg-inf+)
+        x2 (or x2 +pos-inf+)
+        y1 (or y1 +neg-inf+)
+        y2 (or y2 +pos-inf+))
+  (when range-tree
+    (let* ((ynode (%xnode-ynode range-tree))
+           (xkeys (%ynode-xkeys ynode))
+           (ykeys (%ynode-ykeys ynode)))
+      (labels ((bisect-left (y)
+                 (declare (fixnum y))
+                 (let ((left 0)
+                       (ok (length xkeys)))
+                   (declare ((integer 0 #.most-positive-fixnum) left ok))
+                   (loop
+                     (let ((mid (ash (+ left ok) -1)))
+                       (if (= mid left)
+                           (if (< (aref ykeys left) y)
+                               (return ok)
+                               (return left))
+                           (if (< (aref ykeys mid) y)
+                               (setq left mid)
+                               (setq ok mid)))))))
+               (recur (xnode x1 x2 start end)
+                 (declare ((or null xnode) xnode)
+                          (fixnum x1 x2))
+                 (cond ((null xnode))
+                       ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
+                        (loop with ynode = (%xnode-ynode xnode)
+                              with xkeys = (%ynode-xkeys ynode)
+                              with ykeys = (%ynode-ykeys ynode)
+                              for i from start below end
+                              for x = (aref xkeys i)
+                              for y = (aref ykeys i)
+                              do (funcall function x y)))
+                       (t
+                        (let* ((xkey (%xnode-xkey xnode))
+                               (ynode (%xnode-ynode xnode))
+                               (lpointers (%ynode-lpointers ynode))
+                               (rpointers (%ynode-rpointers ynode)))
+                          (if (<= x1 xkey)
+                              (if (< xkey x2)
+                                  ;; XKEY is in [X1, X2)
+                                  (if (xleaf-p xnode)
+                                      (loop with ynode = (%xnode-ynode xnode)
+                                            with xkeys = (%ynode-xkeys ynode)
+                                            with ykeys = (%ynode-ykeys ynode)
+                                            for i from start below end
+                                            for x = (aref xkeys i)
+                                            for y = (aref ykeys i)
+                                            do (funcall function x y))
+                                      (progn
+                                        (recur (%xnode-left xnode)
+                                               x1 +pos-inf+
+                                               (aref lpointers start)
+                                               (aref lpointers end))
+                                        (recur (%xnode-right xnode)
+                                               +neg-inf+ x2
+                                               (aref rpointers start)
+                                               (aref rpointers end))))
+                                  ;; XKEY is in [X2, +inf)
+                                  (recur (%xnode-left xnode)
+                                         x1 x2
+                                         (aref lpointers start)
+                                         (aref lpointers end)))
+                              ;; XKEY is in (-inf, X1)
+                              (recur (%xnode-right xnode)
+                                     x1 x2
+                                     (aref rpointers start)
+                                     (aref rpointers end))))))))
+        (let ((start (bisect-left y1))
+              (end (bisect-left y2)))
+          (recur range-tree x1 x2 start end))))))
