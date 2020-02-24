@@ -87,7 +87,7 @@
 
 ;; not tested
 ;; TODO: move to another file
-(declaim (inline binomial))
+(declaim (inline mod-binomial))
 (defun mod-binomial (n k modulus)
   (declare ((integer 0 #.most-positive-fixnum) modulus))
   (if (or (< n k) (< n 0) (< k 0))

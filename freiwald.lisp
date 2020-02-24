@@ -5,8 +5,8 @@
 ;; NOTE: not tested
 (declaim (inline gemm-p))
 (defun gemm-p (a b c &optional (count 32))
-  "Always returns true if AB = C. Returns false with error probability smaller
-than 1/2^COUNT if AB != C."
+  "Always returns true if AB = C. If AB != C, returns false with probability at
+least 1 - (1/2)^COUNT."
   (declare ((integer 0 #.most-positive-fixnum) count)
            ((array * (* *)) a b c))
   (let* ((dim1 (array-dimension a 0))

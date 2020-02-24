@@ -78,6 +78,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/divisor.lisp) enumeration of divisors
 - [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/enum-quotients.lisp) enumeration of truncated quotients
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/gemm.lisp) matrix multiplication over semiring
+- [freiwald.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/freiwald.lisp) Freiwalds' algorithm
 - [f2.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/f2.lisp) linear algebra on GF(2)
 - [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/walsh-hadamard.lisp) fast Walsh-Hadamard transform
 - [zeta-transform.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/zeta-transform.lisp) fast zeta/Möbius transform
