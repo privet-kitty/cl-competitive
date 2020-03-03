@@ -2,6 +2,9 @@
 ;;; Radix heap (unfinished)
 ;;;
 
+(defconstant +radix-heap-bit-depth+ 32)
+(deftype radix-heap-integer () '(unsigned-byte #.+radix-heap-bit-depth+))
+
 (define-condition rheap-empty-error (error)
   ((rheap :initarg :rheap :reader rheap-empty-error-rheap))
   (:report
@@ -16,9 +19,6 @@
      (format stream "Attempted to push an integer lower than the last popped one to heap ~W"
              (rheap-not-monotone-error-rheap condition)))))
 
-(defconstant +radix-heap-bit-depth+ 32)
-(deftype radix-heap-integer () '(unsigned-byte #.+radix-heap-bit-depth+))
-
 (defstruct (radix-heap (:constructor make-radix-heap
                            (&aux (buckets (make-array (+ 1 +radix-heap-bit-depth+) :element-type 'list :initial-element nil))))
                        (:conc-name rheap-)
@@ -29,7 +29,7 @@
 
 (declaim (inline rheap-push))
 (defun rheap-push (obj rheap)
-  (declare ((integer 0 #.most-positive-fixnum) obj))
+  (declare (radix-heap-integer obj))
   (let ((lowest (rheap-lowest rheap)))
     (when (< obj lowest)
       (error 'rheap-not-monotone-error :rheap rheap))

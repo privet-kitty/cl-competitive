@@ -28,7 +28,10 @@
     (rheap-push 270 h)
     (assert (= 270 (rheap-pop h)))
     (assert (= 270 (rheap-pop h)))
-    (assert (rheap-empty-p h))))
+    (assert (rheap-empty-p h))
+    (rheap-push #xffffffff h)
+    (assert (= #xffffffff (rheap-pop h)))
+    (signals type-error (rheap-push (ash 1 +radix-heap-bit-depth+) h))))
 
 (defparameter *state* (sb-ext:seed-random-state 0))
 
