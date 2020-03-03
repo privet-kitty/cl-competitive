@@ -1,5 +1,5 @@
 ;;;
-;;; Radix heap (unfinished)
+;;; Radix heap
 ;;;
 
 (defconstant +radix-heap-bit-depth+ 32)
