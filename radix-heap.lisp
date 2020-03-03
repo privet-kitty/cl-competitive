@@ -20,7 +20,9 @@
              (rheap-not-monotone-error-rheap condition)))))
 
 (defstruct (radix-heap (:constructor make-radix-heap
-                           (&aux (buckets (make-array (+ 1 +radix-heap-bit-depth+) :element-type 'list :initial-element nil))))
+                           (&aux (buckets (make-array (+ 1 +radix-heap-bit-depth+)
+                                                      :element-type 'list
+                                                      :initial-element nil))))
                        (:conc-name rheap-)
                        (:copier nil))
   (buckets nil :type (simple-array list (*)))
