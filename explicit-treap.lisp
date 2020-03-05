@@ -313,7 +313,6 @@ w.r.t. your intended order. The values are filled with the identity element."
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
   (labels ((recur (treap l r)
-             (format t "~A ~A ~A~%" treap l r)
              (unless treap
                (return-from recur +op-identity+))
              (force-down treap)
