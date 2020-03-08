@@ -12,7 +12,7 @@
                                  ((zerop byte) ; #\Nul
                                   (error "Read EOF or #\Nul."))
                                  ((= byte #.(char-code #\-))
-                                  (setf minus t)))))))
+                                  (setq minus t)))))))
       (declare ((integer 0 #.most-positive-fixnum) result))
       (loop
         (let* ((byte (%read-byte)))

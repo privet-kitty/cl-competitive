@@ -60,7 +60,7 @@
         (incf sum)
         (assert (= i (cbv-select cbv sum)))))))
 
-(with-test (:name wavelet-matrix)
+(with-test (:name wavelet-matrix/manual)
   ;; MitI_7's example (http://miti-7.hatenablog.com/entry/2018/04/28/152259)
   (let* ((miti7 (vector 5 4 5 5 2 1 5 6 1 3 5 0))
          (w (make-wavelet 3 miti7))
@@ -138,12 +138,14 @@
                                             :end r))))))))
     (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 0 13))
     (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 12 11))
-    (signals error (wavelet-range-count w 3 2)))
-  ;; random case
-  (let* ((vec (coerce (loop repeat 10007 collect (random 500 *state*))
-                      '(simple-array (unsigned-byte 32) (*))))
-         (w (make-wavelet 9 vec)))
-    (loop for x across vec
-          for i from 0
-          do (assert (= x (wavelet-ref w i))))
-    (signals invalid-wavelet-index-error (wavelet-ref w 10007))))
+    (signals error (wavelet-range-count w 3 2))))
+
+(with-test (:name wavelet-matrix/random)
+  (dolist (len '(10007 1024))
+    (let* ((vec (coerce (loop repeat len collect (random 500 *state*))
+                        '(simple-array (unsigned-byte 32) (*))))
+           (w (make-wavelet 9 vec)))
+      (loop for x across vec
+            for i from 0
+            do (assert (= x (wavelet-ref w i))))
+      (signals invalid-wavelet-index-error (wavelet-ref w len)))))
