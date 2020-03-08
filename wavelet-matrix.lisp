@@ -267,7 +267,6 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
                        end (- end rcount))))
     result))
 
-;; not tested
 (defun wavelet-map-frequency (function wmatrix lo hi &optional (start 0) end)
   "Maps all values within [LO, HI). FUNCTION must take two arguments: value and
 its frequency."
@@ -307,7 +306,7 @@ its frequency."
       (dfs (- (wavelet-depth wmatrix) 1) start end 0))))
 
 (defun wavelet-range-count (wmatrix lo hi &optional (start 0) end)
-  "Returns the number of the integers within [LO, HI)."
+  "Returns the number of the values within [LO, HI)."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) lo hi start)
            ((or null (integer 0 #.most-positive-fixnum)) end))

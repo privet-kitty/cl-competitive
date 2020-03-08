@@ -60,6 +60,14 @@
         (incf sum)
         (assert (= i (cbv-select cbv sum)))))))
 
+(with-test (:name wavelet-empty)
+  (let ((w (make-wavelet 10 #())))
+    (signals invalid-wavelet-index-error (wavelet-ref w 0))
+    (wavelet-map-frequency (lambda (x y) (error "Huh?")) w 0 10)
+    (wavelet-map-frequency (lambda (x y) (error "Huh?")) w 0 10 0 0)
+    (signals invalid-wavelet-index-error
+      (wavelet-map-frequency (lambda (x y) (error "Huh?")) w 0 10 0 1))))
+
 (with-test (:name wavelet-matrix/manual)
   ;; MitI_7's example (http://miti-7.hatenablog.com/entry/2018/04/28/152259)
   (let* ((miti7 (vector 5 4 5 5 2 1 5 6 1 3 5 0))
@@ -138,7 +146,25 @@
                                             :end r))))))))
     (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 0 13))
     (signals invalid-wavelet-index-error (wavelet-range-count w 3 5 12 11))
-    (signals error (wavelet-range-count w 3 2))))
+    (signals error (wavelet-range-count w 3 2))
+    ;; wavelet-map-frequency
+    (dotimes (l 12)
+      (loop
+        for r from (+ l 1) to 12
+        do (loop
+             for lo from 0 to 7
+             do (loop
+                  for hi from lo to 7
+                  do (let* ((seq (vector 5 4 5 5 2 1 5 6 1 3 5 0))
+                            (res1 (make-array 10 :initial-element 0))
+                            (res2 (make-array 10 :initial-element 0)))
+                       (loop for i from l below r
+                             when (<= lo (aref seq i) (- hi 1))
+                             do (incf (aref res1 (aref seq i))))
+                       (wavelet-map-frequency
+                        (lambda (value freq) (incf (aref res2 value) freq))
+                        w lo hi l r)
+                       (assert (equalp res1 res2)))))))))
 
 (with-test (:name wavelet-matrix/random)
   (dolist (len '(10007 1024))
