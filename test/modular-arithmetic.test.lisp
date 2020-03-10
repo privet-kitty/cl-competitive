@@ -1,6 +1,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../modular-arithmetic.lisp"))
+  (load "../modular-arithmetic.lisp")
+  (load "../mod-power.lisp"))
 
 (use-package :test-util)
 
@@ -20,6 +21,12 @@
         (assert (or (/= 1 (gcd a m))
                     (= 1 (mod (* a (mod-inverse a m)) m))))))))
 
+(defun naive-mod-log (x y modulus)
+  (loop for k from 1 to modulus
+        when (= (mod-power x k modulus) (mod y modulus))
+        do (return k)
+        finally (return nil)))
+
 (with-test (:name mod-log)
   (let ((state (sb-ext:seed-random-state 0)))
     (dotimes (i 100)
@@ -35,7 +42,17 @@
   (assert (= 1 (mod-log 12 0 4)))
   (assert (= 2 (mod-log 12 0 8)))
   (assert (null (mod-log 12 1 8)))
-  (assert (= 1 (mod-log 0 0 100))))
+  (assert (= 1 (mod-log 0 0 100)))
+  (loop for x to 30
+        do (loop for y to 30
+                 do (loop for modulus from 1 to 30
+                          do (assert (eql (mod-log x y modulus)
+                                          (naive-mod-log x y modulus))))))
+  (dotimes (_ 2000)
+    (let ((x (random 1000))
+          (y (random 1000))
+          (modulus (+ 1 (random 1000))))
+      (assert (eql (mod-log x y modulus) (naive-mod-log x y modulus))))))
 
 (with-test (:name solve-bezout)
   (assert (= (%calc-min-factor 8 3) -2))
