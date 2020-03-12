@@ -5,6 +5,8 @@
 
 (use-package :test-util)
 
+(defparameter *state* (seed-random-state 0))
+
 (declaim (notinline ext-gcd mod-log mod-inverse mod-echelon! mod-inverse-matrix!))
 
 (with-test (:name ext-gcd)
@@ -21,8 +23,8 @@
         (assert (or (/= 1 (gcd a m))
                     (= 1 (mod (* a (mod-inverse a m)) m))))))))
 
-(defun naive-mod-log (x y modulus)
-  (loop for k from 1 to modulus
+(defun naive-mod-log (x y modulus &key from-zero)
+  (loop for k from (if from-zero 0 1) to modulus
         when (= (mod-power x k modulus) (mod y modulus))
         do (return k)
         finally (return nil)))
@@ -47,12 +49,16 @@
         do (loop for y to 30
                  do (loop for modulus from 1 to 30
                           do (assert (eql (mod-log x y modulus)
-                                          (naive-mod-log x y modulus))))))
-  (dotimes (_ 2000)
-    (let ((x (random 1000))
-          (y (random 1000))
-          (modulus (+ 1 (random 1000))))
-      (assert (eql (mod-log x y modulus) (naive-mod-log x y modulus))))))
+                                          (naive-mod-log x y modulus)))
+                             (assert (eql (mod-log x y modulus :from-zero t)
+                                          (naive-mod-log x y modulus :from-zero t))))))
+  (dotimes (_ 200)
+    (let ((x (random 1000 *state*))
+          (y (random 1000 *state*))
+          (modulus (+ 1 (random 1000 *state*))))
+      (assert (eql (mod-log x y modulus) (naive-mod-log x y modulus)))
+      (assert (eql (mod-log x y modulus :from-zero t)
+                   (naive-mod-log x y modulus :from-zero t))))))
 
 (with-test (:name solve-bezout)
   (assert (= (%calc-min-factor 8 3) -2))

@@ -102,9 +102,9 @@
               do (setq denom (mod (* denom x) modulus)))
         (mod (* num (mod-inverse denom modulus)) modulus))))
 
-(declaim (ftype (function * (values (or null (integer 1 #.most-positive-fixnum)) &optional)) mod-log))
+(declaim (ftype (function * (values (or null (integer 0 #.most-positive-fixnum)) &optional)) mod-log))
 
-(defun mod-log (x y modulus)
+(defun mod-log (x y modulus &key from-zero)
   "Returns the smallest positive integer k that satiefies x^k ≡ y mod p.
 Returns NIL if it is infeasible."
   (declare (optimize (speed 3))
@@ -115,6 +115,8 @@ Returns NIL if it is infeasible."
         (g (gcd x modulus)))
     (declare (optimize (safety 0))
              ((mod #.most-positive-fixnum) x y g))
+    (when (and from-zero (or (= y 1) (= modulus 1)))
+      (return-from mod-log 0))
     (if (= g 1)
         ;; coprime case
         (let* ((m (+ 1 (isqrt (- modulus 1)))) ; smallest integer equal to or
