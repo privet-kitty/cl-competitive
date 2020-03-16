@@ -69,7 +69,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination
 - [mod-power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mod-power.lisp) modular exponentiation
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power.lisp) exponentiation on arbitrary monoid
-- [binomial-coefficient-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient-mod.lisp) binomial coefficient with fixed modulus; building tables of inverses, factorials, and inverses of factorials in O(n)
+- [binomial-coefficient-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient-mod.lisp) binomial coefficient with fixed modulus; linear-time construction of tables of inverses, factorials, and inverses of factorials
 - [binomial-coefficient.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient.lisp) binomial coefficient by direct bignum arithmetic
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bounded-partition-number.lisp) partition number with upper-bound
@@ -116,6 +116,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [condensation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/condensation.lisp) strongly connected component of directed graph; 2-SAT
 - [block-cut-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/block-cut-tree.lisp) biconnected component of undirected graph; block-cut tree
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/tree-centroid.lisp) centroid decomposition of tree
+- [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/random-graph.lisp) fast generation of random adjacency matrices
 
 ### Geometry

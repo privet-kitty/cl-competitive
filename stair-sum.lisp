@@ -1,3 +1,5 @@
+;; TODO: enable to deal with a given arithmetric progression
+
 ;; not tested
 (defstruct (stair-sum (:constructor %make-stair-sum))
   (cumul nil :type (simple-array fixnum (*)))
