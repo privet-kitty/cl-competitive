@@ -21,7 +21,7 @@
          (ords (make-array n :element-type 'fixnum :initial-element -1)) ; in-order
          ;; store the lowest in-order number as the representative element of a
          ;; strongly connected component
-         (lowests (make-array n :element-type 'fixnum))
+         (lowlinks (make-array n :element-type 'fixnum))
          (components (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (comp-index 0) ; index number of component
          (sizes (make-array n :element-type '(integer 0 #.most-positive-fixnum)
@@ -41,18 +41,18 @@
                  v))
              (visit (v)
                (setf (aref ords v) ord
-                     (aref lowests v) ord)
+                     (aref lowlinks v) ord)
                (incf ord)
                (%push v)
                (dolist (next (aref graph v))
                  (cond ((= -1 (aref ords next))
                         (visit next)
-                        (setf (aref lowests v)
-                              (min (aref lowests v) (aref lowests next))))
+                        (setf (aref lowlinks v)
+                              (min (aref lowlinks v) (aref lowlinks next))))
                        ((= 1 (aref in-stack next))
-                        (setf (aref lowests v)
-                              (min (aref lowests v) (aref ords next))))))
-               (when (= (aref lowests v) (aref ords v))
+                        (setf (aref lowlinks v)
+                              (min (aref lowlinks v) (aref ords next))))))
+               (when (= (aref lowlinks v) (aref ords v))
                  (loop for size of-type (integer 0 #.most-positive-fixnum) from 1
                        for w = (%pop)
                        do (setf (aref components w) comp-index)
