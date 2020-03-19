@@ -11,10 +11,8 @@
   ;; the total number of strongly connected components
   (count 0 :type (integer 0 #.most-positive-fixnum)))
 
+;; Tarjan's algorithm
 ;; Reference: http://www.prefield.com/algorithm/graph/strongly_connected_components.html
-;; This is faster than well-known Kosaraju's algorithm because it doesn't
-;; generate a reversed graph. I don't know the first person who referred to this
-;; algorithm (tmaehara's invention?)
 (defun make-scc (graph)
   (declare (optimize (speed 3))
            (vector graph))

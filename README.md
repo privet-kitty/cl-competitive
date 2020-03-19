@@ -113,7 +113,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [prim.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/prim.lisp) minimum spanning tree (Prim's algorithm)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/topological-sort.lisp) topological sort on DAG
 - [dfs-order.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dfs-order.lisp) Euler tour of tree
-- [condensation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/condensation.lisp) strongly connected component of directed graph; 2-SAT
+- [condensation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/condensation.lisp) strongly connected component of directed graph (Tarjan's algorithm); 2-SAT
 - [block-cut-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/block-cut-tree.lisp) biconnected component of undirected graph; block-cut tree
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/tree-centroid.lisp) centroid decomposition of tree
 - [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
