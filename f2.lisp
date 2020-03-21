@@ -185,3 +185,7 @@ The width of A must be multiple of 64."
                   always (zerop (aref vector i)))
             (values vector rank)
             (values nil rank))))))
+
+(declaim (inline f2-binom))
+(defun f2-binom (n k)
+  (if (= k (logand n k)) 1 0))
