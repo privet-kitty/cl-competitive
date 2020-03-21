@@ -8,20 +8,20 @@
 (defun mod* (&rest args)
   (reduce (lambda (x y) (mod (* x y) *modulus*)) args))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:define-source-transform mod* (&rest args)
-    (if (null args)
-        1
-        (reduce (lambda (x y) `(mod (* ,x ,y) *modulus*)) args))))
-
 (defun mod+ (&rest args)
   (reduce (lambda (x y) (mod (+ x y) *modulus*)) args))
 
+#+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:define-source-transform mod+ (&rest args)
-    (if (null args)
-        0
-        (reduce (lambda (x y) `(mod (+ ,x ,y) *modulus*)) args))))
+  (locally (declare (muffle-conditions warning))
+    (sb-c:define-source-transform mod* (&rest args)
+      (if (null args)
+          1
+          (reduce (lambda (x y) `(mod (* ,x ,y) *modulus*)) args)))
+    (sb-c:define-source-transform mod+ (&rest args)
+      (if (null args)
+          0
+          (reduce (lambda (x y) `(mod (+ ,x ,y) *modulus*)) args)))))
 
 (define-modify-macro incfmod (delta &optional (divisor '*modulus*))
   (lambda (x y divisor) (mod (+ x y) divisor)))
