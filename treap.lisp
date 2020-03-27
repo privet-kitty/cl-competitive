@@ -50,7 +50,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   "Destructively inserts KEY into TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value.
 
-The behavior is undefined when duplicated keys are inserted."
+The behavior is undefined when duplicate keys are inserted."
   (declare ((or null treap) treap)
            (function test))
   (labels ((recur (new-node treap)
@@ -124,13 +124,16 @@ cannot rely on the side effect. Use the returned value."
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-count))
 (defun treap-count (treap)
-  "Computes the length of TREAP in O(n)."
-  (declare (optimize (speed 3)) ((or null treap) treap))
+  "Counts the number of elements in TREAP in O(n) time."
+  (declare (optimize (speed 3))
+           ((or null treap) treap))
   (labels ((recur (treap)
              (declare (optimize (safety 0)))
              (if (null treap)
                  0
-                 (+ 1 (treap-count (%treap-left treap)) (treap-count (%treap-right treap))))))
+                 (+ 1
+                    (treap-count (%treap-left treap))
+                    (treap-count (%treap-right treap))))))
     (recur treap)))
 
 ;; (defun copy-treap (treap)
