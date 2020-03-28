@@ -2,6 +2,9 @@
 ;;; Primality test (Miller-Rabin)
 ;;;
 
+;; Tuned for 64-bit SBCL ((INTEGER 0 #.MOST-POSITIVE-FIXNUM) == (UNSIGNED-BYTE
+;; 62))
+
 (defun %strong-probable-prime-p (n base)
   (declare (optimize (speed 3))
            ((unsigned-byte 62) n base))
@@ -33,10 +36,10 @@
         ((< n 4759123141)
          (loop for base in '(2 7 61)
                always (%strong-probable-prime-p n base)))
-        ;; NOTE: branches below are not tested
         ((< n 2152302898747)
          (loop for base in '(2 3 5 7 11)
                always (%strong-probable-prime-p n base)))
+        ;; NOTE: branches below are not tested
         ((< n 341550071728321)
          (loop for base in '(2 3 5 7 11 13 17)
                always (%strong-probable-prime-p n base)))
