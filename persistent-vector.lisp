@@ -59,47 +59,47 @@ NOTE: currently unbounded (or out-of-bound) value is zero."
 ;;; Queue with singly linked list
 ;;;
 
-(defstruct (queue (:constructor make-queue
-                      (&optional list &aux (tail (last list)))))
-  (list nil :type list)
-  (tail nil :type list))
+;; (defstruct (queue (:constructor make-queue
+;;                       (&optional list &aux (tail (last list)))))
+;;   (list nil :type list)
+;;   (tail nil :type list))
 
-(declaim (inline enqueue))
-(defun enqueue (obj queue)
-  "Pushes OBJ to the end of QUEUE."
-  (symbol-macrolet ((list (queue-list queue))
-                    (tail (queue-tail queue)))
-    (if (null list)
-        (setf tail (list obj)
-              list tail)
-        (setf (cdr tail) (list obj)
-              tail (cdr tail))))
-  queue)
+;; (declaim (inline enqueue))
+;; (defun enqueue (obj queue)
+;;   "Pushes OBJ to the end of QUEUE."
+;;   (symbol-macrolet ((list (queue-list queue))
+;;                     (tail (queue-tail queue)))
+;;     (if (null list)
+;;         (setf tail (list obj)
+;;               list tail)
+;;         (setf (cdr tail) (list obj)
+;;               tail (cdr tail))))
+;;   queue)
 
-(declaim (inline dequeue))
-(defun dequeue (queue)
-  "Removes and returns the element at the front of QUEUE. Returns NIL if QUEUE
-is empty."
-  (pop (queue-list queue)))
+;; (declaim (inline dequeue))
+;; (defun dequeue (queue)
+;;   "Removes and returns the element at the front of QUEUE. Returns NIL if QUEUE
+;; is empty."
+;;   (pop (queue-list queue)))
 
-(declaim (inline queue-empty-p))
-(defun queue-empty-p (queue)
-  (null (queue-list queue)))
+;; (declaim (inline queue-empty-p))
+;; (defun queue-empty-p (queue)
+;;   (null (queue-list queue)))
 
-(declaim (inline queue-peek))
-(defun queue-peek (queue)
-  (car (queue-list queue)))
+;; (declaim (inline queue-peek))
+;; (defun queue-peek (queue)
+;;   (car (queue-list queue)))
 
-(declaim (inline enqueue-front))
-(defun enqueue-front (obj queue)
-  "Pushes OBJ to the front of QUEUE."
-  (symbol-macrolet ((list (queue-list queue))
-                    (tail (queue-tail queue)))
-    (if (null list)
-        (setf tail (list obj)
-              list tail)
-        (push obj list))
-    queue))
+;; (declaim (inline enqueue-front))
+;; (defun enqueue-front (obj queue)
+;;   "Pushes OBJ to the front of QUEUE."
+;;   (symbol-macrolet ((list (queue-list queue))
+;;                     (tail (queue-tail queue)))
+;;     (if (null list)
+;;         (setf tail (list obj)
+;;               list tail)
+;;         (push obj list))
+;;     queue))
 
 ;; (defmethod print-object ((object persistent-vector) stream)
 ;;   (print-unreadable-object (object stream :type t)
