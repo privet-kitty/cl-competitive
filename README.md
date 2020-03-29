@@ -78,6 +78,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/eratosthenes.lisp) enumeration of primes; prime factorization
 - [ext-eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ext-eratosthenes.lisp) faster prime factorization than naive trial division
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/divisor.lisp) enumeration of divisors
+- [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/primality.lisp) primality test (Miller-Rabin)
 - [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/enum-quotients.lisp) enumeration of truncated quotients
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/gemm.lisp) matrix multiplication over semiring
 - [freiwald.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/freiwald.lisp) Freiwalds' algorithm
@@ -117,6 +118,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [block-cut-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/block-cut-tree.lisp) biconnected component of undirected graph; block-cut tree
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/tree-centroid.lisp) centroid decomposition of tree
 - [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
+- [diameter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/diameter.lisp) diameter of tree
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/random-graph.lisp) fast generation of random adjacency matrices
 
 ### Geometry
