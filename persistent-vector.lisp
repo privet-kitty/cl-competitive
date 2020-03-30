@@ -9,7 +9,6 @@
 ;; - handy function for initialization (currently `unbounded value' is zero)
 ;; - iteration; map
 ;; - abstraction
-;; - printer
 
 (defconstant +persistent-vector-log+ 16)
 
@@ -55,68 +54,30 @@ NOTE: currently unbounded (or out-of-bound) value is zero."
                                    (mod index +persistent-vector-log+))
                              (floor index +persistent-vector-log+))))))
     (recur (or pvector 0) index)))
-;;;
-;;; Queue with singly linked list
-;;;
 
-;; (defstruct (queue (:constructor make-queue
-;;                       (&optional list &aux (tail (last list)))))
-;;   (list nil :type list)
-;;   (tail nil :type list))
-
-;; (declaim (inline enqueue))
-;; (defun enqueue (obj queue)
-;;   "Pushes OBJ to the end of QUEUE."
-;;   (symbol-macrolet ((list (queue-list queue))
-;;                     (tail (queue-tail queue)))
-;;     (if (null list)
-;;         (setf tail (list obj)
-;;               list tail)
-;;         (setf (cdr tail) (list obj)
-;;               tail (cdr tail))))
-;;   queue)
-
-;; (declaim (inline dequeue))
-;; (defun dequeue (queue)
-;;   "Removes and returns the element at the front of QUEUE. Returns NIL if QUEUE
-;; is empty."
-;;   (pop (queue-list queue)))
-
-;; (declaim (inline queue-empty-p))
-;; (defun queue-empty-p (queue)
-;;   (null (queue-list queue)))
-
-;; (declaim (inline queue-peek))
-;; (defun queue-peek (queue)
-;;   (car (queue-list queue)))
-
-;; (declaim (inline enqueue-front))
-;; (defun enqueue-front (obj queue)
-;;   "Pushes OBJ to the front of QUEUE."
-;;   (symbol-macrolet ((list (queue-list queue))
-;;                     (tail (queue-tail queue)))
-;;     (if (null list)
-;;         (setf tail (list obj)
-;;               list tail)
-;;         (push obj list))
-;;     queue))
-
-;; (defmethod print-object ((object persistent-vector) stream)
-;;   (print-unreadable-object (object stream :type t)
-;;     (let ((res (make-array 1))
-;;           (que (make-queue)))
-;;       (labels ((%set (index value)
-;;                  (when (>= index (length res))
-;;                    (setq res (adjust-array res (* 2 index)))))
-;;                (recur (pvector depth)
-;;                  (setf (aref res (expt ))))))
-;;       (loop until (queue-empty-p que)
-;;             for pvector = (dequeue que)
-;;             when (persistent-vector-p pvector)
-;;             do (push (%pv-value pvector) res)
-;;                (loop for child across (%pv-children pvector)
-;;                      do (enqueue child que))
-;;             else
-;;             do (loop repeat +persistent-vector-log+
-;;                      do (push 0 res)))
-;;       (format stream "~{~A~^ ~}" (nreverse res)))))
+(defmethod print-object ((object persistent-vector) stream)
+  (print-unreadable-object (object stream :type t)
+    (let ((res (make-array 1))
+          (max-index 0))
+      (declare ((integer 0 #.most-positive-fixnum) max-index))
+      (labels
+          ((set! (index value)
+             (declare ((integer 0 #.most-positive-fixnum) index))
+             (when (>= index (length res))
+               (setq res (adjust-array res (* 2 index))))
+             (setf (aref res index) value
+                   max-index (max max-index index)))
+           (recur (pvector depth index)
+             (declare ((integer 0 #.most-positive-fixnum) depth index))
+             (unless (zerop index)
+               (set! index (%pv-value pvector)))
+             (let ((base (expt +persistent-vector-log+ depth))
+                   (children (%pv-children pvector)))
+               (declare ((integer 0 #.most-positive-fixnum) base))
+               (dotimes (i +persistent-vector-log+)
+                 (unless (eq 0 (aref children i))
+                   (let ((next-index (+ (* base i) index)))
+                     (recur (aref children i) (+ depth 1) next-index)))))))
+        (set! 0 (%pv-value object))
+        (recur object 0 0))
+      (write (adjust-array res (+ max-index 1)) :stream stream))))
