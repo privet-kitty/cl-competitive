@@ -2,6 +2,11 @@
 ;;; Radix heap
 ;;;
 
+;; NOTE: this implementation permanently reuses every cons cell once it has been
+;; generated. Be careful about memory leak.
+
+;; TODO: adopt typical key-value structure
+
 (defconstant +radix-heap-bit-depth+ 32)
 (deftype radix-heap-integer () '(unsigned-byte #.+radix-heap-bit-depth+))
 
@@ -28,19 +33,21 @@
   (buckets nil :type (simple-array list (*)))
   (lowest 0 :type radix-heap-integer)
   (count 0 :type (integer 0 #.most-positive-fixnum))
-  (stack nil :type list))
+  ;; for recycling cons cell
+  (store nil :type list))
 
 (declaim (inline rheap-push))
 (defun rheap-push (obj rheap)
+  "Adds OBJ to RHEAP."
   (declare (radix-heap-integer obj))
   (let ((lowest (rheap-lowest rheap))
         (buckets (rheap-buckets rheap)))
     (when (< obj lowest)
       (error 'rheap-not-monotone-error :rheap rheap))
     (incf (rheap-count rheap))
-    (let ((cell (or (rheap-stack rheap) (list obj)))
+    (let ((cell (or (rheap-store rheap) (list obj)))
           (dest-index (integer-length (logxor obj lowest))))
-      (pop (rheap-stack rheap))
+      (pop (rheap-store rheap))
       (rplaca cell obj)
       (rplacd cell (aref buckets dest-index))
       (setf (aref buckets dest-index) cell))
@@ -48,6 +55,7 @@
 
 (declaim (inline rheap-pop))
 (defun rheap-pop (rheap)
+  "Removes and returns the lowest element in RHEAP."
   (when (zerop (rheap-count rheap))
     (error 'rheap-empty-error :rheap rheap))
   (let ((buckets (rheap-buckets rheap)))
@@ -70,8 +78,8 @@
     (decf (rheap-count rheap))
     (let ((cell (aref buckets 0)))
       (pop (aref buckets 0))
-      (rplacd cell (rheap-stack rheap))
-      (setf (rheap-stack rheap) cell)
+      (rplacd cell (rheap-store rheap))
+      (setf (rheap-store rheap) cell)
       (car cell))))
 
 (declaim (inline rheap-empty-p))

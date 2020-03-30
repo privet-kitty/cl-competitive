@@ -1,5 +1,6 @@
 ;;;
 ;;; Fully persistent vector
+;;; (implementation with perfect m-ary tree)
 ;;;
 
 ;; TODO:
