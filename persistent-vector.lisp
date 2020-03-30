@@ -1,13 +1,11 @@
 ;;;
-;;; Persistent vector (unfinished)
+;;; Fully persistent vector
 ;;;
-
-;; NOTE: not tested
 
 ;; TODO:
 ;; - more sane handling of unbounded index
 ;; - handy function for initialization (currently `unbounded value' is zero)
-;; - iteration; map
+;; - iteration
 ;; - abstraction
 
 (defconstant +persistent-vector-log+ 16)
