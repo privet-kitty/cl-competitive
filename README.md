@@ -44,6 +44,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [convex-hull-trick.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/convex-hull-trick.lisp) convex hull trick
 - [succinct-bit-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/succinct-bit-vector.lisp) three-layer succinct bit vector
 - [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/wavelet-matrix.lisp) wavelet matrix (with compact bit vector)
+- [persistent-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/persistent-vector.lisp) persistent vector
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dice.lisp) six-sided dice
 
 ### General algorithms
