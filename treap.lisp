@@ -9,31 +9,31 @@
   (right nil :type (or null treap)))
 
 (declaim (inline treap-find))
-(defun treap-find (key treap &key (test #'<))
-  "Searches the sub-treap of TREAP whose key satisfies (and (not (funcall test
-key (%treap-key sub-treap))) (not (funcall test (%treap-key sub-treap) key))) and
+(defun treap-find (key treap &key (order #'<))
+  "Searches the sub-treap of TREAP whose key satisfies (and (not (funcall order
+key (%treap-key sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and
 returns KEY. Returns NIL if KEY is not contained."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
-                   ((funcall test key (%treap-key treap))
+                   ((funcall order key (%treap-key treap))
                     (recur (%treap-left treap)))
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (recur (%treap-right treap)))
                    (t key))))
     (recur treap)))
 
 (declaim (inline treap-split))
-(defun treap-split (key treap &key (test #'<))
+(defun treap-split (key treap &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function test)
+  (declare (function order)
            ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap)
                     (values nil nil))
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (multiple-value-bind (left right)
                         (recur (%treap-right treap))
                       (setf (%treap-right treap) left)
@@ -46,22 +46,22 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
     (recur treap)))
 
 (declaim (inline treap-insert))
-(defun treap-insert (key treap &key (test #'<))
+(defun treap-insert (key treap &key (order #'<))
   "Destructively inserts KEY into TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value.
 
 The behavior is undefined when duplicate keys are inserted."
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (labels ((recur (new-node treap)
              (declare (treap new-node))
              (cond ((null treap) new-node)
                    ((> (%treap-priority new-node) (%treap-priority treap))
                     (setf (values (%treap-left new-node) (%treap-right new-node))
-                          (treap-split (%treap-key new-node) treap :test test))
+                          (treap-split (%treap-key new-node) treap :order order))
                     new-node)
                    (t
-                    (if (funcall test (%treap-key new-node) (%treap-key treap))
+                    (if (funcall order (%treap-key new-node) (%treap-key treap))
                         (setf (%treap-left treap)
                               (recur new-node (%treap-left treap)))
                         (setf (%treap-right treap)
@@ -105,17 +105,17 @@ smaller (or larger, depending on the order) than those of RIGHT."
          right)))
 
 (declaim (inline treap-delete))
-(defun treap-delete (key treap &key (test #'<))
+(defun treap-delete (key treap &key (order #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value."
   (declare ((or null treap) treap)
-           (function test))
+           (function order))
   (labels ((recur (treap)
              (cond ((null treap) nil)
-                   ((funcall test key (%treap-key treap))
+                   ((funcall order key (%treap-key treap))
                     (setf (%treap-left treap) (recur (%treap-left treap)))
                     treap)
-                   ((funcall test (%treap-key treap) key)
+                   ((funcall order (%treap-key treap) key)
                     (setf (%treap-right treap) (recur (%treap-right treap)))
                     treap)
                    (t
