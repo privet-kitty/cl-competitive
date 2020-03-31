@@ -71,7 +71,7 @@
         (rotatef (aref sizes i) (aref sizes (- comp-index i 1))))
       (%make-scc graph components sizes comp-index))))
 
-
+;; FIXME: Constant factor is too large. Is hash-table necessary?
 (declaim (ftype (function * (values (simple-array t (*)) &optional))
                 make-condensed-graph))
 (defun make-condensed-graph (scc)
