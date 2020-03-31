@@ -1,3 +1,6 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (assert (= sb-vm:n-word-bits 64)))
+
 (declaim (ftype (function * (values simple-bit-vector &optional)) make-prime-table))
 (defun make-prime-table (sup)
   "Returns a simple-bit-vector of length SUP, whose (0-based) i-th bit is 1 if i
@@ -20,13 +23,13 @@ Example: (make-prime-table 10) => #*0011010100"
                    do (setf (sbit table composite) 0)))
     table))
 
-;; FIXME: Currently the element type of the resultant vector is (UNSIGNED-BYTE 62).
 (declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*))
                                     simple-bit-vector
                                     &optional))
                 make-prime-sequence))
 (defun make-prime-sequence (sup)
-  "Returns the ascending sequence of primes smaller than SUP."
+  "Returns the ascending sequence of primes smaller than SUP. Internally calls
+MAKE-PRIME-TABLE and returns its result as the second value."
   (declare (optimize (speed 3) (safety 0)))
   (check-type sup (integer 2 (#.array-total-size-limit)))
   (let ((table (make-prime-table sup)))

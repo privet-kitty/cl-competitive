@@ -1,21 +1,21 @@
 (declaim (ftype (function * (values (vector (integer 0 #.most-positive-fixnum)) &optional))
                 enum-divisors))
 (defun enum-divisors (x)
-  "Enumerates all the divisors of X in O(sqrt(X)). Note that the resultant
+  "Enumerates all the divisors of X in O(sqrt(X)) time. Note that the resultant
 vector is NOT sorted."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) x))
   (let* ((sqrt (isqrt x))
-         (res (make-array (isqrt sqrt) ; FIXME: sets the initial size to x^1/4
-                          :element-type '(integer 0 #.most-positive-fixnum)
-                          :fill-pointer 0)))
+         (result (make-array (isqrt sqrt) ; FIXME: currently set the initial size to x^1/4
+                             :element-type '(integer 0 #.most-positive-fixnum)
+                             :fill-pointer 0)))
     (loop for i from 1 to sqrt
           do (multiple-value-bind (quot rem) (floor x i)
                (when (zerop rem)
-                 (vector-push-extend i res)
+                 (vector-push-extend i result)
                  (unless (= i quot)
-                   (vector-push-extend quot res)))))
-    res))
+                   (vector-push-extend quot result)))))
+    result))
 
 ;; Below is a variant that returns a sorted list.
 (defun enum-ascending-divisors (n)
@@ -44,10 +44,11 @@ vector is NOT sorted."
           (%enum 2 result (list n))
           result))))
 
-(declaim (ftype (function * (values (simple-array list (*)) &optional)) make-divisors-table))
+(declaim (ftype (function * (values (simple-array list (*)) &optional))
+                make-divisors-table))
 (defun make-divisors-table (sup)
-  "Returns a vector of length SUP whose each cell, vector[INDEX], is the
-ascending list of every divisor of INDEX. Note that vector[0] = NIL."
+  "Returns a vector of length SUP whose each cell, vector[X], is the ascending
+list of every divisor of X. Note that vector[0] = NIL."
   (declare ((integer 0 #.most-positive-fixnum) sup)
            #+sbcl (sb-ext:muffle-conditions style-warning))
   (let ((result (make-array sup :element-type 'list))

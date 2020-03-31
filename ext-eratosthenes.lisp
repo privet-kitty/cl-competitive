@@ -51,18 +51,3 @@ MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal prime factor of k)"
                                (loop-finish)))
                       finally (return (cons prime exponent)))))
 
-;; from sb-int:positive-primep
-(defun %primep (x)
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) x))
-  (if (<= x 5)
-      (and (>= x 2) (/= x 4))
-      (and (not (evenp x))
-           (not (zerop (rem x 3)))
-           (do ((q 6)
-                (r 1)
-                (inc 2 (logxor inc 6)) ;; 2,4,2,4...
-                (d 5 (+ d inc)))
-               ((or (= r 0) (> d q)) (/= r 0))
-             (declare ((integer 0 #.most-positive-fixnum) d inc))
-             (multiple-value-setq (q r) (truncate x d))))))
