@@ -1,11 +1,11 @@
 ;;;
 ;;; Fully persistent vector
-;;; (implementation with perfect m-ary tree)
+;;; (implemented with perfect m-ary tree)
 ;;;
 
 ;; TODO:
-;; - more sane handling of unbounded index
-;; - handy function for initialization (currently `unbounded value' is zero)
+;; - more sane handling of unbounded place
+;; - handy function for initialization (currently `unbound value' is zero)
 ;; - iteration
 ;; - abstraction
 

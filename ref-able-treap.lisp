@@ -135,9 +135,13 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
                       treap))))
       (recur treap))))
 
-(defmacro treap-push (obj treap)
-  "Pushes OBJ to TREAP at POS."
-  `(setf ,treap (treap-insert ,obj ,treap)))
+(defmacro treap-push (key treap order)
+  "Pushes KEY to TREAP."
+  `(setf ,treap (treap-insert ,key ,treap :order ,order)))
+
+(defmacro treap-pop (key treap order)
+  "Deletes KEY from TREAP."
+  `(setf ,treap (treap-delete ,key ,treap :order ,order)))
 
 ;; It takes O(nlog(n)).
 (defun treap (order &rest keys)
@@ -149,9 +153,10 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
-  "Makes a treap from the given SORTED-VECTOR in O(n). Note that this function
-doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your intended
-order. The consequence is undefined when a non-sorted vector is passed."
+  "Makes a treap from the given SORTED-VECTOR in O(n) time. Note that this
+function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
+intended order. The consequence is undefined when a non-sorted vector is
+passed."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
