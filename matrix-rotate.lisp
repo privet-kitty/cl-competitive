@@ -1,5 +1,3 @@
-;; not tested
-
 (defun matrix-rotate (matrix rot)
   "Counterclockwise rotates a 2-dimensional array by 90 * ROT degrees. This
 function is non-destructive."
@@ -27,13 +25,13 @@ function is non-destructive."
                (setf (aref res j (- h 1 i)) (aref matrix i j))))))
       res)))
 
-;; (declaim (inline matrix-transpose!))
-;; (defun matrix-transpose! (matrix)
-;;   (declare ((array * (* *)) matrix))
-;;   (destructuring-bind (h w) (array-dimensions matrix)
-;;     (declare ((integer 0 #.most-positive-fixnum) h w))
-;;     (assert (= h w))
-;;     (dotimes (i h)
-;;       (loop for j from (+ i 1) below w
-;;             do (rotatef (aref matrix i j) (aref matrix j i))))
-;;     matrix))
+(declaim (inline matrix-transpose))
+(defun matrix-transpose (matrix)
+  (declare ((array * (* *)) matrix))
+  (destructuring-bind (h w) (array-dimensions matrix)
+    (declare ((integer 0 #.most-positive-fixnum) h w))
+    (let ((res (make-array (list w h) :element-type (array-element-type matrix))))
+      (dotimes (i h)
+        (dotimes (j w)
+          (setf (aref res j i) (aref matrix i j))))
+      res)))

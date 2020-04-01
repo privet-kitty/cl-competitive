@@ -17,3 +17,9 @@
   ;; empty case
   (dotimes (i 100)
     (assert (equalp #2a() (matrix-rotate #2a() (- (random 100) 100))))))
+
+(with-test (:name matrix-transpose)
+  (let ((mat #2a((1 2 3) (4 5 6))))
+    (assert (equalp #2a((1 4) (2 5) (3 6)) (matrix-transpose mat))))
+  ;; empty case
+  (assert (equalp #2a() (matrix-transpose #2a()))))
