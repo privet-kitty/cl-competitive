@@ -8,16 +8,18 @@
             (:conc-name ds-))
   (data nil :type (simple-array fixnum (*))))
 
-(declaim (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
+(declaim (inline ds-root)
+         (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
 (defun ds-root (disjoint-set x)
   "Returns the root of X."
-  (declare (optimize (speed 3))
-           ((mod #.array-total-size-limit) x))
+  (declare ((mod #.array-total-size-limit) x))
   (let ((data (ds-data disjoint-set)))
-    (if (< (aref data x) 0)
-        x
-        (setf (aref data x)
-              (ds-root disjoint-set (aref data x))))))
+    (labels ((recur (x)
+               (if (< (aref data x) 0)
+                   x
+                   (setf (aref data x)
+                         (recur (aref data x))))))
+      (recur x))))
 
 (declaim (inline ds-unite!))
 (defun ds-unite! (disjoint-set x1 x2)
