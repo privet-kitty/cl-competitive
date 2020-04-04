@@ -8,8 +8,7 @@
             (:conc-name ds-))
   (data nil :type (simple-array fixnum (*))))
 
-(declaim (inline ds-root)
-         (ftype (function * (values (mod #.array-total-size-limit) &optional)) ds-root))
+(declaim (inline ds-root))
 (defun ds-root (disjoint-set x)
   "Returns the root of X."
   (declare ((mod #.array-total-size-limit) x))
