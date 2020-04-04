@@ -13,6 +13,7 @@
 
 ;; Tarjan's algorithm
 ;; Reference: http://www.prefield.com/algorithm/graph/strongly_connected_components.html
+;; (Kosaraju's algorithm is put in the test file)
 (defun make-scc (graph)
   (declare (optimize (speed 3))
            (vector graph))
@@ -71,14 +72,12 @@
         (rotatef (aref sizes i) (aref sizes (- comp-index i 1))))
       (%make-scc graph components sizes comp-index))))
 
-;; FIXME: Constant factor is too large. Is hash-table necessary?
+;; FIXME: Constant factor of this implementation is too large. Can we avoid
+;; hash-table?
 (declaim (ftype (function * (values (simple-array t (*)) &optional))
                 make-condensed-graph))
 (defun make-condensed-graph (scc)
-  "Does graph condensation.
-
-This function is non-destructive. The resultant graph doesn't contain self-loops
-even if the given graph does."
+  "Does graph condensation. This function is non-destructive."
   (declare (optimize (speed 3)))
   (let* ((graph (scc-graph scc))
          (n (length graph))
