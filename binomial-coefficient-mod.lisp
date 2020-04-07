@@ -9,12 +9,12 @@
 (defconstant +binom-size+ 510000)
 (defconstant +binom-mod+ #.(+ (expt 10 9) 7))
 
-(declaim ((simple-array (unsigned-byte 32) (*)) *fact* *fact-inv* *inv*))
-(defparameter *fact* (make-array +binom-size+ :element-type '(unsigned-byte 32))
+(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
+(defparameter *fact* (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of factorials")
-(defparameter *fact-inv* (make-array +binom-size+ :element-type '(unsigned-byte 32))
+(defparameter *fact-inv* (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of inverses of factorials")
-(defparameter *inv* (make-array +binom-size+ :element-type '(unsigned-byte 32))
+(defparameter *inv* (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of inverses of non-negative integers")
 
 (defun initialize-binom ()
