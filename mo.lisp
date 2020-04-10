@@ -36,7 +36,7 @@ universe and Q is the number of queries."
                         (if (= (floor (aref lefts x) bucket-width)
                                (floor (aref lefts y) bucket-width))
                             ;; Even-number [Odd-number] block is in ascending
-                            ;; [descending] order w.r.t. the right boundary.
+                            ;; [descending] order w.r.t. the right end.
                             (if (evenp (floor (aref lefts x) bucket-width))
                                 (< (aref rights x) (aref rights y))
                                 (> (aref rights x) (aref rights y)))

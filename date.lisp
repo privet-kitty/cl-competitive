@@ -25,3 +25,13 @@ Note that DAY and MONTH are 1-based."
               (* 4 (mod (- year 1) 100))
               (* 6 (mod (- year 1) 400)))
            7))))
+
+(declaim (inline get-julian-day-number))
+(defun get-julian-day-number (day month year)
+  "Converts a Gregorian calendar date to Julian Day Number. (Used to get the
+number of days between two dates."
+  (+ (truncate (* 1461 (+ year 4800 (truncate (- month 14) 12))) 4)
+     (truncate (* 367 (- month 2 (* 12 (truncate (- month 14) 12)))) 12)
+     (- (truncate (* 3 (truncate (+ year 4900 (truncate (- month 14) 12)) 100)) 4))
+     day
+     -32075))
