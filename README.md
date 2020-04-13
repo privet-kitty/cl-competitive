@@ -120,6 +120,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/tree-centroid.lisp) centroid decomposition of tree
 - [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
 - [diameter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/diameter.lisp) diameter of tree
+- [mo-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mo-tree.lisp) Mo's algorithm for paths on tree (vertex query)
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/random-graph.lisp) fast generation of random adjacency matrices
 
 ### Geometry
