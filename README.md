@@ -106,6 +106,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [bipartite-matching.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bipartite-matching.lisp) maximum bipartite matching (Ford-Fulkerson)
 - [hopcroft-karp.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/hopcroft-karp.lisp) maximum bipartite matching (Hopcroft-Karp)
 - [jonker-volgenant.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/jonker-volgenant.lisp) weighted bipartite matching (Jonker-Volgenant)
+- [gabow-edmonds.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/jonker-volgenant.lisp) maximum non-bipartite matching (Gabow-Edmonds)
 - [bipartite-p.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bipartite-p.lisp) test of bipartiteness
 - [bron-kerbosch.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bron-kerbosch.lisp) maximum clique
 - [ford-fulkerson.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/ford-fulkerson.lisp) maximum flow (Ford-Fulkerson algorithm)
