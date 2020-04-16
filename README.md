@@ -71,7 +71,6 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [mod-power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mod-power.lisp) modular exponentiation
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/power.lisp) exponentiation on arbitrary monoid
 - [binomial-coefficient-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient-mod.lisp) binomial coefficient with fixed modulus; linear-time construction of tables of inverses, factorials, and inverses of factorials
-- [binomial-coefficient.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binomial-coefficient.lisp) binomial coefficient by direct bignum arithmetic
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/bounded-partition-number.lisp) partition number with upper-bound
 - [dynamic-mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dynamic-mod-operations.lisp) addition/multiplication with dynamic modulus

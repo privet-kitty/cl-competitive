@@ -39,7 +39,3 @@
                  n
                  (floor (%multiply-range (+ k 1) n)
 	                (%multiply-range 1 n-k)))))))
-
-(declaim (inline multichoose))
-(defun multichoose (n k)
-  (binomial-coefficient (+ n k -1) k))
