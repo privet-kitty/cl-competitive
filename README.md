@@ -112,7 +112,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/lca.lisp) lowest common anscestor (binary lifting)
 - [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/min-cost-flow.lisp) minimum cost flow (SSP)
-- [prim.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/prim.lisp) minimum spanning tree (Prim's algorithm)
+- [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/boruvka.lisp) minimum spanning tree (Borůvka's algorithm)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/topological-sort.lisp) topological sort on DAG
 - [dfs-order.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dfs-order.lisp) Euler tour of tree
 - [condensation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/condensation.lisp) strongly connected component of directed graph (Tarjan's algorithm); 2-SAT
