@@ -41,6 +41,37 @@ throw a floating exception if EPS is too small."
         (complex (- (/ b (* 2 a)))
                  (- (/ c (* 2 a)))))))
 
+;; Reference: https://stackoverflow.com/questions/1119627/how-to-test-if-a-point-is-inside-of-a-convex-polygon-in-2d-integer-coordinates
+;; TODO: introduce eps
+;; TODO: strictly/weekly inside
+(declaim (inline inside-convex-polygon-p))
+(defun inside-convex-polygon-p (point vector)
+  "Returns T iff POINT is strictly inside the given convex polygon. Vertices of
+the polygon must be ordered clockwise or anticlockwise in VECTOR."
+  (declare (number point)
+           (vector vector))
+  (let (prev-side
+        (n (length vector)))
+    (labels ((get-side (a b)
+               (let ((x (- (* (realpart a) (imagpart b))
+                           (* (imagpart a) (realpart b)))))
+                 (cond ((< x 0) -1)
+                       ((> x 0) 1)
+                       (t 0)))))
+      (dotimes (i n)
+        (let* ((a (aref vector i))
+               (b (aref vector (if (= i (- n 1)) 0 (+ i 1))))
+               (a-to-b (- b a))
+               (a-to-point (- point a))
+               (current-side (get-side a-to-b a-to-point)))
+          (cond ((zerop current-side)
+                 (return-from inside-convex-polygon-p nil))
+                ((null prev-side)
+                 (setq prev-side current-side))
+                ((/= prev-side current-side)
+                 (return-from inside-convex-polygon-p nil)))))
+      t)))
+
 ;;;
 ;;; Welzl's algorithm for smallest circle problem (not optimized)
 ;;;
