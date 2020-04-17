@@ -18,7 +18,12 @@
 ;; in noshi91's article: http://noshi91.hatenablog.com/entry/2019/07/19/180606
 ;; (Japanese)
 
-(declaim (inline get-mst))
+(declaim (inline get-mst)
+         (ftype (function * (values integer
+                                    (simple-array fixnum (*))
+                                    (simple-array fixnum (*))
+                                    &optional))
+                get-mst))
 (defun get-mst (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
   "Computes an MST by Boruvka's algorithm. Returns three values: minimum total
 cost, two vectors that store each end of the edges. If GRAPH is not connected,
@@ -43,6 +48,8 @@ MAXIMIZE := if true, solve maximization problem instead"
             (aref nexts i) i))
     (labels ((%add (src dest cost)
                "Adds a new edge to the (unfinished) MST."
+               (declare (fixnum src dest cost))
+               (when (> src dest) (rotatef src dest))
                (setf (aref res-srcs edge-count) src
                      (aref res-dests edge-count) dest
                      cost-sum (+ cost-sum cost)
@@ -63,9 +70,9 @@ MAXIMIZE := if true, solve maximization problem instead"
                  (let ((root (aref roots u)))
                    (dolist (edge (aref graph u))
                      (let ((v (funcall vertex-key edge))
-                           (cost (let ((cost (funcall cost-key edge)))
-                                   (if maximize (- cost) cost))))
+                           (cost (funcall cost-key edge)))
                        (declare (fixnum v cost))
+                       (when maximize (setq cost (- cost)))
                        (when (and (/= root (aref roots v))
                                   (<= cost (aref min-costs root)))
                          (setf (aref min-costs root) cost
@@ -91,3 +98,5 @@ MAXIMIZE := if true, solve maximization problem instead"
       (values (if maximize (- cost-sum) cost-sum)
               (adjust-array res-srcs edge-count)
               (adjust-array res-dests edge-count)))))
+
+(in-package :cl-user)
