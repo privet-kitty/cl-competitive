@@ -1,16 +1,17 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-int:defconstant-eqx OPT
+  (sb-int:defconstant-eqx opt
     #+swank '(optimize (speed 3) (safety 2))
     #-swank '(optimize (speed 3) (safety 0) (debug 0))
     #'equal)
   #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
   #-swank (set-dispatch-macro-character
-           ;; enclose the form with VALUES to avoid being captured by LOOP macro
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 #-swank (disable-debugger) ; for CS Academy
 
 ;; BEGIN_INSERTED_CONTENTS
+(in-package :cl-user)
+
 (defmacro dbg (&rest forms)
   #+swank
   (if (= (length forms) 1)
