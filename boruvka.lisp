@@ -1,30 +1,24 @@
 ;;;
-;;; Minimum spanning tree (Boruvka's algorithm, Sollin's algorithm)
+;;; Minimum spanning tree (Boruvka's algorithm, O(ElogV))
 ;;;
 ;;; Reference:
 ;;; Ahuja, Magnanti, Orlin. Network Flows: Theory, Algorithms, and Applications.
 ;;;
 
-(defpackage #:boruvka
-  (:use :cl)
-  (:export #:get-mst))
-
-(in-package #:boruvka)
-
-(defconstant +inf-cost+ most-positive-fixnum)
+(defconstant +boruvka-inf-cost+ most-positive-fixnum)
 
 ;; Here I express each connected component as a cycle with singly-linked list,
 ;; though Ahuja's book adopts doubly-linked list. I learned about this technique
 ;; in noshi91's article: http://noshi91.hatenablog.com/entry/2019/07/19/180606
 ;; (Japanese)
 
-(declaim (inline get-mst)
+(declaim (inline boruvka)
          (ftype (function * (values integer
                                     (simple-array fixnum (*))
                                     (simple-array fixnum (*))
                                     &optional))
-                get-mst))
-(defun get-mst (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
+                boruvka))
+(defun boruvka (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
   "Computes an MST by Boruvka's algorithm. Returns three values: minimum total
 cost, two vectors that store each end of the edges. If GRAPH is not connected,
 this function computes MST for each connected component.
@@ -64,7 +58,7 @@ MAXIMIZE := if true, solve maximization problem instead"
                (rotatef (aref nexts root1) (aref nexts root2))))
       (loop for updated = nil
             while (< edge-count (- n 1))
-            do (fill min-costs +inf-cost+)
+            do (fill min-costs +boruvka-inf-cost+)
                ;; detect minimum cost edge starting from each connected component
                (dotimes (u n)
                  (let ((root (aref roots u)))
@@ -85,7 +79,7 @@ MAXIMIZE := if true, solve maximization problem instead"
                         (src (aref min-srcs root))
                         (dest (aref min-dests root))
                         (cost (aref min-costs root)))
-                   (unless (= cost +inf-cost+) ; can be true if GRAPH is not connected
+                   (unless (= cost +boruvka-inf-cost+) ; can be true if GRAPH is not connected
                      (loop for root2 = (aref roots dest)
                            until (= root root2)
                            do (setq updated t)

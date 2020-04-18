@@ -3,7 +3,6 @@
   (load "../boruvka.lisp")
   (load "../disjoint-set.lisp"))
 
-(in-package :cl-user)
 (use-package :test-util)
 
 (defun make-random-graph (n density)
@@ -17,7 +16,7 @@
     graph))
 
 ;; Kruskal
-(defun get-mst-cost (graph maximize)
+(defun kruskal (graph maximize)
   (let* (edges
          (n (length graph))
          (dset (make-disjoint-set n))
@@ -36,20 +35,20 @@
 
 (with-test (:name boruvka)
   ;; empty graph
-  (multiple-value-bind (cost e1 e2) (boruvka:get-mst #())
+  (multiple-value-bind (cost e1 e2) (boruvka #())
     (assert (zerop cost))
     (assert (equalp #() e1))
     (assert (equalp #() e2)))
   ;; self loop
-  (multiple-value-bind (cost e1 e2) (boruvka:get-mst #(((0 . 10))))
+  (multiple-value-bind (cost e1 e2) (boruvka #(((0 . 10))))
     (assert (zerop cost))
     (assert (equalp #() e1))
     (assert (equalp #() e2)))
   ;; minimize random graph
   (dotimes (_ 500)
     (let ((graph (make-random-graph 40 (random 1.0))))
-      (assert (= (get-mst-cost graph nil) (boruvka:get-mst graph)))))
+      (assert (= (kruskal graph nil) (boruvka graph)))))
   ;; maximize random graph
   (dotimes (_ 500)
     (let ((graph (make-random-graph 40 (random 1.0))))
-      (assert (= (get-mst-cost graph t) (boruvka:get-mst graph :maximize t))))))
+      (assert (= (kruskal graph t) (boruvka graph :maximize t))))))
