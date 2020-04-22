@@ -15,7 +15,7 @@ intersects the one from (Q1-X, Q1-Y) to (Q2-X, Q2-Y)."
                   (- (* delta-p-x (- q2-y p1-y)) (* delta-p-y (- q2-x p1-x)))))
          (det2 (* (- (* delta-q-x (- p1-y q1-y)) (* delta-q-y (- p1-x q1-x)))
                   (- (* delta-q-x (- p2-y q1-y)) (* delta-q-y (- p2-x q1-x))))))
-    (and (< det1 eps) (< det2 eps))))
+    (and (<= det1 eps) (<= det2 eps))))
 
 (declaim (inline parallel-p))
 (defun parallel-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y &optional (eps 0))

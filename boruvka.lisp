@@ -92,5 +92,3 @@ MAXIMIZE := if true, solve maximization problem instead"
       (values (if maximize (- cost-sum) cost-sum)
               (adjust-array res-srcs edge-count)
               (adjust-array res-dests edge-count)))))
-
-(in-package :cl-user)

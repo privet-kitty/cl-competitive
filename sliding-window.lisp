@@ -101,6 +101,7 @@ ORDER := #'> => maximum"
 
 (declaim (inline swindow-shrink))
 (defun swindow-shrink (time sw)
+  "Advance the left end of the time range to TIME (inclusive)."
   (let ((times (%swindow-times sw)))
     (loop while (and (<= (%swindow-front-pos sw) (%swindow-end-pos sw))
                      (< (aref times (%swindow-front-pos sw)) time))
@@ -108,10 +109,15 @@ ORDER := #'> => maximum"
 
 (declaim (inline swindow-empty-p))
 (defun swindow-empty-p (sw)
-  (> (%sw-front-pos sw) (%sw-end-pos sw)))
+  (> (%swindow-front-pos sw) (%swindow-end-pos sw)))
 
 (declaim (inline swindow-get-opt))
 (defun swindow-get-opt (sw)
   (assert (not (swindow-empty-p sw)))
-  (let ((front-pos (%sw-front-pos sw)))
-    (aref (%sw-values sw) front-pos)))
+  (let ((front-pos (%swindow-front-pos sw)))
+    (aref (%swindow-values sw) front-pos)))
+
+(declaim (inline swindow-reinitialize))
+(defun swindow-reinitialize (sw)
+  (setf (%swindow-front-pos sw) 0
+        (%swindow-end-pos sw) -1))

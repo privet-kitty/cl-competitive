@@ -2,6 +2,28 @@
 ;;; Utilities for 2D geometry (using complex number)
 ;;;
 
+(declaim (inline intersect-p))
+(defun intersect-p (p1 p2 q1 q2 &optional (eps 0))
+  "Returns true iff the line segment from P1 to P2 intersects the one from Q1
+to Q2."
+  (let* ((p1-x (realpart p1))
+         (p1-y (imagpart p1))
+         (p2-x (realpart p2))
+         (p2-y (imagpart p2))
+         (q1-x (realpart q1))
+         (q1-y (imagpart q1))
+         (q2-x (realpart q2))
+         (q2-y (imagpart q2))
+         (delta-p-x (- p2-x p1-x))
+         (delta-p-y (- p2-y p1-y))
+         (delta-q-x (- q2-x q1-x))
+         (delta-q-y (- q2-y q1-y))
+         (det1 (* (- (* delta-p-x (- q1-y p1-y)) (* delta-p-y (- q1-x p1-x)))
+                  (- (* delta-p-x (- q2-y p1-y)) (* delta-p-y (- q2-x p1-x)))))
+         (det2 (* (- (* delta-q-x (- p1-y q1-y)) (* delta-q-y (- p1-x q1-x)))
+                  (- (* delta-q-x (- p2-y q1-y)) (* delta-q-y (- p2-x q1-x))))))
+    (and (<= det1 eps) (<= det2 eps))))
+
 (defun calc-internal-angle (c1 c2)
   (acos (max -1d0 (min 1d0 (/ (+ (* (realpart c1) (realpart c2))
                                  (* (imagpart c1) (imagpart c2)))
