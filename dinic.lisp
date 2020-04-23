@@ -8,9 +8,8 @@
   ((graph :initarg :graph :reader max-flow-overflow-graph))
   (:report
    (lambda (condition stream)
-     (let ((*print-circle* t))
-       (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
-               (max-flow-overflow-graph condition))))))
+     (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
+             (max-flow-overflow-graph condition)))))
 
 (defstruct (edge (:constructor %make-edge
                      (to capacity reversed
@@ -24,7 +23,7 @@
   (let ((*print-circle* t))
     (call-next-method)))
 
-(defun push-edge (from-idx to-idx capacity graph &key bidirectional)
+(defun push-edge (graph from-idx to-idx capacity &key bidirectional)
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of lists of all the edges that goes from each vertex
 
@@ -40,7 +39,7 @@ capacity in addition."
     (push dep (aref graph from-idx))
     (push ret (aref graph to-idx))))
 
-(defun %fill-dist-table (src graph dist-table queue)
+(defun %fill-dist-table (graph src dist-table queue)
   "Does BFS and sets DIST-TABLE to the distance between SRC and each vertex of
 GRAPH, where an edge of zero capacity is regarded as disconnected."
   (declare (optimize (speed 3) (safety 0))
@@ -99,7 +98,7 @@ amount of the flow."
     (dfs src most-positive-fixnum)))
 
 (declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
-(defun max-flow! (src dest graph)
+(defun max-flow! (graph src dest)
   "Destructively sends the maximum flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
@@ -113,7 +112,7 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
          (result 0))
     (declare ((integer 0 #.most-positive-fixnum) result))
     (loop
-      (%fill-dist-table src graph dist-table queue)
+      (%fill-dist-table graph src dist-table queue)
       (when (= (aref dist-table dest) +graph-inf-distance+)
         ;; SRC and DEST are not connected on the current residual network.
         (return result))
