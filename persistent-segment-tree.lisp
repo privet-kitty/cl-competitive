@@ -2,9 +2,12 @@
 ;;; Persistent segment tree
 ;;;
 
-;; TODO: abstraction
-;; TODO: test
-;; TODO: linear-time initialization
+;; TODO:
+;; - abstraction
+;; - test
+;; - linear-time initialization
+;; - avoid sb-int:power-of-two-ceiling
+;; - out-of-bound error
 
 (declaim (inline make-node))
 (defstruct (node (:constructor make-node (&optional (value 0))))
@@ -14,7 +17,7 @@
 
 (defstruct (psegtree (:constructor %make-psegtree)
                      (:conc-name %psegtree-))
-  (n 0 :type (integer 0 #.most-positive-fixnum)) ; actual length
+  (length 0 :type (integer 0 #.most-positive-fixnum))
   (root nil :type node))
 
 (defun make-psegtree (length)
@@ -28,7 +31,7 @@
                    (setf (node-left node) (recur (ash i 1))
                          (node-right node) (recur (ash i 1)))
                    node))))
-      (%make-psegtree :n n :root (recur 1)))))
+      (%make-psegtree :length length :root (recur 1)))))
 
 (defun psegtree-query (psegtree left right)
   "Queries the sum of the interval [LEFT, RIGHT)."
@@ -43,7 +46,9 @@
                    (t
                     (+ (recur (node-left root) l (ash (+ l r) -1))
                        (recur (node-right root) (ash (+ l r) -1) r))))))
-    (recur (%psegtree-root psegtree) 0 (%psegtree-n psegtree))))
+    (recur (%psegtree-root psegtree)
+           0
+           (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))))
 
 (defun psegtree-update (psegtree index delta)
   "Returns a new psegtree updated by PSEGTREE[INDEX] += DELTA. This function is
@@ -67,24 +72,22 @@ non-destructive."
                                (node-value (node-right root)))))))))
     (let ((new-psegtree (copy-psegtree psegtree))
           (new-root (copy-node (%psegtree-root psegtree))))
-      (recur new-root 0 (%psegtree-n psegtree))
+      (recur new-root 0 (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))
       (setf (%psegtree-root new-psegtree) new-root)
       new-psegtree)))
 
-(defmethod print-object ((object node) stream)
-  (print-unreadable-object (object stream)
-    (let ((init t))
-      (labels ((recur (node)
+(defmethod print-object ((object psegtree) stream)
+  (print-unreadable-object (object stream :type t)
+    (let ((init t)
+          (length (%psegtree-length object)))
+      (labels ((recur (node index)
                  (if (node-left node)
                      (progn
-                       (recur (node-left node))
-                       (recur (node-right node)))
-                     (progn
+                       (recur (node-left node) (ash index 1))
+                       (recur (node-right node) (+ (ash index 1) 1)))
+                     (when (< index length)
                        (if init
                            (setq init nil)
                            (write-char #\  stream))
                        (write (node-value node) :stream stream)))))
-        (recur object)))))
-
-(defmethod print-object ((object psegtree) stream)
-  (write (%psegtree-root object) :stream stream))
+        (recur (%psegtree-root object) 0)))))
