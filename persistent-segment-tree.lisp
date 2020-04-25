@@ -4,7 +4,6 @@
 
 ;; TODO: abstraction
 ;; TODO: test
-;; TODO: print-object
 ;; TODO: linear-time initialization
 
 (declaim (inline make-node))
@@ -71,3 +70,21 @@ non-destructive."
       (recur new-root 0 (%psegtree-n psegtree))
       (setf (%psegtree-root new-psegtree) new-root)
       new-psegtree)))
+
+(defmethod print-object ((object node) stream)
+  (print-unreadable-object (object stream)
+    (let ((init t))
+      (labels ((recur (node)
+                 (if (node-left node)
+                     (progn
+                       (recur (node-left node))
+                       (recur (node-right node)))
+                     (progn
+                       (if init
+                           (setq init nil)
+                           (write-char #\  stream))
+                       (write (node-value node) :stream stream)))))
+        (recur object)))))
+
+(defmethod print-object ((object psegtree) stream)
+  (write (%psegtree-root object) :stream stream))
