@@ -67,6 +67,32 @@ MOST-POSITIVE-FIXNUM. (multinomial) returns 1."
             (mod (* result (aref *fact-inv* k)) +binom-mod+)))
     (mod (* result (aref *fact* sum)) +binom-mod+)))
 
+(declaim (inline stirling2))
+(defun stirling2 (n k)
+  "Returns the stirling number of the second kind S2(n, k)."
+  (declare ((integer 0 #.most-positive-fixnum) n k))
+  (labels ((mod-power (base exp)
+             (declare ((integer 0 #.most-positive-fixnum) base exp))
+             (loop with res of-type (integer 0 #.most-positive-fixnum) = 1
+                   while (> exp 0)
+                   when (oddp exp)
+                   do (setq res (mod (* res base) +binom-mod+))
+                   do (setq base (mod (* base base) +binom-mod+)
+                            exp (ash exp -1))
+                   finally (return res))))
+    (loop with result of-type fixnum = 0
+          for i from 0 to k
+          for delta = (mod (* (binom k i) (mod-power i n)) +binom-mod+)
+          when (evenp (- k i))
+          do (incf result delta)
+             (when (>= result +binom-mod+)
+               (decf result +binom-mod+))
+          else
+          do (decf result delta)
+             (when (< result 0)
+               (incf result +binom-mod+))
+          finally (return (mod (* result (aref *fact-inv* k)) +binom-mod+)))))
+
 (declaim (inline catalan))
 (defun catalan (n)
   "Returns the N-th Catalan number."
