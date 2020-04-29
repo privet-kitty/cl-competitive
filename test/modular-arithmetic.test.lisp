@@ -6,8 +6,9 @@
 (use-package :test-util)
 
 (defparameter *state* (seed-random-state 0))
+(defconstant +mod+ 1000000007)
 
-(declaim (notinline ext-gcd mod-log mod-inverse mod-echelon! mod-inverse-matrix!))
+(declaim (notinline ext-gcd mod-log mod-inverse mod-echelon! mod-determinant! mod-inverse-matrix!))
 
 (with-test (:name ext-gcd)
   (assert (equalp '(-9 47) (multiple-value-list (ext-gcd 240 46))))
@@ -72,19 +73,27 @@
 
 (with-test (:name mod-echelon)
   (assert (equalp #2a((1 0 1000000005 1000000004) (0 1 1 4) (0 0 0 0))
-                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 35))) 1000000007)))
-  (assert (= 2 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 35)) 1000000007))))
+                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 35))) +mod+)))
+  (assert (= 2 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 35)) +mod+))))
   (assert (equalp #2a((1 0 1000000005 0) (0 1 1 0) (0 0 0 1))
-                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 37))) 1000000007)))
-  (assert (= 3 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 37)) 1000000007))))
+                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 37))) +mod+)))
+  (assert (= 3 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 37)) +mod+))))
   ;; extended
   (assert (equalp #2a((1 0 1000000005 1000000004) (0 1 1 4) (0 0 0 1))
-                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 36))) 1000000007 t)))
-  (assert (= 2 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 36)) 1000000007 t))))
+                  (mod-echelon! (make-array '(3 4) :initial-contents '((1 3 1 9) (1 1 -1 1) (3 11 5 36))) +mod+ t)))
+  (assert (= 2 (nth-value 1 (mod-echelon! #2a((1 3 1 9) (1 1 -1 1) (3 11 5 36)) +mod+ t))))
   (assert (equalp #2a((1 0 0 4) (0 1 0 3) (0 0 1 0))
                   (mod-echelon! (make-array '(3 4) :initial-contents '((3 1 4 1) (5 2 6 5) (0 5 2 1))) 7 t))))
 
+(with-test (:name mod-determinant)
+  (assert (= 14 (mod-determinant! #2a((3 3 3 1) (2 4 5 2) (3 4 5 1) (2 2 3 4)) +mod+)))
+  (assert (= (mod -70 +mod+)
+             (mod-determinant! #2a((10 20 10) (4 5 6) (2 3 5)) +mod+)))
+  (assert (= 1 (mod-determinant! #2a() +mod+))))
+
 (with-test (:name mod-inverse-matrix)
-  (assert (equalp #2a((1 0 0) (0 1 0) (0 0 1)) (mod-inverse-matrix! #2a((1 0 0) (0 1 0) (0 0 1)) 7)))
-  (assert (equalp #2a((0 0 1) (0 1 0) (1 0 0)) (mod-inverse-matrix! #2a((0 0 1) (0 1 0) (1 0 0)) 7)))
+  (assert (equalp #2a((1 0 0) (0 1 0) (0 0 1))
+                  (mod-inverse-matrix! #2a((1 0 0) (0 1 0) (0 0 1)) 7)))
+  (assert (equalp #2a((0 0 1) (0 1 0) (1 0 0))
+                  (mod-inverse-matrix! #2a((0 0 1) (0 1 0) (1 0 0)) 7)))
   (assert (null (mod-inverse-matrix! #2a((0 0 1) (1 1 1) (1 1 1)) 7))))

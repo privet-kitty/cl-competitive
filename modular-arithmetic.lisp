@@ -248,6 +248,52 @@ This function destructively modifies MATRIX."
             (incf rank))))
       (values matrix rank))))
 
+;; not tested
+(declaim (inline mod-determinant!))
+(defun mod-determinant! (matrix modulus)
+  "Returns the determinant of MATRIX. This function destructively modifies
+MATRIX."
+  (declare ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((n (array-dimension matrix 0)))
+    (assert (= n (array-dimension matrix 1)))
+    (dotimes (i n)
+      (dotimes (j n)
+        (setf (aref matrix i j) (mod (aref matrix i j) modulus))))
+    (let ((rank 0)
+          (netto-product 1))
+      (declare ((integer 0 #.most-positive-fixnum) rank netto-product))
+      (dotimes (target-col n)
+        (let ((pivot-row (do ((i rank (+ 1 i)))
+                             ((= i n) -1)
+                           (unless (zerop (aref matrix i target-col))
+                             (return i)))))
+          (when (>= pivot-row 0)
+            ;; swap rows
+            (loop for j from target-col below n
+                  do (rotatef (aref matrix rank j) (aref matrix pivot-row j)))
+            (let* ((pivot (aref matrix rank target-col))
+                   (inv (mod-inverse pivot modulus)))
+              (setq netto-product
+                    (mod (* netto-product pivot) modulus))
+              (dotimes (j n)
+                (setf (aref matrix rank j)
+                      (mod  (* inv (aref matrix rank j)) modulus)))
+              (dotimes (i n)
+                (unless (or (= i rank) (zerop (aref matrix i target-col)))
+                  (let ((factor (aref matrix i target-col)))
+                    (loop for j from target-col below n
+                          do (setf (aref matrix i j)
+                                   (mod (- (aref matrix i j)
+                                           (mod (* (aref matrix rank j) factor) modulus))
+                                        modulus)))))))
+            (incf rank))))
+      (let ((diag 1))
+        (declare ((integer 0 #.most-positive-fixnum) diag))
+        (dotimes (i n)
+          (setq diag (mod (* diag (aref matrix i i)) modulus)))
+        (values (mod (* diag netto-product) modulus)
+                rank)))))
+
 (declaim (inline mod-inverse-matrix!))
 (defun mod-inverse-matrix! (matrix modulus)
   "Returns the inverse of MATRIX by gaussian elimination if it exists and
