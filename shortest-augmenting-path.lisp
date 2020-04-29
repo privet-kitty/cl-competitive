@@ -99,48 +99,48 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                     (= (aref dists node)
                        (+ 1 (aref dists (edge-to edge)))))))
       (loop
-        do (loop
-             for edge = (car (aref subgraph node))
-             while edge
-             when (admissible-p node edge)
-             do (let ((to (edge-to edge)))
-                  ;; advance
-                  (setf (aref preds to) node
-                        node to)
-                  (when (= node dest)
-                    ;; send as much flow as possible along the augmenting path
-                    (let ((delta
-                            (loop with v = dest
-                                  do (setq v (aref preds v))
-                                  minimize (edge-capacity (car (aref subgraph v)))
-                                  until (= v src))))
-                      (declare ((integer 0 #.most-positive-fixnum) delta))
-                      (when (>= (+ flow delta) most-positive-fixnum)
-                        (error 'max-flow-overflow :graph graph))
-                      (incf flow delta)
-                      (loop with v = dest
-                            do (setq v (aref preds v))
-                               (let ((edge (car (aref subgraph v))))
-                                 (decf (edge-capacity edge) delta)
-                                 (incf (edge-capacity (edge-reversed edge)) delta))
-                            until (= v src)))
-                    (setq node src)))
-                (return)
-             else do (pop (aref subgraph node))
-             finally ;; do relabeling when there're no admissible arcs
-                (let ((min-label +graph-inf-distance+)
-                      (current-label (aref dists node)))
-                  (declare ((unsigned-byte 32) min-label))
-                  (dolist (edge (aref graph node))
-                    (when (> (edge-capacity edge) 0)
-                      (setq min-label
-                            (min min-label (aref dists (edge-to edge))))))
-                  (when (or (= 1 (aref nums current-label))
-                            (= min-label +graph-inf-distance+))
-                    (return-from max-flow! flow))
-                  (decf (aref nums current-label))
-                  (incf (aref nums (+ 1 min-label)))
-                  (setf (aref dists node) (+ 1 min-label)))
-                (setf (aref subgraph node) (aref graph node))
-                (unless (= node src)
-                  (setq node (aref preds node))))))))
+        (loop for edge = (car (aref subgraph node))
+              while edge
+              when (admissible-p node edge)
+              do (let ((to (edge-to edge)))
+                   ;; advance
+                   (setf (aref preds to) node
+                         node to)
+                   (when (= node dest)
+                     ;; send as much flow as possible along the augmenting path
+                     (let ((delta
+                             (loop with v = dest
+                                   do (setq v (aref preds v))
+                                   minimize (edge-capacity (car (aref subgraph v)))
+                                   until (= v src))))
+                       (declare ((integer 0 #.most-positive-fixnum) delta))
+                       (when (>= (+ flow delta) most-positive-fixnum)
+                         (error 'max-flow-overflow :graph graph))
+                       (incf flow delta)
+                       (loop with v = dest
+                             do (setq v (aref preds v))
+                                (let ((edge (car (aref subgraph v))))
+                                  (decf (edge-capacity edge) delta)
+                                  (incf (edge-capacity (edge-reversed edge)) delta))
+                             until (= v src)))
+                     (setq node src)))
+                 (return)
+              else do (pop (aref subgraph node))
+              finally ;; do relabeling when there're no admissible arcs
+                 (let ((min-label +graph-inf-distance+)
+                       (current-label (aref dists node)))
+                   (declare ((unsigned-byte 32) min-label))
+                   (dolist (edge (aref graph node))
+                     (when (> (edge-capacity edge) 0)
+                       (setq min-label
+                             (min min-label (aref dists (edge-to edge))))))
+                   ;; return if a gap occurs in distance labels
+                   (when (or (= 1 (aref nums current-label))
+                             (= min-label +graph-inf-distance+))
+                     (return-from max-flow! flow))
+                   (decf (aref nums current-label))
+                   (incf (aref nums (+ 1 min-label)))
+                   (setf (aref dists node) (+ 1 min-label)))
+                 (setf (aref subgraph node) (aref graph node))
+                 (unless (= node src)
+                   (setq node (aref preds node))))))))
