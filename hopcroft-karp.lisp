@@ -103,7 +103,8 @@
 (declaim (ftype (function * (values (unsigned-byte 32) &optional)) bgraph-build-matching!))
 (defun bgraph-build-matching! (bgraph)
   "Makes a maximum bipartite matching and returns two vectors: correspondence
-from group 1 to group 2, and correspondence from group 2 to group 1."
+from group 1 to group 2, and correspondence from group 2 to group 1. At an
+unmatched vertex, -1 is stored."
   (declare (optimize (speed 3)))
   (let* ((size1 (bgraph-size1 bgraph))
          (matching1 (bgraph-matching1 bgraph))
@@ -121,8 +122,9 @@ from group 1 to group 2, and correspondence from group 2 to group 1."
                                     (simple-array (integer 0 #.most-positive-fixnum) (*))
                                     &optional))
                 bgraph-decompose!))
-(defun bgraph-decompose! (bgraph)
-  "Decomposes a residual network to strongly connected components."
+(defun bgraph-decompose (bgraph)
+  "Decomposes a residual network to strongly connected components by Tarjan's
+algorithm. BGRAPH-BUILD-MATCHING! must be called beforehand."
   (declare (optimize (speed 3)))
   (let* ((size1 (bgraph-size1 bgraph))
          (size2 (bgraph-size2 bgraph))
@@ -134,7 +136,7 @@ from group 1 to group 2, and correspondence from group 2 to group 1."
          (matching2 (bgraph-matching2 bgraph))
          (ord 0) ; in-order
          (ords (make-array total-size :element-type 'fixnum :initial-element -1))
-         (lowests (make-array total-size :element-type 'fixnum))
+         (lowlinks (make-array total-size :element-type 'fixnum))
          (components (make-array total-size
                                  :element-type '(integer 0 #.most-positive-fixnum)))
          (comp-index 0) ; index number of component
@@ -157,14 +159,14 @@ from group 1 to group 2, and correspondence from group 2 to group 1."
              (frob (v next)
                (cond ((= -1 (aref ords next))
                       (visit next)
-                      (setf (aref lowests v)
-                            (min (aref lowests v) (aref lowests next))))
+                      (setf (aref lowlinks v)
+                            (min (aref lowlinks v) (aref lowlinks next))))
                      ((= 1 (aref in-stack next))
-                      (setf (aref lowests v)
-                            (min (aref lowests v) (aref ords next))))))
+                      (setf (aref lowlinks v)
+                            (min (aref lowlinks v) (aref ords next))))))
              (visit (v)
                (setf (aref ords v) ord
-                     (aref lowests v) ord)
+                     (aref lowlinks v) ord)
                (incf ord)
                (%push v)
                (cond ((= v source)
@@ -187,9 +189,10 @@ from group 1 to group 2, and correspondence from group 2 to group 1."
                           (frob v (+ next size1)))))
                      ((= -1 (aref matching2 (- v size1)))
                       (frob v sink))
-                     (t ; (/= -1 (aref matching2 (- v size1)))
+                     (t
+                      ;; (assert (/= -1 (aref matching2 (- v size1))))
                       (frob v (aref matching2 (- v size1)))))
-               (when (= (aref lowests v) (aref ords v))
+               (when (= (aref lowlinks v) (aref ords v))
                  (loop for size of-type (integer 0 #.most-positive-fixnum) from 1
                        for w = (%pop)
                        do (setf (aref components w) comp-index)

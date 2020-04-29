@@ -1,13 +1,13 @@
 ;;;
 ;;; Maximum bipartite matching (Ford-Fulkerson)
-;;; (better to use Hopcroft-Karp instead)
+;;; (Not fast. Better to use Hopcroft-Karp if you need speed)
 ;;;
 ;;; Referene:
 ;;; Akiha, Iwata, Kitagawa. Programming Contest Challenge Book (Japanese)
 ;;;
 
-(declaim (ftype (function * (values (or null (simple-array fixnum (*)))
-                                    (integer 0 #.most-positive-fixnum)
+(declaim (ftype (function * (values (simple-array fixnum (*))
+                                    (mod #.array-total-size-limit)
                                     &optional))
                 find-matching))
 (defun find-matching (graph)
