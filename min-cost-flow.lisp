@@ -2,8 +2,6 @@
 ;;; Minimum cost flow (SSP)
 ;;;
 
-(setf *print-circle* t)
-
 ;; COST-TYPE and +INF-COST+ may be changed. (A supposed use case is to adopt
 ;; bignum).
 (deftype cost-type () 'fixnum)
@@ -16,6 +14,10 @@
   (capacity 0 :type (integer 0 #.most-positive-fixnum))
   (cost 0 :type cost-type)
   (reversed nil :type (or null edge)))
+
+(defmethod print-object ((edge edge) stream)
+  (let ((*print-circle* t))
+    (call-next-method)))
 
 (defun add-edge! (from-idx to-idx capacity cost graph)
   "FROM-IDX, TO-IDX := index of vertex
@@ -110,11 +112,11 @@ GRAPH := vector of list of all the edges that goes from the vertex"
              (not-enough-capacity-error-flow c)
              (not-enough-capacity-error-graph c)))))
 
-(defun min-cost-flow! (src-idx dest-idx flow graph &key density)
+(defun min-cost-flow! (src-idx dest-idx flow graph &key edge-count)
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
-DENSITY := nil | the number of edges (assumed to be (size of GRAPH)*2 if NIL)"
+DENSITY := initial reserved size for heap (it should be the number of edges)"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) flow)
            ((simple-array list (*)) graph))

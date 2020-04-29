@@ -1,9 +1,12 @@
 ;; PAY ATTENTION TO THE STACK SIZE!
-(declaim (ftype (function * (values (or null simple-bit-vector) &optional)) bipartite-p))
+(declaim (inline bipartite-p)
+         (ftype (function * (values (or null simple-bit-vector) &optional)) bipartite-p))
 (defun bipartite-p (graph)
   "Checks if GRAPH is bipartite and returns the vector of colorings if so,
-otherwise returns NIL. GRAPH must be a vector of adjacency lists."
-  (declare ((simple-array list (*)) graph))
+otherwise returns NIL.
+
+GRAPH := vector of adjacency lists"
+  (declare (vector graph))
   (let* ((n (length graph))
          (visited (make-array n :element-type 'bit :initial-element 0))
          (colors (make-array n :element-type 'bit :initial-element 0)))
