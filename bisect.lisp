@@ -18,27 +18,23 @@ monotonically non-decreasing with respect to ORDER.
            ((or null integer) end))
   (macrolet
       ((frob (accessor &optional declaration)
-         `(progn
+         `(labels
+              ((%bisect-left (ng ok)
+                 ;; TARGET[OK] >= VALUE always holds (assuming
+                 ;; TARGET[END] = +infinity)
+                 ,@(when declaration (list declaration))
+                 (if (<= (- ok ng) 1)
+                     ok
+                     (let ((mid (ash (+ ng ok) -1)))
+                       (if (funcall order (funcall key (,accessor target mid)) value)
+                           (%bisect-left mid ok)
+                           (%bisect-left ng mid))))))
             (assert (<= start end))
-            (if (= start end) end
-                (labels
-                    ((%bisect-left (left ok)
-                       ;; TARGET[OK] >= VALUE always holds (assuming
-                       ;; TARGET[END] = +infinity)
-                       ,@(when declaration (list declaration))
-                       (let ((mid (ash (+ left ok) -1)))
-                         (if (= mid left)
-                             (if (funcall order (funcall key (,accessor target left)) value)
-                                 ok
-                                 left)
-                             (if (funcall order (funcall key (,accessor target mid)) value)
-                                 (%bisect-left mid ok)
-                                 (%bisect-left left mid))))))
-                  (%bisect-left start end))))))
+            (%bisect-left (- start 1) end))))
     (etypecase target
       (vector
        (let ((end (or end (length target))))
-         (frob aref (declare ((integer 0 #.most-positive-fixnum) left ok)))))
+         (frob aref (declare ((integer -1 (#.most-positive-fixnum)) ng ok)))))
       (function
        (assert end () "Requires END argument if TARGET is a function.")
        (frob funcall)))))
@@ -63,29 +59,23 @@ respect to ORDER.
            ((or null integer) end))
   (macrolet
       ((frob (accessor &optional declaration)
-         `(progn
+         `(labels
+              ((%bisect-right (ng ok)
+                 ;; TARGET[OK] > VALUE always holds (assuming
+                 ;; TARGET[END] = +infinity)
+                 ,@(when declaration (list declaration))
+                 (if (<= (- ok ng) 1)
+                     ok
+                     (let ((mid (ash (+ ng ok) -1)))
+                       (if (funcall order value (funcall key (,accessor target mid)))
+                           (%bisect-right ng mid)
+                           (%bisect-right mid ok))))))
             (assert (<= start end))
-            (if (= start end)
-                end
-                (labels
-                    ((%bisect-right (left ok)
-                       ;; TARGET[OK] > VALUE always holds (assuming
-                       ;; TARGET[END] = +infinity)
-                       ,@(when declaration (list declaration))
-                       (let ((mid (ash (+ left ok) -1)))
-                         (if (= mid left)
-                             (if (funcall order value (funcall key (,accessor target left)))
-                                 left
-                                 ok)
-                             (if (funcall order value (funcall key (,accessor target mid)))
-                                 (%bisect-right left mid)
-                                 (%bisect-right mid ok))))))
-                  
-                  (%bisect-right start end))))))
+            (%bisect-right (- start 1) end))))
     (etypecase target
       (vector
        (let ((end (or end (length target))))
-         (frob aref (declare ((integer 0 #.most-positive-fixnum) left ok)))))
+         (frob aref (declare ((integer -1 (#.array-total-size-limit)) ng ok)))))
       (function
        (assert end () "Requires END argument if TARGET is a function.")
        (frob funcall)))))
