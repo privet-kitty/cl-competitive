@@ -1,9 +1,11 @@
 ;;;
-;;; Maximum flow (shortest augmenting path algorithm, O(EV^2)
+;;; Maximum flow (shortest augmenting path algorithm, O(EV^2))
 ;;;
 ;;; Reference:
 ;;; Ahuja, Magnanti, Orlin. Network flows
 ;;;
+
+;; NOTE: Not tested. Use dinic.lisp instead
 
 (defconstant +graph-inf-distance+ #xffffffff)
 
