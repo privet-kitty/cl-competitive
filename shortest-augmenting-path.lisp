@@ -30,7 +30,7 @@
 
 (defun add-edge (graph from-idx to-idx capacity &key bidirectional)
   "FROM-IDX, TO-IDX := index of vertex
-GRAPH := vector of lists of all the edges that goes from each vertex
+GRAPH := vector of lists of all the outgoing edges
 
 If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
 capacity in addition."
@@ -75,15 +75,16 @@ capacity in addition."
                      (enqueue to)))))
       dists)))
 
-(defun max-flow! (graph src dest)
-  "Destructively sends the maximum flow from SRC to DEST and returns the amount
+(defun max-flow! (graph src sink)
+  "Destructively sends the maximum flow from SRC to SINK and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) src dest)
+           ((integer 0 #.most-positive-fixnum) src sink)
            ((simple-array list (*)) graph))
+  (assert (/= src sink))
   (let* ((n (length graph))
-         (dists (%make-distance-labels graph dest))
+         (dists (%make-distance-labels graph sink))
          (nums (make-array (+ n 1) :element-type '(unsigned-byte 32) :initial-element 0))
          (preds (make-array n :element-type '(unsigned-byte 32)))
          (subgraph (copy-seq graph))
@@ -106,10 +107,10 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                    ;; advance
                    (setf (aref preds to) node
                          node to)
-                   (when (= node dest)
+                   (when (= node sink)
                      ;; send as much flow as possible along the augmenting path
                      (let ((delta
-                             (loop with v = dest
+                             (loop with v = sink
                                    do (setq v (aref preds v))
                                    minimize (edge-capacity (car (aref subgraph v)))
                                    until (= v src))))
@@ -117,7 +118,7 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                        (when (>= (+ flow delta) most-positive-fixnum)
                          (error 'max-flow-overflow :graph graph))
                        (incf flow delta)
-                       (loop with v = dest
+                       (loop with v = sink
                              do (setq v (aref preds v))
                                 (let ((edge (car (aref subgraph v))))
                                   (decf (edge-capacity edge) delta)
@@ -134,7 +135,9 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                      (when (> (edge-capacity edge) 0)
                        (setq min-label
                              (min min-label (aref dists (edge-to edge))))))
-                   ;; return if a gap occurs in distance labels
+                   ;; return if
+                   ;; 1. a gap occurs in distance labels or
+                   ;; 2. there are no more admissible arcs from source
                    (when (or (= 1 (aref nums current-label))
                              (= min-label +graph-inf-distance+))
                      (return-from max-flow! flow))
