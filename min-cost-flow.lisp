@@ -116,7 +116,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
-DENSITY := initial reserved size for heap (it should be the number of edges)"
+EDGE-COUNT := initial reserved size for heap (it should be the number of edges)"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) flow)
            ((simple-array list (*)) graph))
@@ -124,14 +124,14 @@ DENSITY := initial reserved size for heap (it should be the number of edges)"
                (reduce (lambda (x y) `(,(car form) (the cost-type ,x) (the cost-type ,y)))
 		       (cdr form))))
     (let* ((size (length graph))
-           (density (or density (* size 2)))
+           (edge-count (or edge-count (* size 2)))
            (prev-vertices (make-array size :element-type 'fixnum :initial-element 0))
            (prev-edges (make-array size :element-type 'edge))
            (potential (make-array size :element-type 'cost-type :initial-element 0))
            (dist (make-array size :element-type 'cost-type))
-           (pqueue (make-fheap density))
+           (pqueue (make-fheap edge-count))
            (res 0))
-      (declare (fixnum density)
+      (declare (fixnum edge-count)
                (cost-type res))
       ;; FIXME: Actually we must do Bellman-Ford here to handle negative edges
       ;; properly. Currently this function returns a correct result also for a
