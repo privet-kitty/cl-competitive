@@ -36,6 +36,11 @@ to Q2."
 vector C2. The range is [0, 2PI)."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
+(declaim (inline cross-product))
+(defun cross-product (p1 p2)
+  (- (* (realpart p1) (imagpart p2))
+     (* (imagpart p1) (realpart p2))))
+
 ;; http://www.ambrsoft.com/trigocalc/circle3d.htm
 (declaim (inline calc-circumcenter))
 (defun calc-circumcenter (p1 p2 p3 &optional (eps 1d-8))
