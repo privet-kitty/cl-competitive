@@ -2,9 +2,8 @@
 ;;; Quicksort
 ;;;
 
-;; NOTE: Not tested
-;; NOTE: Not randomized. Shuffling prior to sorting is required to avoid getting
-;; hacked.
+;; NOTE: This quicksort is NOT randomized. You should shuffle an input when you
+;; need to avoid getting hacked.
 
 (declaim (inline %median3))
 (defun %median3 (x y z order)
@@ -51,6 +50,7 @@
     (recur start (- end 1))
     vector))
 
+;; not tested
 (declaim (inline quicksort-by2!))
 (defun quicksort-by2! (vector order)
   "Destructively sorts VECTOR by two elements. This function regards
