@@ -41,6 +41,15 @@ vector C2. The range is [0, 2PI)."
   (- (* (realpart p1) (imagpart p2))
      (* (imagpart p1) (realpart p2))))
 
+(declaim (inline on-line-segment-p))
+(defun on-line-segment-p (point end1 end2 &optional (eps 0))
+  "Returns T iff POINT is on the line segment between END1 and END2."
+  (and (<= (abs (cross-product (- point end1) (- end2 end1))) eps)
+       (or (<= (realpart end1) (realpart point) (realpart end2))
+           (<= (realpart end2) (realpart point) (realpart end1)))
+       (or (<= (imagpart end1) (imagpart point) (imagpart end2))
+           (<= (imagpart end2) (imagpart point) (imagpart end1)))))
+
 ;; http://www.ambrsoft.com/trigocalc/circle3d.htm
 (declaim (inline calc-circumcenter))
 (defun calc-circumcenter (p1 p2 p3 &optional (eps 1d-8))
