@@ -13,7 +13,7 @@
 ;; (Japanese)
 
 (declaim (inline boruvka)
-         (ftype (function * (values integer
+         (ftype (function * (values (simple-array fixnum (*))
                                     (simple-array fixnum (*))
                                     (simple-array fixnum (*))
                                     &optional))
@@ -34,7 +34,7 @@ MAXIMIZE := if true, solve maximization problem instead"
          (min-srcs (make-array n :element-type 'fixnum))
          (min-dests (make-array n :element-type 'fixnum))
          (edge-count 0)
-         (cost-sum 0)
+         (res-costs (make-array (max 0 (- n 1)) :element-type 'fixnum))
          (res-srcs (make-array (max 0 (- n 1)) :element-type 'fixnum))
          (res-dests (make-array (max 0 (- n 1)) :element-type 'fixnum)))
     (dotimes (i n)
@@ -46,7 +46,7 @@ MAXIMIZE := if true, solve maximization problem instead"
                (when (> src dest) (rotatef src dest))
                (setf (aref res-srcs edge-count) src
                      (aref res-dests edge-count) dest
-                     cost-sum (+ cost-sum cost)
+                     (aref res-costs edge-count) (if maximize (- cost) cost)
                      edge-count (+ edge-count 1)))
              (%merge (root1 root2)
                "Merges ROOT2 into ROOT1."
@@ -89,6 +89,6 @@ MAXIMIZE := if true, solve maximization problem instead"
                                     dest (aref min-dests root2)
                                     cost (aref min-costs root2))))))
             while updated)
-      (values (if maximize (- cost-sum) cost-sum)
+      (values (adjust-array res-costs edge-count)
               (adjust-array res-srcs edge-count)
               (adjust-array res-dests edge-count)))))
