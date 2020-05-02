@@ -39,7 +39,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
        (defun ,fname-push (obj heap)
-         "Adds OBJ to the end of HEAP."
+         "Adds OBJ to HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))

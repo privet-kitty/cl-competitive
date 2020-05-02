@@ -42,12 +42,11 @@
                  do (rotatef (aref vector (- i 1)) (aref vector i)))
         finally (return vector)))
 
-
 ;; NOTE: This merge sort is slow on SBCL version earlier than 1.5.0 as the type
 ;; propagation of MAKE-ARRAY doesn't work. array-element-type.lisp is required to
 ;; enable the optimization.
 
-;; TODO: Peephole optimization of SBCL is not sufficient to omit empty KEY
+;; TODO: Peephole optimization of SBCL is not sufficient to optimize empty KEY
 ;; function. Defining deftransform will work.
 (declaim (inline merge-sort!))
 (defun merge-sort! (vector order &key (start 0) end (key #'identity))
@@ -57,7 +56,7 @@ ORDER := strict order"
   (declare (vector vector)
            (function order key))
   (let* ((end (or end (length vector)))
-         ;; TODO: avoid to allocate a buffer of excessive size
+         ;; TODO: avoid to allocate excessive size
          (buffer (make-array end :element-type (array-element-type vector))))
     (declare ((integer 0 #.array-total-size-limit) start end))
     (symbol-macrolet ((vec1 vector) (vec2 buffer))
