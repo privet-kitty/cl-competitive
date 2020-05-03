@@ -6,20 +6,23 @@
 
 (declaim (inline decompose-to-cycles))
 (defun decompose-to-cycles (permutation)
-  "Returns the list of all the cyclic permutations in a given permutation of {0,
-1, ..., N-1}"
+  "Returns the list of all the cyclic permutations in PERMUTATION and returns
+the parity of it as the second value."
   (declare (vector permutation))
   (let* ((n (length permutation))
          result
-         (visited (make-array n :element-type 'bit :initial-element 0)))
+         (visited (make-array n :element-type 'bit :initial-element 0))
+         (sign 0))
+    (declare (bit sign))
     (dotimes (init n)
       (when (zerop (sbit visited init))
         (push (loop for x = init then (aref permutation x)
+                    do (setq sign (logxor sign 1))
                     until (= (sbit visited x) 1)
                     collect x
                     do (setf (sbit visited x) 1))
               result)))
-    result))
+    (values result sign)))
 
 (declaim (inline perm*))
 (defun perm* (perm1 perm2)
