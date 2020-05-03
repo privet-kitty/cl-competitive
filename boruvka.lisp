@@ -19,9 +19,9 @@
                                     &optional))
                 boruvka))
 (defun boruvka (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
-  "Computes an MST by Boruvka's algorithm. Returns three values: minimum total
-cost, two vectors that store each end of the edges. If GRAPH is not connected,
-this function computes MST for each connected component.
+  "Computes an MST by Boruvka's algorithm. Returns three values: a vector that
+stores each cost of the edges, two vectors that store each end of the edges. If
+GRAPH is not connected, this function computes MST for each connected component.
 
 GRAPH := vector of adjacency lists
 MAXIMIZE := if true, solve maximization problem instead"
