@@ -17,7 +17,7 @@
                (incf i2))
               (t
                (when (or (zerop pos)
-                         (funcall predicate (aref result pos) (aref vec1 i1)))
+                         (funcall predicate (aref result (- pos 1)) (aref vec1 i1)))
                  (vector-push-extend (aref vec1 i1) result)
                  (incf pos))
                (incf i1)
