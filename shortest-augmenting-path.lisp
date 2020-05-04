@@ -131,6 +131,9 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                  (let ((min-label +graph-inf-distance+)
                        (current-label (aref dists node)))
                    (declare ((unsigned-byte 32) min-label))
+                   (when (or (= current-label +graph-inf-distance+)
+                             (= 1 (aref nums current-label)))
+                     (return-from max-flow! flow))
                    (dolist (edge (aref graph node))
                      (when (> (edge-capacity edge) 0)
                        (setq min-label
@@ -138,8 +141,7 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
                    ;; return if
                    ;; 1. a gap occurs in distance labels or
                    ;; 2. there are no more admissible arcs from source
-                   (when (or (= 1 (aref nums current-label))
-                             (= min-label +graph-inf-distance+))
+                   (when (= min-label +graph-inf-distance+)
                      (return-from max-flow! flow))
                    (decf (aref nums current-label))
                    (incf (aref nums (+ 1 min-label)))
