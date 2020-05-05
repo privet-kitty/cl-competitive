@@ -16,7 +16,7 @@
              (let ((perm (coerce (loop for i below len collect i) 'vector)))
                (dotimes (i 100)
                  (assert (= (logand i 1)
-                            (nth-value 1 (decompose-to-cycles perm))))
+                            (logand (nth-value 1 (decompose-to-cycles perm)) 1)))
                  (let* ((i (random len))
                         (j (random len)))
                    (loop while (= i j)

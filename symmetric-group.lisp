@@ -7,21 +7,23 @@
 (declaim (inline decompose-to-cycles))
 (defun decompose-to-cycles (permutation)
   "Returns the list of all the cyclic permutations in PERMUTATION and returns
-the parity of it as the second value."
+the parity of it as the second value. (Actually the second value is the distance
+to the identity permutation, (0, 1, ..., N-1), w.r.t. swapping.)"
   (declare (vector permutation))
   (let* ((n (length permutation))
          result
          (visited (make-array n :element-type 'bit :initial-element 0))
          (sign 0))
-    (declare (bit sign))
+    (declare ((integer 0 #.most-positive-fixnum) sign))
     (dotimes (init n)
       (when (zerop (sbit visited init))
         (push (loop for x = init then (aref permutation x)
-                    do (setq sign (logxor sign 1))
                     until (= (sbit visited x) 1)
                     collect x
-                    do (setf (sbit visited x) 1))
-              result)))
+                    do (setf (sbit visited x) 1)
+                       (incf sign))
+              result)
+        (decf sign)))
     (values result sign)))
 
 (declaim (inline perm*))
