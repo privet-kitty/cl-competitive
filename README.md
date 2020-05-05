@@ -61,6 +61,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inversion-number.lisp) counting inversions of vector by merge sort
 - [lis.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/lis.lisp) longest increasing subsequence
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mex.lisp) minimum excludant on non-negative integers
+- [swag.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/swag.lisp) sliding window aggregation
 - [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/sliding-window.lisp) sliding window minimum (or maximum)
 - [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
 - [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
