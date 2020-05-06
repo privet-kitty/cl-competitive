@@ -1,5 +1,7 @@
 ;;;
 ;;; Next permutation (O(n))
+;;; Reference:
+;;; https://www.geeksforgeeks.org/find-the-next-lexicographically-greater-word-than-a-given-word/
 ;;;
 
 (define-condition no-permutation-error (error)
