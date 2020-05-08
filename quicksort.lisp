@@ -1,9 +1,12 @@
 ;;;
-;;; Quicksort
+;;; Quicksort (deterministic median-of-three partitioning)
 ;;;
 
 ;; NOTE: This quicksort is NOT randomized. You should shuffle an input when you
 ;; need to avoid getting hacked.
+
+;; Reference:
+;; Hannu Erkio, The worst case permutation for median-of-three quicksort
 
 (declaim (inline %median3))
 (defun %median3 (x y z order)
@@ -37,9 +40,9 @@
                                    order)))
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
-                         do (incf l 1))
+                         do (incf l))
                    (loop while (funcall order pivot (aref vector r))
-                         do (decf r 1))
+                         do (decf r))
                    (when (>= l r)
                      (return))
                    (rotatef (aref vector l) (aref vector r))
