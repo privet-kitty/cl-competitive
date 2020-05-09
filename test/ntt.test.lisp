@@ -1,0 +1,27 @@
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (load "test-util")
+  (load "../ntt.lisp")
+  (load "../mod-operations.lisp")
+  (load "../polynomial.lisp"))
+
+(define-mod-operations +ntt-mod+)
+
+(use-package :test-util)
+
+(with-test (:name ntt/manual)
+  (assert (equalp #() (ntt-convolute! #() #())))
+  (assert (equalp #(15) (ntt-convolute! #(3) #(5))))
+  (assert (equalp #(998244308 17 2 998244348 1 0 0 0)
+                  (ntt-convolute! #(5 998244350 1 0 0 0 0 0)
+                                  #(998244344 998244351 1 0 0 0 0 0)))))
+
+(with-test (:name ntt/random)
+  (dolist (len '(1 2 4 8))
+    (dotimes (_ 1000)
+      (let ((poly1 (make-array (* len 2) :element-type 'ntt-int :initial-element 0))
+            (poly2 (make-array (* len 2) :element-type 'ntt-int :initial-element 0)))
+        (dotimes (i len)
+          (setf (aref poly1 i) (random +ntt-mod+)
+                (aref poly2 i) (random +ntt-mod+)))
+        (assert (equalp (adjust-array (poly-mult poly1 poly2 +ntt-mod+) (* len 2))
+                        (ntt-convolute! (copy-seq poly1) (copy-seq poly2))))))))
