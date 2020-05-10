@@ -1,10 +1,8 @@
 ;;;
-;;; Quicksort (deterministic median-of-three partitioning)
+;;; Quicksort (randomized median-of-three partitioning)
 ;;;
 
-;; NOTE: This quicksort is NOT randomized. You should shuffle an input when you
-;; need to avoid getting hacked.
-
+;; TODO: Consider worst case of deterministic partitioning
 ;; Reference:
 ;; Hannu Erkio, The worst case permutation for median-of-three quicksort
 
@@ -31,11 +29,12 @@
   (assert (<= 0 start end))
   (labels
       ((recur (left right)
+         (declare ((integer 0 #.most-positive-fixnum) left right))
          (when (< left right)
            (let* ((l left)
                   (r right)
                   (pivot (%median3 (aref vector l)
-                                   (aref vector (ash (+ l r) -1))
+                                   (aref vector (the fixnum (+ l (random (+ 1 (- r l))))))
                                    (aref vector r)
                                    order)))
              (declare ((integer 0 #.most-positive-fixnum) l r))
@@ -60,15 +59,18 @@
 each (VECTOR[i], VECTOR[i+1]) for even i as an element, and compares only the
 first elements (i.e. VECTOR[i] for even i)."
   (declare (vector vector))
+  (assert (evenp (length vector)))
   (labels
       ((recur (left right)
+         (declare ((integer 0 #.most-positive-fixnum) left right))
          (when (< left right)
            (let* ((l left)
                   (r right)
-                  (pivot (%median3 (aref vector l)
-                                   (aref vector (ash (ash (+ l r) -2) 1))
-                                   (aref vector r)
-                                   order)))
+                  (pivot (%median3
+                          (aref vector l)
+                          (aref vector (the fixnum (+ l (logandc2 (random (+ 1 (- r l))) 1))))
+                          (aref vector r)
+                          order)))
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
                          do (incf l 2))
