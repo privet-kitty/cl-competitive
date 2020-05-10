@@ -29,7 +29,7 @@
   (assert (<= 0 start end))
   (labels
       ((recur (left right)
-         (declare ((integer 0 #.most-positive-fixnum) left right))
+         (declare (fixnum left right))
          (when (< left right)
            (let* ((l left)
                   (r right)
@@ -62,7 +62,7 @@ first elements (i.e. VECTOR[i] for even i)."
   (assert (evenp (length vector)))
   (labels
       ((recur (left right)
-         (declare ((integer 0 #.most-positive-fixnum) left right))
+         (declare (fixnum left right))
          (when (< left right)
            (let* ((l left)
                   (r right)
