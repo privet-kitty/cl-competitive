@@ -29,7 +29,7 @@
          node1)))
 
 ;; NOTE: Three implementations are available for MERGE-LIST, each of which has
-;; good points and bad points. Currently the third one is adopeted.
+;; good points and bad points. Currently the third one is adopted.
 
 ;; Implementation 1, naive recursion
 ;; Pros: fastest on SBCL, no consing
@@ -77,7 +77,7 @@
 
 (declaim (inline %pheap-merge-list3))
 (defun %pheap-merge-list3 (node order)
-  (let ((stack (load-time-value (sb-mop:class-prototype (find-class 'pheap)))))
+  (let ((stack (load-time-value (copy-structure (sb-mop:class-prototype (find-class 'pheap))))))
     (setf (%pheap-next stack) nil)
     (loop
       (unless node (return))

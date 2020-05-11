@@ -52,7 +52,6 @@
     (recur start (- end 1))
     vector))
 
-;; not tested
 (declaim (inline quicksort-by2!))
 (defun quicksort-by2! (vector order)
   "Destructively sorts VECTOR by two elements. This function regards
