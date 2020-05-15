@@ -234,6 +234,24 @@ exist.)"
           (t
            (treap-merge (%treap-left treap) (%treap-right treap))))))
 
+(declaim (inline treap-unite))
+(defun treap-unite (treap1 treap2 &key (order #'<))
+  "Merges two treaps with keeping the order."
+  (labels
+      ((recur (l r)
+         (cond ((null l) (when r (force-down r) (force-up r)) r)
+               ((null r) (when l (force-down l) (force-up l)) l)
+               (t (force-down l)
+                  (when (< (%treap-priority l) (%treap-priority r))
+                    (rotatef l r))
+                  (multiple-value-bind (lchild rchild)
+                      (treap-split r (%treap-key l) :order order)
+                    (setf (%treap-left l) (recur (%treap-left l) lchild)
+                          (%treap-right l) (recur (%treap-right l) rchild))
+                    (force-up l)
+                    l)))))
+    (recur treap1 treap2)))
+
 (declaim (inline treap-map))
 (defun treap-map (function treap)
   "Successively applies FUNCTION to TREAP[0], ..., TREAP[SIZE-1]. FUNCTION must
