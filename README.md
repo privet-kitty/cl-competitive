@@ -25,7 +25,8 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 
 ### General data structures
 - [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/queue.lisp) queue by singly-linked list
-- [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/deque.lisp) double-ended queue by ring buffer
+- [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/deque.lisp) double-ended queue with ring buffer
+- [double-stack-deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/double-stack-deque.lisp) double-ended queue with two stacks
 - [abstract-heap](https://github.com/privet-kitty/cl-competitive/blob/master/abstract-heap.lisp) binary heap for static order function
 - [heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/heap.lisp) binary heap for dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/pairing-heap.lisp) meldable heap (pairing heap)
