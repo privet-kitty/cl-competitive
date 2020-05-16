@@ -113,6 +113,48 @@ unmatched vertex, -1 is stored."
     count))
 
 ;; not tested
+(defun coerce-to-bgraph (graph)
+  "Converts adjacency lists representation of undirected graph to
+BIPARTITE-GRAPH.
+
+GRAPH := vector of adjacency lists"
+  (declare (vector graph))
+  (let* ((n (length graph))
+         (visited (make-array n :element-type 'bit :initial-element 0))
+         (colors (make-array n :element-type 'bit :initial-element 0))
+         (nums (make-array n :element-type 'fixnum))
+         (size0 0)
+         (size1 0))
+    (declare ((integer 0 #.most-positive-fixnum) size0 size1))
+    (labels ((dfs (vertex color)
+               (cond ((zerop (aref visited vertex))
+                      (setf (aref visited vertex) 1
+                            (aref colors vertex) color)
+                      (if (zerop color)
+                          (setf (aref nums vertex) size0
+                                size0 (+ size0 1))
+                          (setf (aref nums vertex) size1
+                                size1 (+ size1 1)))
+                      (if (= color 1)
+                          (dolist (neighbor (aref graph vertex))
+                            (dfs neighbor 0))
+                          (dolist (neighbor (aref graph vertex))
+                            (dfs neighbor 1))))
+                     ((/= color (aref colors vertex))
+                      (error "Not bipartite.")))))
+      (dotimes (i n)
+        (when (zerop (aref visited i))
+          (dfs i 1)))
+      (let ((bgraph (make-bgraph size0 size1)))
+        (dotimes (i n)
+          (when (zerop (aref colors i))
+            (let ((i-num (aref nums i)))
+              (dolist (j (aref graph i))
+                (let ((j-num (aref nums j)))
+                  (bgraph-add-edge! bgraph i-num j-num))))))
+        bgraph))))
+
+;; not tested
 (declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*))
                                     (simple-array (integer 0 #.most-positive-fixnum) (*))
                                     &optional))
