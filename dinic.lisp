@@ -23,7 +23,7 @@
   (let ((*print-circle* t))
     (call-next-method)))
 
-(defun push-edge (graph from-idx to-idx capacity &key bidirectional)
+(defun add-edge (graph from-idx to-idx capacity &key bidirectional)
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of lists of all the edges that goes from each vertex
 
