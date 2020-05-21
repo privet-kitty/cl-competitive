@@ -31,7 +31,8 @@
     (assert (rheap-empty-p h))
     (rheap-push #xffffffff h)
     (assert (= #xffffffff (rheap-pop h)))
-    (signals type-error (rheap-push (ash 1 +radix-heap-bit-depth+) h))))
+    (locally (declare #+sbcl (muffle-conditions warning))
+      (signals type-error (rheap-push (ash 1 +radix-heap-bit-depth+) h)))))
 
 (defparameter *state* (sb-ext:seed-random-state 0))
 

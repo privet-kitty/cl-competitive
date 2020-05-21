@@ -23,3 +23,6 @@
     (assert (equalp #2a((1 4) (2 5) (3 6)) (matrix-transpose mat))))
   ;; empty case
   (assert (equalp #2a() (matrix-transpose #2a()))))
+
+(defun test ()
+  (equalp #2a() (matrix-transpose #2a())))

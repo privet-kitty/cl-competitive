@@ -73,9 +73,9 @@
         (when (> x1 x2) (rotatef x1 x2))
         (when (> y1 y2) (rotatef y1 y2))
         (assert (= (rt-count rt x1 y1 x2 y2)
-                   (get-2dcumul counts x1 y1 x2 y2)))
+                   (2dcumul-get counts x1 y1 x2 y2)))
         (assert (= (rt-query rt x1 y1 x2 y2)
-                   (get-2dcumul cumuls x1 y1 x2 y2)))))))
+                   (2dcumul-get cumuls x1 y1 x2 y2)))))))
 
 (defun random-int (inf sup)
   (+ inf (random (- sup inf))))
