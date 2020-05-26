@@ -518,7 +518,7 @@ Note:
 - This function handles a **closed** interval. 
 - This function returns NIL instead if TREAP[<1st key>]+ ... + TREAP[<last
 key>] < VALUE.
-- The prefix sums of TTREAP, (TREAP[<1st key>], TREAP[<1st key>]+TREAP[<2nd
+- The prefix sums of TREAP (TREAP[<1st key>], TREAP[<1st key>] + TREAP[<2nd
 key>], ...) must be monotone w.r.t. ORDER.
 - ORDER must be a strict order"
   (labels
