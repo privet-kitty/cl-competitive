@@ -1,11 +1,20 @@
 ;; This is a decimal reader specialized for the inputs that can be handled
 ;; within the range of FIXNUM. The implementation is based on
 ;; SB-IMPL::MAKE-FLOAT.
-(defun read-simple-float (&optional (in *standard-input*))
-  "Reads a fixed point float in the format of *READ-DEFAULT-FLOAT-FORMAT*.
 
-NOTE: two numbers before and after the decimal point must be within (INTEGER 0
+;; TODO: test
+(declaim (ftype (function * (values rational &optional)) read-decimal))
+(defun read-decimal (&optional (in *standard-input*))
+  "Reads a fixed-point decimal and returns it as a rational.
+
+Example:
+CL-USER> (read-decimal)
+-3.5
+-> -7/2
+
+Note: Two numbers before and after the decimal point must be within (INTEGER 0
 #.MOST-POSITIVE-FIXNUM)."
+  (declare (optimize (speed 3)))
   (macrolet ((%read-byte ()
                `(the (unsigned-byte 8)
                      #+swank (char-code (read-char in nil #\Nul))
@@ -25,14 +34,29 @@ NOTE: two numbers before and after the decimal point must be within (INTEGER 0
       (loop
         (setq byte (%read-byte))
         (if (<= 48 byte 57)
-            (setq number (+ (- byte 48) (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) number))))
+            (setq number
+                  (+ (- byte 48)
+                     (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) number))))
             (return)))
       (when (= byte #.(char-code #\.))
         (loop
           (setq byte (%read-byte))
           (if (<= 48 byte 57)
-              (setq number (+ (- byte 48) (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) number)))
-                    divisor (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) divisor)))
+              (setq number
+                    (+ (- byte 48)
+                       (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) number)))
+                    divisor
+                    (* 10 (the (integer 0 #.(floor most-positive-fixnum 10)) divisor)))
               (return))))
-      (let ((num (coerce (/ number divisor) *read-default-float-format*)))
-        (if minus (- num) num)))))
+      (if minus
+          (- (/ number divisor))
+          (/ number divisor)))))
+
+(declaim (inline read-float)
+         (ftype (function * (values float &optional)) read-float))
+(defun read-float (&optional (in *standard-input*))
+  "Reads a fixed-point decimal in the format of *READ-DEFAULT-FLOAT-FORMAT*.
+
+NOTE: Two numbers before and after the decimal point must be within (INTEGER 0
+#.MOST-POSITIVE-FIXNUM)."
+  (coerce (read-decimal in) *read-default-float-format*))
