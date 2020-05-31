@@ -55,6 +55,7 @@ Note that the version of SBCL is _1.1.14_ on AtCoder.
 - [merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/merge-sort.lisp) merge sort
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binsort.lisp) bin sort; counting sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/map-permutations.lisp) permutation and combination
+- [next-permutation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/next-permutation.lisp) next permutation w.r.t. lexicographical order
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mo.lisp) Mo's algorithm
 - [inverse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/inverse-table.lisp) inverse lookup table of vector
 - [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/adjacent-duplicates.lisp) deletion of adjacent duplicates
