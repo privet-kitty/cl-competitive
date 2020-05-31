@@ -92,7 +92,7 @@
             (setf (aref vector i) (mod* (aref vector i) inv)))))
       vector)))
 
-(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute!))
+(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute))
 (defun ntt-convolute (vector1 vector2 &optional fixed)
   (declare (optimize (speed 3))
            (vector vector1 vector2))

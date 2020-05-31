@@ -1,5 +1,5 @@
 ;;;
-;;; Disjoint set by Union-Find algorithm
+;;; Disjoint set (union by size & path compression)
 ;;;
 
 (defstruct (disjoint-set
