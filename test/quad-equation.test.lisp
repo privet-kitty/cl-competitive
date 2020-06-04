@@ -9,6 +9,7 @@
 
 (with-test (:name quad-equation)
   (loop for a from -50 to 50
+        unless (zerop a)
         do (loop for b from -50 to 50
                  do (loop for c from -50 to 50
                           do (multiple-value-bind (res1 res2) (solve-quad-equation a b c)
