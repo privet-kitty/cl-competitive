@@ -35,10 +35,10 @@ Example:
                   for pos = (bisect -1 end x)
                   do (setf (aref dp pos) x
                            (aref indices pos) i)
-                     (unless (zerop pos)
-                       (setf (aref prevs i) (aref indices (- pos 1))))
-                     (when (= end pos)
-                       (incf end)))
+                  unless (zerop pos)
+                  do (setf (aref prevs i) (aref indices (- pos 1)))
+                  when (= end pos)
+                  do (incf end))
             (let ((res (make-array end :element-type (array-element-type vector))))
               (when (zerop end)
                 (return-from calc-lis (values end res)))
@@ -50,6 +50,6 @@ Example:
           (loop for x across vector
                 for pos = (bisect -1 end x)
                 do (setf (aref dp pos) x)
-                   (when (= end pos)
-                     (incf end))
+                when (= end pos)
+                do (incf end)
                 finally (return (values end nil)))))))

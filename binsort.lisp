@@ -2,8 +2,6 @@
 ;;; Bucket sort and counting sort
 ;;;
 
-;; TODO: enable to deal with any ordered sets.
-
 (declaim (inline map-binsort))
 (defun map-binsort (function sequence range-max &key from-end key)
   "Calls FUNCTION with each ascending non-negative integer in SEQUENCE if KEY is

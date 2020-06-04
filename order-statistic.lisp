@@ -65,12 +65,3 @@ example). Destructively modifies VECTOR."
                      (t
                       (recur (+ mid 1) r (- i delta 1)))))))
     (recur start (or end (- (length vector) 1)) i)))
-
-;; (defun test ()
-;;   (let ((vector (make-array 50 :element-type 'fixnum)))
-;;     (dotimes (i (length vector))
-;;       (setf (aref vector i) (random 10)))
-;;     (let ((sorted (sort (copy-seq vector) #'<)))
-;;       (dotimes (i (length vector))
-;;         (assert (= (aref sorted i)
-;;                    (select-ith! (copy-seq vector) #'< i)))))))
