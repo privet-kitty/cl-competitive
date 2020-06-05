@@ -2,8 +2,8 @@
 ;;; Bucket sort and counting sort
 ;;;
 
-(declaim (inline map-binsort))
-(defun map-binsort (function sequence range-max &key from-end key)
+(declaim (inline map-binsorted))
+(defun map-binsorted (function sequence range-max &key from-end key)
   "Calls FUNCTION with each ascending non-negative integer in SEQUENCE if KEY is
 null. If KEY is non-nil, this function calls FUNCTION with each element of
 SEQUENCE in the order of the (non-negative) integers that (FUNCALL KEY
@@ -45,10 +45,10 @@ non-destructive."
                   do (loop repeat (aref counts x)
                            do (funcall function x)))))))
 
-(defmacro do-binsort ((var sequence range-max &key from-end key finally) &body body)
-  "DO-style macro of MAP-BINSORT"
+(defmacro do-binsorted ((var sequence range-max &key from-end key finally) &body body)
+  "DO-style macro of MAP-BINSORTED"
   `(block nil
-     (map-binsort (lambda (,var) ,@body) ,sequence ,range-max
+     (map-binsorted (lambda (,var) ,@body) ,sequence ,range-max
                     :from-end ,from-end :key ,key)
      ,finally))
 
