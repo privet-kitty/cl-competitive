@@ -26,7 +26,7 @@
 (defun ssp-add-edge (ssp from to cost)
   (let ((cost (if (ssp-maximize ssp) (- cost) cost))
         (size1 (ssp-size1 ssp)))
-    (add-edge! from (+ size1 to) 1 cost (ssp-graph ssp))
+    (add-edge! (ssp-graph ssp) from (+ size1 to) cost 1)
     ssp))
 
 (defun make-ssp (size1 size2 &optional maximize)
@@ -35,9 +35,9 @@
          (source (ssp-source ssp))
          (sink (ssp-sink ssp)))
     (loop for v below size1
-          do (add-edge! source v 1 0 graph))
+          do (add-edge! graph source v 0 1))
     (loop for v from size1 below (+ size1 size2)
-          do (add-edge! v sink 1 0 graph))
+          do (add-edge! graph v sink 0 1))
     ssp))
 
 (defun ssp-compute (ssp flow)
@@ -45,7 +45,7 @@
                (handler-bind ((not-enough-capacity-error
                                 (lambda (c)
                                   (return-from proc (not-enough-capacity-error-score c)))))
-                 (min-cost-flow! (ssp-source ssp) (ssp-sink ssp) flow (ssp-graph ssp))))))
+                 (min-cost-flow! (ssp-graph ssp) (ssp-source ssp) (ssp-sink ssp) flow)))))
     (if (ssp-maximize ssp)
         (- res)
         res)))
