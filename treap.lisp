@@ -8,6 +8,10 @@
   (left nil :type (or null treap))
   (right nil :type (or null treap)))
 
+(declaim (inline treap-key))
+(defun treap-key (treap)
+  (and treap (%treap-key treap)))
+
 (declaim (inline treap-find))
 (defun treap-find (key treap &key (order #'<))
   "Searches the sub-treap of TREAP whose key satisfies (and (not (funcall order
@@ -88,6 +92,7 @@ order. FUNCTION must take one argument."
                    (write key :stream stream))
                  object))))
 
+(declaim (ftype (function * (values (or null treap) &optional)) treap-merge))
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
 smaller (or larger, depending on the order) than those of RIGHT."
@@ -122,6 +127,14 @@ cannot rely on the side effect. Use the returned value."
                     (treap-merge (%treap-left treap) (%treap-right treap))))))
     (recur treap)))
 
+(defmacro treap-push (key treap order)
+  "Pushes KEY to TREAP."
+  `(setf ,treap (treap-insert ,key ,treap :order ,order)))
+
+(defmacro treap-pop (key treap order)
+  "Deletes KEY from TREAP."
+  `(setf ,treap (treap-delete ,key ,treap :order ,order)))
+
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-count))
 (defun treap-count (treap)
   "Counts the number of elements in TREAP in O(n) time."
@@ -135,6 +148,20 @@ cannot rely on the side effect. Use the returned value."
                     (treap-count (%treap-left treap))
                     (treap-count (%treap-right treap))))))
     (recur treap)))
+
+(declaim (inline treap-bisect-left))
+(defun treap-bisect-left (treap key &key (order #'<))
+  "Returns the smallest key equal to or larger than KEY. Returns NIL if KEY is
+larger than any keys in TREAP."
+  (declare ((or null treap) treap)
+           (function order))
+  (labels ((recur (treap)
+             (unless treap (return-from recur nil))
+             (if (funcall order (%treap-key treap) key)
+                 (recur (%treap-right treap))
+                 (or (recur (%treap-left treap))
+                     treap))))
+    (treap-key (recur treap))))
 
 ;; (defun copy-treap (treap)
 ;;   "For development. Recursively copies the whole TREAP."

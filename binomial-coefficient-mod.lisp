@@ -69,7 +69,8 @@ MOST-POSITIVE-FIXNUM. (multinomial) returns 1."
 
 (declaim (inline stirling2))
 (defun stirling2 (n k)
-  "Returns the stirling number of the second kind S2(n, k)."
+  "Returns the stirling number of the second kind S2(n, k). Time complexity is
+O(klog(n))."
   (declare ((integer 0 #.most-positive-fixnum) n k))
   (labels ((mod-power (base exp)
              (declare ((integer 0 #.most-positive-fixnum) base exp))
