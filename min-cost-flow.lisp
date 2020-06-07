@@ -19,7 +19,7 @@
   (let ((*print-circle* t))
     (call-next-method)))
 
-(defun add-edge! (from-idx to-idx capacity cost graph)
+(defun add-edge! (graph from-idx to-idx cost capacity)
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of list of all the edges that goes from the vertex"
   (declare ((simple-array list (*)) graph)
@@ -112,7 +112,7 @@ GRAPH := vector of list of all the edges that goes from the vertex"
              (not-enough-capacity-error-flow c)
              (not-enough-capacity-error-graph c)))))
 
-(defun min-cost-flow! (src-idx dest-idx flow graph &key edge-count)
+(defun min-cost-flow! (graph src-idx dest-idx flow &key edge-count)
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
