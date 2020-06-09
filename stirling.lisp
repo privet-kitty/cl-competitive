@@ -1,5 +1,6 @@
 ;;;
 ;;; S(n, k): Stirling number of the second kind
+;;; Time: O(nk)
 ;;;
 
 (defun make-stirling2-table (size1 size2 modulus)
