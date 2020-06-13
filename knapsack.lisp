@@ -1,10 +1,11 @@
+;; TODO: add document and test
 (defun knapsack-merge (values weights new-value new-weight)
   "Merges new item to the set of possible sum of values and weights. VALUES and
 WEIGHTS must be increasing.
 
 VALUES [WEIGHTS] := increasing sequence of sum of values [weights]"
   (declare (vector values weights)
-           (fixnum new-value new-weight))
+           ((integer 0 #.most-positive-fixnum) new-value new-weight))
   (assert (= (length values) (length weights)))
   (let* ((new-vs (make-array (* 2 (length values)) :element-type 'fixnum))
          (new-ws (make-array (* 2 (length weights)) :element-type 'fixnum))
@@ -19,8 +20,8 @@ VALUES [WEIGHTS] := increasing sequence of sum of values [weights]"
              (fixnum current-w current-v))
     (loop (when (= pos1 len)
             (loop for pos from pos2 below len
-                  for v2 of-type fixnum = (aref values pos)
-                  for w2 of-type fixnum = (aref weights pos)
+                  for v2 of-type (integer 0 #.most-positive-fixnum) = (aref values pos)
+                  for w2 of-type (integer 0 #.most-positive-fixnum) = (aref weights pos)
                   when (and (> (+ v2 new-value) current-v)
                             (> (+ w2 new-weight) current-w))
                   do (setf (aref new-vs end) (+ v2 new-value)
@@ -34,7 +35,7 @@ VALUES [WEIGHTS] := increasing sequence of sum of values [weights]"
                 (w1 (aref weights pos1))
                 (v2 (aref values pos2))
                 (w2 (aref weights pos2)))
-            (declare (fixnum v1 v2 w1 w2))
+            (declare ((integer 0 #.most-positive-fixnum) v1 v2 w1 w2))
             (cond ((< w1 (+ w2 new-weight))
                    (when (and (> w1 current-w)
                               (> v1 current-v))
@@ -55,7 +56,7 @@ VALUES [WEIGHTS] := increasing sequence of sum of values [weights]"
                    (incf pos2))
                   (t ;; (= w1 (+ w2 new-weight))
                    (let ((max-v (max v1 (+ v2 new-value))))
-                     (declare (fixnum max-v))
+                     (declare ((integer 0 #.most-positive-fixnum) max-v))
                      (when (and (> w1 current-w)
                                 (> max-v current-v))
                        (setf (aref new-vs end) max-v
