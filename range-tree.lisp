@@ -20,10 +20,11 @@
 (defconstant +op-identity+ 0
   "identity element w.r.t. OP")
 
-(defstruct (xnode (:constructor make-xnode (xkey ynode left right))
+(defstruct (xnode (:constructor make-xnode (xkey ykey ynode left right))
                   (:conc-name %xnode-)
                   (:copier nil))
   (xkey 0 :type fixnum)
+  (ykey 0 :type fixnum)
   ynode
   left right)
 
@@ -186,14 +187,16 @@ POINTS[i]), otherwise to the value +OP-IDENTITY+."
                         (x (funcall xkey point))
                         (y (funcall ykey point))
                         (value (if value-key (funcall value-key point) +op-identity+)))
-                   (make-xnode x (make-ynode x y nil nil
-                                             :value value
-                                             :accumulator value)
+                   (make-xnode x y
+                               (make-ynode x y nil nil
+                                           :value value
+                                           :accumulator value)
                                nil nil))
                  (let* ((mid (ash (+ l r) -1))
                         (left (build l mid))
                         (right (build mid r)))
                    (make-xnode (funcall xkey (aref points mid))
+                               (funcall ykey (aref points mid))
                                (%ynode-merge (%xnode-ynode left)
                                              (%xnode-ynode right))
                                left right)))))
@@ -309,22 +312,29 @@ positive infinity."
     ;; (declare (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) xrecur yrecur))
     (xrecur range-tree x1 x2)))
 
-;; For development
-(defun list-to-ynode (list &optional length)
-  (declare (list list))
-  (let* ((length (or length (length list)))
-         (max-depth (- (integer-length length) 1)))
-    (labels ((build (depth)
-               (declare ((integer 0 #.most-positive-fixnum) depth))
-               (when list
-                 (if (= depth max-depth)
-                     (make-ynode 0 (pop list) nil nil)
-                     (let ((left (build (+ 1 depth))))
-                       (if (null list)
-                           left
-                           (let* ((med (pop list))
-                                  (right (build (+ 1 depth)))
-                                  (node (make-ynode 0 med left right)))
-                             (force-up node)
-                             node)))))))
-      (build 0))))
+(defun rt-update (range-tree x y delta)
+  "Increments the point (X, Y) by DELTA. (X, Y) must be contained in RANGE-TREE."
+  (declare (fixnum x y delta))
+  (labels ((xrecur (xnode)
+             (declare ((or null xnode) xnode))
+             (when xnode
+               (yrecur (%xnode-ynode xnode))
+               (let ((xkey (%xnode-xkey xnode))
+                     (ykey (%xnode-ykey xnode)))
+                 (if (or (> x xkey)
+                         (and (= x xkey) (>= y ykey)))
+                     (xrecur (%xnode-right xnode))
+                     (xrecur (%xnode-left xnode))))))
+           (yrecur (ynode)
+             (declare ((or null ynode) ynode))
+             (when ynode
+               (let ((xkey (%ynode-xkey ynode))
+                     (ykey (%ynode-ykey ynode)))
+                 (cond ((and (= x xkey) (= y ykey))
+                        (incf (%ynode-value ynode) delta))
+                       ((or (> y ykey)
+                            (and (= y ykey) (>= x xkey)))
+                        (yrecur (%ynode-right ynode)))
+                       (t (yrecur (%ynode-left ynode)))))
+               (ynode-update-accumulator ynode))))
+    (xrecur range-tree)))
