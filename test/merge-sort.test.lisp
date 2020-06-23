@@ -11,13 +11,21 @@
   (sort (displace vector start end) order :key key)
   vector)
 
-(with-test (:name merge-sort)
+(with-test (:name merge-sort/manual)
+  (declare (notinline merge-sort!))
+  (assert (equalp #() (merge-sort! (vector) #'<)))
+  (assert (equalp #(#\a) (merge-sort! (vector #\a) #'< :key #'char-code)))
+  (assert (equalp #(#\a) (merge-sort! (vector #\a) #'> :key #'char-code)))
+  (assert (equalp #(#\a #\b) (merge-sort! (vector #\b #\a) #'< :key #'char-code)))
+  (assert (equalp #(#\b #\a) (merge-sort! (vector #\b #\a) #'> :key #'char-code))))
+
+(with-test (:name merge-sort/random)
   (dotimes (i 100)
     (let ((vec (coerce (loop repeat i collect (random 100)) 'vector)))
       (assert (equalp (sort (copy-seq vec) #'>)
                       (merge-sort! (copy-seq vec) #'>)))))
   (dotimes (i 1000)
-    (let ((vec (coerce (loop repeat 10
+    (let ((vec (coerce (loop repeat 20
                              collect (code-char (+ 97 (random 10))))
                        'vector))
           (start (random 11))

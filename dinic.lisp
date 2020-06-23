@@ -27,7 +27,7 @@
   "FROM-IDX, TO-IDX := index of vertex
 GRAPH := vector of lists of all the edges that goes from each vertex
 
-If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
+If BIDIRECTIONAL is true, ADD-EDGE adds the reversed edge of the same
 capacity in addition."
   (declare (optimize (speed 3))
            ((simple-array list (*)) graph))

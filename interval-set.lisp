@@ -1,5 +1,5 @@
 ;;;
-;;; Ordered set of intervals
+;;; Ordered set of half-open intervals
 ;;;
 
 (defstruct (interval-set (:constructor %make-interval-set
@@ -7,7 +7,8 @@
                               &aux (priority (random most-positive-fixnum))))
                          (:conc-name %iset-))
   "This structure maintains an ordered set of half-open intervals with a
-balanced binary search tree (treap)."
+balanced binary search tree (treap). Every fundamental operation takes O(log(n))
+time."
   (lkey 0 :type fixnum)
   (rkey 0 :type fixnum)
   (priority 0 :type fixnum)
