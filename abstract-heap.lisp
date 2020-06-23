@@ -10,7 +10,7 @@
 
 (defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
   "Defines a binary heap specialized for the given order and the element
-type. This macro defines a structure of the name NAME and relevant functions:
+type. This macro defines a structure of the given NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK."
   (check-type name symbol)

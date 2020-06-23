@@ -1,3 +1,4 @@
+(declaim (ftype (function * (values integer &optional)) read-bignum))
 (defun read-bignum (&optional (in *standard-input*))
   (macrolet ((%read-byte ()
                `(the (unsigned-byte 8)

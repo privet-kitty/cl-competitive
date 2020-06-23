@@ -311,7 +311,7 @@ take one argument."
 (defun treap-reverse (treap)
   "Destructively reverses the order of the whole treap."
   (labels ((recur (treap)
-             (unless (null treap)
+             (when treap
                (let ((left (recur (%treap-left treap)))
                      (right (recur (%treap-right treap))))
                  (setf (%treap-left treap) right
