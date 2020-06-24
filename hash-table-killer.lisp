@@ -13,4 +13,3 @@
       (assert (zerop (mod max min)))
       (loop for i from 1 to size
             collect (* min i)))))
-
