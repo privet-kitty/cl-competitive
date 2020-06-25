@@ -1,3 +1,4 @@
+;; NOTE: If you need efficient data structure, interval-set will be useful.
 (defun mex (&rest args)
   "Returns the minimum non-negative integer not contained in ARGS."
   (let ((table (make-hash-table :test #'eql)))
