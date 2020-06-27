@@ -4,8 +4,8 @@
 
 (use-package :test-util)
 
+(declaim (notinline matrix-rotate matrix-transpose))
 (with-test (:name matrix-rotate)
-  (declare (notinline matrix-rotate))
   (let ((mat #2a((1 2 3) (4 5 6))))
     (assert (equalp #2a((1 2 3) (4 5 6)) (matrix-rotate mat 0)))
     (assert (equalp #2a((3 6) (2 5) (1 4)) (matrix-rotate mat 1)))
