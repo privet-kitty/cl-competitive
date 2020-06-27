@@ -8,7 +8,7 @@
   :order #'<
   :element-type (unsigned-byte 32))
 
-(with-test (:name abstract-heap)
+(with-test (:name abstract-heap/manual)
   (let ((h (make-test-heap 7)))
     (assert (= 0 (test-heap-count h)))
     (dolist (x '(6 18 22 15 27 9 11))
@@ -18,7 +18,13 @@
     (test-heap-push 0 h)
     (assert (= 8 (test-heap-count h)))
     (assert (= 0 (test-heap-peek h)))
-    (assert (equal '(0 6 9 11 15 18 22 27)
+    (test-heap-push 7 h)
+    (assert (= 9 (test-heap-count h)))
+    (assert (= 0 (test-heap-peek h)))
+    (assert (zerop (test-heap-pop h)))
+    (assert (= 8 (test-heap-count h)))
+    (assert (= 6 (test-heap-peek h)))
+    (assert (equal '(6 7 9 11 15 18 22 27)
                    (loop repeat 8 collect (test-heap-pop h))))
     (assert (test-heap-empty-p h))
     (signals heap-empty-error (test-heap-pop h)))
