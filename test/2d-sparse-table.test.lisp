@@ -5,6 +5,7 @@
 (use-package :test-util)
 
 (with-test (:name 2d-sparse-table/manual)
+  (declare (notinline make-2d-sparse-table))
   (assert (equal '(1 1 0 0)
                  (array-dimensions (make-2d-sparse-table #2a() #'min))))
   (let ((table (make-2d-sparse-table #2a((2 1 1 9 6)

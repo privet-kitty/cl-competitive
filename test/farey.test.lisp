@@ -1,7 +1,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (load "test-util")
-  (load "../farey.lisp")
-  (load "../while-collecting.lisp"))
+  (load "../farey.lisp"))
 
 (use-package :test-util)
 
