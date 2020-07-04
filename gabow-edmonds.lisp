@@ -2,14 +2,13 @@
 ;;; Maximum cardinality matching in general unweighted graph (Gabow-Edmonds)
 ;;;
 ;;; Reference:
-;;; Gabow: An Efficient Implementation of Edmonds' Algorithm for Maximum Matching on Graphs
 ;;; https://qiita.com/Kutimoti_T/items/5b579773e0a24d650bdf (Japanese)
 ;;; https://web.archive.org/web/20170620142342/https://min-25.hatenablog.com/entry/2016/11/21/222625 (Japanese)
 ;;;
 
 (defun gabow-edmonds (graph)
   "Computes a maximum matching in an undirected graph. -1 in the returned vector
-expresses no matched vertex.
+expresses an unmatched vertex.
 
 GRAPH := vector of adjacency lists
 
