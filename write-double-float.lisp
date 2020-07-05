@@ -2,6 +2,11 @@
 (defun write-double-float (x &key (max-digits 10)
                                   (stream *standard-output*)
                                   (allow-trailing-point t))
+  "Writes a double float X to STREAM using a fixed-point expression.
+
+MAX-DIGITS is the maximum number of digits after decimal point. The actual
+number of output digits can be less than this number, however. If
+ALLOW-TRAILING-POINT is false, an expression like `123.' is modified to `123.0'"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) max-digits)
            (double-float x))

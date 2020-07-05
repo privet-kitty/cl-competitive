@@ -2,13 +2,19 @@
 ;;; Ordered set of half-open intervals
 ;;;
 
+;; TODO: more rich operations
+
 (defstruct (interval-set (:constructor %make-interval-set
                              (lkey rkey lnode rnode
                               &aux (priority (random most-positive-fixnum))))
                          (:conc-name %iset-))
   "This structure maintains an ordered set of half-open intervals with a
 balanced binary search tree (treap). Every fundamental operation takes expected
-O(log(n)) time."
+O(log(n)) time.
+
+NOTE: For every destructive operation, you cannot rely on a side effect but have
+to use a returned value. (i.e. same as destructive operations to list)
+"
   (lkey 0 :type fixnum)
   (rkey 0 :type fixnum)
   (priority 0 :type fixnum)
@@ -146,6 +152,7 @@ O(log(n)) time."
   `(setf ,iset (iset-insert ,iset ,lkey ,rkey)))
 
 (defmacro iset-push-point (iset key)
+  "Pushes an interval [KEY, KEY+1) to ISET."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
        (setf ,iset (iset-insert ,iset ,tmp (+ ,tmp 1))))))
@@ -194,6 +201,7 @@ O(log(n)) time."
   `(setf ,iset (iset-delete ,iset ,lkey ,rkey)))
 
 (defmacro iset-pop-point (iset key)
+  "POPs an interval [KEY, KEY+1) from ISET."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
        (setf ,iset (iset-delete ,iset ,tmp (+ ,tmp 1))))))
