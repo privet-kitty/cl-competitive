@@ -63,7 +63,8 @@ the string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
 #+swank
 (defun get-clipbrd ()
   (with-output-to-string (out)
-    (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)))
+    #+os-windows (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)
+    #+os-unix (run-program "xsel" () :output out :search t)))
 
 #+swank (defparameter *this-pathname* (uiop:current-lisp-file-pathname))
 #+swank (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *this-pathname*))
