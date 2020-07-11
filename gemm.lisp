@@ -1,30 +1,33 @@
-;;
-;; Matrix multiplication over semiring
-;;
+;;;
+;;; Matrix multiplication over semiring
+;;;
+
+;; NOTE: not tested
 
 ;; NOTE: These funcions are slow on SBCL version earlier than 1.5.6 as the type
 ;; propagation of MAKE-ARRAY doesn't work. The following files are required to
 ;; enable the optimization.
 ;; version < 1.5.0: array-element-type.lisp, make-array-header.lisp
 ;; version < 1.5.6: make-array-header.lisp
+(declaim (inline gemm!))
 (defun gemm! (a b c &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates C := A*B. This function destructively modifies C. (OP+, OP*) must
+  "Computes C := A*B. This function destructively modifies C. (OP+, OP*) must
 comprise a semiring. IDENTITY+ is the identity element w.r.t. OP+."
-  (declare ((simple-array * (* *)) a b c))
+  (declare ((array * (* *)) a b c))
   (dotimes (row (array-dimension a 0))
     (dotimes (col (array-dimension b 1))
       (let ((res identity+))
         (dotimes (k (array-dimension a 1))
-          (setf res
-                (funcall op+ (funcall op* (aref a row k) (aref b k col)))))
+          (setq res
+                (funcall op+ res (funcall op* (aref a row k) (aref b k col)))))
         (setf (aref c row col) res))))
   c)
 
 (declaim (inline gemm))
 (defun gemm (a b &key (op+ #'+) (op* #'*) (identity+ 0))
-  "Calculates A*B. (OP+, OP*) must comprise a semiring. IDENTITY+ is the
-identity element w.r.t. OP+."
-  (declare ((simple-array * (* *)) a b)
+  "Computes A*B. (OP+, OP*) must comprise a semiring. IDENTITY+ is the identity
+element w.r.t. OP+."
+  (declare ((array * (* *)) a b)
            (function op+ op*))
   (let ((c (make-array (list (array-dimension a 0) (array-dimension b 1))
                        :element-type (array-element-type a))))
@@ -32,14 +35,16 @@ identity element w.r.t. OP+."
       (dotimes (col (array-dimension b 1))
         (let ((res identity+))
           (dotimes (k (array-dimension a 1))
-            (setf res
+            (setq res
                   (funcall op+ res (funcall op* (aref a row k) (aref b k col)))))
           (setf (aref c row col) res))))
     c))
 
 (declaim (inline matrix-power))
 (defun matrix-power (base power &key (op+ #'+) (op* #'*) (identity+ 0) (identity* 1))
-  (declare ((simple-array * (* *)) base)
+  "Computes BASE^POWER. (OP+, OP*) must form a semiring. IDENTITY+ [IDENTITY*]
+is the identity element w.r.t. OP+ [OP*]."
+  (declare ((array * (* *)) base)
            (function op+ op*)
            ((integer 0 #.most-positive-fixnum) power))
   (let ((size (array-dimension base 0)))
@@ -64,14 +69,14 @@ identity element w.r.t. OP+."
 (defun gemv (a x &key (op+ #'+) (op* #'*) (identity+ 0))
   "Calculates A*x for a matrix A and a vector x. (OP+, OP*) must form a
 semiring. IDENTITY+ is the identity element w.r.t. OP+."
-  (declare ((simple-array * (* *)) a)
-           ((simple-array * (*)) x)
+  (declare ((array * (* *)) a)
+           ((array * (*)) x)
            (function op+ op*))
   (let ((y (make-array (array-dimension a 0) :element-type (array-element-type x))))
     (dotimes (i (length y))
       (let ((res identity+))
         (dotimes (j (length x))
-          (setf res
+          (setq res
                 (funcall op+ res (funcall op* (aref a i j) (aref x j)))))
         (setf (aref y i) res)))
     y))
