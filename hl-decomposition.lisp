@@ -85,9 +85,9 @@
 
 (declaim (inline hld-map-path))
 (defun hld-map-path (hld vertex1 vertex2 function)
-  "Maps all heavy paths of the given path between VERTEX1 and VERTEX2.
-FUNCTION takes two arguments, which are both ends of a heavy path represented
-in pre-order numbering. Note that they are **closed** intervals."
+  "Maps all heavy paths in the path between given vertices. FUNCTION takes two
+arguments which are both ends of a heavy path represented in pre-order
+numbering. Note that they are **closed** intervals."
   (let ((u vertex1)
         (v vertex2)
         (preords (%hld-preords hld))
