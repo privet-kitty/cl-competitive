@@ -16,11 +16,11 @@ comprise a semiring. IDENTITY+ is the identity element w.r.t. OP+."
   (declare ((array * (* *)) a b c))
   (dotimes (row (array-dimension a 0))
     (dotimes (col (array-dimension b 1))
-      (let ((res identity+))
+      (let ((value identity+))
         (dotimes (k (array-dimension a 1))
-          (setq res
-                (funcall op+ res (funcall op* (aref a row k) (aref b k col)))))
-        (setf (aref c row col) res))))
+          (setq value
+                (funcall op+ value (funcall op* (aref a row k) (aref b k col)))))
+        (setf (aref c row col) value))))
   c)
 
 (declaim (inline gemm))
@@ -33,11 +33,11 @@ element w.r.t. OP+."
                        :element-type (array-element-type a))))
     (dotimes (row (array-dimension a 0))
       (dotimes (col (array-dimension b 1))
-        (let ((res identity+))
+        (let ((value identity+))
           (dotimes (k (array-dimension a 1))
-            (setq res
-                  (funcall op+ res (funcall op* (aref a row k) (aref b k col)))))
-          (setf (aref c row col) res))))
+            (setq value
+                  (funcall op+ value (funcall op* (aref a row k) (aref b k col)))))
+          (setf (aref c row col) value))))
     c))
 
 (declaim (inline matrix-power))
@@ -72,11 +72,11 @@ semiring. IDENTITY+ is the identity element w.r.t. OP+."
   (declare ((array * (* *)) a)
            ((array * (*)) x)
            (function op+ op*))
-  (let ((y (make-array (array-dimension a 0) :element-type (array-element-type x))))
-    (dotimes (i (length y))
-      (let ((res identity+))
+  (let ((res (make-array (array-dimension a 0) :element-type (array-element-type x))))
+    (dotimes (i (length res))
+      (let ((value identity+))
         (dotimes (j (length x))
-          (setq res
-                (funcall op+ res (funcall op* (aref a i j) (aref x j)))))
-        (setf (aref y i) res)))
-    y))
+          (setq value
+                (funcall op+ value (funcall op* (aref a i j) (aref x j)))))
+        (setf (aref res i) value)))
+    res))

@@ -1,6 +1,8 @@
 (declaim (inline mod-power))
 (defun mod-power (base power modulus)
-  "BASE := integer
+  "Returns BASE^POWER mod MODULUS. Note: 0^0 = 1.
+
+BASE := integer
 POWER, MODULUS := non-negative fixnum"
   (declare ((integer 0 #.most-positive-fixnum) modulus power)
            (integer base))
@@ -13,3 +15,4 @@ POWER, MODULUS := non-negative fixnum"
           do (setq base (mod (* base base) modulus)
                    power (ash power -1)))
     res))
+
