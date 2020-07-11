@@ -144,7 +144,7 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 - [buffered-read-line.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/buffered-read-line.lisp) `read-line` into a recycled string
 - [read-fixnum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-fixnum.lisp) faster `read` for fixnum
 - [read-bignum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/read-bignum.lisp) faster `read` for bignum
-- [with-buffered-stdout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-buffered-stdout.lisp) buffering macro for `*standard-output*`
+- [write-double-float.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/write-double-float.lisp) write double-float with fixed-point expression
 
 ### Other utilities
 - [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
