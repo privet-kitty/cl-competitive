@@ -52,16 +52,6 @@
   (defparameter *ntt-base* base)
   (defparameter *ntt-inv-base* inv-base))
 
-;; FIXME: Here I resort to SBCL's behaviour. Actually ADJUST-ARRAY isn't
-;; guaranteed to preserve the given VECTOR.
-(declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
-(defun %adjust-array (vector length)
-  (declare (vector vector))
-  (let ((vector (coerce vector 'ntt-vector)))
-    (if (= (length vector) length)
-        (copy-seq vector)
-        (adjust-array vector length :initial-element 0))))
-
 (declaim (ftype (function * (values ntt-vector &optional)) ntt!))
 (defun ntt! (vector)
   (declare (optimize (speed 3))
@@ -97,7 +87,7 @@
                         (setq w (mod* w (aref base (%tzcount k))))))
       vector)))
 
-(defun inverse-ntt! (vector)
+(defun inverse-ntt! (vector &optional inverse)
   (declare (optimize (speed 3))
            (vector vector))
   (check-ntt-vector vector)
@@ -134,32 +124,30 @@
                                        (aref vector j) (mod* (mod- x y) w)))
                         (incf k)
                         (setq w (mod* w (aref base (%tzcount k))))))
-      (let ((inv-len (%mod-power len (- +ntt-mod+ 2))))
-        (dotimes (i len)
-          (setf (aref vector i) (mod* inv-len (aref vector i)))))
+      (when inverse
+        (let ((inv-len (%mod-power len (- +ntt-mod+ 2))))
+          (dotimes (i len)
+            (setf (aref vector i) (mod* inv-len (aref vector i))))))
       vector)))
 
-(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute!))
-(defun ntt-convolute! (vector1 vector2)
-  (declare (ntt-vector vector1 vector2))
-  (let* ((len1 (length vector1))
-         (len2 (length vector2))
-         (mul-len (- (+ len1 len2) 1))
-         (required-len (sb-int:power-of-two-ceiling mul-len))
-         (vector1 (ntt! (adjust-array vector1 required-len)))
-         (vector2 (ntt! (adjust-array vector2 required-len))))
-    (dotimes (i required-len)
-      (setf (aref vector1 i)
-            (mod (* (aref vector1 i) (aref vector2 i)) +ntt-mod+)))
-    (inverse-ntt! vector1 t)))
+;; FIXME: Here I resort to SBCL's behaviour. Actually ADJUST-ARRAY isn't
+;; guaranteed to preserve the given VECTOR.
+(declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
+(defun %adjust-array (vector length)
+  (declare (vector vector))
+  (let ((vector (coerce vector 'ntt-vector)))
+    (if (= (length vector) length)
+        (copy-seq vector)
+        (adjust-array vector length :initial-element 0))))
 
-;; NOTE: buggy
+;; Change %ADJUST-ARRAY to ADJUST-ARRAY when if what you want is a destructive
+;; operation.
 (declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute))
 (defun ntt-convolute (vector1 vector2 &optional fixed)
   (declare (optimize (speed 3))
            (vector vector1 vector2))
   (let ((len1 (length vector1))
-        (len2 (length vector1)))
+        (len2 (length vector2)))
     (when fixed
       (assert (= len1 len2)))
     (let* ((mul-len (max 0 (- (+ len1 len2) 1)))
@@ -169,8 +157,7 @@
                              (ash 1 (integer-length (max 0 (- mul-len 1))))))
            (vector1 (ntt! (%adjust-array vector1 required-len)))
            (vector2 (ntt! (%adjust-array vector2 required-len))))
-      
       (dotimes (i required-len)
         (setf (aref vector1 i)
               (mod (* (aref vector1 i) (aref vector2 i)) +ntt-mod+)))
-      (inverse-ntt! vector1))))
+      (inverse-ntt! vector1 t))))
