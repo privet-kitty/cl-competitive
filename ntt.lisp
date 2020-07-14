@@ -139,10 +139,9 @@
           (setf (aref vector i) (mod* inv-len (aref vector i)))))
       vector)))
 
-(declaim (ftype (function * (values (simple-array ntt-int (*)) &optional)) ntt-convolute!))
+(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute!))
 (defun ntt-convolute! (vector1 vector2)
-  (declare #.OPT
-           ((simple-array ntt-int (*)) vector1 vector2))
+  (declare (ntt-vector vector1 vector2))
   (let* ((len1 (length vector1))
          (len2 (length vector2))
          (mul-len (- (+ len1 len2) 1))
