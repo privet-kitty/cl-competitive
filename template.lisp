@@ -7,7 +7,12 @@
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
-#-swank (disable-debugger) ; for CS Academy
+
+(defmacro define-int-types (&rest bits)
+  `(progn
+     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))) bits)
+     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))) bits)))
+(define-int-types 2 4 7 8 15 16 31 32 62 63 64)
 
 ;; BEGIN_INSERTED_CONTENTS
 (in-package :cl-user)
@@ -18,12 +23,6 @@
       `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
       `(format *error-output* "~A => ~A~%" ',forms `(,,@forms)))
   #-swank (declare (ignore forms)))
-
-(defmacro define-int-types (&rest bits)
-  `(progn
-     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))) bits)
-     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))) bits)))
-(define-int-types 2 4 7 8 15 16 31 32 62 63 64)
 
 (declaim (inline println))
 (defun println (obj &optional (stream *standard-output*))
