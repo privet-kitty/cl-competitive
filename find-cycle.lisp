@@ -1,31 +1,30 @@
-(declaim (ftype (function * (values list &optional)) find-cycle))
-(defun find-cycle (graph &optional wrap)
-  "Finds a simple cycle in GRAPH and returns a list of vertices. Note that
-this function doesn't detect a cycle of length 1 (i.e. self-loop) or 2.
+(declaim (inline find-cycle))
+(defun find-cycle (graph &key wrap undirected)
+  "Finds a simple cycle in GRAPH and returns a list of vertices. The consequence
+is undefined when GRAPH contains self-loop.
 
 If WRAP is true, this function adds the same vertex to the first and the last of
-the list."
-  (let ((pivot -1)
-        cycle
-        (marked (make-array (length graph) :element-type 'bit :initial-element 0)))
-    (labels ((recur (v prev)
-               (declare ((integer -1 #.most-positive-fixnum) v prev))
-               (when (= 1 (aref marked v))
-                 (setq pivot v)
-                 (when wrap
-                   (push v cycle))
-                 (return-from recur (list v)))
-               (setf (aref marked v) 1)
-               (dolist (neighbor (aref graph v))
-                 (declare ((integer 0 #.most-positive-fixnum) neighbor))
-                 (unless (or (= prev neighbor) (= neighbor v))
-                   (recur neighbor v))
-                 (when (>= pivot 0)
-                   (when (= pivot v)
-                     (return-from find-cycle (cons pivot cycle)))
-                   (push v cycle)
-                   (return)))))
-      (dotimes (v (length graph))
-        (when (zerop (aref marked v))
-          (recur v -1)))
-      nil)))
+the list. If UNDIRECTED is true, this function ignores cycles of length 2."
+  (declare (vector graph))
+  (let* ((n (length graph))
+         (tmp-marked (make-array n :element-type 'bit :initial-element 0))
+         (marked (make-array n :element-type 'bit :initial-element 0)))
+    (labels ((visit (v prev path)
+               (declare (fixnum v prev))
+               (when (= 0 (aref marked v))
+                 (when (= 1 (aref tmp-marked v))
+                   (loop for suffix on (cdr path)
+                         when (= (the fixnum (car suffix)) v)
+                         do (loop-finish)
+                         finally (setf (cdr suffix) nil))
+                   (return-from find-cycle
+                     (nreverse (if wrap path (cdr path)))))
+                 (setf (aref tmp-marked v) 1)
+                 (dolist (next (aref graph v))
+                   (declare (fixnum next))
+                   (unless (and undirected (= prev next))
+                     (visit next v (cons next path))))
+                 (setf (aref marked v) 1))))
+      (dotimes (v n)
+        (when (= 0 (aref marked v))
+          (visit v -1 (list v)))))))
