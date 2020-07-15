@@ -1,6 +1,6 @@
-(declaim (ftype (function * (values list &optional)) detect-cycle))
-(defun detect-cycle (graph &optional wrap)
-  "Detects a simple cycle in GRAPH and returns a list of vertices. Note that
+(declaim (ftype (function * (values list &optional)) find-cycle))
+(defun find-cycle (graph &optional wrap)
+  "Finds a simple cycle in GRAPH and returns a list of vertices. Note that
 this function doesn't detect a cycle of length 1 (i.e. self-loop) or 2.
 
 If WRAP is true, this function adds the same vertex to the first and the last of
@@ -22,7 +22,7 @@ the list."
                    (recur neighbor v))
                  (when (>= pivot 0)
                    (when (= pivot v)
-                     (return-from detect-cycle (cons pivot cycle)))
+                     (return-from find-cycle (cons pivot cycle)))
                    (push v cycle)
                    (return)))))
       (dotimes (v (length graph))
