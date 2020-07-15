@@ -3,7 +3,7 @@
   "Finds a simple cycle in GRAPH and returns a list of vertices. The consequence
 is undefined when GRAPH contains self-loop.
 
-If WRAP is true, this function adds the same vertex to the first and the last of
+If WRAP is true, this function puts the same vertex to the first and the last of
 the list. If UNDIRECTED is true, this function ignores cycles of length 2."
   (declare (vector graph))
   (let* ((n (length graph))
