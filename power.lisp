@@ -2,6 +2,8 @@
 ;;; Calculate a^n on any monoids in O(log(n)) time
 ;;;
 
+;; TODO: test
+;; TODO: non-recursive implementation
 (declaim (inline power))
 (defun power (base exponent op identity)
   "OP := binary operation (comprising a monoid)
