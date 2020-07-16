@@ -57,7 +57,7 @@
 
 (declaim (ftype (function * (values ntt-vector &optional)) ntt!))
 (defun ntt! (vector)
-  (declare (optimize (speed 3))
+  (declare (optimize (speed 3) (safety 0))
            (vector vector))
   (check-ntt-vector vector)
   (labels ((mod* (x y) (mod (* x y) +ntt-mod+))
@@ -91,7 +91,7 @@
       vector)))
 
 (defun inverse-ntt! (vector &optional inverse)
-  (declare (optimize (speed 3))
+  (declare (optimize (speed 3) (safety 0))
            (vector vector))
   (check-ntt-vector vector)
   (labels ((mod* (x y)
@@ -163,6 +163,7 @@
               (mod (* (aref vector1 i) (aref vector2 i)) +ntt-mod+)))
       (adjust-array (inverse-ntt! vector1 t) mul-len))))
 
+(declaim (ftype (function * (values ntt-vector &optional)) ntt-inverse))
 (defun ntt-inverse (poly &optional result-length)
   (declare (optimize (speed 3))
            (vector poly)
@@ -177,10 +178,11 @@
              :operands poly))
     (let ((res (make-array 1
                            :element-type 'ntt-int
-                           :initial-element (%mod-inverse (aref poly 0)))))
+                           :initial-element (%mod-inverse (aref poly 0))))
+          (result-length (or result-length n)))
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
-            while (< i n)
+            while (< i result-length)
             for decr = (ntt-convolute (ntt-convolute res res)
                                       (subseq poly 0 (min (length poly) (* 2 i))))
             for decr-len = (length decr)
@@ -191,10 +193,7 @@
                                  (+ (mod (* 2 (aref res j)) +ntt-mod+)
                                     (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
                             +ntt-mod+))))
-      (if result-length
-          (adjust-array res result-length :initial-element 0)
-          res)
-      )))
+      (adjust-array res result-length))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) ntt-floor))
 (defun ntt-floor (poly1 poly2)
@@ -263,7 +262,8 @@
 (declaim (ftype (function * (values ntt-vector &optional)) multipoint-eval))
 (defun multipoint-eval (poly points)
   (declare (optimize (speed 3))
-           (vector poly points))
+           (vector poly points)
+           #+sbcl (muffle-conditions style-warning))
   (check-ntt-vector points)
   (let* ((poly (coerce poly 'ntt-vector))
          (points (coerce points 'ntt-vector))

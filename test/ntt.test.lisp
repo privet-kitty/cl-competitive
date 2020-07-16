@@ -42,8 +42,7 @@
                  (q (ntt-sub poly1 p)))
             (equalp q (ntt-mod poly1 poly2)))))
       ;; multipoint eval.
-      ;; (let* ((points (make-random-polynomial (ash 1 (random 7))))
-      ;;        (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
-      ;;        (res2 (multipoint-eval poly1 points)))
-      ;;   (assert (equalp res1 res2)))
-      )))
+      (let* ((points (make-random-polynomial (ash 1 (random 7))))
+             (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
+             (res2 (multipoint-eval poly1 points)))
+        (assert (equalp res1 res2))))))
