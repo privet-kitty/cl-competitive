@@ -34,9 +34,16 @@
           (assert (= 1 (aref res 0)))
           (loop for i from 1 below len1
                 do (assert (zerop (aref res i))))))
+      ;; floor and mod
       (block continue
         (handler-bind ((division-by-zero (lambda (c) (declare (ignorable c))
                                            (return-from continue))))
           (let* ((p (ntt-floor poly1 poly2))
                  (q (ntt-sub poly1 p)))
-            (equalp q (ntt-mod poly1 poly2))))))))
+            (equalp q (ntt-mod poly1 poly2)))))
+      ;; multipoint eval.
+      ;; (let* ((points (make-random-polynomial (ash 1 (random 7))))
+      ;;        (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
+      ;;        (res2 (multipoint-eval poly1 points)))
+      ;;   (assert (equalp res1 res2)))
+      )))
