@@ -118,6 +118,7 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 - [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/min-cost-flow.lisp) minimum cost flow (SSP)
 - [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/boruvka.lisp) minimum spanning tree (Borůvka's algorithm)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/topological-sort.lisp) topological sort on DAG
+- [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/find-cycle.lisp) (explicit) cycle detection
 - [dfs-order.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dfs-order.lisp) Euler tour of tree
 - [condensation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/condensation.lisp) strongly connected component of directed graph (Tarjan's algorithm); 2-SAT
 - [block-cut-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/block-cut-tree.lisp) biconnected component of undirected graph; block-cut tree
