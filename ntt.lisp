@@ -28,6 +28,10 @@
                    exp (ash exp -1)))
     res))
 
+(declaim (inline %mod-inverse))
+(defun %mod-inverse (x)
+  (%mod-power x (- +ntt-mod+ 2)))
+
 (defun check-ntt-vector (vector)
   (declare (optimize (speed 3))
            (vector vector))
@@ -36,17 +40,16 @@
     (check-type len ntt-int)))
 
 (defun make-ntt-base ()
-  (labels ((mod-inverse (x) (%mod-power x (- +ntt-mod+ 2))))
-    (let* ((base-size (%tzcount (- +ntt-mod+ 1)))
-           (base (make-array base-size :element-type 'ntt-int))
-           (inv-base (make-array base-size :element-type 'ntt-int)))
-      (dotimes (i base-size)
-        (setf (aref base i)
-              (mod (- (%mod-power +ntt-root+ (ash (- +ntt-mod+ 1) (- (+ i 2)))))
-                   +ntt-mod+)
-              (aref inv-base i)
-              (mod-inverse (aref base i))))
-      (values base inv-base))))
+  (let* ((base-size (%tzcount (- +ntt-mod+ 1)))
+         (base (make-array base-size :element-type 'ntt-int))
+         (inv-base (make-array base-size :element-type 'ntt-int)))
+    (dotimes (i base-size)
+      (setf (aref base i)
+            (mod (- (%mod-power +ntt-root+ (ash (- +ntt-mod+ 1) (- (+ i 2)))))
+                 +ntt-mod+)
+            (aref inv-base i)
+            (%mod-inverse (aref base i))))
+    (values base inv-base)))
 
 (multiple-value-bind (base inv-base) (make-ntt-base)
   (defparameter *ntt-base* base)
@@ -143,21 +146,51 @@
 ;; Change %ADJUST-ARRAY to ADJUST-ARRAY when if what you want is a destructive
 ;; operation.
 (declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute))
-(defun ntt-convolute (vector1 vector2 &optional fixed)
+(defun ntt-convolute (vector1 vector2)
   (declare (optimize (speed 3))
            (vector vector1 vector2))
   (let ((len1 (length vector1))
         (len2 (length vector2)))
-    (when fixed
-      (assert (= len1 len2)))
+    (when (or (zerop len1) (zerop len2))
+      (return-from ntt-convolute (make-array 0 :element-type 'ntt-int)))
     (let* ((mul-len (max 0 (- (+ len1 len2) 1)))
            ;; power of two ceiling
-           (required-len (if fixed
-                             len1
-                             (ash 1 (integer-length (max 0 (- mul-len 1))))))
+           (required-len (ash 1 (integer-length (max 0 (- mul-len 1)))))
            (vector1 (ntt! (%adjust-array vector1 required-len)))
            (vector2 (ntt! (%adjust-array vector2 required-len))))
       (dotimes (i required-len)
         (setf (aref vector1 i)
               (mod (* (aref vector1 i) (aref vector2 i)) +ntt-mod+)))
-      (inverse-ntt! vector1 t))))
+      (adjust-array (inverse-ntt! vector1 t) mul-len))))
+
+(defun ntt-inverse (vector &optional result-length)
+  (declare (optimize (speed 3))
+           (vector vector)
+           ((or null fixnum) result-length))
+  (let* ((vector (coerce vector 'ntt-vector))
+         (n (length vector)))
+    (declare (ntt-vector vector))
+    (when (or (zerop n)
+              (zerop (aref vector 0)))
+      (error 'division-by-zero
+             :operation #'ntt-inverse
+             :operands vector))
+    (let ((res (make-array 1
+                           :element-type 'ntt-int
+                           :initial-element (%mod-inverse (aref vector 0)))))
+      (declare (ntt-vector res))
+      (loop for i of-type ntt-int = 1 then (ash i 1)
+            while (< i n)
+            for decr = (ntt-convolute (ntt-convolute res res)
+                                      (subseq vector 0 (min (length vector) (* 2 i))))
+            for decr-len = (length decr)
+            do (setq res (adjust-array res (* 2 i) :initial-element 0))
+               (dotimes (j (* 2 i))
+                 (setf (aref res j)
+                       (mod (the ntt-int
+                                 (+ (mod (* 2 (aref res j)) +ntt-mod+)
+                                    (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
+                            +ntt-mod+))))
+      (if result-length
+          (adjust-array res result-length :initial-element 0)
+          res))))

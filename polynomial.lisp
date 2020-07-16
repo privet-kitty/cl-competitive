@@ -16,30 +16,28 @@
 ;; naive multiplication in O(n^2)
 (declaim (inline poly-mult))
 (defun poly-mult (u v modulus &optional result-vector)
-  "Multiplies u(x) and v(x) over Z/nZ in O(deg(u)deg(v)) time.
+  "Multiplies two polynomials u(x) and v(x) over Z/nZ in O(deg(u)deg(v)) time.
 
 The result is stored in RESULT-VECTOR if it is given, otherwise a new vector is
 created."
   (declare (vector u v)
            ((or null vector) result-vector)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((deg1 (loop for i from (- (length u) 1) downto 0
-                     while (zerop (aref u i))
-                     finally (return i)))
-         (deg2 (loop for i from (- (length v) 1) downto 0
-                     while (zerop (aref v i))
-                     finally (return i)))
-         (len (max 0 (+ deg1 deg2 1)))
-         (res (or result-vector (make-array len :element-type (array-element-type u)))))
+  (let* ((deg1 (- (length u) 1))
+         (deg2 (- (length v) 1))
+         (len (max 0 (+ deg1 deg2 1))))
     (declare ((integer -1 (#.array-total-size-limit)) deg1 deg2 len))
-    (dotimes (d len res)
-      ;; 0 <= i <= deg1, 0 <= j <= deg2
-      (loop with coef of-type (integer 0 #.most-positive-fixnum) = 0
-            for i from (max 0 (- d deg2)) to (min d deg1)
-            for j = (- d i)
-            do (setq coef (mod (+ coef (* (aref u i) (aref v j)))
-                               modulus))
-            finally (setf (aref res d) coef)))))
+    (when (or (= -1 deg1) (= -1 deg2))
+      (return-from poly-mult (make-array 0 :element-type (array-element-type u))))
+    (let ((res (or result-vector (make-array len :element-type (array-element-type u)))))
+      (declare ((integer -1 (#.array-total-size-limit)) len))
+      (dotimes (d len res)
+        ;; 0 <= i <= deg1, 0 <= j <= deg2
+        (loop with coef of-type (integer 0 #.most-positive-fixnum) = 0
+              for i from (max 0 (- d deg2)) to (min d deg1)
+              for j = (- d i)
+              do (setq coef (mod (+ coef (* (aref u i) (aref v j))) modulus))
+              finally (setf (aref res d) coef))))))
 
 (declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) %mod-inverse))
 (defun %mod-inverse (a modulus)
