@@ -11,8 +11,7 @@
              (max-flow-overflow-graph condition)))))
 
 (defstruct (edge (:constructor %make-edge
-                     (to capacity reversed
-                      &aux (default-capacity capacity))))
+                     (to capacity reversed &aux (default-capacity capacity))))
   (to nil :type (integer 0 #.most-positive-fixnum))
   (capacity 0 :type (integer 0 #.most-positive-fixnum))
   (default-capacity 0 :type (integer 0 #.most-positive-fixnum))

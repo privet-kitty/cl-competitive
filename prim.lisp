@@ -1,6 +1,6 @@
 ;;;
 ;;; MST (Prim's algorithm)
-;;; (Obsolete. I leave it just for my reference.)
+;;; (Poorly implemented and obsolete. I leave it just for my reference.)
 ;;;
 
 (defstruct edge
