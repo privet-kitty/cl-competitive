@@ -6,7 +6,7 @@
 
 
 (with-test (:name heap)
-  (let ((h (make-heap 7 :test #'< :element-type '(unsigned-byte 32))))
+  (let ((h (make-heap 7 :order #'< :element-type '(unsigned-byte 32))))
     (dolist (o (list 7 18 22 15 27 9 11))
       (heap-push o h))
     (heap-push 0 h)
