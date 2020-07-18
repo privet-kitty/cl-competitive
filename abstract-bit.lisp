@@ -9,18 +9,19 @@ ORDER := nil | strict comparison operator on the monoid
 SUM-TYPE := nil | type specifier
 
 Defines no structure; BIT is just a vector. This macro defines the three
-functions: <NAME>-UPDATE!, point-update function, <NAME>-SUM, query function for
+functions: <NAME>-UPDATE!, point-update function, <NAME>-FOLD, query function for
 prefix sum, and COERCE-TO-<NAME>!, constructor. If ORDER is specified, this
 macro in addition defines <NAME>-BISECT-LEFT and <NAME>-BISECT-RIGHT, the
 bisection functions for prefix sums. (Note that these functions work only when
 the sequence of prefix sums (VECTOR[0], VECTOR[0]+VECTOR[1], ...) is monotone.)
 
 SUM-TYPE is used only for the type declaration: each sum
-VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. (The
-element-type of vector itself doesn't need to be SUM-TYPE.)"
+VECTOR[i]+VECTOR[i+1]...+VECTOR[i+k] is declared to be this type. When SUM-TYPE
+is NIL, type declaration is omitted. (The array-element-type of vector itself
+doesn't need to be identical to SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
-         (fname-sum (intern (format nil "~A-SUM" name)))
+         (fname-fold (intern (format nil "~A-FOLD" name)))
          (fname-coerce (intern (format nil "COERCE-TO-~A!" name)))
          (fname-bisect-left (intern (format nil "~A-BISECT-LEFT" name)))
          (fname-bisect-right (intern (format nil "~A-BISECT-RIGHT" name))))
@@ -36,8 +37,8 @@ DELTA"
              (setf (aref bitree i)
                    (funcall ,operator (aref bitree i) delta)))))
 
-       (declaim (inline ,fname-sum))
-       (defun ,fname-sum (bitree end)
+       (declaim (inline ,fname-fold))
+       (defun ,fname-fold (bitree end)
          "Returns the sum of the prefix: vector[0] + ... + vector[END-1]."
          (declare ((integer 0 #.most-positive-fixnum) end))
          (let ((res ,identity))
@@ -49,9 +50,9 @@ DELTA"
 
        (declaim (inline ,fname-coerce))
        (defun ,fname-coerce (vector)
-         "Destructively constructs BIT from VECTOR. (You will not need to call
+         "Destructively constructs BIT from VECTOR. (You doesn't need to call
 this constructor if what you need is a `zero-filled' BIT, because a vector
-filled with the identity elements is a valid BIT as it is.)"
+filled with the identity element is a valid BIT as it is.)"
          (loop with len = (length vector)
                for i below len
                for dest-i = (logior i (+ i 1))
@@ -142,7 +143,7 @@ interval."
     (loop for j below len
           for element = (aref vector j)
           for compressed = (gethash element inv-lookup-table)
-          for delta of-type integer = (- j (bitree-sum bitree (1+ compressed)))
+          for delta of-type integer = (- j (bitree-fold bitree (1+ compressed)))
           do (incf inversion-number delta)
              (bitree-update! bitree compressed 1))
     inversion-number))
