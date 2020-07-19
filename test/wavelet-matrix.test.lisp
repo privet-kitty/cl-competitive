@@ -13,7 +13,7 @@
                   (* sb-vm:n-word-bits (ceiling n sb-vm:n-word-bits)))))
 
 (with-test (:name compact-bit-vector)
-  (let ((cbv (make-cbv! #*101101)))
+  (let ((cbv (make-compact-bit-vector! #*101101)))
     (assert (= 0 (cbv-rank cbv 0)))
     (assert (= 1 (cbv-rank cbv 1)))
     (assert (= 1 (cbv-rank cbv 2)))
@@ -30,7 +30,7 @@
     (signals error (cbv-select cbv 5)))
   
   ;; null case
-  (let ((cbv (make-cbv! #*)))
+  (let ((cbv (make-compact-bit-vector! #*)))
     (assert (= 0 (cbv-rank cbv 0)))
     (assert (= 0 (cbv-select cbv 0))))
 
@@ -38,7 +38,7 @@
   (let* ((vec (let ((tmp (make-array 10000 :element-type 'bit)))
                 (dotimes (i (length tmp) tmp)
                   (setf (aref tmp i) (random 2 *state*)))))
-         (cbv (make-cbv! vec))
+         (cbv (make-compact-bit-vector! vec))
          (sum 0))
     (assert (zerop (cbv-select cbv 0)))
     (dotimes (i (length vec))
@@ -51,7 +51,7 @@
   (let* ((vec (let ((tmp (make-array (* 10 sb-vm:n-word-bits) :element-type 'bit)))
                 (dotimes (i (length tmp) tmp)
                   (setf (aref tmp i) (random 2 *state*)))))
-         (cbv (make-cbv! vec))
+         (cbv (make-compact-bit-vector! vec))
          (sum 0))
     (assert (zerop (cbv-select cbv 0)))
     (dotimes (i (length vec))
@@ -69,7 +69,7 @@
       (wavelet-map-frequency (lambda (x y) (error "Huh?")) w 0 10 0 1))))
 
 (with-test (:name wavelet-matrix/manual)
-  ;; MitI_7's example (http://miti-7.hatenablog.com/entry/2018/04/28/152259)
+  ;; Miti_7's example (http://miti-7.hatenablog.com/entry/2018/04/28/152259)
   (let* ((miti7 (vector 5 4 5 5 2 1 5 6 1 3 5 0))
          (w (make-wavelet 3 miti7))
          (data (wavelet-data w)))

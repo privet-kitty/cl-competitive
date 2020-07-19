@@ -2,9 +2,9 @@
 ;;; Compact bit vector
 ;;;
 
-;; NOTE: I adopt compact bit vector with POPCNT instruction because it is
-;; usually better than the typical three-layer succinct bit vector (at least in
-;; competitive programming).
+;; NOTE: As a result of benchmark, I adopted compact bit vector with POPCNT
+;; instruction. (Typical three-layer implementation of succinct bit vector is
+;; put in succinct-bit-vector.lisp)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
@@ -15,7 +15,7 @@
   (storage nil :type simple-bit-vector)
   (blocks nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
  
-(defun make-cbv! (vector)
+(defun make-compact-bit-vector! (vector)
   "The consequence is undefined when VECTOR is modified after a compact bit
 vector is created."
   (declare (optimize (speed 3)))
@@ -152,7 +152,7 @@ returns 0."
                        (setf (aref rights rpos) (aref tmp i)
                              rpos (+ rpos 1)))
                    (setf (aref bits i) bit)))
-               (setf (aref data d) (make-cbv! (copy-seq bits))
+               (setf (aref data d) (make-compact-bit-vector! (copy-seq bits))
                      (aref zeros d) lpos)
                (rotatef lefts tmp)
                (replace tmp rights :start1 lpos :end2 rpos)))
