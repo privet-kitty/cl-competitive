@@ -433,8 +433,22 @@ be NIL, then it is regarded as the (negative or positive) infinity."
                  (force-up treap)))))
     (recur treap)))
 
+(defun treap-first (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-left treap)
+      (treap-first (%treap-left treap))
+      (%treap-key treap)))
+
+(defun treap-last (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-right treap)
+      (treap-last (%treap-right treap))
+      (%treap-key treap)))
+
 ;;;
-;;; Bisection search for key
+;;; Bisection search w.r.t. key
 ;;;
 
 ;; NOTE: These functions intentionally don't return the assigned value. That is

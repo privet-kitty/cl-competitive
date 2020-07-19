@@ -133,7 +133,7 @@ interval."
     (dotimes (i (length vector) table)
       (setf (gethash (aref vector i) table) i))))
 
-(defun calc-inversion-number (vector &key (order #'<))
+(defun count-inversions (vector &key (order #'<))
   (declare (vector vector))
   (let* ((len (length vector))
          (inv-lookup-table (make-inverse-lookup-table (sort (copy-seq vector) order)))
@@ -149,9 +149,9 @@ interval."
     inversion-number))
 
 (progn
-  (assert (= 3 (calc-inversion-number #(2 4 1 3 5))))
-  (assert (zerop (calc-inversion-number #(0))))
-  (assert (zerop (calc-inversion-number #())))
-  (assert (zerop (calc-inversion-number #(1 2))))
-  (assert (= 1 (calc-inversion-number #(2 1)))))
+  (assert (= 3 (count-inversions #(2 4 1 3 5))))
+  (assert (zerop (count-inversions #(0))))
+  (assert (zerop (count-inversions #())))
+  (assert (zerop (count-inversions #(1 2))))
+  (assert (= 1 (count-inversions #(2 1)))))
 ;|#

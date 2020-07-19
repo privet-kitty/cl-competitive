@@ -1,8 +1,9 @@
 ;;;
-;;; 1-dimensional segment tree on arbitrary monoid
+;;; 1-dimensional segment tree on arbitrary monoid (bottom-up implementation)
 ;;;
 
 ;; TODO: test
+;; TODO: binary search
 
 (defmacro define-segtree (name &key (operator '#'+) (identity 0) element-type)
   "OPERATOR := binary operator (comprising a monoid)
@@ -22,7 +23,7 @@ This macro defines three functions: <NAME>-REF, index-access function,
        (defstruct (,name (:constructor ,fname-%make
                              (vector &aux (n (ash (+ 1 (length vector)) -1))))
                          (:conc-name ,conc-name))
-         (n nil :type ,element-type)
+         (n nil :type (integer 0 #.(floor array-total-size-limit 2)))
          (vector nil :type (simple-array ,element-type (*))))
        (declaim (inline ,fname-make))
        (defun ,fname-make (size &key (initial-element ,identity) initial-contents)

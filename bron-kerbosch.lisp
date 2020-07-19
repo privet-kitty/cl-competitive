@@ -21,7 +21,7 @@ vertex i."
                    (when (zerop x)
                      (let ((size (logcount r)))
                        (when (> size result-size)
-                         (setf result-set r
+                         (setq result-set r
                                result-size size))))
                    (let ((pivot 0)
                          (max -1)
@@ -32,7 +32,7 @@ vertex i."
                            do (when (logbitp u p-or-x)
                                 (let ((num-neighbors (logcount (logand p (aref neighbors u)))))
                                   (when (> num-neighbors max)
-                                    (setf pivot u
+                                    (setq pivot u
                                           max num-neighbors)))))
                      (let ((pivot-neighbors (logandc2 p (aref neighbors pivot))))
                        (unless (zerop pivot-neighbors)
