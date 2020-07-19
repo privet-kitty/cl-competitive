@@ -29,6 +29,7 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 - [heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/heap.lisp) binary heap for dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/pairing-heap.lisp) meldable heap (pairing heap)
 - [radix-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/radix-heap.lisp) radix heap
+- [abstract-segtree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/abstract-segtree.lisp) segment tree on arbitrary monoid
 - [abstract-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/abstract-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
 - [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/binary-indexed-tree.lisp) binary indexed tree (specialized for ordinary `+`)
 - [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/2d-bit.lisp) 2D binary indexed tree
