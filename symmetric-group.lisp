@@ -29,7 +29,7 @@ to the identity permutation, (0, 1, ..., N-1), w.r.t. swapping.)"
 (declaim (inline perm*))
 (defun perm* (perm1 perm2)
   "Composes two permutations. (Actually the arguments doesn't need to be
-permutations. This is just a composition of two functions.)"
+permutations. This is just a composition of two maps.)"
   (let* ((n (length perm1))
          (result (make-array n :element-type 'fixnum)))
     (dotimes (i n)
