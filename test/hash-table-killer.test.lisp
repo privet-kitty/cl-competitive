@@ -6,7 +6,7 @@
 
 (defun hash-collide-p (size max timeout)
   (let ((table (make-hash-table :size size :test #'eq))
-        (keys (make-killer-list size max)))
+        (keys (make-killer-sequence2 size max)))
     (sb-int:with-progressive-timeout (get-remaining-time :seconds timeout)
       (dolist (key keys)
         (when (zerop (get-remaining-time))
