@@ -7,8 +7,8 @@
 (declaim (inline decompose-to-cycles))
 (defun decompose-to-cycles (permutation)
   "Returns the list of all the cyclic permutations in PERMUTATION and returns
-the parity of it as the second value. (Actually the second value is the distance
-to the identity permutation, (0, 1, ..., N-1), w.r.t. swapping.)"
+its parity as the second value. (Actually the second value is the distance to
+the identity permutation, (0, 1, ..., N-1), w.r.t. swapping.)"
   (declare (vector permutation))
   (let* ((n (length permutation))
          result

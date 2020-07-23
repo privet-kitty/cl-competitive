@@ -9,8 +9,8 @@ X = 0. Ignores the negative sign.)"
         until (zerop y)
         finally (return length)))
 
-(declaim (inline digit-sum))
-(defun digit-sum (x &optional (radix 10))
+(declaim (inline digital-sum))
+(defun digital-sum (x &optional (radix 10))
   "Returns the sum of the each digit of X w.r.t. RADIX. (Returns 0 when X =
 0. Ignores the negative sign.)"
   (declare (integer x)

@@ -1,5 +1,5 @@
 ;;;
-;;; Extended Eratosthenes' sieve (aka osa_k's method in Japanese community)
+;;; Extended Eratosthenes' sieve
 ;;;
 ;;; build: O(nloglogn)
 ;;; With this sieve each prime factorization can be executed in O(log(n)), which
@@ -9,6 +9,8 @@
 ;;; https://cp-algorithms.com/algebra/prime-sieve-linear.html
 ;;;
 
+(declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*)) &optional))
+                make-minfactor-table))
 (defun make-minfactor-table (sup)
   "Returns a vector of length SUP, whose (0-based) i-th value is the minimal
 prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.)"
@@ -51,3 +53,20 @@ MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal prime factor of k)"
                                (loop-finish)))
                       finally (return (cons prime exponent)))))
 
+
+(declaim (inline euler-phi))
+(defun euler-phi (x minfactor-table)
+  (declare (fixnum x)
+           (vector minfactor-table))
+  (setq x (abs x))
+  (assert (< x (length minfactor-table)))
+  (let ((res x))
+    (declare ((integer 0 #.most-positive-fixnum) res))
+    (loop until (= x 1)
+          for prime of-type (integer 0 #.most-positive-fixnum) = (aref minfactor-table x)
+          do (decf res (floor res prime))
+             (loop (multiple-value-bind (quot rem) (floor x prime)
+                     (if (zerop rem)
+                         (setq x quot)
+                         (return)))))
+    res))
