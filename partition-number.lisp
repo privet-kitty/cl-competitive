@@ -8,30 +8,23 @@
 ;;; P(n, k) = P(n, n) (k > n)
 ;;;
 
-;: TODO: non-global handling
-(defconstant +partition-sum-sup+ 1100) ; exclusive upper bound of n
-(defconstant +partition-sup+ 1100) ; exclusive upper bound of k
-(defconstant +partition-mod+ #.(+ (expt 10 9) 7))
-
-(declaim ((simple-array (unsigned-byte 32) (#.+partition-sum-sup+ #.+partition-sup+)) *partition*))
-(defparameter *partition*
-  (make-array (list +partition-sum-sup+ +partition-sup+)
-              :element-type '(unsigned-byte 32)
-              :initial-element 0))
-
-(defun initialize-partition ()
-  "Fills *PARTITION* by using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
+(declaim (inline make-partition-number-table))
+(defun make-partition-number-table
+    (sup-n sup-k modulus &key (element-type '(unsigned-byte 31)))
+  "Builds table using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
 k)."
-  (dotimes (k +partition-sup+)
-    (setf (aref *partition* 0 k) 1))
-  (loop for n from 1 below +partition-sum-sup+
-        do (loop for k from 1 below +partition-sup+
-                 do (if (> k n)
-                        (setf (aref *partition* n k)
-                              (aref *partition* n n))
-                        (setf (aref *partition* n k)
-                              (mod (+ (aref *partition* n (- k 1))
-                                      (aref *partition* (- n k) k))
-                                   +partition-mod+))))))
-
-(initialize-partition)
+  (declare ((mod #.array-total-size-limit) sup-n sup-k)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((res (make-array (list sup-n sup-k) :element-type element-type)))
+    (dotimes (k sup-k)
+      (setf (aref res 0 k) 1))
+    (loop for n from 1 below sup-n
+          do (loop for k from 1 below sup-k
+                   do (if (> k n)
+                          (setf (aref res n k)
+                                (aref res n n))
+                          (setf (aref res n k)
+                                (mod (+ (aref res n (- k 1))
+                                        (aref res (- n k) k))
+                                     modulus)))))
+    res))
