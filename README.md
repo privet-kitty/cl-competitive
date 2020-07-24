@@ -150,6 +150,7 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 
 ### Other utilities
 - [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/template.lisp) template code
+- [mpfr.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/mpfr.lisp) header to load SB-MPFR
 - [with-cache.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/with-cache.lisp) memoization of function
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/dotimes-unroll.lisp) loop unrolling
 - [placeholder-syntax.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/placeholder-syntax.lisp) Clojure-style placeholder syntax
