@@ -28,3 +28,29 @@ k)."
                                         (aref res (- n k) k))
                                      modulus)))))
     res))
+
+;; TODO: arbitrary element-type
+(declaim (ftype (function * (values (simple-array (unsigned-byte 31) (*)) &optional))
+                make-partition-number-sequence))
+(defun make-partition-number-sequence (sup-n modulus)
+  (declare ((mod #.array-total-size-limit) sup-n)
+           ((unsigned-byte 31) modulus))
+  (let ((res (make-array sup-n :element-type '(unsigned-byte 31) :initial-element 0)))
+    (setf (aref res 0) 1)
+    (loop for n from 1 below sup-n
+          for value of-type fixnum = 0
+          for sqrt = (isqrt (+ 1 (* 24 n)))
+          do (loop for j from 1 to (floor (+ sqrt 1) 6)
+                   for index = (- n (floor (* j (- (* 3 j) 1)) 2))
+                   when (oddp j)
+                   do (incf value (aref res index))
+                   else
+                   do (decf value (aref res index)))
+             (loop for j from 1 to (floor (- sqrt 1) 6)
+                   for index = (- n (floor (* j (+ (* 3 j) 1)) 2))
+                   when (oddp j)
+                   do (incf value (aref res index))
+                   else
+                   do (decf value (aref res index)))
+             (setf (aref res n) (mod value modulus)))
+    res))
