@@ -10,25 +10,32 @@ numerator and denominator."
   (declare (list cfrac))
   (if (endp cfrac)
       (values 1 0)
-      (multiple-value-bind (x y) (calc (cdr cfrac))
+      (multiple-value-bind (x y) (numerize-cfrac (cdr cfrac))
         (rotatef x y)
         (values (+ x (* y (car cfrac))) y))))
 
-(defun calc-cfrac-of-sqrt (x)
+(defun calc-cfrac-of-sqrt (x &optional length)
   "Returns the periodic continued fraction of sqrt(X)."
-  (declare ((integer 1 #.most-positive-fixnum) x))
+  (declare ((integer 1 #.most-positive-fixnum) x)
+           ((or null (integer 1 #.most-positive-fixnum)) length))
   (let* ((sqrt (isqrt x))
          (p 0)
          (q 1)
          (a sqrt))
     (declare ((integer 0 #.most-positive-fixnum) p q a))
-    (cons sqrt
-          (unless (= x (* sqrt sqrt))
-            (loop do (setq p (- (* a q) p)
-                           q (floor (- x (* p p)) q)
-                           a (floor (+ sqrt p) q))
-                  collect a
-                  until (= q 1))))))
+    (labels ((update ()
+               (setq p (- (* a q) p)
+                     q (floor (- x (* p p)) q)
+                     a (floor (+ sqrt p) q))))
+      (cons sqrt
+            (unless (= x (* sqrt sqrt))
+              (if length
+                  (loop repeat (- length 1)
+                        do (update) 
+                        collect a)
+                  (loop do (update)
+                        collect a
+                        until (= q 1))))))))
 
 (defun solve-pell (d)
   "Returns the minimum potisitive solution of x^2 - Dy^2 = 1. D may not be a

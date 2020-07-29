@@ -23,22 +23,17 @@
                              &key
                              (max most-positive-fixnum)
                              (test 'eql)
-                             (number-of-keys 3))
+                             (number-of-hashes 3))
   "Generates a killer sequence of non-negative fixnum keys in [0, MAX).
 LENGTH must be power of two.
 
 TEST := test function for target hash table
-NUMBER-OF-KEYS := the allowed number of hash values"
+NUMBER-OF-HASHES := the allowed number of hash values"
   (declare (optimize (speed 3))
            (symbol test)
-           ((integer 0 #.most-positive-fixnum) number-of-keys length)
-           (values hash-table &optional))
+           ((integer 0 #.most-positive-fixnum) number-of-hashes length max))
   (assert (= 1 (logcount length))) ;; power of 2
-  (let* ((hash-fn (ecase test
-                    (eql #'sb-impl::eql-hash)
-                    (eq #'sb-impl::eq-hash)
-                    (equal #'sb-impl::equal-hash)
-                    (equalp #'sb-impl::equalp-hash)))
+  (let* ((hash-fn (sb-impl::hash-table-hash-fun (make-hash-table :test test)))
          (table (make-hash-table :test #'eq))
          (mask (- length 1)))
     (dotimes (i length)
@@ -49,7 +44,7 @@ NUMBER-OF-KEYS := the allowed number of hash values"
                (hash-value (prefuzz-hash (the (integer 0 #.most-positive-fixnum)
                                               (funcall hash-fn x))))
                (masked-value (logand mask hash-value)))
-          (when (or (< (hash-table-count table) number-of-keys)
+          (when (or (< (hash-table-count table) number-of-hashes)
                     (gethash masked-value table))
             (push x (gethash masked-value table))
             (return)))))
