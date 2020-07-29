@@ -58,27 +58,29 @@ of (<prime> . <exponent>). E.g. (factorize 40 <prime-table>) => '((2 . 3) (5
 . 1)).
 
 - Any numbers beyond the range of PRIME-DATA are regarded as prime.
-- The returned list is in descending order w.r.t. prime factors."
+- The returned list is in ascending order w.r.t. prime factors."
   (declare (integer x))
-  (setq x (abs x))
-  (when (<= x 1)
-    (return-from factorize nil))
-  (let ((prime-seq (prime-data-seq prime-data))
-        result)
-    (loop for prime of-type unsigned-byte across prime-seq
-          do (when (= x 1)
-               (return-from factorize result))
-             (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
-                   do (multiple-value-bind (quot rem) (floor x prime)
-                        (if (zerop rem)
-                            (setf x quot)
-                            (progn
-                              (when (> exponent 0)
-                                (push (cons prime exponent) result))
-                              (loop-finish))))))
-    (if (= x 1)
-        result
-        (cons (cons x 1) result))))
+  (let* ((x (abs x))
+         (prime-seq (prime-data-seq prime-data))
+         (result (load-time-value (list :root)))
+         (tail result))
+    (labels ((add (x)
+               (setf (cdr tail) (list x)
+                     tail (cdr tail))))
+      (loop for prime of-type unsigned-byte across prime-seq
+            until (= x 1)
+            do (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
+                     do (multiple-value-bind (quot rem) (floor x prime)
+                          (if (zerop rem)
+                              (setf x quot)
+                              (progn
+                                (when (> exponent 0)
+                                  (add (cons prime exponent)))
+                                (loop-finish)))))
+            finally (unless (= x 1)
+                      (add (cons x 1))))
+      (prog1 (cdr result)
+        (setf (cdr result) nil)))))
 
 (defun make-omega-table (sup prime-data)
   "Returns the table of prime omega function on {0, 1, ..., SUP-1}."
