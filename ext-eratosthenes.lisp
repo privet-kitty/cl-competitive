@@ -18,7 +18,8 @@ prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.)"
   (check-type sup (integer 2 (#.array-total-size-limit)))
   (let ((table (make-array sup :element-type '(integer 0 #.most-positive-fixnum))))
     ;; initialize
-    (dotimes (i sup) (setf (aref table i) i))
+    (dotimes (i sup)
+      (setf (aref table i) i))
     ;; p = 2
     (loop for even-num from 4 below sup by 2
           do (setf (aref table even-num) 2))

@@ -2,6 +2,9 @@
 ;;; Arithmetic operations with dynamic modulus
 ;;;
 
+;; NOTE: Currently MOD* and MOD+ doesn't apply MOD when the number of
+;; parameters is one. For simplicity I won't fix it for now.
+
 (declaim ((unsigned-byte 32) *modulus*))
 (defvar *modulus*)
 

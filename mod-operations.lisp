@@ -2,11 +2,11 @@
 ;;; Arithmetic operations with static modulus
 ;;;
 
-;; FIXME: Currently MOD* and MOD+ doesn't apply MOD when the number of
-;; parameters is one.
+;; NOTE: Currently MOD* and MOD+ doesn't apply MOD when the number of
+;; parameters is one. For simplicity I won't fix it for now.
 (defmacro define-mod-operations (divisor)
   `(progn
-     (defun mod* (&rest args)
+     (defun mod+ (&rest args)
        (reduce (lambda (x y) (mod (* x y) ,divisor)) args))
 
      (defun mod+ (&rest args)

@@ -71,12 +71,11 @@ of (<prime> . <exponent>). E.g. (factorize 40 <prime-table>) => '((2 . 3) (5
             until (= x 1)
             do (loop for exponent of-type (integer 0 #.most-positive-fixnum) from 0
                      do (multiple-value-bind (quot rem) (floor x prime)
-                          (if (zerop rem)
-                              (setq x quot)
-                              (progn
-                                (when (> exponent 0)
-                                  (add (cons prime exponent)))
-                                (return)))))
+                          (unless (zerop rem)
+                            (when (> exponent 0)
+                              (add (cons prime exponent)))
+                            (return))
+                          (setq x quot)))
             finally (unless (= x 1)
                       (add (cons x 1))))
       (prog1 (cdr result)
