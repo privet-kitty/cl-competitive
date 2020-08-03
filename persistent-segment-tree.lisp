@@ -35,7 +35,8 @@
 
 (defun psegtree-query (psegtree left right)
   "Queries the sum of the interval [LEFT, RIGHT)."
-  (declare ((integer 0 #.most-positive-fixnum) left right))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) left right))
   (labels ((recur (root l r)
              (declare ((integer 0 #.most-positive-fixnum) l r)
                       (values fixnum &optional))
@@ -50,10 +51,11 @@
            0
            (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))))
 
-(defun psegtree-update (psegtree index delta)
+(defun psegtree-inc (psegtree index delta)
   "Returns a new psegtree updated by PSEGTREE[INDEX] += DELTA. This function is
 non-destructive."
-  (declare ((integer 0 #.most-positive-fixnum) index)
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) index)
            (fixnum delta))
   (labels ((recur (root l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
@@ -75,6 +77,29 @@ non-destructive."
       (recur new-root 0 (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))
       (setf (%psegtree-root new-psegtree) new-root)
       new-psegtree)))
+
+;; NOTE: Almost always PSEGTREE-INC is suitable. Pay close attention when you
+;; use this destructive version.
+(defun %psegtree-inc! (psegtree index delta)
+  "Destructively update PSEGTREE by PSEGTREE[INDEX] += DELTA."
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) index)
+           (fixnum delta))
+  (labels ((recur (root l r)
+             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (cond ((or (<= (+ index 1) l) (<= r index)))
+                   ((and (<= index l) (<= r (+ index 1)))
+                    (incf (node-value root) delta))
+                   (t
+                    (recur (node-left root) l (ash (+ l r) -1))
+                    (recur (node-right root) (ash (+ l r) -1) r)
+                    (setf (node-value root)
+                          (+ (node-value (node-left root))
+                             (node-value (node-right root))))))))
+    (recur (%psegtree-root psegtree)
+           0
+           (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))
+    psegtree))
 
 (defmethod print-object ((object psegtree) stream)
   (print-unreadable-object (object stream :type t)

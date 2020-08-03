@@ -249,6 +249,7 @@ This function destructively modifies MATRIX."
       (values matrix rank))))
 
 ;; not tested
+;; TODO: integrate into MOD-ECHELON!
 (declaim (inline mod-determinant!))
 (defun mod-determinant! (matrix modulus)
   "Returns the determinant of MATRIX. This function destructively modifies
@@ -260,8 +261,8 @@ MATRIX."
       (dotimes (j n)
         (setf (aref matrix i j) (mod (aref matrix i j) modulus))))
     (let ((rank 0)
-          (netto-product 1))
-      (declare ((integer 0 #.most-positive-fixnum) rank netto-product))
+          (total-product 1))
+      (declare ((integer 0 #.most-positive-fixnum) rank total-product))
       (dotimes (target-col n)
         (let ((pivot-row (do ((i rank (+ 1 i)))
                              ((= i n) -1)
@@ -269,12 +270,14 @@ MATRIX."
                              (return i)))))
           (when (>= pivot-row 0)
             ;; swap rows
+            (unless (= rank pivot-row)
+              (setq total-product (mod (- total-product) modulus)))
             (loop for j from target-col below n
                   do (rotatef (aref matrix rank j) (aref matrix pivot-row j)))
             (let* ((pivot (aref matrix rank target-col))
                    (inv (mod-inverse pivot modulus)))
-              (setq netto-product
-                    (mod (* netto-product pivot) modulus))
+              (setq total-product
+                    (mod (* total-product pivot) modulus))
               (dotimes (j n)
                 (setf (aref matrix rank j)
                       (mod  (* inv (aref matrix rank j)) modulus)))
@@ -291,7 +294,7 @@ MATRIX."
         (declare ((integer 0 #.most-positive-fixnum) diag))
         (dotimes (i n)
           (setq diag (mod (* diag (aref matrix i i)) modulus)))
-        (values (mod (* diag netto-product) modulus)
+        (values (mod (* diag total-product) modulus)
                 rank)))))
 
 (declaim (inline mod-inverse-matrix!))

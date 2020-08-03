@@ -51,7 +51,7 @@ MAKE-PRIME-TABLE and returns its result as the second value."
   (multiple-value-call #'%make-prime-data (make-prime-sequence sup)))
 
 (declaim (inline factorize)
-         (ftype (function * (values list &optional)) factorize))
+         (ftype (function * (values list list &optional)) factorize))
 (defun factorize (x prime-data)
   "Returns the associative list of prime factors of X, which is composed
 of (<prime> . <exponent>). E.g. (factorize 40 <prime-table>) => '((2 . 3) (5
@@ -78,7 +78,8 @@ of (<prime> . <exponent>). E.g. (factorize 40 <prime-table>) => '((2 . 3) (5
                           (setq x quot)))
             finally (unless (= x 1)
                       (add (cons x 1))))
-      (prog1 (cdr result)
+      (multiple-value-prog1 (values (cdr result)
+                                    (if (eq result tail) nil tail))
         (setf (cdr result) nil)))))
 
 (defun make-omega-table (sup prime-data)
