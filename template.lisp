@@ -45,21 +45,6 @@
 ;;;
 
 #+swank
-(defun io-equal (in-string out-string &key (function #'main) (test #'equal))
-  "Passes IN-STRING to *STANDARD-INPUT*, executes FUNCTION, and returns true if
-the string output to *STANDARD-OUTPUT* is equal to OUT-STRING."
-  (labels ((ensure-last-lf (s)
-             (if (eql (uiop:last-char s) #\Linefeed)
-                 s
-                 (uiop:strcat s uiop:+lf+))))
-    (funcall test
-             (ensure-last-lf out-string)
-             (with-output-to-string (out)
-               (let ((*standard-output* out))
-                 (with-input-from-string (*standard-input* (ensure-last-lf in-string))
-                   (funcall function)))))))
-
-#+swank
 (defun get-clipbrd ()
   (with-output-to-string (out)
     #+os-windows (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)
