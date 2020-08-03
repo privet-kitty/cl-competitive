@@ -76,18 +76,19 @@ null: run #'MAIN using the text on clipboard as input.
 string: run #'MAIN using the string as input.
 symbol: alias of FIVEAM:RUN!.
 pathname: run #'MAIN using the text file as input."
-  (let ((*standard-output* out))
-    (etypecase thing
-      (null
-       (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
-         (main)))
-      (string
-       (with-input-from-string (*standard-input* (delete #\Return thing))
-         (main)))
-      (symbol (5am:run! thing))
-      (pathname
-       (with-open-file (*standard-input* thing)
-         (main))))))
+  (let* ((*standard-output* (or out (make-string-output-stream)))
+         (res (etypecase thing
+                (null
+                 (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
+                   (main)))
+                (string
+                 (with-input-from-string (*standard-input* (delete #\Return thing))
+                   (main)))
+                (symbol (5am:run! thing))
+                (pathname
+                 (with-open-file (*standard-input* thing)
+                   (main))))))
+    (if out res (get-output-stream-string *standard-output*))))
 
 #+swank
 (defun gen-dat ()
