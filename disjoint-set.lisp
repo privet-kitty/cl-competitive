@@ -28,7 +28,8 @@ connected for the first time."
         (root2 (ds-root disjoint-set x2)))
     (unless (= root1 root2)
       (let ((data (ds-data disjoint-set)))
-        ;; ensure the size of root1 >= the size of root2
+        ;; NOTE: If you want X1 to always be root, just delete this form. (Time
+        ;; complexity becomes worse, however.)
         (when (> (aref data root1) (aref data root2))
           (rotatef root1 root2))
         (incf (aref data root1) (aref data root2))

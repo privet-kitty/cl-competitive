@@ -23,7 +23,8 @@ to use a returned value. (i.e. same as destructive operations to list)
 
 (declaim (inline iset-map))
 (defun iset-map (function iset)
-  "Applies function to each interval [L, R) in ISET in ascending order."
+  "Applies function to each (maximal) interval [L, R) in ISET in ascending
+order."
   (labels ((recur (node)
              (when node
                (recur (%iset-lnode node))
@@ -201,7 +202,7 @@ to use a returned value. (i.e. same as destructive operations to list)
   `(setf ,iset (iset-delete ,iset ,lkey ,rkey)))
 
 (defmacro iset-pop-point (iset key)
-  "POPs an interval [KEY, KEY+1) from ISET."
+  "Deletes an interval [KEY, KEY+1) from ISET (if it exists)."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
        (setf ,iset (iset-delete ,iset ,tmp (+ ,tmp 1))))))

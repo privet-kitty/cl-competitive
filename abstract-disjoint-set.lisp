@@ -4,7 +4,7 @@
 
 ;; not tested
 
-(defmacro define-disjoint-set (name &key (operation '#'+) (element-type 'fixnum) conc-name)
+(defmacro define-disjoint-set (name &key (operation '#'+) (element-type 'fixnum) (union-by-size t) conc-name)
   (check-type name symbol)
   (let* ((conc-string (if conc-name
                           (symbol-name conc-name)
@@ -57,15 +57,16 @@
        (declaim (inline ,uniter))
        (defun ,uniter (,name x1 x2)
          "Destructively unites X1 and X2 and returns true iff X1 and X2 become
-connected for the first time."
+connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
          (let ((root1 (,rooter ,name x1))
                (root2 (,rooter ,name x2)))
            (unless (= root1 root2)
              (let ((data (,data-accessor ,name))
                    (values (,values-accessor ,name)))
                ;; ensure the size of root1 >= the size of root2
-               (when (> (aref data root1) (aref data root2))
-                 (rotatef root1 root2))
+               ,@(when union-by-size
+                   '((when (> (aref data root1) (aref data root2))
+                       (rotatef root1 root2))))
                (incf (aref data root1) (aref data root2))
                (setf (aref values root1)
                      (funcall ,operation (aref values root2) (aref values root1)))
@@ -84,6 +85,7 @@ connected for the first time."
 
 
 (define-disjoint-set disjoint-set
-  :operation #'+
+  :operation #'max
   :element-type fixnum
-  :conc-name ds-)
+  :conc-name ds-
+  :union-by-size nil)
