@@ -2,6 +2,11 @@
 ;;; Six-sided dice
 ;;;
 
+(defpackage :cp/dice
+  (:use :cl)
+  (:export #:dice #:dice-p #:copy-dice #:make-dice #:dice-rotate! #:dice-rotate))
+(in-package :cp/dice)
+
 (declaim (inline %make-dice))
 (defstruct (dice (:constructor %make-dice))
   (x 0 :type (integer 1 6))

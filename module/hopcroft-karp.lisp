@@ -2,6 +2,13 @@
 ;;; Maximum bipartite matching (Hopcroft-Karp, O(E sqrt(V)))
 ;;;
 
+(defpackage :cp/hopcroft-karp
+  (:use :cl)
+  (:export #:bipartite-graph #:make-bgraph #:bipartite-graph-p #:coerce-to-bgraph
+           #:bgraph-matching1 #:bgraph-matching2 #:bgraph-size1 #:bgraph-size2 #:bgraph-graph1
+           #:bgraph-add-edge! #:bgraph-build-matching! #:bgraph-decompose))
+(in-package :cp/hopcroft-karp)
+
 ;; NOTE: The number of elements in the graph must be less than 2^32-1 as we use
 ;; (UNSIGNED-BYTE 32) here for efficiency.
 
@@ -17,7 +24,8 @@
                  (graph1 (make-array size1 :element-type 'list :initial-element nil))
                  (matching1 (make-array size1 :element-type 'fixnum :initial-element -1))
                  (matching2 (make-array size2 :element-type 'fixnum :initial-element -1))))
-            (:conc-name bgraph-))
+            (:conc-name bgraph-)
+            (:copier nil))
   (size1 0 :type (unsigned-byte 32))
   (size2 0 :type (unsigned-byte 32))
   (graph1 nil :type (simple-array list (*)))

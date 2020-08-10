@@ -1,3 +1,8 @@
+(defpackage :cp/inverse-table
+  (:use :cl)
+  (:export #:make-inverse-table #:make-monotone-inverse-table!))
+(in-package :cp/inverse-table)
+
 (declaim (inline make-reverse-inverse-table))
 (defun make-inverse-table (vector &key (test #'eql))
   "Returns a hash-table that assigns each value of the (usually sorted) VECTOR

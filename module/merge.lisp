@@ -1,3 +1,8 @@
+(defpackage :cp/merge
+  (:use :cl)
+  (:export #:intersected-merge #:unique-merge))
+(in-package :cp/merge)
+
 ;; unfinished && not tested
 (declaim (inline intersected-merge))
 (defun intersected-merge (element-type vec1 vec2 predicate)

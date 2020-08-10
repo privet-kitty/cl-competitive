@@ -25,7 +25,7 @@ throw a floating exception if EPS is too small."
          (c (+ (* (+ (* x1 x1) (* y1 y1)) (- x2 x3))
                (* (+ (* x2 x2) (* y2 y2)) (- x3 x1))
                (* (+ (* x3 x3) (* y3 y3)) (- x1 x2)))))
-    (if (< a eps)
+    (if (< (abs a) eps)
         nil
         (complex (- (/ b (* 2 a)))
                  (- (/ c (* 2 a)))))))

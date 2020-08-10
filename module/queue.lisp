@@ -2,8 +2,14 @@
 ;;; Queue with singly linked list
 ;;;
 
+(defpackage :cp/queue
+  (:use :cl)
+  (:export #:queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front #:queue-p))
+(in-package :cp/queue)
+
 (defstruct (queue (:constructor make-queue
-                      (&optional list &aux (tail (last list)))))
+                      (&optional list &aux (tail (last list))))
+                  (:copier nil))
   (list nil :type list)
   (tail nil :type list))
 

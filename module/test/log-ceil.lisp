@@ -1,12 +1,11 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../log-ceil.lisp"))
+(defpackage :cp/test/log-ceil
+  (:use :cl :fiveam :cp/log-ceil)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/log-ceil)
+(in-suite base-suite)
 
-(use-package :test-util)
-
-(declaim (notinline log2-ceil log-ceil))
-
-(with-test (:name log2-ceil)
+(test log2-ceil
+  (declare (notinline log2-ceil))
   (assert (= 0 (log2-ceil 0)))
   (assert (= 0 (log2-ceil 1)))
   (assert (= 1 (log2-ceil 1.5d0)))
@@ -15,7 +14,8 @@
   (assert (= 2 (log2-ceil 5/2)))
   (assert (= 2 (log2-ceil 4))))
 
-(with-test (:name log-ceil)
+(test log-ceil
+  (declare (notinline log-ceil))
   (assert (= 0 (log-ceil 0 2)))
   (assert (= 0 (log-ceil 1 2)))
   (assert (= 1 (log-ceil 1.5d0 2)))

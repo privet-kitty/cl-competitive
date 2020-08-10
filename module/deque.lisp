@@ -2,6 +2,11 @@
 ;;; double-ended queue (ring buffer)
 ;;;
 
+(defpackage :cp/deque
+  (:use :cl)
+  (:export #:deque-empty-error #:deque-full-error #:deque-invalid-index-error #:define-deque))
+(in-package :cp/deque)
+
 (define-condition deque-empty-error (error)
   ((queue :initarg :queue :reader deque-empty-error-queue))
   (:report
@@ -172,4 +177,8 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
              (error 'deque-invalid-index-error :index index :queue ,name))
            (aref data pos))))))
 
+#|
+
 (define-deque deque :element-type fixnum)
+
+;|#

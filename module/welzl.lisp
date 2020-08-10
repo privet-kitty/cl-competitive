@@ -34,7 +34,7 @@ q2 on the circumference)."
   (let* ((center (* 1/2 (+ (aref points 0) q)))
          (radius (abs (coerce (- q center) '(complex double-float)))))
     (loop for i from 1 below end
-          for new-point of-type complex = (aref points i)
+          for new-point = (aref points i)
           when (>= (abs (- new-point center)) (+ radius eps))
           do (setf (values center radius)
                    (%mini-disc-with-2-points points i (aref points i) q eps)))
@@ -48,7 +48,7 @@ q2 on the circumference)."
     (return-from calc-smallest-circle
       (values (aref points 0)
               (coerce 0 (type-of (realpart (aref points 0)))))))
-  (let* ((points (copy-seq (%shuffle! points)))
+  (let* ((points (copy-seq (shuffle! points)))
          (copy (copy-seq points))
          (p0 (aref points 0))
          (p1 (aref points 1))

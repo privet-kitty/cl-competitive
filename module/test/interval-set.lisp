@@ -1,8 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../interval-set.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/interval-set
+  (:use :cl :fiveam :cp/interval-set)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/interval-set)
+(in-suite base-suite)
 
 (defun to-interval-list (thing)
   (declare (optimize (speed 3)))
@@ -32,22 +32,23 @@
   (loop for i from l below r
         do (setf (aref vector i) 0)))
 
-(defparameter *state* (seed-random-state 123))
+(defparameter *state* (sb-ext:seed-random-state 123))
 
-(with-test (:name interval-set/random)
-  (loop for len from 1 to 500
-        for vector = (make-array len :element-type 'bit :initial-element 0)
-        for iset = nil
-        do (dotimes (_ 500)
-             (let ((l (random (+ 1 len) *state*))
-                   (r (random (+ 1 len) *state*)))
-               (when (> l r) (rotatef l r))
-               (if (zerop (random 2))
-                   (progn
-                     (add-interval vector l r)
-                     (iset-push iset l r))
-                   (progn
-                     (delete-interval vector l r)
-                     (iset-pop iset l r)))
-               (assert (equal (to-interval-list iset)
-                              (to-interval-list vector)))))))
+(test interval-set/random
+  (finishes
+    (loop for len from 1 to 500
+          for vector = (make-array len :element-type 'bit :initial-element 0)
+          for iset = nil
+          do (dotimes (_ 500)
+               (let ((l (random (+ 1 len) *state*))
+                     (r (random (+ 1 len) *state*)))
+                 (when (> l r) (rotatef l r))
+                 (if (zerop (random 2))
+                     (progn
+                       (add-interval vector l r)
+                       (iset-push iset l r))
+                     (progn
+                       (delete-interval vector l r)
+                       (iset-pop iset l r)))
+                 (assert (equal (to-interval-list iset)
+                                (to-interval-list vector))))))))

@@ -2,42 +2,12 @@
 ;;; Max flow (Dinic's algorithm)
 ;;;
 
+(defpackage :cp/dinic
+  (:use :cl :cp/max-flow)
+  (:export #:max-flow!))
+(in-package :cp/dinic)
+
 (defconstant +graph-inf-distance+ #xffffffff)
-
-(define-condition max-flow-overflow (error)
-  ((graph :initarg :graph :reader max-flow-overflow-graph))
-  (:report
-   (lambda (condition stream)
-     (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
-             (max-flow-overflow-graph condition)))))
-
-(defstruct (edge (:constructor %make-edge
-                     (to capacity reversed
-                      &aux (default-capacity capacity))))
-  (to nil :type (integer 0 #.most-positive-fixnum))
-  (capacity 0 :type (integer 0 #.most-positive-fixnum))
-  (default-capacity 0 :type (integer 0 #.most-positive-fixnum))
-  (reversed nil :type (or null edge)))
-
-(defmethod print-object ((edge edge) stream)
-  (let ((*print-circle* t))
-    (call-next-method)))
-
-(defun add-edge (graph from-idx to-idx capacity &key bidirectional)
-  "FROM-IDX, TO-IDX := index of vertex
-GRAPH := vector of lists of all the edges that goes from each vertex
-
-If BIDIRECTIONAL is true, ADD-EDGE adds the reversed edge of the same
-capacity in addition."
-  (declare (optimize (speed 3))
-           ((simple-array list (*)) graph))
-  (let* ((dep (%make-edge to-idx capacity nil))
-         (ret (%make-edge from-idx
-                          (if bidirectional capacity 0)
-                          dep)))
-    (setf (edge-reversed dep) ret)
-    (push dep (aref graph from-idx))
-    (push ret (aref graph to-idx))))
 
 (defun %fill-dist-table (graph src dist-table queue)
   "Does BFS and sets DIST-TABLE to the distance between SRC and each vertex of
@@ -102,7 +72,7 @@ amount of the flow."
   "Destructively sends the maximum flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
-  (declare #+sbcl (muffle-conditions style-warning)
+  (declare #+sbcl (sb-ext:muffle-conditions style-warning)
            ((integer 0 #.most-positive-fixnum) src dest)
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
@@ -123,12 +93,3 @@ flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
             do (when (>= (+ result delta) most-positive-fixnum)
                  (error 'max-flow-overflow :graph graph))
                (incf result delta)))))
-
-(declaim (inline reinitialize-flow-network))
-(defun reinitialize-flow-network (graph)
-  "Sets the current CAPACITY of every edge in GRAPH to the default
-capacity. That is, this function reinitialize the graph network to the state
-prior to sending flow."
-  (loop for edges across graph
-        do (dolist (edge edges)
-             (setf (edge-capacity edge) (edge-default-capacity edge)))))

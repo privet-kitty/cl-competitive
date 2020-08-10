@@ -3,6 +3,11 @@
 ;;; (better to use complex-geometry.lisp)
 ;;;
 
+(defpackage :cp/geometry
+  (:use :cl)
+  (:export #:intersect-p #:parallel-p #:calc-internal-angle #:calc-angle))
+(in-package :cp/geometry)
+
 (declaim (inline intersect-p))
 (defun intersect-p (p1-x p1-y p2-x p2-y q1-x q1-y q2-x q2-y &optional (eps 0))
   "Returns true iff the line segment from (P1-X, P1-Y) to (P2-X, P2-Y)

@@ -1,17 +1,17 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../dice.lisp"))
+(defpackage :cp/test/dice
+  (:use :cl :fiveam :cp/dice)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/dice)
+(in-suite base-suite)
 
-(use-package :test-util)
-
-(with-test (:name dice)
+(test dice
   (let ((dice (make-dice 3 5 1)))
-    (assert (equalp #S(dice :x 1 :y 5 :z 4) (dice-rotate dice :east)))
-    (assert (equalp #S(dice :x 2 :y 3 :z 1) (dice-rotate dice :left)))
-    (assert (equalp #S(dice :x 3 :y 1 :z 2) (dice-rotate dice :north)))
-    (assert (equalp #S(dice :x 5 :y 4 :z 1) (dice-rotate dice :right)))
-    (assert (equalp #S(dice :x 3 :y 6 :z 5) (dice-rotate dice :south)))
-    (assert (equalp #S(dice :x 6 :y 5 :z 3) (dice-rotate dice :west)))
+    (is (equalp (make-dice 1 5 4) (dice-rotate dice :east)))
+    (is (equalp (make-dice 2 3 1) (dice-rotate dice :left)))
+    (is (equalp (make-dice 3 1 2) (dice-rotate dice :north)))
+    (is (equalp (make-dice 5 4 1) (dice-rotate dice :right)))
+    (is (equalp (make-dice 3 6 5) (dice-rotate dice :south)))
+    (is (equalp (make-dice 6 5 3) (dice-rotate dice :west)))
 
     (dice-rotate! dice :east)
-    (assert (equalp #S(dice :x 1 :y 5 :z 4) dice))))
+    (is (equalp (make-dice 1 5 4) dice))))

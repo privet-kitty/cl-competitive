@@ -2,9 +2,16 @@
 ;;; Heavy-Light decomposition (for commutative operation)
 ;;;
 
+(defpackage :cp/hl-decomposition
+  (:use :cl)
+  (:export #:hl-decomposition #:make-hl-decomposition #:hl-decomposition-p
+           #:two-vertices-disconnected-error #:hld-map-path #:hld-get-lca))
+(in-package :cp/hl-decomposition)
+
 (defstruct (hl-decomposition (:constructor %make-hl-decomposition
                                  (graph sizes parents preords heads))
-                             (:conc-name %hld-))
+                             (:conc-name %hld-)
+                             (:copier nil))
   (graph nil :type (simple-array list (*)))
   (sizes nil :type (simple-array fixnum (*)))
   (parents nil :type (simple-array fixnum (*)))

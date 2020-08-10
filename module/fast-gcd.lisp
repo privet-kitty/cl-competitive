@@ -4,6 +4,11 @@
 ;;; https://lemire.me/blog/2013/12/26/fastest-way-to-compute-the-greatest-common-divisor/
 ;;;
 
+(defpackage :cp/fast-gcd
+  (:use :cl)
+  (:export #:fast-gcd #:fast-lcm #:%fast-fcd))
+(in-package :cp/fast-gcd)
+
 (declaim (inline %fast-gcd fast-gcd fast-lcm)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
                 %fast-gcd fast-gcd fast-lcm))

@@ -2,6 +2,11 @@
 ;;; Matrix multiplication over semiring
 ;;;
 
+(defpackage :cp/gemm
+  (:use :cl)
+  (:export #:gemm! #:gemm #:matrix-power #:gemv))
+(in-package :cp/gemm)
+
 ;; NOTE: not tested
 
 ;; NOTE: These funcions are slow on SBCL version earlier than 1.5.6 as the type

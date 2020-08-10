@@ -14,6 +14,11 @@
 ;; DEFINE-CONS-PACK is almost the same as DEFINE-INTEGER-PACK though it will be
 ;; suitable for the total bits in the range [63, 124].
 
+(defpackage :cp/integer-pack
+  (:use :cl)
+  (:export #:define-integer-pack #:define-cons-pack))
+(in-package :cp/integer-pack)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %concat-name (&rest args)
     (if (cdr args)

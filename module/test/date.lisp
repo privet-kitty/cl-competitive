@@ -1,8 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../date.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/date
+  (:use :cl :fiveam :cp/date)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/date)
+(in-suite base-suite)
 
 (defun get-day-of-week2 (day month year)
   (declare (fixnum day month year))
@@ -15,15 +15,16 @@
               0)))
        7))
 
-(with-test (:name get-day-of-week)
-  (loop
-    for year from -3000 to 3000
-    do (loop
-         for month from 1 to 12
-         do (loop
-              for day from 1 to (aref (if (leap-year-p year)
-                                          #(-1 31 29 31 30 31 30 31 31 30 31 30 31)
-                                          #(-1 31 28 31 30 31 30 31 31 30 31 30 31))
-                                      month)
-              do (assert (= (get-day-of-week day month year)
-                            (get-day-of-week2 day month year)))))))
+(test get-day-of-week
+  (finishes
+    (loop
+      for year from -3000 to 3000
+      do (loop
+           for month from 1 to 12
+           do (loop
+                for day from 1 to (aref (if (leap-year-p year)
+                                            #(-1 31 29 31 30 31 30 31 31 30 31 30 31)
+                                            #(-1 31 28 31 30 31 30 31 31 30 31 30 31))
+                                        month)
+                do (assert (= (get-day-of-week day month year)
+                              (get-day-of-week2 day month year))))))))

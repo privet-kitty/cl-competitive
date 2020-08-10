@@ -1,3 +1,8 @@
+(defpackage :cp/merge-sort
+  (:use :cl)
+  (:export #:merge-sort!))
+(in-package :cp/merge-sort)
+
 ;;;
 ;;; Merge sort
 ;;;

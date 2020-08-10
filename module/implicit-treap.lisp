@@ -3,6 +3,16 @@
 ;;; (treap with implicit key)
 ;;;
 
+(defpackage :cp/implicit-treap
+  (:use :cl)
+  (:export #:itreap #:itreap-p #:itreap-count #:itreap-accumulator
+           #:make-itreap #:invalid-itreap-index-error #:itreap-ref
+           #:itreap-split #:itreap-merge #:itreap-insert #:itreap-delete
+           #:itreap-push #:itreap-pop #:itreap-map #:do-itreap
+           #:itreap-query #:itreap-range-bisect-left #:itreap-update #:itreap-reverse
+           #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort))
+(in-package :cp/implicit-treap)
+
 ;; Note:
 ;; - An empty treap is NIL.
 

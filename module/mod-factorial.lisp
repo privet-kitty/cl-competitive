@@ -1,3 +1,8 @@
+(defpackage :cp/mod-factorial
+  (:use :cl)
+  (:export #:mod-factorial))
+(in-package :cp/mod-factorial)
+
 (declaim (inline mod-factorial))
 (defun mod-factorial (n modulus)
   "Returns N! mod MODULUS."

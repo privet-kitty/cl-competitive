@@ -1,3 +1,8 @@
+(defpackage :cp/farey
+  (:use :cl)
+  (:export #:map-farey))
+(in-package :cp/farey)
+
 ;; PAY ATTENTION TO THE STACK SIZE! This function does DFS.
 (declaim (inline map-farey))
 (defun map-farey (function max-denominator &optional from-end)

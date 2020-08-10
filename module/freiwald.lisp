@@ -2,6 +2,11 @@
 ;;; Freiwalds' algorithm
 ;;;
 
+(defpackage :cp/freiwald
+  (:use :cl)
+  (:export #:gemm-p))
+(in-package :cp/freiwald)
+
 ;; NOTE: not tested
 (declaim (inline gemm-p))
 (defun gemm-p (a b c &optional (count 32))

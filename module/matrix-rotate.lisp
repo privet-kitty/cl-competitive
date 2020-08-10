@@ -1,3 +1,8 @@
+(defpackage :cp/matrix-rotate
+  (:use :cl)
+  (:export #:matrix-rotate #:matrix-transpose))
+(in-package :cp/matrix-rotate)
+
 (defun matrix-rotate (matrix rot)
   "Counterclockwise rotates a 2-dimensional array by 90 * ROT degrees. This
 function is non-destructive."

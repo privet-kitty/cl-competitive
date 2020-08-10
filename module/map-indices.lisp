@@ -1,3 +1,8 @@
+(defpackage :cp/map-indices
+  (:use :cl)
+  (:export #:map-indices #:do-indices))
+(in-package :cp/map-indices)
+
 (declaim (inline map-indices))
 (defun map-indices (function max-indices)
   "Applies function to each vector of indices smaller than MAX-INDICES. The

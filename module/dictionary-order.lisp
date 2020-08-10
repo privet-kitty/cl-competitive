@@ -1,3 +1,8 @@
+(defpackage :cp/dictionary-order
+  (:use :cl)
+  (:export #:dict<))
+(in-package :cp/dictionary-order)
+
 ;; from UIOP:LEXICOGRAPHIC<
 (declaim (inline dict<))
 (defun dict< (element< x y)

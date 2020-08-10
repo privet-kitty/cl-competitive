@@ -1,3 +1,8 @@
+(defpackage :cp/find-cycle
+  (:use :cl)
+  (:export #:find-cycle))
+(in-package :cp/find-cycle)
+
 (declaim (inline find-cycle))
 (defun find-cycle (graph &key wrap undirected)
   "Finds a simple cycle in GRAPH and returns a list of vertices. The consequence

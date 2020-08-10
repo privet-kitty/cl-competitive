@@ -6,7 +6,12 @@
 ;;; https://web.archive.org/web/20170620142342/https://min-25.hatenablog.com/entry/2016/11/21/222625 (Japanese)
 ;;;
 
-(defun gabow-edmonds (graph)
+(defpackage :cp/gabow-edmonds
+  (:use :cl)
+  (:export #:find-matching))
+(in-package :cp/gabow-edmonds)
+
+(defun find-matching (graph)
   "Computes a maximum matching in an undirected graph. -1 in the returned vector
 expresses an unmatched vertex.
 

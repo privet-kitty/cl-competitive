@@ -1,3 +1,8 @@
+(defpackage :cp/mex
+  (:use :cl)
+  (:export #:mex))
+(in-package :cp/mex)
+
 ;; NOTE: If you need efficient data structure, interval-set will be useful.
 (defun mex (&rest args)
   "Returns the minimum non-negative integer not contained in ARGS."

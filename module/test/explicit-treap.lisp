@@ -1,10 +1,11 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../explicit-treap.lisp"))
-
-(use-package :test-util)
-
-(declaim (notinline treap-bisect-left treap-bisect-right treap-bisect-left-1 treap-bisect-right-1))
+(defpackage :cp/test/explicit-treap
+  (:use :cl :fiveam :cp/explicit-treap)
+  (:import-from :cp/test/base #:base-suite)
+  (:import-from :cp/explicit-treap
+                #:%treap-priority #:%treap-key #:%treap-left #:%treap-right
+                #:%treap-accumulator #:%treap-value #:%make-treap #:op))
+(in-package :cp/test/explicit-treap)
+(in-suite base-suite)
 
 (defun treap-priority (treap)
   (declare ((or null treap) treap))
@@ -31,15 +32,14 @@
   (if (null treap)
       nil
       (%make-treap (%treap-key treap)
-                  (%treap-priority treap)
-                  (%treap-value treap)
-                  :accumulator (%treap-accumulator treap)
-                  :left (copy-treap (%treap-left treap))
-                  :right (copy-treap (%treap-right treap)))))
+                   (%treap-priority treap)
+                   (%treap-value treap)
+                   :accumulator (%treap-accumulator treap)
+                   :left (copy-treap (%treap-left treap))
+                   :right (copy-treap (%treap-right treap)))))
 
-(declaim (notinline make-treap treap-insert treap-map))
-
-(with-test (:name explicit-treap-sanity)
+(test explicit-treap-sanity
+  (declare (notinline make-treap))
   (loop repeat 10
         do (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9 10))))
            (assert (treap-sane-p (make-treap #(1 2 3 4 5 6 7 8 9))))
@@ -48,7 +48,8 @@
            (assert (treap-sane-p (make-treap #(1))))
            (assert (treap-sane-p nil))))
 
-(with-test (:name explicit-treap-bisection)
+(test explicit-treap-bisection
+  (declare (notinline treap-bisect-left treap-bisect-right treap-bisect-left-1 treap-bisect-right-1))
   (let ((treap (treap #'> '(50 . 3) '(20 . 1) '(40 . 4))))
     (assert (null (treap-find treap 0 :order #'>)))
     (assert (= 50 (treap-find treap 50 :order #'>)))

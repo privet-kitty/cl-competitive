@@ -2,6 +2,11 @@
 ;;; Generate all the n-bead and k-color necklaces (FKM algorithm)
 ;;;
 
+(defpackage :cp/fkm
+  (:use :cl)
+  (:export #:map-necklaces))
+(in-package :cp/fkm)
+
 (declaim (inline map-necklaces))
 (defun map-necklaces (function length alphabet-size)
   "Example:

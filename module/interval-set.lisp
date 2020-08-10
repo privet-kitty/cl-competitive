@@ -2,12 +2,19 @@
 ;;; Ordered set of half-open intervals
 ;;;
 
+(defpackage :cp/interval-set
+  (:use :cl)
+  (:export #:interval-set #:interval-set-p #:iset-map #:iset-find
+           #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point))
+(in-package :cp/interval-set)
+
 ;; TODO: more rich operations
 
 (defstruct (interval-set (:constructor %make-interval-set
                              (lkey rkey lnode rnode
                               &aux (priority (random most-positive-fixnum))))
-                         (:conc-name %iset-))
+                         (:conc-name %iset-)
+                         (:copier nil))
   "This structure maintains an ordered set of half-open intervals with a
 balanced binary search tree (treap). Every fundamental operation takes expected
 O(log(n)) time.

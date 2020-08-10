@@ -6,6 +6,13 @@
 ;;; Jonker's C++ implementaion: https://web.archive.org/web/20070613181051/http://www.magiclogic.com/assignment/lap_cpp.zip
 ;;;
 
+(defpackage :cp/jonker-volgenant
+  (:use :cl)
+  (:export #:solve-lap-jp #:+lap-null-vertex+ #:+lap-null-weight+
+           #:lap #:make-lap #:%lap-size1 #:%lap-size2 #:%lap-matching1 #:%lap-matching2
+           #:lap-p #:lap-add-edge #:lap-build #:lap-score))
+(in-package :cp/jonker-volgenant)
+
 (defconstant +lap-null-vertex+ -1)
 (defconstant +lap-null-weight+ most-positive-fixnum)
 

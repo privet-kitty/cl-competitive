@@ -1,3 +1,8 @@
+(defpackage :cp/date
+  (:use :cl)
+  (:export #:leap-year-p #:get-day-of-week #:get-julian-day-number))
+(in-package :cp/date)
+
 (declaim (inline leap-year-p))
 (defun leap-year-p (year)
   (or (zerop (mod year 400))

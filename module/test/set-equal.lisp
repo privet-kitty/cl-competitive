@@ -1,3 +1,8 @@
+(defpackage :cp/test/set-equal
+  (:use :cl)
+  (:export #:set-equal))
+(in-package :cp/test/set-equal)
+
 (defun set-equal (seq1 seq2 &key (test #'eql))
   (let ((table1 (make-hash-table :test test))
         (table2 (make-hash-table :test test)))

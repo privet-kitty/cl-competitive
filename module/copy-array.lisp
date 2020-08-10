@@ -1,3 +1,8 @@
+(defpackage :cp/copy-array
+  (:use :cl)
+  (:export #:copy-array))
+(in-package :cp/copy-array)
+
 ;; from alexandria
 (declaim (inline copy-array))
 (defun copy-array (array &key (element-type (array-element-type array))

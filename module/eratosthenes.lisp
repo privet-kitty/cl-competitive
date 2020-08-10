@@ -1,3 +1,10 @@
+(defpackage :cp/eratosthenes
+  (:use :cl)
+  (:export #:make-prime-table #:make-prime-sequence #:prime-data #:make-prime-data
+           #:prime-data-seq #:prime-data-table #:prime-data-p
+           #:factorize #:make-omega-table))
+(in-package :cp/eratosthenes)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
 
@@ -43,7 +50,8 @@ MAKE-PRIME-TABLE and returns its result as the second value."
                (incf index))
       (values result table))))
 
-(defstruct (prime-data (:constructor %make-prime-data (seq table)))
+(defstruct (prime-data (:constructor %make-prime-data (seq table))
+                       (:copier nil))
   (seq nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   (table nil :type simple-bit-vector))
 

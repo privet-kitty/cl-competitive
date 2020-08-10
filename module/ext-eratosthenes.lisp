@@ -2,12 +2,16 @@
 ;;; Extended Eratosthenes' sieve
 ;;;
 ;;; build: O(nloglogn)
-;;; With this sieve each prime factorization can be executed in O(log(n)), which
-;;; is faster than the naive known one in O(N/log(n) + log(n)).
+;;; query: O(log(n))
 ;;; Reference:
 ;;; http://www.osak.jp/diary/diary_201310.html#20131017 (Japanese)
 ;;; https://cp-algorithms.com/algebra/prime-sieve-linear.html
 ;;;
+
+(defpackage :cp/ext-eratosthenes
+  (:use :cl)
+  (:export #:make-minfactor-table #:factorize #:euler-phi))
+(in-package :cp/ext-eratosthenes)
 
 (declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*)) &optional))
                 make-minfactor-table))

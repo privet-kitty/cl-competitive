@@ -1,3 +1,8 @@
+(defpackage :cp/euler-tour
+  (:use :cl)
+  (:export #:make-euler-tour))
+(in-package :cp/euler-tour)
+
 ;; PAY ATTENTION TO THE STACK SIZE!
 (declaim (inline make-euler tour))
 (defun make-euler-tour (tree &key (key #'identity) (root 0))

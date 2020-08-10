@@ -1,29 +1,28 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../matrix-rotate.lisp"))
+(defpackage :cp/test/matrix-rotate
+  (:use :cl :fiveam :cp/matrix-rotate)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/matrix-rotate)
+(in-suite base-suite)
 
-(use-package :test-util)
-
-(declaim (notinline matrix-rotate matrix-transpose))
-(with-test (:name matrix-rotate)
+(test matrix-rotate
+  (declare (notinline matrix-rotate))
   (let ((mat #2a((1 2 3) (4 5 6))))
-    (assert (equalp #2a((1 2 3) (4 5 6)) (matrix-rotate mat 0)))
-    (assert (equalp #2a((3 6) (2 5) (1 4)) (matrix-rotate mat 1)))
-    (assert (equalp #2a((6 5 4) (3 2 1)) (matrix-rotate mat 2)))
-    (assert (equalp #2a((4 1) (5 2) (6 3)) (matrix-rotate mat 3)))
-    (assert (equalp #2a((1 2 3) (4 5 6)) (matrix-rotate mat -4)))
-    (assert (equalp #2a((3 6) (2 5) (1 4)) (matrix-rotate mat 5)))
-    (assert (equalp #2a((6 5 4) (3 2 1)) (matrix-rotate mat -2)))
-    (assert (equalp #2a((4 1) (5 2) (6 3)) (matrix-rotate mat 7))))
+    (is (equalp #2a((1 2 3) (4 5 6)) (matrix-rotate mat 0)))
+    (is (equalp #2a((3 6) (2 5) (1 4)) (matrix-rotate mat 1)))
+    (is (equalp #2a((6 5 4) (3 2 1)) (matrix-rotate mat 2)))
+    (is (equalp #2a((4 1) (5 2) (6 3)) (matrix-rotate mat 3)))
+    (is (equalp #2a((1 2 3) (4 5 6)) (matrix-rotate mat -4)))
+    (is (equalp #2a((3 6) (2 5) (1 4)) (matrix-rotate mat 5)))
+    (is (equalp #2a((6 5 4) (3 2 1)) (matrix-rotate mat -2)))
+    (is (equalp #2a((4 1) (5 2) (6 3)) (matrix-rotate mat 7))))
   ;; empty case
-  (dotimes (i 100)
-    (assert (equalp #2a() (matrix-rotate #2a() (- (random 100) 100))))))
+  (finishes
+    (dotimes (i 100)
+      (assert (equalp #2a() (matrix-rotate #2a() (- (random 100) 100)))))))
 
-(with-test (:name matrix-transpose)
+(test matrix-transpose
+  (declare (notinline matrix-transpose))
   (let ((mat #2a((1 2 3) (4 5 6))))
-    (assert (equalp #2a((1 4) (2 5) (3 6)) (matrix-transpose mat))))
+    (is (equalp #2a((1 4) (2 5) (3 6)) (matrix-transpose mat))))
   ;; empty case
-  (assert (equalp #2a() (matrix-transpose #2a()))))
-
-(defun test ()
-  (equalp #2a() (matrix-transpose #2a())))
+  (is (equalp #2a() (matrix-transpose #2a()))))

@@ -3,10 +3,15 @@
 ;;; Reference: https://stackoverflow.com/questions/746171/efficient-algorithm-for-bit-reversal-from-msb-lsb-to-lsb-msb-in-c
 ;;;
 
+(defpackage :cp/logreverse
+  (:use :cl)
+  (:export #:logreverse))
+(in-package :cp/logreverse)
+
 (defparameter *bit-reverse-table*
   (make-array 65536 :element-type '(unsigned-byte 16)))
 (declaim ((simple-array (unsigned-byte 16) (65536)) *bit-reverse-table*)
-         #+sbcl (always-bound *bit-reverse-table*))
+         #+sbcl (sb-ext:always-bound *bit-reverse-table*))
 
 (dotimes (idx (length *bit-reverse-table*))
   (let ((x idx))

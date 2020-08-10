@@ -1,3 +1,8 @@
+(defpackage :cp/map-mountain
+  (:use :cl)
+  (:export #:map-mountain))
+(in-package :cp/map-mountain)
+
 ;; not tested
 
 ;; NOTE: Use MAP-ALTERING-MONOTONE-SUBSEQ instead to deal with non-decreasing or

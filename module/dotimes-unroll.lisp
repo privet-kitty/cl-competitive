@@ -1,3 +1,8 @@
+(defpackage :cp/dotimes-unroll
+  (:use :cl)
+  (:export #:dotimes-unroll #:dotimes-unroll-all))
+(in-package :cp/dotimes-unroll)
+
 ;; FIXME: currently not enclosed with (BLOCK NIL ...).
 (defmacro dotimes-unroll ((var count size &optional result) &body body)
   "DOTIMES macro with loop-unrolling by SIZE."

@@ -2,41 +2,13 @@
 ;;; Fast operations on GF(2)
 ;;;
 
+(defpackage :cp/f2
+  (:use :cl)
+  (:export #:f2-gemm #:f2-gemv #:f2-echelon! #:f2-solve-linear-system! #:f2-binom))
+(in-package :cp/f2)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
-
-;; Reference: https://www.pvk.ca/Blog/2014/08/16/how-to-define-new-intrinsics-in-sbcl/
-;; We need to define POPCNT by ourselves as the version of SBCL is 1.1.14 on AtCoder.
-(sb-c:defknown popcnt ((unsigned-byte 64)) (integer 0 64)
-    (sb-c:foldable sb-c:flushable sb-c:movable)
-  :overwrite-fndb-silently t)
-
-(sb-vm::define-vop (popcnt)
-  (:policy :fast-safe)
-  (:translate popcnt)
-  (:args (x :scs (sb-vm::unsigned-reg) :target r))
-  (:arg-types sb-vm::unsigned-num)
-  (:results (r :scs (sb-vm::unsigned-reg)))
-  (:result-types sb-vm::unsigned-num)
-  (:generator 3
-              (unless (sb-vm::location= r x)
-                (sb-vm::inst xor r r))
-              (sb-vm::inst popcnt r x)))
-
-(sb-vm::define-vop (popcnt/fx)
-  (:policy :fast-safe)
-  (:translate popcnt)
-  (:args (x :scs (sb-vm::unsigned-reg) :target r))
-  (:arg-types sb-vm::positive-fixnum)
-  (:results (r :scs (sb-vm::unsigned-reg)))
-  (:result-types sb-vm::unsigned-num)
-  (:generator 2
-              (unless (sb-vm::location= r x)
-                (sb-vm::inst xor r r))
-              (sb-vm::inst popcnt r x)))
-
-(defun popcnt (x)
-  (popcnt x))
 
 (defun f2-gemm (a b)
   "Calculates A*B on GF(2). The width of A (and the height of B) must be
@@ -51,8 +23,8 @@ multiple of 64."
                            :element-type 'bit)) ; transposed B
            (c (make-array (list (array-dimension a 0) (array-dimension b 1))
                           :element-type 'bit))
-           (a-storage (array-storage-vector a))
-           (tb-storage (array-storage-vector tb)))
+           (a-storage (sb-ext:array-storage-vector a))
+           (tb-storage (sb-ext:array-storage-vector tb)))
       (dotimes (row (array-dimension b 0))
         (dotimes (col (array-dimension b 1))
           (setf (aref tb row col) (aref b col row))))
@@ -63,11 +35,12 @@ multiple of 64."
                 (tb-index (floor (array-row-major-index tb col 0) 64)))
             (declare (bit res))
             (dotimes (k length/64)
-              (setf res
+              (setq res
                     (logxor res
                             (ldb (byte 1 0)
-                                 (popcnt (logand (sb-kernel:%vector-raw-bits a-storage (+ k a-index))
-                                                 (sb-kernel:%vector-raw-bits tb-storage (+ k tb-index))))))))
+                                 (logcount
+                                  (logand (sb-kernel:%vector-raw-bits a-storage (+ k a-index))
+                                          (sb-kernel:%vector-raw-bits tb-storage (+ k tb-index))))))))
             (setf (aref c row col) res))))
       c)))
 
@@ -82,18 +55,19 @@ multiple of 64."
     (assert (zerop rem))
     (assert (= (array-dimension a 1) (length v)))
     (let* ((res (make-array (array-dimension a 0) :element-type 'bit))
-           (a-storage (array-storage-vector a))
-           (v-storage (array-storage-vector v)))
+           (a-storage (sb-ext:array-storage-vector a))
+           (v-storage (sb-ext:array-storage-vector v)))
       (dotimes (row (array-dimension a 0))
         (let ((value 0)
               (a-index (floor (array-row-major-index a row 0) 64)))
           (declare (bit value))
           (dotimes (k length/64)
-            (setf value
+            (setq value
                   (logxor value
                           (ldb (byte 1 0)
-                               (popcnt (logand (sb-kernel:%vector-raw-bits a-storage (+ k a-index))
-                                               (sb-kernel:%vector-raw-bits v-storage k)))))))
+                               (logcount
+                                (logand (sb-kernel:%vector-raw-bits a-storage (+ k a-index))
+                                        (sb-kernel:%vector-raw-bits v-storage k)))))))
           (setf (aref res row) value)))
       res)))
 
@@ -111,7 +85,7 @@ The width of MATRIX must be multiple of 64."
              ((integer 0 #.most-positive-fixnum) m n))
     (multiple-value-bind (n/64 rem) (floor n 64)
       (assert (zerop rem))
-      (let* ((storage (array-storage-vector matrix))
+      (let* ((storage (sb-ext:array-storage-vector matrix))
              (rank 0))
         (declare (fixnum rank))
         (dotimes (target-col (if extended (- n 1) n))
@@ -153,7 +127,7 @@ The width of A must be multiple of 64."
              ((integer 0 #.most-positive-fixnum) m n))
     (multiple-value-bind (n/64 rem) (floor n 64)
       (assert (zerop rem))
-      (let* ((storage (array-storage-vector matrix))
+      (let* ((storage (sb-ext:array-storage-vector matrix))
              (rank 0))
         (declare (fixnum rank))
         (dotimes (target-col n)

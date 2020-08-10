@@ -1,3 +1,8 @@
+(defpackage :cp/map-flipping-subseq
+  (:use :cl)
+  (:export #:map-flipping-subseq))
+(in-package :cp/map-flipping-subseq)
+
 (declaim (inline map-flipping-subseq))
 (defun map-flipping-subseq (function vector &key (test #'eql))
   "Applies FUNCTION to each `flipping' subsequence of VECTOR. `Flipping' here

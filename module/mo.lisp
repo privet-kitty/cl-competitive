@@ -2,6 +2,12 @@
 ;;; Mo's algorithm
 ;;;
 
+(defpackage :cp/mo
+  (:use :cl)
+  (:export #:mo-integer #:mo #:make-mo #:mo-get-current #:mo-get-previous
+           #:mo-process2 #:mo-process4))
+(in-package :cp/mo)
+
 (deftype mo-integer () 'fixnum)
 
 (defstruct (mo (:constructor %make-mo

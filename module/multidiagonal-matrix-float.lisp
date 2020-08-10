@@ -2,6 +2,14 @@
 ;;; Several operations on a multidiagonal matrix (double-float)
 ;;;
 
+;; not tested
+
+(defpackage :cp/multidiagonal-matrix-float
+  (:use :cl)
+  (:export #:multidiagonal-matrix #:make-md-matrix #:md-size #:md-k #:md-storage
+           #:md-gemv #:md-gemv! #:md-ref))
+(in-package :cp/multidiagonal-matrix-float)
+
 (defstruct (multidiagonal-matrix
             (:constructor make-md-matrix
                 (size k
@@ -9,7 +17,8 @@
                  (storage (make-array (list size (+ 1 (* 2 k)))
                                       :element-type 'double-float
                                       :initial-element 0d0))))
-            (:conc-name md-))
+            (:conc-name md-)
+            (:copier nil))
   (size 0 :type (integer 0 #.most-positive-fixnum))
   (k 0 :type (integer 0 #.most-positive-fixnum))
   (storage nil :type (simple-array double-float (* *))))

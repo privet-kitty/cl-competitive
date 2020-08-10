@@ -2,6 +2,12 @@
 ;;; Permutation and Combination
 ;;;
 
+(defpackage :cp/map-permutations
+  (:use :cl)
+  (:export #:map-permutations! #:map-combinations #:map-permutations
+           #:do-permutations! #:do-combinations #:do-permutations))
+(in-package :cp/map-permutations)
+
 (declaim (inline map-permutations!))
 (defun map-permutations! (function vector &optional (start 0) end)
   "Destructively permutes VECTOR[START] ... VECTOR[END-1] and applies FUNCTION

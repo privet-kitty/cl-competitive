@@ -5,46 +5,14 @@
 ;;; Ahuja, Magnanti, Orlin. Network flows
 ;;;
 
-;; NOTE: Not tested. Use dinic.lisp instead
+;; NOTE: Not tested. Use cp/dinic instead
+
+(defpackage :cp/shortest-augmenting-path
+  (:use :cl :cp/max-flow)
+  (:export #:max-flow!))
+(in-package :cp/shortest-augmenting-path)
 
 (defconstant +graph-inf-distance+ #xffffffff)
-
-(define-condition max-flow-overflow (error)
-  ((graph :initarg :graph :reader max-flow-overflow-graph))
-  (:report
-   (lambda (condition stream)
-     (format stream "MOST-POSITIVE-FIXNUM or more units can flow on graph ~W."
-             (max-flow-overflow-graph condition)))))
-
-(defstruct (edge (:constructor %make-edge
-                     (to capacity reversed
-                      &aux (default-capacity capacity))))
-  (to nil :type (integer 0 #.most-positive-fixnum))
-  (capacity 0 :type (integer 0 #.most-positive-fixnum))
-  (default-capacity 0 :type (integer 0 #.most-positive-fixnum))
-  (reversed nil :type (or null edge)))
-
-(defmethod print-object ((edge edge) stream)
-  (let ((*print-circle* t))
-    (call-next-method)))
-
-(defun add-edge (graph from-idx to-idx capacity &key bidirectional)
-  "FROM-IDX, TO-IDX := index of vertex
-GRAPH := vector of lists of all the outgoing edges
-
-If BIDIRECTIONAL is true, PUSH-EDGE adds the reversed edge of the same
-capacity in addition."
-  (declare (optimize (speed 3))
-           ((simple-array list (*)) graph)
-           ((integer 0 #.most-positive-fixnum) capacity))
-  (unless (zerop capacity)
-    (let* ((dep (%make-edge to-idx capacity nil))
-           (ret (%make-edge from-idx
-                            (if bidirectional capacity 0)
-                            dep)))
-      (setf (edge-reversed dep) ret)
-      (push dep (aref graph from-idx))
-      (push ret (aref graph to-idx)))))
 
 (defun %make-distance-labels (graph dest)
   "Makes initial distance labels to DEST."

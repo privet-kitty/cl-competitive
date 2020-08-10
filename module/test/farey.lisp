@@ -1,8 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../farey.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/farey
+  (:use :cl :fiveam :cp/farey)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/farey)
+(in-suite base-suite)
 
 (defun gen-farey (max-denominator from-end)
   (let (res)
@@ -11,12 +11,12 @@
                from-end)
     (nreverse res)))
 
-(with-test (:name farey)
+(test farey
   (let ((f5 '((1 . 5) (1 . 4) (1 . 3) (2 . 5) (1 . 2) (3 . 5) (2 . 3) (3 . 4) (4 . 5))))
-    (assert (equal f5 (gen-farey 5 nil)))
-    (assert (equal (reverse f5) (gen-farey 5 t)))
+    (is (equal f5 (gen-farey 5 nil)))
+    (is (equal (reverse f5) (gen-farey 5 t)))
     ;; trivial case
-    (assert (null (gen-farey 1 nil)))
-    (assert (null (gen-farey 1 t)))
-    (assert (null (gen-farey 0 nil)))
-    (assert (null (gen-farey 0 t)))))
+    (is (null (gen-farey 1 nil)))
+    (is (null (gen-farey 1 t)))
+    (is (null (gen-farey 0 nil)))
+    (is (null (gen-farey 0 t)))))

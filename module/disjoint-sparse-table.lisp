@@ -7,6 +7,11 @@
 ;;; http://noshi91.hatenablog.com/entry/2018/05/08/183946 (Japanese)
 ;;; http://drken1215.hatenablog.com/entry/2018/09/08/162600 (Japanese)
 
+(defpackage :cp/disjoint-sparse-table
+  (:use :cl)
+  (:export #:make-disjoint-sparse-table #:dst-query))
+(in-package :cp/disjoint-sparse-table)
+
 ;; NOTE: This constructor is slow on SBCL version earlier than 1.5.6 as the type
 ;; propagation of MAKE-ARRAY doesn't work. The following files are required to
 ;; enable the optimization.

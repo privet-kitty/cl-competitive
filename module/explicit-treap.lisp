@@ -3,6 +3,17 @@
 ;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
 ;;;
 
+(defpackage :cp/explicit-treap
+  (:use :cl)
+  (:export #:treap #:treap-p #:treap-key #:treap-accumulator
+           #:treap-split #:treap-insert #:treap-merge #:treap-delete
+           #:treap-ensure-key #:treap-unite #:treap-map #:do-treap
+           #:make-treap #:treap-query #:treap-update #:treap-ref
+           #:treap-first #:treap-last #:treap-find
+           #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
+           #:treap-range-bisect #:treap-range-bisect-from-end))
+(in-package :cp/explicit-treap)
+
 ;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
 ;; (+ x y)) and insert each element by
 ;;

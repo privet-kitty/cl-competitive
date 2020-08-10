@@ -1,3 +1,8 @@
+(defpackage :cp/divisor
+  (:use :cl)
+  (:export #:enum-divisors #:enum-ascending-divisors #:make-divisors-table))
+(in-package :cp/divisor)
+
 (declaim (ftype (function * (values (vector (integer 0 #.most-positive-fixnum)) &optional))
                 enum-divisors))
 (defun enum-divisors (x)

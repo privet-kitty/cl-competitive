@@ -3,10 +3,17 @@
 ;;; instead. I leave it just for my reference.
 ;;;
 
+(defpackage :cp/reference-heap
+  (:use :cl)
+  (:export #:heap #:heap-p #:make-heap #:heap-empty-error
+           #:heap-push #:heap-pop #:heap-peek #:heap-empty-p #:heap-count #:heap-reinitialize))
+(in-package :cp/reference-heap)
+
 (defstruct (heap (:constructor make-heap
                             (size
                              &key order (element-type t)
-                             &aux (data (make-array (1+ size) :element-type element-type)))))
+                             &aux (data (make-array (1+ size) :element-type element-type))))
+                 (:copier nil))
   (data nil :type (simple-array * (*)))
   (order #'< :type function :read-only t)
   (position 1 :type (integer 1 #.array-total-size-limit)))
@@ -85,12 +92,3 @@
 (declaim (inline heap-empty-p))
 (defun heap-empty-p (heap)
   (= (heap-position heap) 1))
-
-;; (defun bench (&optional (size 2000000))
-;;   (declare (optimize (speed 3)))
-;;   (let* ((heap (make-heap size :element-type 'fixnum))
-;;          (seed (seed-random-state 0)))
-;;     (time (dotimes (i size)
-;;             (heap-push (random most-positive-fixnum seed) heap)))
-;;     (time (dotimes (i size)
-;;             (heap-pop heap)))))

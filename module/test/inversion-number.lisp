@@ -1,8 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../inversion-number.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/inversion-number
+  (:use :cl :fiveam :cp/inversion-number)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/inversion-number)
+(in-suite base-suite)
 
 ;; test
 (defun count-inversions-by-bubble-sort! (vec predicate &key (key #'identity))
@@ -19,12 +19,13 @@
 
 (declaim (notinline count-inversions!))
 
-(with-test (:name inversion-number)
+(test inversion-number
+  (declare (notinline count-inversions!))
   (let ((vec (make-array 200))
         (state (sb-ext:seed-random-state 0)))
     (dotimes (i (length vec))
       (setf (aref vec i) (cons (random 20 state) (random 20 state))))
-    (assert (= (count-inversions! (copy-seq vec) #'< :key #'cdr)
-               (count-inversions-by-bubble-sort! (copy-seq vec) #'< :key #'cdr)))
-    (assert (= (count-inversions! (copy-seq vec) #'< :key #'car)
-               (count-inversions-by-bubble-sort! (copy-seq vec) #'< :key #'car)))))
+    (is (= (count-inversions! (copy-seq vec) #'< :key #'cdr)
+           (count-inversions-by-bubble-sort! (copy-seq vec) #'< :key #'cdr)))
+    (is (= (count-inversions! (copy-seq vec) #'< :key #'car)
+           (count-inversions-by-bubble-sort! (copy-seq vec) #'< :key #'car)))))

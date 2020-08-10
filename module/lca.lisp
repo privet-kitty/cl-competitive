@@ -4,6 +4,13 @@
 ;;; query: O(log(n))
 ;;;
 
+(defpackage :cp/lca
+  (:use :cl)
+  (:export #:lca-table #:lca-table-p
+           #:make-lca-table #:lca-max-level #:lca-depths #:lca-parents
+           #:two-vertices-disconnected-error #:lca-get-lca #:lca-distance))
+(in-package :cp/lca)
+
 ;; PAY ATTENTION TO THE STACK SIZE! THE CONSTRUCTOR DOES DFS.
 
 (deftype lca-vertex-number () '(signed-byte 32))
@@ -19,7 +26,8 @@
                                      :initial-element -1))
                  (parents (make-array (list size max-level)
                                       :element-type 'lca-vertex-number))))
-            (:conc-name lca-))
+            (:conc-name lca-)
+            (:copier nil))
   (max-level nil :type (integer 0 #.most-positive-fixnum))
   (depths nil :type (simple-array lca-vertex-number (*)))
   (parents nil :type (simple-array lca-vertex-number (* *))))

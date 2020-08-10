@@ -2,20 +2,27 @@
 ;;; Compute a well approximated value of log(n!) by asymtotic expansion
 ;;;
 
-(declaim ((simple-array double-float (*)) *bernoulli*))
+(defpackage :cp/log-factorial
+  (:use :cl)
+  (:export #:log-factorial #:log-binomial))
+(in-package :cp/log-factorial)
+
 (defparameter *bernoulli*
   #.(coerce
      (mapcar (lambda (x) (float x 1d0))
              '(1 -1/2 1/6 0 -1/30 0 1/42 0 -1/30 0 5/66 0 -691/2730 0 7/6 0 -3617/510 0 43867/798 0 -174611/330 0 854513/138 0 -236364091/2730 0 8553103/6 0 -23749461029/870 0 8615841276005/14332 0))
      '(simple-array double-float (*)))
   "Bernoulli number")
+(declaim ((simple-array double-float (*)) *bernoulli*)
+         #+sbcl (sb-ext:always-bound *bernoulli*))
 
 ;; exact values for small input
-(declaim ((simple-array (unsigned-byte 62) (*)) *factorial-table*))
 (defparameter *factorial-table*
   (make-array 21
               :element-type '(unsigned-byte 62)
               :initial-contents '(1 1 2 6 24 120 720 5040 40320 362880 3628800 39916800 479001600 6227020800 87178291200 1307674368000 20922789888000 355687428096000 6402373705728000 121645100408832000 2432902008176640000)))
+(declaim ((simple-array (unsigned-byte 62) (*)) *factorial-table*)
+         #+sbcl (sb-ext:always-bound *factorial-table*))
 
 ;; FIXME: Maybe we should rely on a convergent series instead of the asymptotic
 ;; expansion. See

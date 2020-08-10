@@ -1,3 +1,8 @@
+(defpackage :cp/map-monotone-subseq
+  (:use :cl)
+  (:export #:map-monotone-subseq #:map-altering-monotone-subseq))
+(in-package :cp/map-monotone-subseq)
+
 ;; not tested
 
 ;; TODO: integrate these two functions

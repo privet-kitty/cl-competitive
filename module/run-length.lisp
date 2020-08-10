@@ -1,3 +1,8 @@
+(defpackage :cp/run-length
+  (:use :cl)
+  (:export #:map-run-length))
+(in-package :cp/run-length)
+
 (declaim (inline map-run-length))
 (defun map-run-length (function seq &key (test #'eql))
   "Applies FUNCTION to each equal successive element of SEQ. FUNCTION must take

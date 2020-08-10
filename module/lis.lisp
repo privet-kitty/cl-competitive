@@ -1,3 +1,8 @@
+(defpackage :cp/lis
+  (:use :cl)
+  (:export #:calc-lis))
+(in-package :cp/lis)
+
 ;;;
 ;;; Longest increasing/decreasing/non-decreasing/non-increasing subsequence
 ;;;

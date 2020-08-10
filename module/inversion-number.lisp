@@ -2,6 +2,11 @@
 ;;; Count the number of inversions in a vector by merge sort
 ;;;
 
+(defpackage :cp/inversion-number
+  (:use :cl)
+  (:export #:count-inversions!))
+(in-package :cp/inversion-number)
+
 (declaim (inline %merge-count))
 (defun %merge-count (l mid r source-vec dest-vec predicate key)
   (declare ((integer 0 #.array-total-size-limit) l mid r))

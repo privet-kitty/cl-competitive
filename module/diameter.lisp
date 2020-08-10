@@ -2,6 +2,11 @@
 ;;; Diameter of tree
 ;;;
 
+(defpackage :cp/diameter
+  (:use :cl)
+  (:export #:find-diameter))
+(in-package :cp/diameter)
+
 (declaim (inline find-diameter))
 (defun find-diameter (graph)
   "Finds a diameter of a tree. Returns three values: the length of the diameter

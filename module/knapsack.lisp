@@ -1,3 +1,8 @@
+(defpackage :cp/knapsack
+  (:use :cl)
+  (:export #:knapsack-merge))
+(in-package :cp/knapsack)
+
 ;; TODO: add document and test
 (defun knapsack-merge (values weights new-value new-weight)
   "Merges new item to the set of possible sum of values and weights. VALUES and

@@ -1,3 +1,7 @@
+(defpackage :cp/enum-quotients
+  (:use :cl)
+  (:export #:enum-quotients))
+(in-package :cp/enum-quotients)
 
 (defun enum-quotients (n)
   "Given a positive integer N, floor(N/k) takes at most O(sqrt(N)) values for k

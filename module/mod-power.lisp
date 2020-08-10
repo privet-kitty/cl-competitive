@@ -1,3 +1,8 @@
+(defpackage :cp/mod-power
+  (:use :cl)
+  (:export #:mod-power))
+(in-package :cp/mod-power)
+
 (declaim (inline mod-power))
 (defun mod-power (base power modulus)
   "Returns BASE^POWER mod MODULUS. Note: 0^0 = 1.

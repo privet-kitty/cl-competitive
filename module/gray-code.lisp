@@ -1,3 +1,8 @@
+(defpackage :cp/gray-code
+  (:use :cl)
+  (:export #:natural-to-gray #:gray-to-natural))
+(in-package :cp/gray-code)
+
 (declaim (inline natural-to-gray))
 (defun natural-to-gray (x)
   "Encodes X into Gray code."

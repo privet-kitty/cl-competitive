@@ -1,3 +1,8 @@
+(defpackage :cp/displace
+  (:use :cl)
+  (:export #:displace))
+(in-package :cp/displace)
+
 (declaim (inline displace))
 (defun displace (vector &optional (start 0) end)
   "displaced subseq"

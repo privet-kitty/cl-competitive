@@ -3,32 +3,38 @@
 ;;; (All the basic operations are amortized O(1))
 ;;;
 
-(defstruct (dsdeque (:constructor %make-dsdeque (stack1 stack2))
-                    (:conc-name %dsdeque-)
+(defpackage :cp/double-stack-deque
+  (:use :cl)
+  (:export #:deque-empty-error #:deque #:make-deque
+           #:deque-push-back #:deque-push-front #:deque-pop-front #:deque-pop-back))
+(in-package :cp/double-stack-deque)
+
+(defstruct (deque (:constructor %make-deque (stack1 stack2))
+                    (:conc-name %deque-)
                     (:copier nil))
   (stack1 nil :type list)
   (stack2 nil :type list))
 
-(define-condition dsdeque-empty-error (error)
-  ((dsdeque :initarg :deque :reader dsdeque-empty-error-dsdeque))
+(define-condition deque-empty-error (error)
+  ((deque :initarg :deque :reader deque-empty-error-deque))
   (:report
    (lambda (condition stream)
-     (format stream "Attempted to pop empty deque ~W" (dsdeque-empty-error-dsdeque condition)))))
+     (format stream "Attempted to pop empty deque ~W" (deque-empty-error-deque condition)))))
 
-(defun make-dsdeque (&optional list)
-  (%make-dsdeque list nil))
+(defun make-deque (&optional list)
+  (%make-deque list nil))
 
-(declaim (inline dsdeque-push-front))
-(defun dsdeque-push-front (obj dsdeque)
-  (push obj (%dsdeque-stack1 dsdeque))
-  dsdeque)
+(declaim (inline deque-push-front))
+(defun deque-push-front (obj deque)
+  (push obj (%deque-stack1 deque))
+  deque)
 
-(declaim (inline dsdeque-push-back))
-(defun dsdeque-push-back (obj dsdeque)
-  (push obj (%dsdeque-stack2 dsdeque))
-  dsdeque)
+(declaim (inline deque-push-back))
+(defun deque-push-back (obj deque)
+  (push obj (%deque-stack2 deque))
+  deque)
 
-(defun %dsdeque-balance! (stack)
+(defun %deque-balance! (stack)
   (declare (optimize (speed 3))
            (list stack))
   (let* ((n (length stack))
@@ -42,28 +48,28 @@
                    (recur (cdr list) (+ pos 1)))))
       (recur stack 0))))
 
-(declaim (inline dsdeque-pop-front))
-(defun dsdeque-pop-front (dsdeque)
-  (symbol-macrolet ((stack1 (%dsdeque-stack1 dsdeque))
-                    (stack2 (%dsdeque-stack2 dsdeque)))
+(declaim (inline deque-pop-front))
+(defun deque-pop-front (deque)
+  (symbol-macrolet ((stack1 (%deque-stack1 deque))
+                    (stack2 (%deque-stack2 deque)))
     (unless stack1
       (if (cdr stack2)
           (setf (values stack2 stack1)
-                (%dsdeque-balance! stack2))
+                (%deque-balance! stack2))
           (if stack2
-              (return-from dsdeque-pop-front (pop stack2))
-              (error 'dsdeque-empty-error :deque dsdeque))))
+              (return-from deque-pop-front (pop stack2))
+              (error 'deque-empty-error :deque deque))))
     (pop stack1)))
 
-(declaim (inline dsdeque-pop-back))
-(defun dsdeque-pop-back (dsdeque)
-  (symbol-macrolet ((stack1 (%dsdeque-stack1 dsdeque))
-                    (stack2 (%dsdeque-stack2 dsdeque)))
+(declaim (inline deque-pop-back))
+(defun deque-pop-back (deque)
+  (symbol-macrolet ((stack1 (%deque-stack1 deque))
+                    (stack2 (%deque-stack2 deque)))
     (unless stack2
       (if (cdr stack1)
           (setf (values stack1 stack2)
-                (%dsdeque-balance! stack1))
+                (%deque-balance! stack1))
           (if stack1
-              (return-from dsdeque-pop-back (pop stack1))
-              (error 'dsdeque-empty-error :deque dsdeque))))
+              (return-from deque-pop-back (pop stack1))
+              (error 'deque-empty-error :deque deque))))
     (pop stack2)))

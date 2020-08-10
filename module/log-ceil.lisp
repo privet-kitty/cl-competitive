@@ -1,3 +1,8 @@
+(defpackage :cp/log-ceil
+  (:use :cl)
+  (:export #:log2-ceil #:log-ceil))
+(in-package :cp/log-ceil)
+
 (declaim (inline log2-ceil))
 (defun log2-ceil (x)
   "Rounds up log2(x)."
