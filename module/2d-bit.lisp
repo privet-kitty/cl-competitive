@@ -1,5 +1,5 @@
 (defpackage :cp/2d-bit
-  (:use #:cl)
+  (:use :cl)
   (:export #:define-2d-bitree))
 (in-package :cp/2d-bit)
 

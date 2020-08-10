@@ -2,6 +2,11 @@
 ;;; 2D rolling hash (32-bit)
 ;;;
 
+(defpackage :cp/2d-rolling-hash
+  (:use :cl)
+  (:export #:make-rhash2d #:rhash2d-matrix-hash))
+(in-package :cp/2d-rolling-hash)
+
 ;; This table consists of pairs of primes less than 2^32 and the random
 ;; primitive roots modulo them larger than 10^9. We randomly choose a pair and
 ;; adopt the prime as modulus and the primitive root as base.

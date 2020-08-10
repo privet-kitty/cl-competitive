@@ -2,13 +2,12 @@
   (:use :cl :fiveam :cp/2d-bit)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/2d-bit)
+(in-suite base-suite)
 
 (define-2d-bitree bitree
   :operator #'+
   :identity 0
   :sum-type fixnum)
-
-(in-suite base-suite)
 
 (test 2d-bit
   (let ((tree (coerce-to-bitree! (make-array '(2 3) :initial-contents '((1 2 3) (4 5 6)))))
