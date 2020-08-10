@@ -3,6 +3,11 @@
 ;;; (better to use in-place FFT instead. I leave it just for my reference.)
 ;;;
 
+(defpackage :cp/fft-recursive
+  (:use :cl)
+  (:export #:fft-float #:dft! #:inverse-dft! #:convolute!))
+(in-package :cp/fft-recursive)
+
 (deftype fft-float () 'double-float)
 
 (defun dft! (f)
@@ -61,8 +66,8 @@
   "Checks if X is a power of 2."
   (zerop (logand x (- x 1))))
 
-(declaim (inline poly-multiply!))
-(defun poly-multiply! (g h)
+(declaim (inline convolute!))
+(defun convolute! (g h)
   (declare ((simple-array (complex fft-float) (*)) g h))
   (assert (and (power2-p (length g))
                (power2-p (length h))

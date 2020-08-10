@@ -1,9 +1,13 @@
+(defpackage :cp/2dcumul
+  (:use :cl)
+  (:export #:2dcumul-get #:2dcumul-initialize))
+(in-package :cp/2dcumul)
+
 (declaim (inline 2dcumul-get))
 (defun 2dcumul-get (cumul-table i0 j0 i1 j1)
-  "Returns the cumulative sum of the region given by the rectangle [i0, i1)*[j0,
+  "Returns the cumulative sum of the region given by rectangle [i0, i1)*[j0,
 j1). CUMUL-TABLE must be appropriately initialized beforehand:
-i.e. CUMUL-TABLE[i][j] = sum of the region given by the regtangle [0, i)*[0,
-j)."
+i.e. CUMUL-TABLE[i][j] = sum of the region given by rectangle [0, i)*[0, j)."
   (+ (- (aref cumul-table i1 j1)
         (aref cumul-table i0 j1)
         (aref cumul-table i1 j0))
@@ -23,4 +27,5 @@ j)."
       (dotimes (j w+1)
         (dotimes (i h)
           (incf (aref cumul-table (+ i 1) j)
-                (aref cumul-table i j)))))))
+                (aref cumul-table i j))))))
+  cumul-table)

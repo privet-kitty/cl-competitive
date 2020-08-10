@@ -1,3 +1,8 @@
+(defpackage :cp/find-argopt
+  (:use :cl)
+  (:export #:find-argopt))
+(in-package :cp/find-argopt)
+
 (declaim (inline find-argopt))
 (defun find-argopt (iterable predicate &key start end (key #'identity))
   "Returns an index (or key) x at which ITERABLE takes the minimum (or maximum,

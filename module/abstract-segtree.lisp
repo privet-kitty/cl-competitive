@@ -5,6 +5,11 @@
 ;; TODO: test
 ;; TODO: binary search
 
+(defpackage :cp/abstract-segtree
+  (:use :cl)
+  (:export #:define-segtree))
+(in-package :cp/abstract-segtree)
+
 (defmacro define-segtree (name &key (operator '#'+) (identity 0) element-type)
   "OPERATOR := binary operator (comprising a monoid)
 IDENTITY := object (identity element of the monoid)
@@ -84,7 +89,11 @@ This macro defines three functions: <NAME>-REF, index-access function,
                           r (ash (- r 1) -1)))
            (funcall ,operator lvalue rvalue))))))
 
+#|
+
 (define-segtree segtree
   :operator #'+
   :identity 0
   :element-type fixnum)
+
+;|#

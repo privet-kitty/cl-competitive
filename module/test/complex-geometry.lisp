@@ -1,13 +1,10 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../complex-geometry.lisp"))
+(defpackage :cp/test/complex-geometry
+  (:use :cl :fiveam :cp/complex-geometry)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/complex-geometry)
+(in-suite base-suite)
 
-(use-package :test-util)
+(test cross-product
+  (is (= 0 (cross-product #c(1 3) #c(2 6))))
+  (is (= -6 (cross-product #c(5 7) #c(13 17)))))
 
-(with-test (:name cross-product)
-  (assert (= 0 (cross-product #c(1 3) #c(2 6))))
-  (assert (= -6 (cross-product #c(5 7) #c(13 17)))))
-
-(with-test (:name calc-circumcenter)
-  (assert (null (calc-circumcenter #c(0 0) #c(1 1) #c(2 2))))
-  (assert (not (null (calc-circumcenter #c(0 0) #c(1 0) #c(1 1))))))

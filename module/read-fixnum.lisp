@@ -1,3 +1,8 @@
+(defpackage :cp/read-fixnum
+  (:use :cl)
+  (:export #:read-fixnum))
+(in-package :cp/read-fixnum)
+
 (declaim (ftype (function * (values fixnum &optional)) read-fixnum))
 (defun read-fixnum (&optional (in *standard-input*))
   "NOTE: cannot read -2^62"

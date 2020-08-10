@@ -1,3 +1,8 @@
+(defpackage :cp/bipartite-p
+  (:use :cl)
+  (:export #:bipartite-p))
+(in-package :cp/bipartite-p)
+
 ;; PAY ATTENTION TO THE STACK SIZE!
 (declaim (inline bipartite-p)
          (ftype (function * (values (or null simple-bit-vector) &optional)) bipartite-p))

@@ -2,6 +2,11 @@
 ;;; Bignum arithmetic by Chinese remainder theorem
 ;;;
 
+(defpackage :cp/chinese-remainder
+  (:use :cl)
+  (:export #:chinese-rem #:chinese-rem*))
+(in-package :cp/chinese-remainder)
+
 ;; Extended Euclidean algorithm (Blankinship algorithm)
 (declaim (ftype (function * (values integer integer &optional)) %ext-gcd/bignum))
 (defun %ext-gcd/bignum (a b)

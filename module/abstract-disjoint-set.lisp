@@ -4,6 +4,11 @@
 
 ;; not tested
 
+(defpackage :cp/abstract-disjoint-set
+  (:use :cl)
+  (:export #:define-disjoint-set))
+(in-package :cp/abstract-disjoint-set)
+
 (defmacro define-disjoint-set (name &key (operation '#'+) (element-type 'fixnum) (union-by-size t) conc-name)
   (check-type name symbol)
   (let* ((conc-string (if conc-name
@@ -83,9 +88,12 @@ connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
          (- (aref (,data-accessor ,name)
                   (,rooter ,name x)))))))
 
+#|
 
 (define-disjoint-set disjoint-set
   :operation #'max
   :element-type fixnum
   :conc-name ds-
   :union-by-size nil)
+
+;|#

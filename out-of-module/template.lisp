@@ -1,3 +1,4 @@
+(in-package :cl-user)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-int:defconstant-eqx opt
     #+swank '(optimize (speed 3) (safety 2))
@@ -14,7 +15,10 @@
      ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))) bits)))
 (define-int-types 2 4 7 8 15 16 31 32 62 63 64)
 
+(defconstant +mod+ 1000000007)
+
 ;; BEGIN_INSERTED_CONTENTS
+;; BEGIN_USE_PACKAGE
 (in-package :cl-user)
 
 (defmacro dbg (&rest forms)
@@ -28,8 +32,6 @@
 (defun println (obj &optional (stream *standard-output*))
   (let ((*read-default-float-format* 'double-float))
     (prog1 (princ obj stream) (terpri stream))))
-
-(defconstant +mod+ 1000000007)
 
 ;;;
 ;;; Body

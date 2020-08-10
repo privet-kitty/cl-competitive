@@ -1,3 +1,8 @@
+(defpackage :cp/bit-basher
+  (:use :cl)
+  (:export #:bit-not! #:bit-count #:bit-lshift))
+(in-package :cp/bit-basher)
+
 ;;;
 ;;; Complement to the bitwise operations in CLHS
 ;;;

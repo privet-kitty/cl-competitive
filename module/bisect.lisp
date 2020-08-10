@@ -1,3 +1,8 @@
+(defpackage :cp/bisect
+  (:use :cl)
+  (:export #:bisect-left #:bisect-right))
+(in-package :cp/bisect)
+
 (declaim (inline bisect-left))
 (defun bisect-left (target value &key (start 0) end (order #'<) (key #'identity))
   "TARGET := vector | function (taking an integer argument)

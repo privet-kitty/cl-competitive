@@ -1,3 +1,8 @@
+(defpackage :cp/read-line-into
+  (:use :cl)
+  (:export #:read-line-into))
+(in-package :cp/read-line-into)
+
 (declaim (inline read-line-into))
 (defun read-line-into (buffer-string &key (in *standard-input*) (term-char #\Space))
   "Receives ASCII inputs and returns multiple values: the string and the end

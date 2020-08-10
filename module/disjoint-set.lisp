@@ -2,10 +2,17 @@
 ;;; Disjoint set (union by size & path compression)
 ;;;
 
+(defpackage :cp/disjoint-set
+  (:use :cl)
+  (:export #:disjoint-set #:make-disjoint-set #:disjoint-set-p
+           #:ds-root #:ds-unite! #:ds-connected-p #:ds-size))
+(in-package :cp/disjoint-set)
+
 (defstruct (disjoint-set
             (:constructor make-disjoint-set
                 (size &aux (data (make-array size :element-type 'fixnum :initial-element -1))))
-            (:conc-name ds-))
+            (:conc-name ds-)
+            (:copier nil))
   (data nil :type (simple-array fixnum (*))))
 
 (declaim (inline ds-root))

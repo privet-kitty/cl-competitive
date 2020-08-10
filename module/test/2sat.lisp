@@ -1,0 +1,23 @@
+(defpackage :cp/test/2sat
+  (:use :cl :fiveam :cp/2sat)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/2sat)
+(in-suite base-suite)
+
+(test 2sat
+  (2sat-solve (make-2sat 0))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat 0 (negate 0))
+    (is (equalp #(0) (2sat-solve 2sat))))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat (negate 0) 0)
+    (is (equalp #(1) (2sat-solve 2sat))))
+  (let ((2sat (make-2sat 1)))
+    (add-implication 2sat 0 (negate 0))
+    (add-implication 2sat (negate 0) 0)
+    (is (null (2sat-solve 2sat))))
+  (let ((2sat (make-2sat 2)))
+    (add-implication 2sat 1 (negate 1))
+    (add-implication 2sat 0 1)
+    (add-implication 2sat (negate 0) 0)
+    (is (null (2sat-solve 2sat)))))

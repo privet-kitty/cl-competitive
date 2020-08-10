@@ -6,6 +6,11 @@
 ;;; http://techtipshoge.blogspot.com/2011/08/fft4.html (Japanese)
 ;;;
 
+(defpackage :cp/fft
+  (:use :cl)
+  (:export #:fft-float #:dft! #:inverse-dft! #:with-fixed-length-fft #:convolute!))
+(in-package :cp/fft)
+
 (deftype fft-float () 'double-float)
 
 (declaim (inline power2-p))

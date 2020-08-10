@@ -5,20 +5,25 @@
 ;;; Ahuja, Magnanti, Orlin. Network Flows: Theory, Algorithms, and Applications.
 ;;;
 
-(defconstant +boruvka-inf-cost+ most-positive-fixnum)
+(defpackage :cp/boruvka
+  (:use :cl)
+  (:export #:find-mst))
+(in-package :cp/boruvka)
+
+(defconstant +inf-cost+ most-positive-fixnum)
 
 ;; Here I express each connected component as a cycle with singly-linked list,
 ;; though Ahuja's book adopts doubly-linked list. I learned about this technique
 ;; in noshi91's article: http://noshi91.hatenablog.com/entry/2019/07/19/180606
 ;; (Japanese)
 
-(declaim (inline boruvka)
+(declaim (inline find-mst)
          (ftype (function * (values (simple-array fixnum (*))
                                     (simple-array fixnum (*))
                                     (simple-array fixnum (*))
                                     &optional))
-                boruvka))
-(defun boruvka (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
+                find-mst))
+(defun find-mst (graph &key (vertex-key #'car) (cost-key #'cdr) maximize)
   "Computes an MST by Boruvka's algorithm. Returns three values: a vector that
 stores each cost of the edges, two vectors that store each end of the edges. If
 GRAPH is not connected, this function computes MST for each connected component.
@@ -58,7 +63,7 @@ MAXIMIZE := if true, solve maximization problem instead"
                (rotatef (aref nexts root1) (aref nexts root2))))
       (loop for updated = nil
             while (< edge-count (- n 1))
-            do (fill min-costs +boruvka-inf-cost+)
+            do (fill min-costs +inf-cost+)
                ;; detect minimum cost edge starting from each connected component
                (dotimes (u n)
                  (let ((root (aref roots u)))
@@ -79,7 +84,7 @@ MAXIMIZE := if true, solve maximization problem instead"
                         (src (aref min-srcs root))
                         (dest (aref min-dests root))
                         (cost (aref min-costs root)))
-                   (unless (= cost +boruvka-inf-cost+) ; can be true if GRAPH is not connected
+                   (unless (= cost +inf-cost+) ; can be true if GRAPH is not connected
                      (loop for root2 = (aref roots dest)
                            until (= root root2)
                            do (setq updated t)

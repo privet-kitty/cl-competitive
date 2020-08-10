@@ -1,3 +1,8 @@
+(defpackage :cp/shuffle
+  (:use :cl)
+  (:export #:shuffle!))
+(in-package :cp/shuffle)
+
 (declaim (inline shuffle!))
 (defun shuffle! (vector &optional (start 0) end)
   "Destructively shuffles VECTOR by Fisher-Yates algorithm."

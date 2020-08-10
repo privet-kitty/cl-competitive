@@ -2,6 +2,11 @@
 ;;; Binary heap
 ;;;
 
+(defpackage :cp/abstract-heap
+  (:use :cl)
+  (:export #:heap-empty-error #:define-binary-heap))
+(in-package :cp/abstract-heap)
+
 (define-condition heap-empty-error (error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report
@@ -27,7 +32,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
     `(progn
        (locally
            ;; prevent style warnings
-           (declare #+sbcl (muffle-conditions style-warning))
+           (declare #+sbcl (sb-ext:muffle-conditions style-warning))
          (defstruct (,name
                      (:constructor ,fname-make
                          (size
@@ -116,6 +121,10 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
              (error 'heap-empty-error :heap heap)
              (aref (,acc-data heap) 1))))))
 
+#|
+
 (define-binary-heap heap
   :order #'>
   :element-type fixnum)
+
+;|#

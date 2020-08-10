@@ -2,6 +2,11 @@
 ;;; Utilities for continued fraction
 ;;;
 
+(defpackage :cp/continued-fraction
+  (:use :cl)
+  (:export #:numerize-cfrac #:calc-cfrac-of-sqrt #:solve-pell))
+(in-package :cp/continued-fraction)
+
 ;; NOTE: not tested
 
 (defun numerize-cfrac (cfrac)

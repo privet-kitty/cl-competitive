@@ -4,6 +4,11 @@
 ;;; it just for my reference.
 ;;;
 
+(defpackage :cp/reference-bit
+  (:use :cl)
+  (:export #:cp/bitree-inc! #:cp/bitree-sum #:coerce-to-bitree! #:count-inversions))
+(in-package :cp/reference-bit)
+
 (declaim (inline bitree-inc!))
 (defun bitree-inc! (bitree index delta)
   "Destructively increments the vector: vector[INDEX] += DELTA"

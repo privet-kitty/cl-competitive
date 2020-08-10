@@ -5,6 +5,11 @@
 ;;; https://codeforces.com/blog/entry/45485
 ;;;
 
+(defpackage :cp/2d-sparse-table
+  (:use :cl)
+  (:export #:make-2d-sparse-table #:2dst-query))
+(in-package :cp/2d-sparse-table)
+
 (declaim (inline make-2d-sparse-table))
 (defun make-2d-sparse-table (matrix binop)
   (destructuring-bind (m n) (array-dimensions matrix)

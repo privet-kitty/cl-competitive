@@ -3,6 +3,11 @@
 ;;; Complexity: O(nlog(n))
 ;;;
 
+(defpackage :cp/convex-hull
+  (:use :cl)
+  (:export #:make-convex-hull!))
+(in-package :cp/convex-hull)
+
 (declaim (inline make-convex-hull!))
 (defun make-convex-hull! (points &optional (eps 0))
   "Returns a vector of the vertices comprising the convex hull, which are sorted

@@ -1,3 +1,8 @@
+(defpackage :cp/buffered-read-line
+  (:use :cl)
+  (:export #:buffered-read-line))
+(in-package :cp/buffered-read-line)
+
 (defmacro buffered-read-line (&optional (buffer-size 30) (in '*standard-input*) (term-char #\Space))
   "Reads ASCII inputs and returns two values: the string and the end
 position. Note that the returned string will be reused if this form is executed

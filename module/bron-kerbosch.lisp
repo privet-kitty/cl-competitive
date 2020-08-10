@@ -3,6 +3,11 @@
 ;;; Reference: http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf
 ;;;
 
+(defpackage :cp/bron-kerbosch
+  (:use :cl)
+  (:export #:find-max-clique))
+(in-package :cp/bron-kerbosch)
+
 ;; TODO: deal with an ordinary adjacency matrix
 (declaim (inline find-max-clique))
 (defun find-max-clique (neighbors)

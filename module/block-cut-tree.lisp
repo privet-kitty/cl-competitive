@@ -2,6 +2,12 @@
 ;;; Biconnected components, bridges, and block-cut tree of undirected graph
 ;;;
 
+(defpackage :cp/block-cut-tree
+  (:use :cl)
+  (:export #:bcc #:bcc-graph #:bcc-preorders #:bcc-components #:bcc-sizes #:bcc-count
+           #:bcc-bridges #:make-bcc #:make-block-cut-tree))
+(in-package :cp/block-cut-tree)
+
 ;; PAY ATTENTION TO THE STACK SIZE! MAKE-BCC does DFS.
 
 (defstruct (bcc (:constructor %make-bcc (graph preorders components sizes count bridges)))
@@ -80,8 +86,8 @@
           (dfs v -1)))
       (%make-bcc graph preorders components sizes bcc-ord bridges))))
 
-(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-block-cut))
-(defun make-block-cut (bcc)
+(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-block-cut-tree))
+(defun make-block-cut-tree (bcc)
   "Makes a block-cut tree (or forest, if not connected). Returns the vector of
 adjacency lists."
   (declare (optimize (speed 3)))

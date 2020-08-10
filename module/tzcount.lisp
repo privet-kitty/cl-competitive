@@ -1,3 +1,8 @@
+(defpackage :cp/tzcount
+  (:use :cl)
+  (:export #:tzcount))
+(in-package :cp/tzcount)
+
 (declaim (inline tzcount))
 (defun tzcount (x)
   "Is equivalent to TZCNT operation: it returns the number of trailing zero

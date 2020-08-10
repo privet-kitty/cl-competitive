@@ -8,7 +8,12 @@
 ;;; P_m(n, k) = P(n, n) (k > n)
 ;;;
 
-(defun make-bpartition (size max divisor)
+(defpackage :cp/bounded-partition-number
+  (:use :cl)
+  (:export #:make-bpartition-table))
+(in-package :cp/bounded-partition-number)
+
+(defun make-bpartition-table (size max divisor)
   "Generates the table of partition numbers (mod DIVISOR) using the recurrence
 relation P_max(n, k) = P_max(n, k-1) + P_max(n-k, k) + P_max(n-k-m, k-1)."
   (declare ((integer 0 #.most-positive-fixnum) size max)

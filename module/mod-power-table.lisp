@@ -1,3 +1,8 @@
+(defpackage :cp/mod-power-table
+  (:use :cl)
+  (:export #:make-mod-power-table))
+(in-package :cp/mod-power-table)
+
 (declaim (inline make-mod-power-table))
 (defun make-mod-power-table (base length modulus &optional (element-type '(unsigned-byte 31)))
   "Returns a vector of the given length: VECTOR[x] := BASE^x mod MODULUS."

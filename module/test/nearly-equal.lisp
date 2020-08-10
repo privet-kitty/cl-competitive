@@ -1,3 +1,8 @@
+(defpackage :cp/test/nearly-equal
+  (:use :cl)
+  (:export #:nearly= #:nearly<= #:nearly-equal #:nearly-equal-values))
+(in-package :cp/test/nearly-equal)
+
 (defun nearly= (threshold &rest numbers)
   "THRESHOLD := acceptable absolute error."
   (loop for (value1 value2) on numbers

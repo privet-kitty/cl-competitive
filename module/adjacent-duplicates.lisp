@@ -1,3 +1,8 @@
+(defpackage :cp/adjacent-duplicates
+  (:use :cl)
+  (:export #:delete-adjacent-duplicates))
+(in-package :cp/adjacent-duplicates)
+
 (declaim (inline delete-adjacent-duplicates))
 (defun delete-adjacent-duplicates (seq &key (test #'eql))
   "Destructively deletes adjacent duplicates of SEQ: e.g. #(1 1 1 2 2 1 3) ->

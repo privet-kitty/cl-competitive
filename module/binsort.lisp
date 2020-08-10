@@ -2,6 +2,11 @@
 ;;; Bucket sort and counting sort
 ;;;
 
+(defpackage :cp/binsort
+  (:use :cl)
+  (:export #:map-binsorted #:do-binsorted #:binsort!))
+(in-package :cp/binsort)
+
 (declaim (inline map-binsorted))
 (defun map-binsorted (function sequence range-max &key from-end key)
   "Calls FUNCTION with each ascending non-negative integer in SEQUENCE if KEY is

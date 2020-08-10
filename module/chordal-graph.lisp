@@ -2,6 +2,11 @@
 ;;; Linear-time graph chordality recognition
 ;;;
 
+(defpackage :cp/chordal-graph
+  (:use :cl)
+  (:export #:perfect-elimination-order-p #:make-perfect-elimination-order))
+(in-package :cp/chordal-graph)
+
 ;; Reference:
 ;; Therese Biedl. Graph-theoretic algorithms. Lecture notes of a graduate course, University of Waterloo
 (defun perfect-elimination-order-p (graph order)

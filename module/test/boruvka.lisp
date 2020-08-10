@@ -1,9 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../boruvka.lisp")
-  (load "../disjoint-set.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/boruvka
+  (:use :cl :fiveam :cp/boruvka :cp/disjoint-set)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/boruvka)
+(in-suite base-suite)
 
 (defun make-random-graph (n density)
   (let ((graph (make-array n :element-type 'list :initial-element nil)))
@@ -16,7 +15,7 @@
     graph))
 
 ;; Kruskal
-(defun kruskal (graph maximize)
+(defun find-mst2 (graph maximize)
   (let* (edges
          (n (length graph))
          (dset (make-disjoint-set n))
@@ -33,22 +32,24 @@
              (ds-unite! dset u v))
     res))
 
-(with-test (:name boruvka)
+(test boruvka
   ;; empty graph
-  (multiple-value-bind (costs e1 e2) (boruvka #())
-    (assert (equalp #() costs))
-    (assert (equalp #() e1))
-    (assert (equalp #() e2)))
+  (multiple-value-bind (costs e1 e2) (find-mst #())
+    (is (equalp #() costs))
+    (is (equalp #() e1))
+    (is (equalp #() e2)))
   ;; self loop
-  (multiple-value-bind (costs e1 e2) (boruvka #(((0 . 10))))
-    (assert (equalp #() costs))
-    (assert (equalp #() e1))
-    (assert (equalp #() e2)))
+  (multiple-value-bind (costs e1 e2) (find-mst #(((0 . 10))))
+    (is (equalp #() costs))
+    (is (equalp #() e1))
+    (is (equalp #() e2)))
   ;; minimize random graph
-  (dotimes (_ 500)
-    (let ((graph (make-random-graph 40 (random 1.0))))
-      (assert (= (kruskal graph nil) (reduce #'+ (boruvka graph))))))
+  (finishes
+    (dotimes (_ 500)
+      (let ((graph (make-random-graph 40 (random 1.0))))
+        (assert (= (find-mst2 graph nil) (reduce #'+ (find-mst graph)))))))
   ;; maximize random graph
-  (dotimes (_ 500)
-    (let ((graph (make-random-graph 40 (random 1.0))))
-      (assert (= (kruskal graph t) (reduce #'+ (boruvka graph :maximize t)))))))
+  (finishes
+    (dotimes (_ 500)
+      (let ((graph (make-random-graph 40 (random 1.0))))
+        (assert (= (find-mst2 graph t) (reduce #'+ (find-mst graph :maximize t))))))))

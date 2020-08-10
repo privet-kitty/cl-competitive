@@ -1,3 +1,8 @@
+(defpackage :cp/random-graph
+  (:use :cl)
+  (:export #:map-random-graph #:canonize-adjacency-matrix! #:make-random-graph))
+(in-package :cp/random-graph)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
 
@@ -13,7 +18,7 @@ lower left) triangle. CANONIZE-ADJACENCY-MATRIX! may be helpful."
            (function function))
   (let* ((num-words (ceiling (* n n) sb-vm:n-word-bits))
          (matrix (make-array (list n n) :element-type 'bit :initial-element 0))
-         (storage (array-storage-vector matrix)))
+         (storage (sb-ext:array-storage-vector matrix)))
     (declare (optimize (speed 3) (safety 0)))
     (check-type num-words (integer 0 #.most-positive-fixnum))
     (dotimes (_ sample)

@@ -6,6 +6,11 @@
 ;;; Akiha, Iwata, Kitagawa. Programming Contest Challenge Book (Japanese)
 ;;;
 
+(defpackage :cp/bipartite-matching
+  (:use :cl)
+  (:export #:find-matching))
+(in-package :cp/bipartite-matching)
+
 (declaim (ftype (function * (values (simple-array fixnum (*))
                                     (mod #.array-total-size-limit)
                                     &optional))

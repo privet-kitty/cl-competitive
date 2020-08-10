@@ -5,6 +5,11 @@
 ;;; http://www.kurims.kyoto-u.ac.jp/~ooura/fftman/ftmn2_12.html#sec2_1_2
 ;;;
 
+(defpackage :cp/fft-real
+  (:use :cl)
+  (:export #:fft-float #:with-fixed-length-fft #:dft! #:inverse-dft! #:convolute!))
+(in-package :cp/fft-real)
+
 (deftype fft-float () 'double-float)
 
 (declaim (inline power2-p))

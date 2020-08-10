@@ -1,8 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../shuffle.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/shuffle
+  (:use :cl :fiveam :cp/shuffle)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/shuffle)
+(in-suite base-suite)
 
 (defun set-equal (seq1 seq2)
   (let ((table1 (make-hash-table))
@@ -16,18 +16,19 @@
          (loop for x being each element of seq2
                always (gethash x table1)))))
 
-(with-test (:name shuffle!)
+(test shuffle
   (let ((seq #(0 1 2 3 4)))
     (dotimes (_ 100)
-      (assert (set-equal seq (shuffle! (copy-seq seq))))))
+      (is (set-equal seq (shuffle! (copy-seq seq))))))
   (let ((seq #(0 1 2 3 4)))
     (loop for start to 5
           do (loop for end from start to 5
-                   do (dotimes (_ 100)
-                        (let ((shuffled (shuffle! (copy-seq seq) start end)))
-                          (loop for i below start
-                                do (assert (= i (aref shuffled i))))
-                          (loop for i from end below (length seq)
-                                do (assert (= i (aref shuffled i))))
-                          (assert (set-equal seq shuffled)))))))
-  (assert (set-equal (vector) (shuffle! (vector)))))
+                   do (finishes
+                        (dotimes (_ 100)
+                          (let ((shuffled (shuffle! (copy-seq seq) start end)))
+                            (loop for i below start
+                                  do (assert (= i (aref shuffled i))))
+                            (loop for i from end below (length seq)
+                                  do (assert (= i (aref shuffled i))))
+                            (assert (set-equal seq shuffled))))))))
+  (is (set-equal (vector) (shuffle! (vector)))))

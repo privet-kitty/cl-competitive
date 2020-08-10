@@ -2,6 +2,11 @@
 ;;; 1-dimensional binary indexed tree on arbitrary commutative monoid
 ;;;
 
+(defpackage :cp/abstract-bit
+  (:use :cl)
+  (:export #:define-bitree))
+(in-package :cp/abstract-bit)
+
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'<))
   "OPERATOR := binary operator (comprising a commutative monoid)
 IDENTITY := object (identity element of the monoid)
@@ -117,11 +122,15 @@ interval."
                                (setf cumul next-cumul)
                                (incf index+1 delta))))))))))))))
 
+#|
+
 (define-bitree bitree
   :operator #'+
   :identity 0
   :sum-type fixnum
   :order #'<)
+
+;|#                                     ;
 
 ;; Example: compute the number of inversions in a sequence
 #|

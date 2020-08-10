@@ -2,6 +2,13 @@
 ;;; Convex Hull Trick for monotone slopes
 ;;;
 
+(defpackage :cp/convex-hull-trick
+  (:use :cl)
+  (:export #:cht-element-type #:cht-empty-error #:cht-full-error
+           #:convex-hull-trick #:make-cht #:cht-p
+           #:cht-push #:cht-get #:cht-increasing-get #:cht-decreasing-get))
+(in-package :cp/convex-hull-trick)
+
 (deftype cht-element-type () 'fixnum)
 
 (define-condition cht-empty-error (error)
