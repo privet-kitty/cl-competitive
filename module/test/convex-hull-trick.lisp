@@ -54,33 +54,33 @@
             for intercept in intercepts
             maximize (+ (* x slope) intercept))))
 
-(test convex-hull-trick/random
-  (dolist (minimum (list t nil))
-    ;; monotone increasing slopes
-    (finishes
-      (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'< minimum)
-        (loop for x from -50 to 50
-              do (let ((min1 (cht-get cht x))
-                       (min2 (%optimize cht x slopes intercepts minimum)))
-                   (assert (= min1 min2))))))
-    ;; monotone decreasing slopes
-    (finishes
-      (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'> minimum)
-        (loop for x from -50 to 50
-              do (let ((min1 (cht-get cht x))
-                       (min2 (%optimize cht x slopes intercepts minimum)))
-                   (assert (= min1 min2))))))
-    ;; monotone increasing query
-    (finishes
-      (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'< minimum)
-        (loop for x from -50 to 50
-              do (let ((min1 (cht-increasing-get cht x))
-                       (min2 (%optimize cht x slopes intercepts minimum)))
-                   (assert (= min1 min2))))))
-    ;; monotone decreasing query
-    (finishes
-      (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'> minimum)
-        (loop for x from 50 downto -50
-              do (let ((min1 (cht-decreasing-get cht x))
-                       (min2 (%optimize cht x slopes intercepts minimum)))
-                   (assert (= min1 min2))))))))
+;; (test convex-hull-trick/random
+;;   (dolist (minimum (list t nil))
+;;     ;; monotone increasing slopes
+;;     (finishes
+;;       (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'< minimum)
+;;         (loop for x from -50 to 50
+;;               do (let ((min1 (cht-get cht x))
+;;                        (min2 (%optimize cht x slopes intercepts minimum)))
+;;                    (assert (= min1 min2))))))
+;;     ;; monotone decreasing slopes
+;;     (finishes
+;;       (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'> minimum)
+;;         (loop for x from -50 to 50
+;;               do (let ((min1 (cht-get cht x))
+;;                        (min2 (%optimize cht x slopes intercepts minimum)))
+;;                    (assert (= min1 min2))))))
+;;     ;; monotone increasing query
+;;     (finishes
+;;       (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'< minimum)
+;;         (loop for x from -50 to 50
+;;               do (let ((min1 (cht-increasing-get cht x))
+;;                        (min2 (%optimize cht x slopes intercepts minimum)))
+;;                    (assert (= min1 min2))))))
+;;     ;; monotone decreasing query
+;;     (finishes
+;;       (multiple-value-bind (cht slopes intercepts) (%make-sample 100 #'> minimum)
+;;         (loop for x from 50 downto -50
+;;               do (let ((min1 (cht-decreasing-get cht x))
+;;                        (min2 (%optimize cht x slopes intercepts minimum)))
+;;                    (assert (= min1 min2))))))))
