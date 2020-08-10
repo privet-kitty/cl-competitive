@@ -1,3 +1,8 @@
+(defpackage :cp/2d-bit
+  (:use #:cl)
+  (:export #:define-2d-bitree))
+(in-package :cp/2d-bit)
+
 ;;;
 ;;; 2-dimensional binary indexed tree
 ;;;
@@ -69,7 +74,11 @@ type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
                          (funcall ,operator (aref array dest-i j) (aref array i j)))))))
            array)))))
 
+#|
+
 (define-2d-bitree bitree
   :operator #'+
   :identity 0
   :sum-type fixnum)
+
+;|#
