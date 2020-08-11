@@ -3,6 +3,11 @@
 ;;; Time: O(nk)
 ;;;
 
+(defpackage :cp/stirling2
+  (:use :cl)
+  (:export #:make-stirling2-table))
+(in-package :cp/stirling2)
+
 (defun make-stirling2-table (size1 size2 modulus)
   (declare (optimize (speed 3))
            ((unsigned-byte 32) size1 size2 modulus))

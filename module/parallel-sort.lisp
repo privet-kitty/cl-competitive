@@ -2,6 +2,11 @@
 ;;; Sort multiple vectors
 ;;;
 
+(defpackage :cp/parallel-sort
+  (:use :cl)
+  (:export #:parallel-sort!))
+(in-package :cp/parallel-sort)
+
 ;; TODO: throw an error if there are two ore more identical vectors in the given
 ;; vectors
 
@@ -85,29 +90,3 @@ Note: not randomized; shuffle the inputs if necessary"
                     (recur (+ r 1) right)))))
            (recur 0 (- (length ,vec) 1))
            ,vec)))))
-
-(defun parallel-shuffle! (vector &rest vectors)
-   "Destructively shuffles VECTOR and applies the same permutation to all the
-vectors in VECTORS."
-  (loop for i from (- (length vector) 1) above 0
-        for j = (random (+ i 1))
-        do (rotatef (aref vector i) (aref vector j))
-           (dolist (v vectors)
-             (rotatef (aref v i) (aref v j)))
-        finally (return vector)))
-
-#+sbcl
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:define-source-transform parallel-shuffle! (vector &rest vectors)
-    (let ((vec (gensym))
-          (vecs (loop for _ in vectors collect (gensym))))
-      `(let ((,vec ,vector)
-             ,@(loop for v in vectors
-                     for sym in vecs
-                     collect `(,sym ,v)))
-         (loop for i from (- (length ,vec) 1) above 0
-               for j = (random (+ i 1))
-               do (rotatef (aref ,vec i) (aref ,vec j))
-                  ,@(loop for sym in vecs
-                          collect `(rotatef (aref ,sym i) (aref ,sym j)))
-               finally (return ,vec))))))

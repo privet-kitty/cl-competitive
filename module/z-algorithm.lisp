@@ -2,6 +2,11 @@
 ;;; Z-algorithm
 ;;;
 
+(defpackage :cp/z-algorithm
+  (:use :cl)
+  (:export #:make-z-array))
+(in-package :cp/z-algorithm)
+
 (declaim (inline make-z-array))
 (defun make-z-array (vector &key (test #'eql))
   "Returns a vector Z of the same length as VECTOR. Z[i] equals to the length of

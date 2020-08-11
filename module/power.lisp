@@ -2,6 +2,11 @@
 ;;; Calculate a^n on any monoids in O(log(n)) time
 ;;;
 
+(defpackage :cp/power
+  (:use :cl)
+  (:export #:power))
+(in-package :cp/power)
+
 ;; TODO: test
 ;; TODO: non-recursive implementation
 (declaim (inline power))

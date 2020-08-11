@@ -22,8 +22,7 @@
   "table of inverses of factorials")
 (defparameter *inv* (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of inverses of non-negative integers")
-(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*)
-         (sb-ext:always-bound *fact* *fact-inv* *inv*))
+(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 
 (defun initialize-binom ()
   (declare (optimize (speed 3) (safety 0)))

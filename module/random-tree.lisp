@@ -2,6 +2,11 @@
 ;;; Generate random trees
 ;;;
 
+(defpackage :cp/random-tree
+  (:use :cl)
+  (:export #:make-random-tree))
+(in-package :cp/random-tree)
+
 ;; TODO: maybe better to use Prüfer sequence?
 
 ;; NOT TESTED

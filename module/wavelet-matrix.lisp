@@ -1,112 +1,14 @@
 ;;;
-;;; Compact bit vector
-;;;
-
-;; NOTE: As a result of benchmark, I adopted compact bit vector with POPCNT
-;; instruction. (Typical three-layer implementation of succinct bit vector is
-;; put in succinct-bit-vector.lisp)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (assert (= sb-vm:n-word-bits 64)))
- 
-(defstruct (compact-bit-vector (:constructor %make-cbv (storage blocks))
-                                (:conc-name cbv-)
-                                (:copier nil))
-  (storage nil :type simple-bit-vector)
-  (blocks nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
- 
-(defun make-compact-bit-vector! (vector)
-  "The consequence is undefined when VECTOR is modified after a compact bit
-vector is created."
-  (declare (optimize (speed 3)))
-  (check-type vector simple-bit-vector)
-  (let* ((vector (if (zerop (mod (length vector) 64))
-                     vector
-                     (adjust-array vector
-                                   (* sb-vm:n-word-bits
-                                      (ceiling (length vector) sb-vm:n-word-bits))
-                                   :initial-element 0)))
-         (len (length vector))
-         (block-count (floor len sb-vm:n-word-bits))
-         (blocks (make-array (+ 1 block-count)
-                             :element-type '(integer 0 #.most-positive-fixnum)
-                             :initial-element 0))
-         (sum 0))
-    (declare (simple-bit-vector vector)
-             ((integer 0 #.most-positive-fixnum) sum))
-    (dotimes (i block-count)
-      (setf (aref blocks i) sum)
-      (incf sum (logcount (sb-kernel:%vector-raw-bits vector i))))
-    (setf (aref blocks block-count) sum)
-    (%make-cbv vector blocks)))
- 
-(declaim (inline cbv-ref))
-(defun cbv-ref (cbv index)
-  (sbit (cbv-storage cbv) index))
- 
-;; NOTE: No error handling.
-(declaim (inline cbv-rank)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) cbv-rank))
-(defun cbv-rank (cbv end)
-  "Counts the number of 1's in the range [0, END)."
-  (declare ((integer 0 #.most-positive-fixnum) end))
-  (let* ((storage (cbv-storage cbv))
-         (blocks (cbv-blocks cbv))
-         (bpos (ash end -6))
-         (brem (logand #b111111 end)))
-    (+ (aref blocks bpos)
-       (if (zerop brem) ; avoid out-of-bounds access
-           0
-           (logcount (ldb (byte brem 0)
-                          (sb-kernel:%vector-raw-bits storage bpos)))))))
-
-(declaim (inline cbv-count)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) cbv-count))
-(defun cbv-count (cbv value end)
-  "Counts the number of VALUEs in the range [0, END)"
-  (declare (bit value)
-           ((integer 0 #.most-positive-fixnum) end))
-  (let ((count1 (cbv-rank cbv end)))
-    (if (= value 1)
-        count1
-        (- end count1))))
-
-(defun cbv-select (cbv ord)
-  "Detects the position of (1-based) ORD-th 1 in CBV. (CBV-SELECT 0) always
-returns 0."
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) ord))
-  (let* ((storage (cbv-storage cbv))
-         (blocks (cbv-blocks cbv))
-         (block-size (length blocks)))
-    (unless (<= ord (aref blocks (- block-size 1)))
-      ;; FIXME: introduce condition class
-      (error "~&There aren't ~W 1's in ~W" ord cbv))
-    (labels ((block-bisect (ok ng)
-               (declare ((unsigned-byte 32) ok ng))
-               (if (<= (- ng ok) 1)
-                   ok
-                   (let ((mid (ash (+ ok ng) -1)))
-                     (if (<= ord (aref blocks mid))
-                         (block-bisect ok mid)
-                         (block-bisect mid ng))))))
-      (let* ((block-idx (block-bisect 0 block-size))
-             (ord (- ord (aref blocks block-idx)))
-             (word (sb-kernel:%vector-raw-bits storage block-idx)))
-        (labels ((pos-bisect (ok ng)
-                   (declare ((integer 0 #.sb-vm:n-word-bits) ok ng))
-                   (if (<= (- ng ok) 1)
-                       ok
-                       (let ((mid (ash (+ ok ng) -1)))
-                         (if (<= ord (logcount (ldb (byte mid 0) word)))
-                             (pos-bisect ok mid)
-                             (pos-bisect mid ng))))))
-          (let ((pos (pos-bisect 0 sb-vm:n-word-bits)))
-            (+ (* sb-vm:n-word-bits block-idx) pos)))))))
-
-;;;
 ;;; Wavelet matrix
 ;;;
+
+(defpackage :cp/wavelet-matrix
+  (:use :cl :cp/compact-bit-vector)
+  (:export #:wavelet-integer #:wavelet-matrix #:invalid-wavelet-index-error
+           #:make-wavelet-matrix #:wavelet-ref #:wavelet-count
+           #:wavelet-zeros #:wavelet-data #:wavelet-length #:wavelet-depth
+           #:wavelet-range-count #:wavelet-map-frequency #:wavelet-kth-smallest #:wavelet-kth-largest))
+(in-package :cp/wavelet-matrix)
 
 (deftype wavelet-integer () '(integer 0 #.most-positive-fixnum))
 
@@ -122,16 +24,16 @@ returns 0."
 
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown make-wavelet ((integer 1 #.most-positive-fixnum) vector)
+  (sb-c:defknown make-wavelet-matrix ((integer 1 #.most-positive-fixnum) vector)
       wavelet-matrix (sb-c:flushable)
     :overwrite-fndb-silently t))
 
 ;; TODO: add deftransform for better type derivation
-(defun make-wavelet (bit-depth vector)
+(defun make-wavelet-matrix (bit-depth vector)
   (declare ((integer 1 #.most-positive-fixnum) bit-depth))
   (let* ((len (length vector))
          (fitted-len (* sb-vm:n-word-bits (ceiling len sb-vm:n-word-bits)))
-         (data (locally (declare #+sbcl (muffle-conditions style-warning))
+         (data (locally (declare #+sbcl (sb-ext:muffle-conditions style-warning))
                  (make-array bit-depth :element-type 'compact-bit-vector)))
          (zeros (make-array bit-depth :element-type '(integer 0 #.most-positive-fixnum)))
          (tmp (copy-seq vector))

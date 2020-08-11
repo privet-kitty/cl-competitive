@@ -2,6 +2,12 @@
 ;;; Multiset structure by Trie
 ;;;
 
+(defpackage :cp/trie
+  (:use :cl)
+  (:export #:trie-char-encode #:trie-node #:make-trie #:%make-trie-node
+           #:+trie-alphabet-size+ #:trie-size #:trie-children #:trie-add! #:trie-get))
+(in-package :cp/trie)
+
 ;; ASCII code:
 ;; #\A: 65
 ;; #\a: 97
@@ -16,7 +22,9 @@
 (defstruct (trie-node (:constructor %make-trie-node
                           (&aux (children (make-array #.+trie-alphabet-size+
                                                       :element-type t
-                                                      :initial-element 0)))))
+                                                      :initial-element 0))))
+                      (:copier nil)
+                      (:predicate nil))
   (size 0 :type (integer 0 #.most-positive-fixnum))
   (children nil :type (simple-array t (#.+trie-alphabet-size+))))
 

@@ -2,8 +2,12 @@
 ;;; Succinct bit vector (select: O(log(n)))
 ;;;
 
-;; NOTE: This code was previously in wavelet-matrix.lisp though I moved it here,
-;; because compact bit vector sufficed in competitive programming.
+(defpackage :cp/succinct-bit-vector
+  (:use :cl)
+  (:export #:succint-bit-vector #:make-sucbv! #:sucbv-ref #:sucbv-rank #:sucbv-select))
+(in-package :cp/succinct-bit-vector)
+
+;; NOTE: compact-bit-vector will be more efficient than this module.
 
 (defconstant +chunk-width+ (* 64 16))
 ;; This constant cannot be changed as the current implementation depends on the

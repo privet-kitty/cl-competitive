@@ -4,12 +4,13 @@
 
 (defpackage :cp/queue
   (:use :cl)
-  (:export #:queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front #:queue-p))
+  (:export #:queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front))
 (in-package :cp/queue)
 
 (defstruct (queue (:constructor make-queue
                       (&optional list &aux (tail (last list))))
-                  (:copier nil))
+                  (:copier nil)
+                  (:predicate nil))
   (list nil :type list)
   (tail nil :type list))
 

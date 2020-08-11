@@ -1,3 +1,8 @@
+(defpackage :cp/read-digit
+  (:use :cl)
+  (:export #:read-digit))
+(in-package :cp/read-digit)
+
 (declaim (ftype (function * (values (integer 0 9) &optional)) read-digit))
 (defun read-digit (&optional (in *standard-input*))
   "Reads a non-negative one-digit integer."

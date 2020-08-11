@@ -2,6 +2,12 @@
 ;;; TrieMap (map structure by Trie)
 ;;;
 
+(defpackage :cp/triemap
+  (:use :cl)
+  (:export #:triemap-char-encode #:+triemap-alphabet-size+ #:make-triemap #:%make-triemap-node
+           #:triemap-add! #:triemap-query #:triemap-get #:triemap-query-longest))
+(in-package :cp/triemap)
+
 ;; ASCII code:
 ;; #\A: 65
 ;; #\a: 97
@@ -18,7 +24,9 @@
                           (&optional value
                            &aux (children (make-array #.+triemap-alphabet-size+
                                                       :element-type t
-                                                      :initial-element 0)))))
+                                                      :initial-element 0))))
+                         (:copier nil)
+                         (:predicate nil))
   (value nil)
   (children nil :type (simple-array t (#.+triemap-alphabet-size+))))
 

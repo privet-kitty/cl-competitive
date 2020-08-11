@@ -4,6 +4,11 @@
 ;;; https://www.geeksforgeeks.org/find-the-next-lexicographically-greater-word-than-a-given-word/
 ;;;
 
+(defpackage :cp/next-permutation
+  (:use :cl)
+  (:export #:no-permutation-error #:next-permutation!))
+(in-package :cp/next-permutation)
+
 ;; NOTE: Here the underlying set is 0-based: {0, 1, 2, ..., N-1}
 
 (define-condition no-permutation-error (error)

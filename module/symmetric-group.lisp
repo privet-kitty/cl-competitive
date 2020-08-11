@@ -2,6 +2,11 @@
 ;;; Some operations on symmetric group
 ;;;
 
+(defpackage :cp/symmetric-group
+  (:use :cl)
+  (:export #:decompose-to-cycles #:perm* #:perm-inverse #:make-identity-permutation))
+(in-package :cp/symmetric-group)
+
 ;; NOTE: Here the underlying set is 0-based: {0, 1, 2, ..., N-1}
 
 (declaim (inline decompose-to-cycles))

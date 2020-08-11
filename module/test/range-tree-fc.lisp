@@ -1,11 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../range-tree-fc.lisp")
-  (load "../2dcumul.lisp"))
-
-(use-package :test-util)
-
-(declaim (notinline make-range-tree))
+(defpackage :cp/test/range-tree-fc
+  (:use :cl :fiveam :cp/range-tree-fc :cp/2dcumul)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/range-tree-fc)
+(in-suite base-suite)
 
 ;; TODO: `+' operation is not implemented yet
 ;;7...1..
@@ -17,9 +14,9 @@
 ;;1.5..7.
 ;;0......
 ;; 012345
-(with-test (:name range-tree-fc/manual)
+(test range-tree-fc/manual
   ;; empty case
-  (assert (null (make-range-tree #())))
+  (is (null (make-range-tree #())))
   ;; small manual case
   (let* ((points #((1 . 1) (1 . 4) (3 . 4) (3 . 6) (3 . 7) (4 . 1) (4 . 4) (5 . 2)))
          (values #(5 2 4 2 1 7 3 0))
@@ -47,36 +44,37 @@
         (incf (aref counts (+ i 1) j) (aref counts i j))))
 
     ;; rt-count
-    (assert (= 8 (rt-count rt nil nil nil nil)))
-    (assert (= 8 (rt-count rt 1 1 nil nil)))
-    (assert (= 8 (rt-count rt 1 1 6 8)))
-    (assert (= 6 (rt-count rt 1 1 5 7)))
-    (assert (= 1 (rt-count rt 1 4 3 7)))
-    (assert (= 4 (rt-count rt 1 4 4 8)))
-    (assert (= 3 (rt-count rt 1 4 4 7)))
-    (assert (= 2 (rt-count rt 1 4 4 6)))
-    (assert (= 2 (rt-count rt 1 4 4 5)))
-    (assert (= 0 (rt-count rt 1 1 nil 1)))
-    (assert (= 2 (rt-count rt 4 1 5 5)))
-    (assert (= 1 (rt-count rt 3 4 4 5)))
+    (is (= 8 (rt-count rt nil nil nil nil)))
+    (is (= 8 (rt-count rt 1 1 nil nil)))
+    (is (= 8 (rt-count rt 1 1 6 8)))
+    (is (= 6 (rt-count rt 1 1 5 7)))
+    (is (= 1 (rt-count rt 1 4 3 7)))
+    (is (= 4 (rt-count rt 1 4 4 8)))
+    (is (= 3 (rt-count rt 1 4 4 7)))
+    (is (= 2 (rt-count rt 1 4 4 6)))
+    (is (= 2 (rt-count rt 1 4 4 5)))
+    (is (= 0 (rt-count rt 1 1 nil 1)))
+    (is (= 2 (rt-count rt 4 1 5 5)))
+    (is (= 1 (rt-count rt 3 4 4 5)))
 
     ;; rt-query
-    (assert (= (reduce #'+ values) (rt-query rt nil nil nil nil)))
-    (assert (= (reduce #'+ values) (rt-query rt 1 1 nil nil)))
-    (assert (= 0 (rt-query rt 1 1 nil 1)))
+    (is (= (reduce #'+ values) (rt-query rt nil nil nil nil)))
+    (is (= (reduce #'+ values) (rt-query rt 1 1 nil nil)))
+    (is (= 0 (rt-query rt 1 1 nil 1)))
     
     ;; random test
-    (dotimes (_ 100)
-      (let ((x1 (random 9 state))
-            (y1 (random 9 state))
-            (x2 (random 9 state))
-            (y2 (random 9 state)))
-        (when (> x1 x2) (rotatef x1 x2))
-        (when (> y1 y2) (rotatef y1 y2))
-        (assert (= (rt-count rt x1 y1 x2 y2)
-                   (2dcumul-get counts x1 y1 x2 y2)))
-        (assert (= (rt-query rt x1 y1 x2 y2)
-                   (2dcumul-get cumuls x1 y1 x2 y2)))))))
+    (finishes
+      (dotimes (_ 100)
+        (let ((x1 (random 9 state))
+              (y1 (random 9 state))
+              (x2 (random 9 state))
+              (y2 (random 9 state)))
+          (when (> x1 x2) (rotatef x1 x2))
+          (when (> y1 y2) (rotatef y1 y2))
+          (assert (= (rt-count rt x1 y1 x2 y2)
+                     (2dcumul-get counts x1 y1 x2 y2)))
+          (assert (= (rt-query rt x1 y1 x2 y2)
+                     (2dcumul-get cumuls x1 y1 x2 y2))))))))
 
 (defun random-int (inf sup)
   (+ inf (random (- sup inf))))
@@ -105,28 +103,29 @@
                              :value-key #'third)
             table)))
 
-(with-test (:name range-tree/random)
-  (dotimes (size 100)
-    (multiple-value-bind (rtree table) (make-random-case size -10 10)
-      (dotimes (i 100)
-        (let ((x1 (if (zerop (random 2)) nil (random-int -12 12)))
-              (y1 (if (zerop (random 2)) nil (random-int -12 12)))
-              (x2 (if (zerop (random 2)) nil (random-int -12 12)))
-              (y2 (if (zerop (random 2)) nil (random-int -12 12))))
-          (when (and x1 x2 (> x1 x2))
-            (rotatef x1 x2))
-          (when (and y1 y2 (> y1 y2))
-            (rotatef y1 y2))
-          (assert (= (rt-count rtree x1 y1 x2 y2)
-                     (loop for (x . y) being each hash-key of table
-                           count (and (or (null x1) (<= x1 x))
-                                      (or (null x2) (< x x2))
-                                      (or (null y1) (<= y1 y))
-                                      (or (null y2) (< y y2))))))
-          (assert (= (rt-query rtree x1 y1 x2 y2)
-                     (loop for (x . y) being each hash-key of table
-                           when (and (or (null x1) (<= x1 x))
-                                     (or (null x2) (< x x2))
-                                     (or (null y1) (<= y1 y))
-                                     (or (null y2) (< y y2)))
-                           sum (gethash (cons x y) table)))))))))
+(test range-tree/random
+  (finishes
+    (dotimes (size 100)
+      (multiple-value-bind (rtree table) (make-random-case size -10 10)
+        (dotimes (i 100)
+          (let ((x1 (if (zerop (random 2)) nil (random-int -12 12)))
+                (y1 (if (zerop (random 2)) nil (random-int -12 12)))
+                (x2 (if (zerop (random 2)) nil (random-int -12 12)))
+                (y2 (if (zerop (random 2)) nil (random-int -12 12))))
+            (when (and x1 x2 (> x1 x2))
+              (rotatef x1 x2))
+            (when (and y1 y2 (> y1 y2))
+              (rotatef y1 y2))
+            (assert (= (rt-count rtree x1 y1 x2 y2)
+                       (loop for (x . y) being each hash-key of table
+                             count (and (or (null x1) (<= x1 x))
+                                        (or (null x2) (< x x2))
+                                        (or (null y1) (<= y1 y))
+                                        (or (null y2) (< y y2))))))
+            (assert (= (rt-query rtree x1 y1 x2 y2)
+                       (loop for (x . y) being each hash-key of table
+                             when (and (or (null x1) (<= x1 x))
+                                       (or (null x2) (< x x2))
+                                       (or (null y1) (<= y1 y))
+                                       (or (null y2) (< y y2)))
+                             sum (gethash (cons x y) table))))))))))

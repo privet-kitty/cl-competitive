@@ -130,21 +130,21 @@
 (test jonker-volgenant/random-minimize
   ;; size1 = size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 30 30 (random 1d0 *state*))
         (let ((query-size (random 31 *state*)))
           (lap-build lap query-size)
           (assert (= (lap-score lap) (ssp-compute ssp query-size)))))))
   ;; size1 < size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 20 30 (random 1d0 *state*))
         (let ((query-size (random 21 *state*)))
           (lap-build lap query-size)
           (assert (= (lap-score lap) (ssp-compute ssp query-size)))))))
   ;; size1 > size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 30 20 (random 1d0 *state*))
         (let ((query-size (random 21 *state*)))
           (lap-build lap query-size)
@@ -153,21 +153,21 @@
 (test jonker-volgenant/random-maximize
   ;; size1 = size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 30 30 (random 1d0 *state*) t)
         (let ((query-size (random 31 *state*)))
           (lap-build lap query-size)
           (assert (= (lap-score lap) (ssp-compute ssp query-size)))))))
   ;; size1 < size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 20 30 (random 1d0 *state*) t)
         (let ((query-size (random 21 *state*)))
           (lap-build lap query-size)
           (assert (= (lap-score lap) (ssp-compute ssp query-size)))))))
   ;; size1 > size2
   (finishes
-    (dotimes (_ 1000)
+    (dotimes (_ 400)
       (multiple-value-bind (ssp lap) (make-random-graph 30 20 (random 1d0 *state*) t)
         (let ((query-size (random 21 *state*)))
           (lap-build lap query-size)

@@ -2,6 +2,12 @@
 ;;; Centroid of tree
 ;;;
 
+(defpackage :cp/tree-centroid
+  (:use :cl)
+  (:export #:tree-centroid #:make-tree-centroid #:tc-size #:tc-graph #:tc-validities
+           #:tc-find-centroid #:tc-disable-vertex #:tree-centroid-disabled-vertex-error))
+(in-package :cp/tree-centroid)
+
 (deftype tc-vertex-integer () '(signed-byte 32))
 
 (defstruct (tree-centroid (:constructor make-tree-centroid
@@ -12,7 +18,8 @@
                                (parents (make-array size :element-type 'tc-vertex-integer))
                                (subtree-sizes (make-array size :element-type 'tc-vertex-integer))))
                           (:conc-name tc-)
-                          (:copier nil))
+                          (:copier nil)
+                          (:predicate nil))
   (size 0 :type (integer 0 #.most-positive-fixnum))
   (graph nil :type (simple-array list (*)))
   (validities nil :type simple-bit-vector)

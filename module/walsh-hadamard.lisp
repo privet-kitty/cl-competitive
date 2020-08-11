@@ -2,6 +2,13 @@
 ;;; Fast Walsh-Hadamard Transform
 ;;;
 
+(defpackage :cp/walsh-hadamard
+  (:use :cl)
+  (:export #:fwht!))
+(in-package :cp/walsh-hadamard)
+
+;; TODO: test
+
 (declaim (inline power2-p))
 (defun power2-p (x)
   "Checks if X is a power of 2."

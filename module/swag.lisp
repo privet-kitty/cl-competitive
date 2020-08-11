@@ -2,6 +2,11 @@
 ;;; Sliding window aggregation over semigroup
 ;;;
 
+(defpackage :cp/swag
+  (:use :cl)
+  (:export #:swag-empty-error #:make-swag #:swag #:swag-push #:swag-pop #:swag-fold))
+(in-package :cp/swag)
+
 (define-condition swag-empty-error (error)
   ((swag :initarg :swag :reader swag-empty-error-swag))
   (:report
@@ -10,7 +15,9 @@
              (swag-empty-error-swag condition)))))
 
 (defstruct (swag (:constructor make-swag ())
-                 (:conc-name %swag-))
+                 (:conc-name %swag-)
+                 (:copier nil)
+                 (:predicate nil))
   ;; FRONT and BACK stores a stack of cons cells: (object . cumulative sum)
   (front nil :type list)
   (back nil :type list))
@@ -50,3 +57,4 @@ semiring. Returns IDENTITY when an empty SWAG is folded."
       (if (%swag-front swag)
           (cdar (%swag-front swag))
           identity)))
+

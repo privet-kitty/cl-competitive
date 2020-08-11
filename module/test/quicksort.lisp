@@ -1,9 +1,8 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../quicksort.lisp")
-  (load "../displace.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/quicksort
+  (:use :cl :fiveam :cp/quicksort :cp/displace)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/quicksort)
+(in-suite base-suite)
 
 ;; FIXME: Resorting to displacement to sort subsequence may be non-standard,
 ;; though it is no problem on SBCL.
@@ -25,28 +24,31 @@
               (aref vector (+ 1 (* 2 i))) (cdr pair))))
     vector))
 
-(with-test (:name quicksort)
-  (dotimes (i 100)
-    (let ((vec (coerce (loop repeat i collect (random 100)) 'vector)))
-      (assert (equalp (sort (copy-seq vec) #'>)
-                      (quicksort! (copy-seq vec) #'>)))))
-  (dotimes (i 1000)
-    (let ((vec (coerce (loop repeat 10
-                             collect (code-char (+ 97 (random 10))))
-                       'vector))
-          (start (random 11))
-          (end (random 11)))
-      (when (> start end)
-        (rotatef start end))
-      (assert (equalp (quicksort! (copy-seq vec) #'char< :start start :end end)
-                      (sort* (copy-seq vec) #'char< start end))))))
+(test quicksort
+  (finishes
+    (dotimes (i 100)
+      (let ((vec (coerce (loop repeat i collect (random 100)) 'vector)))
+        (assert (equalp (sort (copy-seq vec) #'>)
+                        (quicksort! (copy-seq vec) #'>))))))
+  (finishes
+    (dotimes (i 1000)
+      (let ((vec (coerce (loop repeat 10
+                               collect (code-char (+ 97 (random 10))))
+                         'vector))
+            (start (random 11))
+            (end (random 11)))
+        (when (> start end)
+          (rotatef start end))
+        (assert (equalp (quicksort! (copy-seq vec) #'char< :start start :end end)
+                        (sort* (copy-seq vec) #'char< start end)))))))
 
-(with-test (:name quicksort-by2)
-  (dotimes (i 1000)
-    (let ((vec (coerce (loop repeat (random 100)
-                             for code = (random 50)
-                             for char = (code-char code)
-                             append (list char code))
-                       'vector)))
-      (assert (equalp (quicksort-by2! (copy-seq vec) #'char<)
-                      (sort-by2 (copy-seq vec) #'char<))))))
+(test quicksort-by2
+  (finishes
+    (dotimes (i 1000)
+      (let ((vec (coerce (loop repeat (random 100)
+                               for code = (random 50)
+                               for char = (code-char code)
+                               append (list char code))
+                         'vector)))
+        (assert (equalp (quicksort-by2! (copy-seq vec) #'char<)
+                        (sort-by2 (copy-seq vec) #'char<)))))))

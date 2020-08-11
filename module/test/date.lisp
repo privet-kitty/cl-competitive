@@ -18,7 +18,7 @@
 (test get-day-of-week
   (finishes
     (loop
-      for year from -3000 to 3000
+      for year from -1000 to 2000
       do (loop
            for month from 1 to 12
            do (loop

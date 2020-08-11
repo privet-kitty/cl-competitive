@@ -1,12 +1,12 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../z-algorithm.lisp"))
+(defpackage :cp/test/z-algorithm
+  (:use :cl :fiveam :cp/z-algorithm)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/z-algorithm)
+(in-suite base-suite)
 
-(use-package :test-util)
-
-(with-test (:name z-algorithm)
-  (assert (equalp #() (make-z-array "")))
-  (assert (equalp #(1) (make-z-array "a")))
-  (assert (equalp #(4 3 2 1) (make-z-array "aaaa")))
-  (assert (equalp #(6 0 4 0 2 0) (make-z-array "ababab")))
-  (assert (equalp #(11 0 0 1 0 1 0 4 0 0 1) (make-z-array "abracadabra"))))
+(test z-algorithm
+  (is (equalp #() (make-z-array "")))
+  (is (equalp #(1) (make-z-array "a")))
+  (is (equalp #(4 3 2 1) (make-z-array "aaaa")))
+  (is (equalp #(6 0 4 0 2 0) (make-z-array "ababab")))
+  (is (equalp #(11 0 0 1 0 1 0 4 0 0 1) (make-z-array "abracadabra"))))

@@ -1,3 +1,8 @@
+(defpackage :cp/relative-error
+  (:use :cl)
+  (:export #:relative-error<= #:error<=))
+(in-package :cp/relative-error)
+
 (declaim (inline relative-error-p))
 (defun relative-error<= (x y threshold)
   "Returns true iff the relative error between X and Y is equal to or smaller

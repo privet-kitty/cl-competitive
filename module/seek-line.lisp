@@ -1,3 +1,8 @@
+(defpackage :cp/seek-line
+  (:use :cl)
+  (:export #:seek-line))
+(in-package :cp/seek-line)
+
 ;; Ensures that the next character of the stream is neither LF nor CR.
 (defun seek-line (&optional (stream *standard-input*))
   (loop

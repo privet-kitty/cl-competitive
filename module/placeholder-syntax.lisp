@@ -8,6 +8,11 @@
 
 ;; TODO: %&
 
+(defpackage :cp/placeholder-syntax
+  (:use :cl)
+  (:export #:enable-placeholder-syntax #:read-placeholder-form))
+(in-package :cp/placeholder-syntax)
+
 (defun placeholder-p (symbol)
   (let ((name (symbol-name symbol)))
     (and (>= (length name) 1)
@@ -50,12 +55,13 @@
   (let ((form (read s nil nil t)))
     (parse-placeholder-form form)))
 
+(defun enable-placeholder-syntax ()
+  (set-dispatch-macro-character #\# #\% #'read-placeholder-form))
+
 ;; For CL-SYNTAX
-;; (cl-syntax:defsyntax placeholder-syntax
-;;   (:merge :standard)
-;;   (:dispatch-macro-char #\# #\% #'read-placeholder))
+;; (eval-when (:compile-toplevel :load-toplevel :execute)
+;;   (cl-syntax:defsyntax placeholder-syntax
+;;     (:merge :standard)
+;;     (:dispatch-macro-char #\# #\% #'read-placeholder-form)))
 
 ;; (cl-syntax:use-syntax placeholder-syntax)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (set-dispatch-macro-character #\# #\% #'read-placeholder-form))

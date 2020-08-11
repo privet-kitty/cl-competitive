@@ -4,6 +4,11 @@
 ;;; https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
 ;;;
 
+(defpackage :cp/topological-sort
+  (:use :cl)
+  (:export #:cycle-detected-error #:topological-sort))
+(in-package :cp/topological-sort)
+
 (define-condition cycle-detected-error (error)
   ((graph :initarg :graph :reader cycle-detected-error-graph)
    (vertex :initarg :vertex :reader cycle-detected-error-vertex))

@@ -8,6 +8,11 @@
 ;;; P(n, k) = P(n, n) (k > n)
 ;;;
 
+(defpackage :cp/partition-number
+  (:use :cl)
+  (:export #:make-partition-number-table #:make-partition-number-sequence))
+(in-package :cp/partition-number)
+
 (declaim (inline make-partition-number-table))
 (defun make-partition-number-table
     (sup-n sup-k modulus &key (element-type '(unsigned-byte 31)))

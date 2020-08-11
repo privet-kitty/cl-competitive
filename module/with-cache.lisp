@@ -2,6 +2,11 @@
 ;;; Memoization macro
 ;;;
 
+(defpackage :cp/with-cache
+  (:use :cl)
+  (:export #:with-cache #:with-caches))
+(in-package :cp/with-cache)
+
 ;;
 ;; Basic usage:
 ;;
@@ -132,7 +137,7 @@
                    (:hash-table `(setf ,cache (make-hash-table ,@rest-attribs)))
                    (:array `(prog1 nil
                               ;; TODO: portable fill
-                              (fill (array-storage-vector ,cache) ,initial-element)))))
+                              (fill (sb-ext:array-storage-vector ,cache) ,initial-element)))))
                (make-reset-name (name)
                  (intern (format nil "RESET-~A" (symbol-name name)))))
             (values cache cache-form cache-type name-alias

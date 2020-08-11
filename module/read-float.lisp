@@ -2,6 +2,11 @@
 ;; within the range of FIXNUM. The implementation is based on
 ;; SB-IMPL::MAKE-FLOAT.
 
+(defpackage :cp/read-float
+  (:use :cl)
+  (:export #:read-float))
+(in-package :cp/read-float)
+
 ;; TODO: test
 (declaim (ftype (function * (values rational &optional)) read-decimal))
 (defun read-decimal (&optional (in *standard-input*))

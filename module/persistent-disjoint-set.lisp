@@ -2,6 +2,14 @@
 ;;; Partially persistent disjoint set
 ;;;
 
+(defpackage :cp/persistent-disjoint-set
+  (:use :cl)
+  (:export #:persistent-disjoint-set #:make-persistent-disjoint-set
+           #:pds-now #:pds-timestamps #:pds-data #:pds-history
+           #:persistent-disjoint-set-query-future
+           #:pds-root #:pds-unite! #:pds-connected-p #:pds-opening-time #:pds-size))
+(in-package :cp/persistent-disjoint-set)
+
 (defstruct (persistent-disjoint-set
             (:constructor make-persistent-disjoint-set
                 (size
@@ -23,7 +31,9 @@
                             (make-array 1 :element-type '(cons fixnum fixnum)
                                           :fill-pointer 1
                                           :initial-element (cons -1 1))))))))
-            (:conc-name pds-))
+            (:conc-name pds-)
+            (:copier nil)
+            (:predicate nil))
   "partially persistent disjoint set"
   (data nil :type (simple-array fixnum (*)))
   (now 0 :type (integer 0 #.most-positive-fixnum))

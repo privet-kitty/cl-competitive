@@ -1,3 +1,8 @@
+(defpackage :cp/totient
+  (:use :cl)
+  (:export #:euler-phi))
+(in-package :cp/totient)
+
 (declaim (inline euler-phi))
 (defun euler-phi (n)
   "Returns the number of positive integers in {1, 2, ..., N} that are relatively

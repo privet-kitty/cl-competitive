@@ -1,3 +1,8 @@
+(defpackage :cp/write-double-float
+  (:use :cl)
+  (:export #:write-double-float))
+(in-package :cp/write-double-float)
+
 ;; Based on SBCL's implementation
 (defun write-double-float (x &key (max-digits 10)
                                   (stream *standard-output*)

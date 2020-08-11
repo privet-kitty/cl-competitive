@@ -2,6 +2,11 @@
 ;;; Persistent segment tree
 ;;;
 
+(defpackage :cp/persistent-segment-tree
+  (:use :cl)
+  (:export #:psegtree #:make-psegtree #:psegtree-fold #:psegtree-inc #:%psegtree-inc!x))
+(in-package :cp/persistent-segment-tree)
+
 ;; TODO:
 ;; - abstraction
 ;; - test
@@ -16,7 +21,8 @@
   (right nil :type (or null node)))
 
 (defstruct (psegtree (:constructor %make-psegtree)
-                     (:conc-name %psegtree-))
+                     (:conc-name %psegtree-)
+                     (:predicate nil))
   (length 0 :type (integer 0 #.most-positive-fixnum))
   (root nil :type node))
 
@@ -33,7 +39,7 @@
                    node))))
       (%make-psegtree :length length :root (recur 1)))))
 
-(defun psegtree-query (psegtree left right)
+(defun psegtree-fold (psegtree left right)
   "Queries the sum of the interval [LEFT, RIGHT)."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) left right))

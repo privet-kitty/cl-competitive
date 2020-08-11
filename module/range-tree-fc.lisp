@@ -8,6 +8,11 @@
 ;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
 ;;;
 
+(defpackage :cp/range-tree-fc
+  (:use :cl)
+  (:export #:make-range-tree #:rt-count #:rt-query #:rt-map))
+(in-package :cp/range-tree-fc)
+
 ;; TODO: introduce abelian group
 
 (defstruct (ynode (:constructor make-ynode (xkeys ykeys lpointers rpointers values cumuls))

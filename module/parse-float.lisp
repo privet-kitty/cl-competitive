@@ -1,3 +1,8 @@
+(defpackage :cp/parse-float
+  (:use :cl)
+  (:export #:parse-double-float))
+(in-package :cp/parse-float)
+
 ;; This is a makeshift implementation of float parser. Use read-float.lisp
 ;; instead.
 (defun parse-double-float (string &key (start 0) end (declare-fixnum t))

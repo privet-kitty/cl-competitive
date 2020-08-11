@@ -1,3 +1,8 @@
+(defpackage :cp/read-int64
+  (:use :cl)
+  (:export #:read-int64))
+(in-package :cp/read-int64)
+
 (declaim (ftype (function * (values (signed-byte 64) &optional)) read-int64))
 (defun read-int64 (&optional (in *standard-input*))
   (macrolet ((%read-byte ()

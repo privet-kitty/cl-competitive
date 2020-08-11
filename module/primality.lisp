@@ -5,6 +5,11 @@
 ;; Tuned for 64-bit SBCL ((INTEGER 0 #.MOST-POSITIVE-FIXNUM) == (UNSIGNED-BYTE
 ;; 62))
 
+(defpackage :cp/primality
+  (:use :cl)
+  (:export #:prime-p))
+(in-package :cp/primality)
+
 (defun %strong-probable-prime-p (n base)
   (declare (optimize (speed 3))
            ((unsigned-byte 62) n base))

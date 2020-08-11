@@ -2,6 +2,12 @@
 ;;; Zeta/Moebius transforms w.r.t. subsets and supersets
 ;;;
 
+(defpackage :cp/zeta-transform
+  (:use :cl)
+  (:export #:zeta-subtransform! #:zeta-supertransform!
+           #:moebius-subtransform! #:moebius-supertransform!))
+(in-package :cp/zeta-transform)
+
 ;; TODO: Should we integrate zeta- and moebius- into a function?
 
 (declaim (inline zeta-subtransform!))

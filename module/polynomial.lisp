@@ -1,3 +1,8 @@
+(defpackage :cp/polynomial
+  (:use :cl :cp/mod-inverse)
+  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-power))
+(in-package :cp/polynomial)
+
 ;; NOTE: These are poor man's utilities for polynomial arithmetic. NOT
 ;; sufficiently equipped in all senses.
 
@@ -39,23 +44,6 @@ created."
               do (setq coef (mod (+ coef (* (aref u i) (aref v j))) modulus))
               finally (setf (aref res d) coef))))))
 
-(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) %mod-inverse))
-(defun %mod-inverse (a modulus)
-  "Solves ax ≡ 1 mod m. A and M must be coprime."
-  (declare (optimize (speed 3))
-           (integer a)
-           ((integer 1 #.most-positive-fixnum) modulus))
-  (labels ((%gcd (a b)
-             (declare (optimize (safety 0))
-                      ((integer 0 #.most-positive-fixnum) a b))
-             (if (zerop b)
-                 (values 1 0)
-                 (multiple-value-bind (p q) (floor a b) ; a = pb + q
-                   (multiple-value-bind (v u) (%gcd b q)
-                     (declare (fixnum u v))
-                     (values u (the fixnum (- v (the fixnum (* p u))))))))))
-    (mod (%gcd (mod a modulus) modulus) modulus)))
-
 ;; naive division in O(n^2)
 ;; Reference: http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf
 (declaim (inline poly-floor!))
@@ -84,7 +72,7 @@ Note that MODULUS and V[deg(V)] must be coprime."
                    (make-array (max 0 (+ 1 (- m n)))
                                :element-type (array-element-type u))))
          ;; FIXME: Is it better to signal an error in non-coprime case?
-         (inv (%mod-inverse (aref v n) modulus)))
+         (inv (mod-inverse (aref v n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for k from (- m n) downto 0
           do (setf (aref quot k)
@@ -113,7 +101,7 @@ destructively modifies POLY."
                   finally (error 'division-by-zero
                                  :operation #'poly-mod!
                                  :operands (list poly divisor))))
-         (inv (%mod-inverse (aref divisor n) modulus)))
+         (inv (mod-inverse (aref divisor n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for pivot-deg from m downto n
           for factor of-type (integer 0 #.most-positive-fixnum)

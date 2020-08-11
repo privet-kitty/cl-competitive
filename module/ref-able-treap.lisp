@@ -8,6 +8,14 @@
 ;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
 
+(defpackage :cp/ref-able-treap
+  (:use :cl)
+  (:export #:treap #:treap-count #:treap-find #:treap-position #:treap-bisect-left
+           #:treap-split #:treap-insert #:treap-push #:treap-pop #:make-treap
+           #:treap-delete #:treap-merge #:treap-map #:invalid-treap-index-error
+           #:treap-ref #:treap-first #:treap-last #:treap-unite #:treap-reverse))
+(in-package :cp/ref-able-treap)
+
 (defstruct (treap (:constructor %make-treap (key priority &key left right (count 1)))
                   (:copier nil)
                   (:conc-name %treap-))

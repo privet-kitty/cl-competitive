@@ -2,6 +2,12 @@
 ;;; Fast Zeta/Moebius transforms w.r.t. divisor or multiple in O(nloglog(n)).
 ;;;
 
+(defpackage :cp/zeta-integer
+  (:use :cl)
+  (:export #:divisor-transform! #:inverse-divisor-transform!
+           #:multiple-transform! #:inverse-multiple-transform!))
+(in-package :cp/zeta-integer)
+
 (declaim (inline divisor-transform!))
 (defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
   "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in

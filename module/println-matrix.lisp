@@ -1,3 +1,8 @@
+(defpackage :cp/println-matrix
+  (:use :cl)
+  (:export #:println-matrix))
+(in-package :cp/println-matrix)
+
 (declaim (inline println-matrix))
 (defun println-matrix (array &key (separator #\ ) (key #'identity) (writer #'write) (row-start 0) row-end (col-start 0) col-end)
   "Prints a 2-dimensional array."

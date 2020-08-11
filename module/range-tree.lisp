@@ -8,6 +8,11 @@
 ;;; https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf
 ;;;
 
+(defpackage :cp/range-tree
+  (:use :cl)
+  (:export #:make-range-tree #:rt-count #:rt-query #:rt-update))
+(in-package :cp/range-tree)
+
 ;; TODO: map all the points in a given rectangle
 ;; TODO: k-dimensional range tree
 

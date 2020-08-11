@@ -6,7 +6,16 @@
 ;; https://www.mii.lt/olympiads_in_informatics/pdf/INFOL119.pdf
 ;; https://ei1333.github.io/luzhiled/snippets/string/rolling-hash.html
 
-(defstruct (rhash (:constructor %make-rhash (cumul1 powers1 cumul2 powers2)))
+(defpackage :cp/rolling-hash62
+  (:use :cl)
+  (:export #:rhash #:make-rhash #:rhash-vector-hash #:rhash-concat #:rhash-query
+           #:rhash-get-lcp #:map-prefix-hash #:*moduli-table* #:*base-table*
+           #:+rhash-mod1+ #:+rhash-mod2+ #:+rhash-base1+ #:+rhash-base2+))
+(in-package :cp/rolling-hash62)
+
+(defstruct (rhash (:constructor %make-rhash (cumul1 powers1 cumul2 powers2))
+                  (:copier nil)
+                  (:predicate nil))
   ;; lower 31-bit value
   (cumul1 nil :type (simple-array (unsigned-byte 31) (*)))
   (powers1 nil :type (simple-array (unsigned-byte 31) (*)))

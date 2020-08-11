@@ -1,3 +1,8 @@
+(defpackage :cp/warshall-floyd
+  (:use :cl)
+  (:export #:warshall-floyd!))
+(in-package :cp/warshall-floyd)
+
 (declaim (inline warshall-floyd!))
 (defun warshall-floyd! (matrix)
   (let ((n (array-dimension matrix 0)))

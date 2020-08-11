@@ -1,7 +1,13 @@
-;; TODO: enable to deal with a given arithmetric progression
+(defpackage :cp/stair-sum
+  (:use :cl)
+  (:export #:stair-sum #:make-stair-sum #:stair-sum-query))
+(in-package :cp/stair-sum)
 
-;; not tested
-(defstruct (stair-sum (:constructor %make-stair-sum))
+;; TODO: enable to deal with a given arithmetric progression
+;; TODO: test
+(defstruct (stair-sum (:constructor %make-stair-sum)
+                      (:copier nil)
+                      (:predicate nil))
   (cumul nil :type (simple-array fixnum (*)))
   (stair nil :type (simple-array fixnum (*))))
 

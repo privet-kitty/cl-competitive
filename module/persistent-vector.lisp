@@ -3,6 +3,11 @@
 ;;; (implemented with perfect m-ary tree)
 ;;;
 
+(defpackage :cp/persistent-vector
+  (:use :cl)
+  (:export #:persistent-vector #:pv-assoc #:pv-ref))
+(in-package :cp/persistent-vector)
+
 ;; TODO:
 ;; - more sane handling of unbounded place
 ;; - handy function for initialization (currently `unbound value' is zero)

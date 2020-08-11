@@ -1,7 +1,15 @@
+(defpackage :cp/treap
+  (:use :cl)
+  (:export #:treap #:treap-count #:treap-find #:treap-bisect-left
+           #:treap-split #:treap-insert #:treap-push #:treap-pop #:treap-delete #:treap-merge
+           #:treap-map #:invalid-treap-index-error #:treap-first #:treap-last))
+(in-package :cp/treap)
+
 ;; Not included in test script. Better to use ref-able-treap instead.
 
 (defstruct (treap (:constructor %make-treap (key priority &optional left right))
                   (:copier nil)
+                  (:predicate nil)
                   (:conc-name %treap-))
   key
   (priority 0 :type (integer 0 #.most-positive-fixnum))
@@ -134,6 +142,20 @@ cannot rely on the side effect. Use the returned value."
 (defmacro treap-pop (key treap order)
   "Deletes KEY from TREAP."
   `(setf ,treap (treap-delete ,key ,treap :order ,order)))
+
+(defun treap-first (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-left treap)
+      (treap-first (%treap-left treap))
+      (%treap-key treap)))
+
+(defun treap-last (treap)
+  (declare (optimize (speed 3))
+           (treap treap))
+  (if (%treap-right treap)
+      (treap-last (%treap-right treap))
+      (%treap-key treap)))
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-count))
 (defun treap-count (treap)

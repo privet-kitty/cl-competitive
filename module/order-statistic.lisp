@@ -2,6 +2,11 @@
 ;;; Select i-th order statistic in O(n)
 ;;;
 
+(defpackage :cp/order-statistic
+  (:use :cl)
+  (:export #:select-ith!))
+(in-package :cp/order-statistic)
+
 ;; REVIEW: Is the expected time complexity of SELECT-ITH! with (randomized)
 ;; Hoare partition really O(n)?
 

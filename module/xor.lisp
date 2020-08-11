@@ -1,3 +1,8 @@
+(defpackage :cp/xor
+  (:use :cl)
+  (:export #:xor))
+(in-package :cp/xor)
+
 (defmacro xor (form1 form2)
   (let ((f1 (gensym)) (f2 (gensym)))
     `(let ((,f1 ,form1)

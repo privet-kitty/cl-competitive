@@ -1,3 +1,7 @@
+(defpackage :cp/next-table
+  (:use :cl)
+  (:export #:make-next-table))
+(in-package :cp/next-table)
 
 (declaim (inline make-next-table))
 (defun make-next-table (vector &key (test #'eql) (element-type 'fixnum) double)

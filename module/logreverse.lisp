@@ -10,8 +10,7 @@
 
 (defparameter *bit-reverse-table*
   (make-array 65536 :element-type '(unsigned-byte 16)))
-(declaim ((simple-array (unsigned-byte 16) (65536)) *bit-reverse-table*)
-         #+sbcl (sb-ext:always-bound *bit-reverse-table*))
+(declaim ((simple-array (unsigned-byte 16) (65536)) *bit-reverse-table*))
 
 (dotimes (idx (length *bit-reverse-table*))
   (let ((x idx))

@@ -2,6 +2,11 @@
 ;;; Quicksort (deterministic median-of-three partitioning)
 ;;;
 
+(defpackage :cp/quicksort
+  (:use :cl)
+  (:export #:quicksort! #:quicksort-by2!))
+(in-package :cp/quicksort)
+
 ;; NOTE: This quicksort is NOT randomized. You should shuffle an input when you
 ;; need to avoid getting hacked.
 

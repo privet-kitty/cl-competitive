@@ -2,6 +2,13 @@
 ;;; Radix heap
 ;;;
 
+(defpackage :cp/radix-heap
+  (:use :cl)
+  (:export #:rheap-empty-error #:rheap-not-monotone-error #:+radix-heap-bit-depth+
+           #:rheap-count #:rheap-lowest
+           #:radix-heap #:make-radix-heap #:rheap-push #:rheap-pop #:rheap-empty-p))
+(in-package :cp/radix-heap)
+
 ;; NOTE: this implementation permanently reuses every cons cell once it has been
 ;; generated. Be careful about memory leak.
 
@@ -29,7 +36,8 @@
                                                       :element-type 'list
                                                       :initial-element nil))))
                        (:conc-name rheap-)
-                       (:copier nil))
+                       (:copier nil)
+                       (:predicate nil))
   (buckets nil :type (simple-array list (*)))
   (lowest 0 :type radix-heap-integer)
   (count 0 :type (integer 0 #.most-positive-fixnum))

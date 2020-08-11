@@ -19,6 +19,12 @@
 ;;; LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 ;;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+(defpackage :cp/split-string
+  (:use :cl)
+  (:export #:split-string))
+(in-package :cp/split-string)
+
 (declaim (inline split-string))
 (defun split-string (string &key max (separator '(#\Space #\Tab)))
   (declare (string string))

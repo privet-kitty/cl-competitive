@@ -2,13 +2,18 @@
 ;;;; Sliding window optimum
 ;;;;
 
+(defpackage :cp/sliding-window
+  (:use :cl)
+  (:export #:calc-window-opt #:sliding-window #:make-sliding-window
+           #:swindow-extend #:swindow-shrink #:swindow-get #:swindow-empty-p #:swindow-reinitialize))
+(in-package :cp/sliding-window)
 
 ;;;
 ;;; For window of fixed width
 ;;;
 
-(declaim (inline calc-sliding-opt))
-(defun calc-sliding-opt (vector width order)
+(declaim (inline calc-window-opt))
+(defun calc-window-opt (vector width order)
   "Computes all the minima (or maxima) of the subsequences of the given width,
 VECTOR[i, i+WIDTH), in O(n). Returns a vector, whose i-th element is the
 minimum (or maximum) of the subsequence beginning with the index i.
@@ -65,7 +70,8 @@ ORDER := strict order (#'< corresponds to slide min. and #'> to slide max.)"
                                      (times (make-array size :element-type 'fixnum))
                                      (values (make-array size :element-type 'fixnum))))
                            (:conc-name %swindow-)
-                           (:copier nil))
+                           (:copier nil)
+                           (:predicate nil))
   (front-pos 0 :type (integer 0 #.most-positive-fixnum))
   (end-pos -1 :type (integer -1 #.most-positive-fixnum))
   (times nil :type (simple-array fixnum (*)))
@@ -108,7 +114,7 @@ ORDER := #'> => maximum"
   (> (%swindow-front-pos sw) (%swindow-end-pos sw)))
 
 (declaim (inline swindow-get-opt))
-(defun swindow-get-opt (sw)
+(defun swindow-get (sw)
   (assert (not (swindow-empty-p sw)))
   (let ((front-pos (%swindow-front-pos sw)))
     (aref (%swindow-values sw) front-pos)))
