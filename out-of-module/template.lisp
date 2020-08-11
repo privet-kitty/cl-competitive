@@ -17,21 +17,20 @@
 
 (defconstant +mod+ 1000000007)
 
-;; BEGIN_INSERTED_CONTENTS
-;; BEGIN_USE_PACKAGE
-(in-package :cl-user)
-
 (defmacro dbg (&rest forms)
-  #+swank
-  (if (= (length forms) 1)
-      `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-      `(format *error-output* "~A => ~A~%" ',forms `(,,@forms)))
+  #+swank (if (= (length forms) 1)
+              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
+              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms)))
   #-swank (declare (ignore forms)))
 
 (declaim (inline println))
 (defun println (obj &optional (stream *standard-output*))
   (let ((*read-default-float-format* 'double-float))
     (prog1 (princ obj stream) (terpri stream))))
+
+;; BEGIN_INSERTED_CONTENTS
+;; BEGIN_USE_PACKAGE
+(in-package :cl-user)
 
 ;;;
 ;;; Body
