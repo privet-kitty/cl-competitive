@@ -15,7 +15,7 @@ env:
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
-  - git clone --depth=1 -b=release https://gitlab.common-lisp.net/asdf/asdf.git ~/lisp/asdf
+  - git clone --depth=1 -b release https://gitlab.common-lisp.net/asdf/asdf.git ~/lisp/asdf
 
 script:
   - ros -s fiveam -e '(ql:quickload :cp/test)
