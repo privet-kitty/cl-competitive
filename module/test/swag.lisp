@@ -1,0 +1,62 @@
+(defpackage :cp/test/swag
+  (:use :cl :fiveam :cp/swag)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/swag)
+(in-suite base-suite)
+
+(defconstant +mod+ 10007)
+
+(defun mult (mat1 mat2)
+  (declare ((simple-array (unsigned-byte 16) (* *)) mat1 mat2))
+  (let ((res (make-array '(3 3) :element-type '(unsigned-byte 16) :initial-element 0)))
+    (dotimes (i 3)
+      (dotimes (j 3)
+        (let ((value 0))
+          (declare (fixnum value))
+          (dotimes (k 3)
+            (incf value (mod (* (aref mat1 i k) (aref mat2 k j)) +mod+)))
+          (setf (aref res i j) (mod value +mod+)))))
+    res))
+
+(test swag/random
+  (let ((iden (make-array '(3 3) :element-type '(unsigned-byte 16) :initial-element 0)))
+    (dotimes (i 3)
+      (setf (aref iden i i) 1))
+    (finishes
+     (dotimes (_ 100)
+       (let ((vec (make-array 50))
+             (swag (make-swag))
+             (l 0)
+             (r 0))
+         (dotimes (i 50)
+           (let ((mat (make-array '(3 3) :element-type '(unsigned-byte 16))))
+             (dotimes (i 3)
+               (dotimes (j 3)
+                 (setf (aref mat i j) (random +mod+))))
+             (setf (aref vec i) mat)))
+         (labels ((fold (l r)
+                    (let ((res (make-array '(3 3)
+                                           :element-type '(unsigned-byte 16)
+                                           :initial-element 0)))
+                      (dotimes (i 3)
+                        (setf (aref res i i) 1))
+                      (loop for i from l below r
+                            do (setq res (mult res (aref vec i))))
+                      res)))
+           (loop
+             (assert (equalp (fold l r) (swag-fold swag #'mult iden)))
+             (cond ((= l r 50) (return))
+                   ((= r 50)
+                    (swag-pop swag #'mult)
+                    (incf l))
+                   ((= l r)
+                    (swag-push swag (aref vec r) #'mult)
+                    (incf r))
+                   (t
+                    (if (zerop (random 2))
+                        (progn
+                          (swag-pop swag #'mult)
+                          (incf l))
+                        (progn
+                          (swag-push swag (aref vec r) #'mult)
+                          (incf r))))))))))))

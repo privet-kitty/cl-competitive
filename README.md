@@ -7,11 +7,11 @@ This code collection is maintained mainly for competitive programming, and partl
 The greater part of this library is distributed as public domain, or licensed under either CC0 or the MIT license, whichever gives you the most rights in your legislation. Some code, however, has its specific license (usually because it is a dead copy of other library). For the details, please see the header of each file.
 
 ## Style
-Currently I don't introduce any name spaces (packages) in each file. This is due to the circumstance unique to the competitive programming: one-file-per-submission. It is somewhat troublesome to manage many packages on a single file (especially when modifying inserted code). This style may change in the future, however.
+Although I put this code collection in a ASDF module, this project is primarily made for competitive programming and the whole structure will be quite different from a common ASDF library. I don't recommend that you directly load this module for your software.
 
-On portability: I try not to abuse non-portable code though I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent stream, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
+On portability: I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent stream, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
 
-Every data structure and algorithm handles a 0-based index and a half-open interval unless otherwise noted.
+Every data structure and algorithm uses a 0-based index and a half-open interval unless otherwise noted.
 
 ## Test environment
 - SBCL 2.0.3 (x64, linux) &mdash; AtCoder's version
@@ -19,6 +19,7 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 - SBCL 1.4.16 (x64, linux) &mdash; CS Academy's version
 - SBCL 1.3.13 (x64, linux) &mdash; CodeChef's version
 
+<!--
 ## Contents
 
 ### General data structures
@@ -160,3 +161,4 @@ Every data structure and algorithm handles a 0-based index and a half-open inter
 - [increase-spase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/compile-time-increase-space.lisp) analogue of increase-space at compile time
 - [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/self-compile.lisp) self-rewriting compilation
+-->

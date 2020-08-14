@@ -1,0 +1,27 @@
+(defpackage :cp/read-int64
+  (:use :cl)
+  (:export #:read-int64))
+(in-package :cp/read-int64)
+
+(declaim (ftype (function * (values (signed-byte 64) &optional)) read-int64))
+(defun read-int64 (&optional (in *standard-input*))
+  (macrolet ((%read-byte ()
+               `(the (unsigned-byte 8)
+                     #+swank (char-code (read-char in nil #\Nul))
+                     #-swank (sb-impl::ansi-stream-read-byte in nil #.(char-code #\Nul) nil))))
+    (let* ((minus nil)
+           (result (loop (let ((byte (%read-byte)))
+                           (cond ((<= 48 byte 57)
+                                  (return (- byte 48)))
+                                 ((zerop byte) ; #\Nul
+                                  (error "Read EOF or #\Nul."))
+                                 ((= byte #.(char-code #\-))
+                                  (setq minus t)))))))
+      (declare ((signed-byte 64) result))
+      (loop
+        (let* ((byte (%read-byte)))
+          (if (<= 48 byte 57)
+              (setq result (+ (- byte 48)
+                              (* 10 (the (integer 0 #.(floor (expt 2 63) 10))
+                                         result))))
+              (return (if minus (- result) result))))))))

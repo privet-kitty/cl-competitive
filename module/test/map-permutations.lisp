@@ -1,0 +1,37 @@
+(defpackage :cp/test/map-permutations
+  (:use :cl :fiveam :cp/map-permutations)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/map-permutations)
+(in-suite base-suite)
+
+(defun set-equal (x y)
+  (null (set-exclusive-or x y :test #'equalp)))
+
+(test map-permutations
+  (declare (sb-ext:muffle-conditions warning))
+  (is (set-equal '(#(1 2 3) #(1 3 2) #(2 1 3) #(2 3 1) #(3 1 2) #(3 2 1))
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector 1 2 3) 3)
+                     (collect (copy-seq perm))))))
+  (is (set-equal '(#(1 2 3) #(1 3 2) #(2 1 3) #(2 3 1) #(3 1 2) #(3 2 1))
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector 1 2 3))
+                     (collect (copy-seq perm))))))
+  (is (set-equal '(#(1 2) #(1 3) #(2 1) #(2 3) #(3 1) #(3 2))
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector 1 2 3) 2)
+                     (collect (copy-seq perm))))))
+  (is (set-equal '(#(1) #(2) #(3))
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector 1 2 3) 1)
+                     (collect (copy-seq perm))))))
+  (is (set-equal '(#())
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector 1 2 3) 0)
+                     (collect (copy-seq perm))))))
+
+  ;; empty case
+  (is (set-equal '(#())
+                 (uiop:while-collecting (collect)
+                   (do-permutations (perm (vector))
+                     (collect (copy-seq perm)))))))

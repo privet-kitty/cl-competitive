@@ -1,0 +1,22 @@
+(defpackage :cp/test/next-permutation
+  (:use :cl :fiveam :cp/next-permutation :cp/map-permutations :cp/test/set-equal)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/next-permutation)
+(in-suite base-suite)
+
+(test next-permutation
+  (signals no-permutation-error (next-permutation! #()))
+  (signals no-permutation-error (next-permutation! #(#\a) :order #'char<))
+  (is (equalp #(#\b #\a) (next-permutation! #(#\a #\b) :order #'char<)))
+  (signals no-permutation-error (next-permutation! #(#\b #\a) :order #'char<))
+  (let (perms1 perms2)
+    (let ((s (copy-seq "abcdef")))
+      (dotimes (i 720)
+        (push (copy-seq s) perms1)
+        (when (< i 719) (next-permutation! s :order #'char<)))
+      (setq perms1 (reverse perms1)))
+    (let ((s (copy-seq "abcdef")))
+      (do-permutations! (perm s)
+        (push (copy-seq perm) perms2))
+      (setq perms2 (sort perms2 #'string<)))
+    (is (equalp perms1 perms2))))

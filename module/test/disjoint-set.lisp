@@ -1,0 +1,23 @@
+(defpackage :cp/test/disjoint-set
+  (:use :cl :fiveam :cp/disjoint-set)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/disjoint-set)
+(in-suite base-suite)
+
+(test disjoint-set
+  (let ((dset (make-disjoint-set 5)))
+    (is (/= (ds-root dset 0) (ds-root dset 1)))
+    (is (= 1 (ds-size dset 0) (ds-root dset 1)))
+    (ds-unite! dset 0 1)
+    (is (= (ds-root dset 0) (ds-root dset 1)))
+    (is (not (ds-connected-p dset 3 4)))
+    (is (= 2 (ds-size dset 0)))
+    (ds-unite! dset 3 4)
+    (is (ds-connected-p dset 3 4))
+    (is (not (ds-connected-p dset 1 3)))
+    (ds-unite! dset 0 4)
+    (is (ds-connected-p dset 1 3))
+    (is (= 4 (ds-size dset 0)))
+    (is (= 1 (ds-size dset 2))))
+  (finishes (make-disjoint-set 0))
+  (finishes (make-disjoint-set 1)))

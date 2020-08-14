@@ -1,0 +1,26 @@
+(defpackage :cp/spanning-tree
+  (:use :cl)
+  (:export #:get-spanning-tree))
+(in-package :cp/spanning-tree)
+
+(declaim (inline get-spanning-tree)
+         (ftype (function * (values (simple-array list (*)) &optional)) get-spanning-tree))
+(defun get-spanning-tree (graph &optional (src 0))
+  "Returns a directed spanning tree of a GRAPH. (All the vertices must be
+reachable from SRC.)"
+  (declare ((array list (*)) graph)
+           ((integer 0 #.most-positive-fixnum) src))
+  (let* ((n (length graph))
+         (visited (make-array n :element-type 'bit :initial-element 0))
+         (result (make-array n :element-type 'list :initial-element nil)))
+    (labels ((dfs (v)
+               (setf (aref visited v) 1)
+               (let (adj-list)
+                 (dolist (neighbor (aref graph v))
+                   (declare ((integer 0 #.most-positive-fixnum) neighbor))
+                   (when (zerop (aref visited neighbor))
+                     (push neighbor adj-list)
+                     (dfs neighbor)))
+                 (setf (aref result v) adj-list))))
+      (dfs src))
+    result))
