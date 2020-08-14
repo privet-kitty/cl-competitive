@@ -103,6 +103,7 @@
   (:import-from :cp/test/tree-centroid)
   (:import-from :cp/test/trie)
   (:import-from :cp/test/triemap)
+  (:import-from :cp/test/trisect)
   (:import-from :cp/test/tzcount)
   (:import-from :cp/test/warshall-floyd)
   (:import-from :cp/test/wavelet-matrix)

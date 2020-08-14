@@ -15,16 +15,17 @@ vectors in VECTORS."
 
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:define-source-transform parallel-shuffle! (vector &rest vectors)
-    (let ((vec (gensym))
-          (vecs (loop for _ in vectors collect (gensym))))
-      `(let ((,vec ,vector)
-             ,@(loop for v in vectors
-                     for sym in vecs
-                     collect `(,sym ,v)))
-         (loop for i from (- (length ,vec) 1) above 0
-               for j = (random (+ i 1))
-               do (rotatef (aref ,vec i) (aref ,vec j))
-                  ,@(loop for sym in vecs
-                          collect `(rotatef (aref ,sym i) (aref ,sym j)))
-               finally (return ,vec))))))
+  (locally (declare (sb-ext:muffle-conditions warning))
+    (sb-c:define-source-transform parallel-shuffle! (vector &rest vectors)
+      (let ((vec (gensym))
+            (vecs (loop for _ in vectors collect (gensym))))
+        `(let ((,vec ,vector)
+               ,@(loop for v in vectors
+                       for sym in vecs
+                       collect `(,sym ,v)))
+           (loop for i from (- (length ,vec) 1) above 0
+                 for j = (random (+ i 1))
+                 do (rotatef (aref ,vec i) (aref ,vec j))
+                    ,@(loop for sym in vecs
+                            collect `(rotatef (aref ,sym i) (aref ,sym j)))
+                 finally (return ,vec)))))))

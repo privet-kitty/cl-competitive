@@ -1,3 +1,8 @@
+(defpackage :cp/trisect
+  (:use :cl)
+  (:export #:trisect-left))
+(in-package :cp/trisect)
+
 ;; FIXME: This is actually not a trisection and should be renamed.
 (declaim (inline trisect-left))
 (defun trisect-left (target start end &key (order #'<))

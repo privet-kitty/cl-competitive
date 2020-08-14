@@ -1,13 +1,13 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (load "test-util")
-  (load "../trisect.lisp"))
-
-(use-package :test-util)
+(defpackage :cp/test/trisect
+  (:use :cl :fiveam :cp/trisect)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/trisect)
+(in-suite base-suite)
 
 (defun make-func (vec)
   (lambda (pos) (aref vec pos)))
 
-(with-test (:name trisect-left)
+(test trisect-left
   (assert (= 4 (trisect-left (make-func #(3 2 0 -1 -2 -2 -2 -1 0)) 0 8)))
   (assert (= 5 (trisect-left (make-func #(3 2 0 -1 -2 -2 -2 -1 0)) 5 8)))
   (assert (= 3 (trisect-left (make-func #(3 2 0 -1 -2 -2 -2 -1 0)) 0 3)))

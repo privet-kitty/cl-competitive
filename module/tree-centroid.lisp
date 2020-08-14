@@ -97,12 +97,12 @@
       (recur root -1))))
 
 (defun tc-find-centroid (tree-centroid root &optional component-size)
-  "Returns four values: CENTROID1, CHILDS1, CENTROID2, CHILD2.
+  "Returns four values: CENTROID1, CHILDREN1, CENTROID2, CHILD2.
 
 CENTROID1 := 1st centroid
-CHILDS1 := associative list of (<child> . <size of the child subtree>) for CENTROID1
+CHILDREN1 := associative list of (<child> . <size of the child subtree>) for CENTROID1
 CENTROID2 := 2nd centroid (if it exists)
-CHILDS2 := associative list (if CENTROID2 exists)
+CHILDREN2 := associative list (if CENTROID2 exists)
 
 If the size of the component (to which ROOT belongs) is known, you can pass it
 and bypass the extra traverse (though you shouldn't use it except in an urgent
@@ -114,8 +114,8 @@ case as it is dangerous)."
     (error 'tree-centroid-disabled-vertex-error
            :tree-centroid tree-centroid
            :vertex root))
-  (let (childs1
-        childs2
+  (let (children1
+        children2
         (component-size (or component-size (%tc-calc-component-size tree-centroid root)))
         (graph (tc-graph tree-centroid))
         (validities (tc-validities tree-centroid))
@@ -128,15 +128,15 @@ case as it is dangerous)."
         (when (= 1 (sbit validities child))
           (if (= child (aref parents centroid1))
               (push (cons child (- component-size (aref subtree-sizes centroid1)))
-                    childs1)
+                    children1)
               (push (cons child (aref subtree-sizes child))
-                    childs1))))
+                    children1))))
       (when centroid2
         (dolist (child (aref graph centroid2))
           (when (= 1 (sbit validities child))
             (if (= child (aref parents centroid2))
                 (push (cons child (- component-size (aref subtree-sizes centroid2)))
-                      childs2)
+                      children2)
                 (push (cons child (aref subtree-sizes child))
-                      childs2)))))
-      (values centroid1 childs1 centroid2 childs2))))
+                      children2)))))
+      (values centroid1 children1 centroid2 children2))))
