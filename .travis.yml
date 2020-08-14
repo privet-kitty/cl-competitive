@@ -17,6 +17,8 @@ install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
 
 script:
-  - LISP_COMMAND="ros run -- --script" sh test/run-tests.sh
+  - ros -s fiveam -e '(ql:quickload :cp/test)
+                      (or (fiveam:run! (quote cp/test/base:base-suite))
+                          (uiop:quit 1))'
 
 sudo: required
