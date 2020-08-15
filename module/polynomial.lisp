@@ -8,14 +8,14 @@
 
 (declaim (inline poly-value))
 (defun poly-value (poly x modulus)
-  "Returns the value f(x)."
-  (declare (vector poly))
-  (let ((x^i 1)
-        (res 0))
-    (declare (fixnum x^i res))
-    (dotimes (i (length poly))
-      (setq res (mod (+ res (* x^i (aref poly i))) modulus))
-      (setq x^i (mod (* x^i x) modulus)))
+  "Evaluates POLY at X."
+  (declare (vector poly)
+           (fixnum x)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((res 0))
+    (declare (fixnum res))
+    (loop for i from (- (length poly) 1) downto 0
+          do (setq res (mod (+ (mod (* res x) modulus) (aref poly i)) modulus)))
     res))
 
 ;; naive multiplication in O(n^2)

@@ -4,6 +4,10 @@
 (in-package :cp/test/polynomial)
 (in-suite base-suite)
 
+(test poly-value
+  (is (= 4 (poly-value #(1 2 3) 3 30)))
+  (is (= 1 (poly-value #(1 2 3) 0 30))))
+
 (test poly-floor!
   (declare (notinline poly-floor!))
   (multiple-value-bind (quot rem) (poly-floor! #(8 10 -5 3) #(-3 2 1) 10007)

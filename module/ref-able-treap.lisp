@@ -1,4 +1,4 @@
-;; Treap accessible by index (O(log(n))).
+;; Treap accessible by index (O(log(n)))
 ;; Virtually it works like std::set of C++ or TreeSet of Java. 
 
 ;; Note:
@@ -78,9 +78,9 @@ order key <element>)) (not (funcall order <element> key))) is true."
 (declaim (inline treap-bisect-left)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional)) treap-bisect-left))
 (defun treap-bisect-left (value treap &key (order #'<))
-  "Returns the smallest index and the corresponding key that satisfies
-TREAP[index] >= VALUE. Returns the size of TREAP and VALUE if TREAP[size-1] <
-VALUE."
+  "Returns two values: the smallest index and the corresponding key that
+satisfies TREAP[index] >= VALUE. Returns the size of TREAP and VALUE instead if
+TREAP[size-1] < VALUE."
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -102,7 +102,7 @@ VALUE."
 (declaim (inline treap-split)
          (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
 (defun treap-split (key treap &key (order #'<))
-  "Destructively splits the TREAP with reference to KEY and returns two treaps,
+  "Destructively splits TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
@@ -151,7 +151,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   "Deletes KEY from TREAP."
   `(setf ,treap (treap-delete ,key ,treap :order ,order)))
 
-;; It takes O(nlog(n)).
+;; NOTE: It takes O(nlog(n)).
 (defun treap (order &rest keys)
   (loop with res = nil
         for key in keys
@@ -164,7 +164,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   "Makes a treap from the given SORTED-VECTOR in O(n) time. Note that this
 function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
 intended order. The consequence is undefined when a non-sorted vector is
-passed."
+given."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
@@ -218,7 +218,7 @@ CL:CONCATENATE. (TREAP-UNITE is the analogue of the former.)"
 
 (declaim (inline treap-delete))
 (defun treap-delete (key treap &key (order #'<))
-  "Destructively deletes the KEY in TREAP and returns the resultant treap."
+  "Destructively deletes KEY in TREAP and returns the resultant treap."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
@@ -267,7 +267,7 @@ take one argument."
              (invalid-treap-index-error-treap condition)))))
 
 (defun treap-ref (treap index)
-  "Index access"
+  "Returns the INDEX-th element of TREAP."
   (declare (optimize (speed 3))
            ((or null treap) treap)
            ((integer 0 #.most-positive-fixnum) index))
@@ -308,6 +308,8 @@ take one argument."
                (t (when (< (%treap-priority l) (%treap-priority r))
                     (rotatef l r))
                   (multiple-value-bind (lchild rchild)
+                      ;; FIXME: To omit duplicate keys, this TREAP-SPLIT should
+                      ;; be replaced by something like TREAP-EXCLUSIVE-SPLIT.
                       (treap-split (%treap-key l) r :order order)
                     (setf (%treap-left l) (recur (%treap-left l) lchild)
                           (%treap-right l) (recur (%treap-right l) rchild))
