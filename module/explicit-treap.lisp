@@ -8,7 +8,7 @@
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator
            #:treap-split #:treap-insert #:treap-merge #:treap-delete
            #:treap-ensure-key #:treap-unite #:treap-map #:do-treap
-           #:make-treap #:treap-query #:treap-update #:treap-ref
+           #:make-treap #:treap-fold #:treap-update #:treap-ref
            #:treap-first #:treap-last #:treap-find
            #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
            #:treap-range-bisect #:treap-range-bisect-from-end))
@@ -338,7 +338,7 @@ w.r.t. your intended order. The values are filled with the identity element."
                    node))))
     (build 0 (length sorted-vector))))
 
-(defun treap-query (treap &key left right (order #'<))
+(defun treap-fold (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
   (labels ((recur (treap l r)
@@ -358,34 +358,6 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
                            (recur (%treap-right treap) l r))))
                (force-up treap))))
     (recur treap left right)))
-
-#|
-;; Below is a simpler but somewhat slower variant
-(declaim (inline treap-query))
-(defun treap-query (treap &key left right (order #'<))
-  "Queries the sum of the half-open interval specified by the keys: [LEFT,
-RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
-  (if (null left)
-      (if (null right)
-          (treap-accumulator treap)
-          (multiple-value-bind (treap-0-r treap-r-n)
-              (treap-split treap right :order order)
-            (prog1 (treap-accumulator treap-0-r)
-              (treap-merge treap-0-r treap-r-n))))
-      (if (null right)
-          (multiple-value-bind (treap-0-l treap-l-n)
-              (treap-split treap left :order order)
-            (prog1 (treap-accumulator treap-l-n)
-              (treap-merge treap-0-l treap-l-n)))
-          (progn
-            (assert (not (funcall order right left)))
-            (multiple-value-bind (treap-0-l treap-l-n)
-                (treap-split treap left :order order)
-              (multiple-value-bind (treap-l-r treap-r-n)
-                  (treap-split treap-l-n right :order order)
-                (prog1 (treap-accumulator treap-l-r)
-                  (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))))))
-;|#
 
 (declaim (inline treap-update))
 (defun treap-update (treap x &key left right (order #'<))
@@ -414,22 +386,6 @@ be NIL, then it is regarded as the (negative or positive) infinity."
     (recur treap left right)
     treap))
 
-#|
-;; Below is a simpler but somewhat slower variant.
-(declaim (inline treap-update))
-(defun treap-update (treap x left right &key (order #'<))
-  "Updates TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r)"
-  (assert (not (funcall order right left)))
-  (multiple-value-bind (treap-0-l treap-l-n)
-      (treap-split treap left :order order)
-    (multiple-value-bind (treap-l-r treap-r-n)
-        (treap-split treap-l-n right :order order)
-      (when treap-l-r
-        (setf (%treap-lazy treap-l-r)
-              (updater-op (%treap-lazy treap-l-r) x)))
-      (treap-merge treap-0-l (treap-merge treap-l-r treap-r-n)))))
-;|#
-
 (declaim (inline treap-ref))
 (defun treap-ref (treap key &key (order #'<))
   (declare ((or null treap) treap))
@@ -441,6 +397,20 @@ be NIL, then it is regarded as the (negative or positive) infinity."
                             ((funcall order (%treap-key treap) key)
                              (recur (%treap-right treap)))
                             (t (%treap-value treap)))
+                 (force-up treap)))))
+    (recur treap)))
+
+(declaim (inline (setf treap-ref)))
+(defun (setf treap-ref) (new-value treap key &key (order #'<))
+  (declare ((or null treap) treap))
+  (labels ((recur (treap)
+             (when treap
+               (force-down treap)
+               (prog1 (cond ((funcall order key (%treap-key treap))
+                             (recur (%treap-left treap)))
+                            ((funcall order (%treap-key treap) key)
+                             (recur (%treap-right treap)))
+                            (t (setf (%treap-value treap) new-value)))
                  (force-up treap)))))
     (recur treap)))
 

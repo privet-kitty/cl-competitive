@@ -9,7 +9,7 @@
            #:make-itreap #:invalid-itreap-index-error #:itreap-ref
            #:itreap-split #:itreap-merge #:itreap-insert #:itreap-delete
            #:itreap-push #:itreap-pop #:itreap-map #:do-itreap
-           #:itreap-query #:itreap-range-bisect-left #:itreap-update #:itreap-reverse
+           #:itreap-fold #:itreap-range-bisect-left #:itreap-update #:itreap-reverse
            #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort))
 (in-package :cp/implicit-treap)
 
@@ -384,8 +384,8 @@ each time."
     (%set itreap index)
     new-value))
 
-(declaim (inline itreap-query))
-(defun itreap-query (itreap l r)
+(declaim (inline itreap-fold))
+(defun itreap-fold (itreap l r)
   "Queries the `sum' (w.r.t. OP) of the range ITREAP[L, R)."
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
@@ -457,25 +457,6 @@ Note:
       (prog1 (+ start (recur itreap 0 +op-identity+))
         (itreap-merge itreap-prefix itreap)))))
 
-;; merge/split version of itreap-query (a bit slower but simpler)
-;; FIXME: might be problematic when two priorities collide.
-#|
-(declaim (inline itreap-query))
-(defun itreap-query (itreap l r)
-  "Queries the `sum' (w.r.t. OP) of the interval [L, R)."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
-  (unless (<= l r (itreap-count itreap))
-    (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-  (if (= l r)
-      +op-identity+
-      (multiple-value-bind (itreap-0-l itreap-l-n)
-          (itreap-split itreap l)
-        (multiple-value-bind (itreap-l-r itreap-r-n)
-            (itreap-split itreap-l-n (- r l))
-          (prog1 (%itreap-accumulator itreap-l-r)
-            (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))))
-;|#
-
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
   "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
@@ -508,24 +489,6 @@ Note:
            (force-up itreap))))
     (recur itreap l r)
     itreap))
-
-;; merge/split version of itreap-update (a bit slower but simpler)
-#|
-(declaim (inline itreap-update))
-(defun itreap-update (itreap operand l r)
-  "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
-  (declare ((integer 0 #.most-positive-fixnum) l r))
-  (unless (<= l r (itreap-count itreap))
-    (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
-  (multiple-value-bind (itreap-0-l itreap-l-n)
-      (itreap-split itreap l)
-    (multiple-value-bind (itreap-l-r itreap-r-n)
-        (itreap-split itreap-l-n (- r l))
-      (when itreap-l-r
-        (setf (%itreap-lazy itreap-l-r)
-              (updater-op (%itreap-lazy itreap-l-r) operand)))
-      (itreap-merge itreap-0-l (itreap-merge itreap-l-r itreap-r-n)))))
-;|#
 
 (declaim (inline itreap-reverse))
 (defun itreap-reverse (itreap l r)

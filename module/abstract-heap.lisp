@@ -13,11 +13,14 @@
    (lambda (condition stream)
      (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
 
-(defmacro define-binary-heap (name &key (order '#'>) (element-type 'fixnum))
+(defmacro define-binary-heap (name &key order (element-type 'fixnum))
   "Defines a binary heap specialized for the given order and the element
 type. This macro defines a structure of the given NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
-<NAME>-COUNT, and <NAME>-PEEK."
+<NAME>-COUNT, and <NAME>-PEEK.
+
+If ORDER is not given, heap for dynamic order is defined instead: -PUSH and -POP
+functions take order as an argument."
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -28,7 +31,8 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
          (fname-peek (intern (format nil "~A-PEEK" string-name)))
          (fname-make (intern (format nil "MAKE-~A" string-name)))
          (acc-position (intern (format nil "~A-POSITION" string-name)))
-         (acc-data (intern (format nil "~A-DATA" string-name))))
+         (acc-data (intern (format nil "~A-DATA" string-name)))
+         (order (or order 'order)))
     `(progn
        (locally
            ;; prevent style warnings
@@ -43,7 +47,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
            (position 1 :type (integer 1 #.array-total-size-limit))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
-       (defun ,fname-push (obj heap)
+       (defun ,fname-push (obj heap ,@(when (eql order 'order) '(order)))
          "Adds OBJ to HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
@@ -68,7 +72,7 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
                heap))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-pop))
-       (defun ,fname-pop (heap)
+       (defun ,fname-pop (heap ,@(when (eql order 'order) '(order)))
          "Removes and returns the element at the top of HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
