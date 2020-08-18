@@ -4,7 +4,7 @@
 
 (defpackage :cp/queue
   (:use :cl)
-  (:export #:queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front))
+  (:export #:queue #:make-queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front))
 (in-package :cp/queue)
 
 (defstruct (queue (:constructor make-queue

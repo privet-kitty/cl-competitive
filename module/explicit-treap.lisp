@@ -11,7 +11,7 @@
            #:make-treap #:treap-fold #:treap-update #:treap-ref
            #:treap-first #:treap-last #:treap-find
            #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
-           #:treap-range-bisect #:treap-range-bisect-from-end))
+           #:treap-fold-bisect #:treap-fold-bisect-from-end))
 (in-package :cp/explicit-treap)
 
 ;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
@@ -506,7 +506,7 @@ smaller than any keys in TREAP."
     (treap-key (recur treap))))
 
 ;; not tested
-(defun treap-range-bisect (treap value &key (order #'<))
+(defun treap-fold-bisect (treap value &key (order #'<))
   "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
 
 Note:
@@ -538,7 +538,7 @@ key>], ...) must be monotone w.r.t. ORDER.
              (force-up treap)))))
     (recur treap +op-identity+)))
 
-(defun treap-range-bisect-from-end (treap value &key (order #'<))
+(defun treap-fold-bisect-from-end (treap value &key (order #'<))
   (labels
       ((recur (treap prev-sum)
          (unless treap
