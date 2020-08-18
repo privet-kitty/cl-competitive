@@ -78,7 +78,7 @@ This macro defines three functions: <NAME>-REF, index-access function,
                 (lvalue ,identity)
                 (rvalue ,identity))
            (declare ((integer 0 #.most-positive-fixnum) l r)
-                    (,element-type ,lvalue ,rvalue))
+                    (,element-type lvalue rvalue))
            (loop while (< l r)
                  when (evenp l)
                  do (setq lvalue (funcall ,operator lvalue (aref vector l)))
