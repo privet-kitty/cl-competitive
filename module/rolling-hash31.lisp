@@ -76,7 +76,7 @@
 
 ;; KLUDGE: Type derivation of MOD fails in some cases on SBCL. See
 ;; https://bugs.launchpad.net/sbcl/+bug/1843108
-(declaim (notinline %mod))
+(declaim (inline %mod))
 (defun %mod (number divisor)
   (nth-value 1 (floor number divisor)))
 
@@ -106,7 +106,7 @@ KEY := function returning FIXNUM"
 (declaim (ftype (function * (values (unsigned-byte 31) &optional)) rhash-vector-hash)
          (inline rhash-vector-hash))
 (defun rhash-vector-hash (vector &key (key #'char-code))
-  "Returns the hash code of VECTOR w.r.t. the moduli and bases of RHASH."
+  "Returns the hash code of VECTOR."
   (declare (vector vector))
   (let* ((size (length vector))
          (result 0))
@@ -135,6 +135,11 @@ KEY := function returning FIXNUM"
 
 (declaim (inline rhash-concat))
 (defun rhash-concat (rhash hash1 hash2 length2)
+  "Returns the hash value of the concatenated sequence.
+
+HASH-VALUE1 := hash value of the first sequence
+HASH-VALUE2 := hash value of the second sequence
+LENGTH2 := length of the second sequence."
   (declare ((unsigned-byte 31) hash1 hash2)
            ((integer 0 #.most-positive-fixnum) length2))
   (%mod (+ hash2
@@ -143,6 +148,8 @@ KEY := function returning FIXNUM"
 
 (declaim (ftype (function * (values (unsigned-byte 31) &optional)) rhash-get-lcp))
 (defun rhash-get-lcp (rhash1 start1 rhash2 start2)
+  "Returns the length of the longest common prefix of two suffixes which begin
+at START1 and START2."
   (declare (optimize (speed 3))
            ((mod #.most-positive-fixnum) start1 start2))
   (assert (and (< start1 (length (rhash-cumul rhash1)))
