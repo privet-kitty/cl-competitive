@@ -41,9 +41,6 @@
 ;; Then FOO is traced as with CL:TRACE.
 ;;
 
-;; TODO & NOTE: Currently a memoized function is not enclosed with a block of
-;; the function name.
-
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
@@ -109,7 +106,7 @@
                                     (if ,present-p
                                         ,value
                                         (setf (gethash ,args-lst ,cache)
-                                              (,name-alias ,@args))))))
+                                              (,name ,@args))))))
                               (:array
                                (assert (= (length args) (length dims-with-*)))
                                (let ((memoized-args (loop for dimension in dims-with-*
@@ -122,12 +119,12 @@
                                         (let ((,value (aref ,cache ,@indices)))
                                           (if (eql ,initial-element ,value)
                                               (setf (aref ,cache ,@indices)
-                                                    (,name-alias ,@args))
+                                                    (,name ,@args))
                                               ,value)))
                                      `(let ((,value (aref ,cache ,@memoized-args)))
                                         (if (eql ,initial-element ,value)
                                             (setf (aref ,cache ,@memoized-args)
-                                                  (,name-alias ,@args))
+                                                  (,name ,@args))
                                             ,value))))))))
                    (if trace-p
                        (%enclose-with-trace name args res)
@@ -161,8 +158,8 @@ DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
               ,(funcall make-reset-form cache-type))
             (defun ,name ,args
               ,@(%extract-declarations body)
-              (labels ((,name-alias ,args ,@body))
-                (declare (inline ,name-alias))
+              (flet ((,name ,args ,@body))
+                (declare (inline ,name))
                 ,(funcall make-cache-querier cache-type name args))))))
       ((labels flet)
        (destructuring-bind (_ definitions &body labels-body) def-form
@@ -174,8 +171,8 @@ DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
                  ,(funcall make-reset-form cache-type))
                 (,name ,args
                        ,@(%extract-declarations body)
-                       (labels ((,name-alias ,args ,@body))
-                         (declare (inline ,name-alias))
+                       (flet ((,name ,args ,@body))
+                         (declare (inline ,name))
                          ,(funcall make-cache-querier cache-type name args)))
                 ,@(cdr definitions))
                (declare (ignorable #',(funcall make-reset-name name)))
@@ -187,8 +184,8 @@ DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
             (,(car def-form) ,name ,bindings
              ,@(%extract-declarations body)
              ,(let ((args (mapcar (lambda (x) (if (atom x) x (car x))) bindings)))
-                `(labels ((,name-alias ,args ,@body))
-                   (declare (inline ,name-alias))
+                `(flet ((,name ,args ,@body))
+                   (declare (inline ,name))
                    ,(funcall make-cache-querier cache-type name args))))))))))
 
 (defmacro with-caches (cache-specs def-form)
@@ -237,8 +234,8 @@ functions."
                      for make-cache-querier in make-cache-querier-list
                      collect `(,(def-name def) ,(def-args def)
                                ,@(%extract-declarations (def-body def))
-                               (labels ((,name-alias ,(def-args def) ,@(def-body def)))
-                                 (declare (inline ,name-alias))
+                               (flet ((,(def-name def) ,(def-args def) ,@(def-body def)))
+                                 (declare (inline ,(def-name def)))
                                  ,(funcall make-cache-querier cache-type (def-name def) (def-args def))))))
             (declare (ignorable ,@(loop for def in definitions
                                         for make-reset-name in make-reset-name-list
