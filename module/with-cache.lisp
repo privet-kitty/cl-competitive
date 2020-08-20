@@ -93,7 +93,6 @@
         (let ((cache (gensym "CACHE"))
               (value (gensym))
 	      (present-p (gensym))
-              (name-alias (gensym))
 	      (args-lst (gensym))
               (indices (loop repeat rank collect (gensym))))
           (labels
@@ -137,7 +136,7 @@
                               (fill (sb-ext:array-storage-vector ,cache) ,initial-element)))))
                (make-reset-name (name)
                  (intern (format nil "RESET-~A" (symbol-name name)))))
-            (values cache cache-form cache-type name-alias
+            (values cache cache-form cache-type
                     #'make-reset-name
                     #'make-reset-form
                     #'make-cache-querier)))))))
@@ -145,7 +144,7 @@
 (defmacro with-cache ((cache-type &rest cache-attribs) def-form)
   "CACHE-TYPE := :HASH-TABLE | :ARRAY.
 DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
-  (multiple-value-bind (cache-symbol cache-form cache-type name-alias
+  (multiple-value-bind (cache-symbol cache-form cache-type
                         make-reset-name make-reset-form
                         make-cache-querier)
       (%parse-cache-form (cons cache-type cache-attribs))
@@ -201,15 +200,14 @@ and
 This macro will be useful to do mutual recursion between memoized local
 functions."
   (assert (member (car def-form) '(labels flet)))
-  (let (cache-symbol-list cache-form-list cache-type-list name-alias-list make-reset-name-list make-reset-form-list make-cache-querier-list)
+  (let (cache-symbol-list cache-form-list cache-type-list make-reset-name-list make-reset-form-list make-cache-querier-list)
     (dolist (cache-spec (reverse cache-specs))
-      (multiple-value-bind (cache-symbol cache-form cache-type name-alias
+      (multiple-value-bind (cache-symbol cache-form cache-type
                             make-reset-name make-reset-form make-cache-querier)
           (%parse-cache-form cache-spec)
         (push cache-symbol cache-symbol-list)
         (push cache-form cache-form-list)
         (push cache-type cache-type-list)
-        (push name-alias name-alias-list)
         (push make-reset-name make-reset-name-list)
         (push make-reset-form make-reset-form-list)
         (push make-cache-querier make-cache-querier-list)))
@@ -230,7 +228,6 @@ functions."
                                ,(funcall make-reset-form cache-type)))
              ,@(loop for def in definitions
                      for cache-type in cache-type-list
-                     for name-alias in name-alias-list
                      for make-cache-querier in make-cache-querier-list
                      collect `(,(def-name def) ,(def-args def)
                                ,@(%extract-declarations (def-body def))
