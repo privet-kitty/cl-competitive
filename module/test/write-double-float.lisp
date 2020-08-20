@@ -4,9 +4,9 @@
 (in-package :cp/test/write-double-float)
 (in-suite base-suite)
 
-(defun %make-df-string (x &key (max-digits 10) (allow-trailing-point t))
+(defun %make-df-string (x &key (max-decimal-places 10) (allow-trailing-point t))
   (with-output-to-string (out)
-    (write-double-float x :max-digits max-digits
+    (write-double-float x :max-decimal-places max-decimal-places
                           :stream out
                           :allow-trailing-point allow-trailing-point)))
 
@@ -44,17 +44,17 @@
   (is (equal "-0.0155" (%make-df-string -1.55d-2)))
   (is (equal "-0.00155" (%make-df-string -1.55d-3)))
 
-  (is (equal "-2.33333" (%make-df-string -2.33333333d0 :max-digits 5)))
-  (is (equal "-2.3333" (%make-df-string -2.33333333d0 :max-digits 4)))
-  (is (equal "-2.333" (%make-df-string -2.33333333d0 :max-digits 3)))
-  (is (equal "-2.33" (%make-df-string -2.33333333d0 :max-digits 2)))
-  (is (equal "-2.3" (%make-df-string -2.33333333d0 :max-digits 1)))
-  (is (equal "-2." (%make-df-string -2.33333333d0 :max-digits 0)))
-  (is (equal "-2.0" (%make-df-string -2.33333333d0 :max-digits 0 :allow-trailing-point nil)))
+  (is (equal "-2.33333" (%make-df-string -2.33333333d0 :max-decimal-places 5)))
+  (is (equal "-2.3333" (%make-df-string -2.33333333d0 :max-decimal-places 4)))
+  (is (equal "-2.333" (%make-df-string -2.33333333d0 :max-decimal-places 3)))
+  (is (equal "-2.33" (%make-df-string -2.33333333d0 :max-decimal-places 2)))
+  (is (equal "-2.3" (%make-df-string -2.33333333d0 :max-decimal-places 1)))
+  (is (equal "-2." (%make-df-string -2.33333333d0 :max-decimal-places 0)))
+  (is (equal "-2.0" (%make-df-string -2.33333333d0 :max-decimal-places 0 :allow-trailing-point nil)))
 
-  (is (equal "-0.23333" (%make-df-string -2.33333333d-1 :max-digits 5)))
-  (is (equal "-0.2333" (%make-df-string -2.33333333d-1 :max-digits 4)))
-  (is (equal "-0.233" (%make-df-string -2.33333333d-1 :max-digits 3)))
-  (is (equal "-0.23" (%make-df-string -2.33333333d-1 :max-digits 2)))
-  (is (equal "-0.2" (%make-df-string -2.33333333d-1 :max-digits 1)))
-  (is (equal "-0." (%make-df-string -2.33333333d-1 :max-digits 0))))
+  (is (equal "-0.23333" (%make-df-string -2.33333333d-1 :max-decimal-places 5)))
+  (is (equal "-0.2333" (%make-df-string -2.33333333d-1 :max-decimal-places 4)))
+  (is (equal "-0.233" (%make-df-string -2.33333333d-1 :max-decimal-places 3)))
+  (is (equal "-0.23" (%make-df-string -2.33333333d-1 :max-decimal-places 2)))
+  (is (equal "-0.2" (%make-df-string -2.33333333d-1 :max-decimal-places 1)))
+  (is (equal "-0." (%make-df-string -2.33333333d-1 :max-decimal-places 0))))
