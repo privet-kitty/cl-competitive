@@ -148,7 +148,8 @@ NIL. In addition, this function returns the rank of A as the second value."
     (assert (= n (length vector)))
     (let ((extended (make-array (list m (+ n 1)) :element-type (array-element-type matrix))))
       (dotimes (i m)
-        (dotimes (j n) (setf (aref extended i j) (aref matrix i j)))
+        (dotimes (j n)
+          (setf (aref extended i j) (aref matrix i j)))
         (setf (aref extended i n) (aref vector i)))
       (let ((rank (nth-value 1 (mod-echelon! extended modulus t))))
         (if (loop for i from rank below m
