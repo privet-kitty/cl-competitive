@@ -27,15 +27,14 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/deque.lisp) double-ended queue with ring buffer
 - [double-stack-deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/double-stack-deque.lisp) double-ended queue with two stacks
 - [abstract-heap](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-heap.lisp) binary heap for static order function
-- [heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/heap.lisp) binary heap for dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/pairing-heap.lisp) meldable heap (pairing heap)
 - [radix-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/radix-heap.lisp) radix heap
 - [abstract-segtree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-segtree.lisp) segment tree on arbitrary monoid
 - [abstract-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-bit.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
-- [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-indexed-tree.lisp) binary indexed tree (specialized for ordinary `+`)
 - [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-bit.lisp) 2D binary indexed tree
 - [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-set.lisp) disjoint set by Union-Find algorithm
-- [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-disjoint-set.lisp) partially persistent disjoint set by Union-Find algorithm
+- [undoable-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/undoable-disjoint-set.lisp) undoable disjoint set
+- [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-disjoint-set.lisp) partially persistent disjoint set
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/implicit-treap.lisp) treap with implicit key
@@ -45,7 +44,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [range-tree-fc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/range-tree-fc.lisp) 2D range tree with fractional cascading
 - [convex-hull-trick.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull-trick.lisp) convex hull trick
 - [succinct-bit-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/succinct-bit-vector.lisp) three-layer succinct bit vector
-- [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/wavelet-matrix.lisp) wavelet matrix (with compact bit vector)
+- [compact-bit-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/compact-bit-vector.lisp) two-layer compact bit vector
+- [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/wavelet-matrix.lisp) wavelet matrix
 - [persistent-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-vector.lisp) persistent vector
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dice.lisp) six-sided dice
 
@@ -60,7 +60,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mo.lisp) Mo's algorithm
 - [inverse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inverse-table.lisp) inverse lookup table of vector
 - [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/adjacent-duplicates.lisp) deletion of adjacent duplicates
-- [map-run-length.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/map-run-length.lisp) run-length encoding
+- [run-length.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/run-length.lisp) run-length encoding
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inversion-number.lisp) counting inversions of vector by merge sort
 - [lis.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lis.lisp) longest increasing subsequence
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mex.lisp) minimum excludant on non-negative integers
@@ -73,8 +73,12 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 
 ### Arithmetic and algebra
-- [modular-arithmetic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/modular-arithmetic.lisp) extended Euclidean algorithm; Bezout equation; modular inverse; discrete logarithm; Gaussian elimination
 - [mod-power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-power.lisp) modular exponentiation
+- [ext-gcd.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ext-gcd.lisp) extended euclidean algorithm
+- [mod-inverse.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-inverse.lisp) modular inverse
+- [mod-log.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-log.lisp) modular logarithm
+- [bezout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bezout.lisp) Bezout equation
+- [mod-linear-algebra.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-linear-algebra.lisp) modular linear algebra
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation on arbitrary monoid
 - [binomial-coefficient-mod.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binomial-coefficient-mod.lisp) binomial coefficient with fixed modulus; linear-time construction of tables of inverses, factorials, and inverses of factorials
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
@@ -121,7 +125,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/boruvka.lisp) minimum spanning tree (Borůvka's algorithm)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
-- [dfs-order.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dfs-order.lisp) Euler tour of tree
+- [euler-tour.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/euler-tour.lisp) Euler tour of tree
 - [scc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/scc.lisp) strongly connected component of directed graph (Tarjan's algorithm); 2-SAT
 - [block-cut-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/block-cut-tree.lisp) biconnected component of undirected graph; block-cut tree
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-centroid.lisp) centroid decomposition of tree
@@ -131,11 +135,13 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/random-graph.lisp) fast generation of random adjacency matrices
 
 ### Geometry
-- [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number; smallest circle problem (Welzl's algorithm) 
+- [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
+- [circumcenter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/circumcenter.lisp) circumcenter
+- [welzl.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/welzl.lisp) smallest circle problem (Welzl's algorithm)
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull.lisp) 2D convex hull (monotone chain algorithm)
 
 ### Pattern matching
-- [rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash.lisp) 32-bit rolling hash
+- [rolling-hash31.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash31.lisp) 31-bit rolling hash
 - [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash62.lisp) 62-bit rolling hash
 - [2d-rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-rolling-hash.lisp) 2D 32-bit rolling hash
 - [triemap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/triemap.lisp) map structure by Trie
