@@ -1,6 +1,7 @@
 (defpackage :cp/undoable-disjoint-set
   (:use :cl)
-  (:export #:make-undoable-disjoint-set #:uds-root #:uds-unite! #:uds-size #:uds-connected-p
+  (:export #:make-undoable-disjoint-set #:undoable-disjoint-set
+           #:uds-root #:uds-unite! #:uds-size #:uds-connected-p
            #:uds-undo! #:uds-snapshot! #:uds-rollback!))
 (in-package :cp/undoable-disjoint-set)
 

@@ -10,6 +10,8 @@
            #:pds-root #:pds-unite! #:pds-connected-p #:pds-opening-time #:pds-size))
 (in-package :cp/persistent-disjoint-set)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (assert (= (- (ash 1 62) 1))))
 (defstruct (persistent-disjoint-set
             (:constructor make-persistent-disjoint-set
                 (size
@@ -22,15 +24,13 @@
                  (timestamps (make-array size
                                          :element-type '(integer 0 #.most-positive-fixnum)
                                          :initial-element most-positive-fixnum))
-                 ;; HISTORY records changelog of each connected component: (time
-                 ;; . size)
+                 ;; HISTORY records changelog of each connected component: time and size
                  (history
-                  (let ((res (make-array size :element-type '(vector (cons fixnum fixnum)))))
+                  (let ((res (make-array size :element-type '(simple-array fixnum (*)))))
                     (dotimes (i size res)
                       (setf (aref res i)
-                            (make-array 1 :element-type '(cons fixnum fixnum)
-                                          :fill-pointer 1
-                                          :initial-element (cons -1 1))))))))
+                            (make-array 2 :element-type 'fixnum :initial-contents '(-1 1))))))
+                 (ends (make-array size :element-type '(integer 0 #.most-positive-fixnum) :initial-element 2))))
             (:conc-name pds-)
             (:copier nil)
             (:predicate nil))
@@ -38,7 +38,8 @@
   (data nil :type (simple-array fixnum (*)))
   (now 0 :type (integer 0 #.most-positive-fixnum))
   (timestamps nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
-  (history nil :type (simple-array (vector (cons fixnum fixnum)) (*))))
+  (history nil :type (simple-array (simple-array fixnum (*)) (*)))
+  (ends nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
 
 ;; FIXME: add error handling of PDS-ROOT and PDS-CONNECTED-P. (It is too slow to
 ;; naively add this error to these functions.)
@@ -51,17 +52,21 @@
              (pds-now (pds-query-future-disjoint-set condition))
              (pds-query-future-specified-time condition)))))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) pds-root))
-(defun pds-root (x time disjoint-set)
+(declaim (inline pds-root)
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) pds-root))
+(defun pds-root (disjoint-set x time)
   "Returns the root of X at TIME."
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) x time))
-  (if (< time (aref (pds-timestamps disjoint-set) x))
-      x
-      (pds-root (aref (pds-data disjoint-set) x) time disjoint-set)))
+  (declare ((integer 0 #.most-positive-fixnum) x time))
+  (let ((data (pds-data disjoint-set))
+        (timestamps (pds-timestamps disjoint-set)))
+    (labels ((recur (x)
+               (if (< time (aref timestamps x))
+                   x
+                   (recur (aref data x)))))
+      (recur x))))
 
 (declaim (inline pds-unite!))
-(defun pds-unite! (x1 x2 disjoint-set)
+(defun pds-unite! (disjoint-set x1 x2)
   "Destructively unites X1 and X2."
   (declare ((or null (integer 0 #.most-positive-fixnum))))
   (symbol-macrolet ((now (pds-now disjoint-set)))
@@ -69,25 +74,34 @@
       (setf now time)
       (let ((timestamps (pds-timestamps disjoint-set))
             (data (pds-data disjoint-set))
-            (root1 (pds-root x1 time disjoint-set))
-            (root2 (pds-root x2 time disjoint-set)))
+            (history (pds-history disjoint-set))
+            (ends (pds-ends disjoint-set))
+            (root1 (pds-root disjoint-set x1 time))
+            (root2 (pds-root disjoint-set x2 time)))
         (unless (= root1 root2)
+          ;; ensure (size root1) >= (size root2)
           (when (> (aref data root1) (aref data root2))
             (rotatef root1 root2))
-          ;; (size root1) >= (size root2)
           (incf (aref data root1) (aref data root2))
           (setf (aref data root2) root1
                 (aref timestamps root2) time)
-          (vector-push-extend (cons time (- (aref data root1)))
-                              (aref (pds-history disjoint-set) root1))
+          (when (= (aref ends root1) (length (aref history root1)))
+            (setf (aref history root1)
+                  (adjust-array (aref history root1)
+                                (the (mod #.array-total-size-limit)
+                                     (* 2 (aref ends root1))))))
+          (setf (aref (aref history root1) (aref ends root1)) time)
+          (setf (aref (aref history root1) (+ 1 (aref ends root1)))
+                (- (aref data root1)))
+          (incf (aref ends root1) 2)
           t)))))
 
 (declaim (inline pds-connected-p))
-(defun pds-connected-p (x1 x2 time disjoint-set)
+(defun pds-connected-p (disjoint-set x1 x2 time)
   "Returns true iff X1 and X2 have the same root at TIME."
-  (= (pds-root x1 time disjoint-set) (pds-root x2 time disjoint-set)))
+  (= (pds-root disjoint-set x1 time) (pds-root disjoint-set x2 time)))
 
-(defun pds-opening-time (x1 x2 disjoint-set)
+(defun pds-opening-time (disjoint-set x1 x2)
   "Returns the earliest time when X1 and X2 were connected. Returns NIL if X1
 and X2 are not connected yet."
   ;; 
@@ -100,29 +114,30 @@ and X2 are not connected yet."
              (if (<= (- ok ng) 1)
                  ok
                  (let ((mid (ash (+ ng ok) -1)))
-                   (if (pds-connected-p x1 x2 mid disjoint-set)
+                   (if (pds-connected-p disjoint-set x1 x2 mid)
                        (bisect ng mid)
                        (bisect mid ok))))))
-    (when (pds-connected-p x1 x2 (pds-now disjoint-set) disjoint-set)
+    (when (pds-connected-p disjoint-set x1 x2 (pds-now disjoint-set))
       (bisect 0 (pds-now disjoint-set)))))
 
 (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) pds-size))
-(defun pds-size (x time disjoint-set)
+(defun pds-size (disjoint-set x time)
   "Returns the size of X at TIME."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) x time))
   (when (< (pds-now disjoint-set) time)
     (error 'persistent-disjoint-set-query-future :specified-time time :disjoint-set disjoint-set))
-  (let* ((root (pds-root x time disjoint-set))
+  (let* ((root (pds-root disjoint-set x time))
          (root-history (aref (pds-history disjoint-set) root)))
     (declare (optimize (safety 0)))
     ;; detect the latest time equal to or earlier than TIME 
     (labels ((bisect-left-1 (ok ng)
                (declare ((integer 0 #.most-positive-fixnum) ok ng))
-               (if (<= (- ng ok) 1)
+               (if (<= (- ng ok) 2)
                    ok
-                   (let ((mid (ash (+ ok ng) -1)))
-                     (if (<= (the fixnum (car (aref root-history mid))) time)
+                   (let ((mid (logand -2 (ash (+ ok ng) -1))))
+                     (if (<= (aref root-history mid) time)
                          (bisect-left-1 mid ng)
                          (bisect-left-1 ok mid))))))
-      (cdr (aref root-history (bisect-left-1 0 (length root-history)))))))
+      (aref root-history
+            (+ 1 (bisect-left-1 0 (aref (pds-ends disjoint-set) root)))))))
