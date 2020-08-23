@@ -25,7 +25,9 @@
                (adjust-array seq end :fill-pointer end)
                (adjust-array seq end)))))
     (list
-     (loop for rest on seq
-           unless (and (cdr rest)
-                       (funcall test (first rest) (second rest)))
-           collect (car rest)))))
+     (let ((tmp seq))
+       (loop while (cdr tmp)
+             when (funcall test (first tmp) (second tmp))
+             do (setf (cdr tmp) (cddr tmp))
+             else do (setq tmp (cdr tmp)))
+       seq))))
