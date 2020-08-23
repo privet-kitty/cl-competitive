@@ -10,12 +10,12 @@
                 (size
                  &optional (buffer-size 1)
                  &aux (data (make-array size :element-type 'fixnum :initial-element -1))
-                      (stack (make-array (max 4 (* 4 buffer-size)) :element-type 'fixnum))))
+                      (stack (make-array (max 4 (* 4 buffer-size)) :element-type t))))
             (:conc-name %uds-)
             (:copier nil)
             (:predicate nil))
   (data nil :type (simple-array fixnum (*)))
-  (stack nil :type (simple-array fixnum (*)))
+  (stack nil :type (simple-array t (*)))
   (end 0 :type (mod #.array-total-size-limit)))
 
 (declaim (inline uds-root))

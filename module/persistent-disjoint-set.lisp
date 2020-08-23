@@ -10,8 +10,6 @@
            #:pds-root #:pds-unite! #:pds-connected-p #:pds-opening-time #:pds-size))
 (in-package :cp/persistent-disjoint-set)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (assert (= (- (ash 1 62) 1))))
 (defstruct (persistent-disjoint-set
             (:constructor make-persistent-disjoint-set
                 (size
