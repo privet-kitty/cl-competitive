@@ -27,6 +27,16 @@
     (is (uds-connected-p dset 1 3))
     (is (equal '(4 4 1 4 4)
                (loop for x below 5 collect (uds-size dset x))))
+    (uds-unite! dset 0 4)
+    ;; state 4 (= state 3)
+    (is (uds-connected-p dset 1 3))
+    (is (equal '(4 4 1 4 4)
+               (loop for x below 5 collect (uds-size dset x))))
+    (uds-undo! dset)
+    ;; state 3
+    (is (uds-connected-p dset 1 3))
+    (is (equal '(4 4 1 4 4)
+               (loop for x below 5 collect (uds-size dset x))))
     (uds-undo! dset)
     ;; state 2
     (is (uds-connected-p dset 3 4))

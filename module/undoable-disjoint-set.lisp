@@ -34,24 +34,24 @@ for the first time."
   (symbol-macrolet ((stack (%uds-stack dset))
                     (end (%uds-end dset)))
     (let ((root1 (uds-root dset x1))
-          (root2 (uds-root dset x2)))
+          (root2 (uds-root dset x2))
+          (data (%uds-data dset)))
+      ;; record
+      (when (= end (length stack))
+        (setf stack (adjust-array stack (the (integer 0 #.most-positive-fixnum)
+                                             (* end 2)))))
+      (setf (aref stack end) root1
+            (aref stack (+ end 1)) (aref data root1)
+            (aref stack (+ end 2)) root2
+            (aref stack (+ end 3)) (aref data root2)
+            end (+ end 4))
       (unless (= root1 root2)
-        (let ((data (%uds-data dset)))
-          ;; Ensure the size of root1 >= the size of root2
-          (when (> (aref data root1) (aref data root2))
-            (rotatef root1 root2))
-          ;; record
-          (when (= end (length stack))
-            (setf stack (adjust-array stack (the (integer 0 #.most-positive-fixnum)
-                                                 (* end 2)))))
-          (setf (aref stack end) root1
-                (aref stack (+ end 1)) (aref data root1)
-                (aref stack (+ end 2)) root2
-                (aref stack (+ end 3)) (aref data root2)
-                end (+ end 4))
-          ;; update
-          (incf (aref data root1) (aref data root2))
-          (setf (aref data root2) root1))))))
+        ;; Ensure the size of root1 >= the size of root2
+        (when (> (aref data root1) (aref data root2))
+          (rotatef root1 root2))
+        ;; update
+        (incf (aref data root1) (aref data root2))
+        (setf (aref data root2) root1)))))
 
 (declaim (inline uds-connected-p))
 (defun uds-connected-p (dset x1 x2)
