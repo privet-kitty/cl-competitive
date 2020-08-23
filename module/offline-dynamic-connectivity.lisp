@@ -6,7 +6,7 @@
   (:use :cl :cp/undoable-disjoint-set)
   (:export #:dynamic-connectivity #:make-dynamic-connectivity
            #:dycon-insert #:dycon-delete #:dycon-build #:dycon-map
-           #:dycon-num-components #:dycon-dset))
+           #:dycon-num-components #:dycon-disjoint-set))
 (in-package :cp/offline-dynamic-connectivity)
 
 ;; NOTE: not tested
@@ -19,7 +19,7 @@
                       (counter (make-hash-table :test #'equal))
                       (appearance (make-hash-table :test #'equal))
                       (events (make-array 0 :element-type 'list :fill-pointer 0))
-                      (dset (make-undoable-disjoint-set size max-time))
+                      (disjoint-set (make-undoable-disjoint-set size max-time))
                       (num-components size)))
             (:copier nil)
             (:predicate nil)
@@ -32,7 +32,8 @@
   (appearance nil :type hash-table)
   ;; (appear-time disappear-time vertex1 . vertex2)  
   (events nil :type (array list (*)))
-  (dset nil :type undoable-disjoint-set)
+  ;; disjoint set that holds connectivity of graph
+  (disjoint-set nil :type undoable-disjoint-set)
   ;; number of connected components
   (num-components 0 :type (integer 0 #.most-positive-fixnum)))
 
@@ -111,11 +112,11 @@
 
 (defun dycon-map (dycon function)
   "FUCTION takes an argument, time: When FUNCTION is called, NUM-COMPONENTS and
-DSET become those of the time. Be sure to call DYCON-BUILD beforehand."
+DISJOINT-SET become those of the time. Be sure to call DYCON-BUILD beforehand."
   (declare (optimize (speed 3))
            (function function))
   (symbol-macrolet ((comp (dycon-num-components dycon)))
-    (let* ((dset (dycon-dset dycon))
+    (let* ((disjoint-set (dycon-disjoint-set dycon))
            (segtree (dycon-segtree dycon))
            (max-time (dycon-max-time dycon)))
       (labels ((recur (i)
@@ -123,7 +124,7 @@ DSET become those of the time. Be sure to call DYCON-BUILD beforehand."
                  (let ((comp-delta 0))
                    (declare ((integer 0 #.most-positive-fixnum) comp-delta))
                    (loop for (u . v) in (aref segtree i)
-                         when (uds-unite! dset u v)
+                         when (uds-unite! disjoint-set u v)
                          do (incf comp-delta))
                    (decf comp comp-delta)
                    (if (< i (- max-time 1))
@@ -133,5 +134,5 @@ DSET become those of the time. Be sure to call DYCON-BUILD beforehand."
                        (funcall function (- i (- max-time 1))))
                    (incf comp comp-delta)
                    (loop for edge in (aref segtree i)
-                         do (uds-undo! dset)))))
+                         do (uds-undo! disjoint-set)))))
         (recur 0)))))

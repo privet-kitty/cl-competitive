@@ -35,6 +35,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-set.lisp) disjoint set by Union-Find algorithm
 - [undoable-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/undoable-disjoint-set.lisp) undoable disjoint set
 - [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-disjoint-set.lisp) partially persistent disjoint set
+- [offline-dynamic-connectivity.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/offline-dynamic-connectivity.lisp) offline dynamic connectivity
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/implicit-treap.lisp) treap with implicit key
