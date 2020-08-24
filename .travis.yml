@@ -3,6 +3,7 @@ language: common-lisp
 branches:
   only:
     - master
+    - /^ci-.*$/
 
 env:
   global:
