@@ -90,11 +90,9 @@ This macro defines three functions: <NAME>-REF, index-access function,
                           r (ash (- r 1) -1)))
            (funcall ,operator lvalue rvalue))))))
 
-#|
 
+#+(or)
 (define-segtree segtree
   :operator #'+
   :identity 0
   :element-type fixnum)
-
-;|#

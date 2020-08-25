@@ -74,11 +74,8 @@ type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
                          (funcall ,operator (aref array dest-i j) (aref array i j)))))))
            array)))))
 
-#|
-
+#+(or)
 (define-2d-bitree bitree
   :operator #'+
   :identity 0
   :sum-type fixnum)
-
-;|#

@@ -125,10 +125,7 @@ functions take order as an argument."
              (error 'heap-empty-error :heap heap)
              (aref (,acc-data heap) 1))))))
 
-#|
-
+#+(or)
 (define-binary-heap heap
   :order #'>
   :element-type fixnum)
-
-;|#

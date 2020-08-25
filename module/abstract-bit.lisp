@@ -122,12 +122,9 @@ interval."
                                (setf cumul next-cumul)
                                (incf index+1 delta))))))))))))))
 
-#|
-
+#+(or)
 (define-bitree bitree
   :operator #'+
   :identity 0
   :sum-type fixnum
   :order #'<)
-
-;|#

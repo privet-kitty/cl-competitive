@@ -88,12 +88,9 @@ connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
          (- (aref (,data-accessor ,name)
                   (,rooter ,name x)))))))
 
-#|
-
+#+(or)
 (define-disjoint-set disjoint-set
   :operation #'max
   :element-type fixnum
   :conc-name ds-
   :union-by-size nil)
-
-;|#

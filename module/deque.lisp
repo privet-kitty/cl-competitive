@@ -177,8 +177,5 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
              (error 'deque-invalid-index-error :index index :queue ,name))
            (aref data pos))))))
 
-#|
-
+#+(or)
 (define-deque deque :element-type fixnum)
-
-;|#
