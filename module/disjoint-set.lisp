@@ -4,7 +4,7 @@
 
 (defpackage :cp/disjoint-set
   (:use :cl)
-  (:export #:disjoint-set #:make-disjoint-set #:disjoint-set-p
+  (:export #:disjoint-set #:make-disjoint-set #:ds-data
            #:ds-root #:ds-unite! #:ds-connected-p #:ds-size))
 (in-package :cp/disjoint-set)
 
@@ -12,6 +12,7 @@
             (:constructor make-disjoint-set
                 (size &aux (data (make-array size :element-type 'fixnum :initial-element -1))))
             (:conc-name ds-)
+            (:predicate nil)
             (:copier nil))
   (data nil :type (simple-array fixnum (*))))
 
