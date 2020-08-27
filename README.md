@@ -157,15 +157,15 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [write-double-float.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/write-double-float.lisp) write double-float with fixed-point expression
 
 ### Other utilities
-- [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/out-of-module/template.lisp) template code
-- [mpfr.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/out-of-module/mpfr.lisp) header to load SB-MPFR
+- [template.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/template.lisp) template code
+- [mpfr.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/mpfr.lisp) header to load SB-MPFR
 - [with-cache.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/with-cache.lisp) memoization of function
 - [dotimes-unroll.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dotimes-unroll.lisp) loop unrolling
 - [placeholder-syntax.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/placeholder-syntax.lisp) Clojure-style placeholder syntax
 
 ### Weird things
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a bundle of some slots
-- [increase-spase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/out-of-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
-- [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/out-of-module/compile-time-increase-space.lisp) analogue of increase-space at compile time
-- [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/out-of-module/self-compile.lisp) self-rewriting compilation
+- [increase-spase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
+- [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/compile-time-increase-space.lisp) analogue of increase-space at compile time
+- [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/self-compile.lisp) self-rewriting compilation
 
