@@ -84,3 +84,9 @@ pathname: run #'MAIN using the text file as input."
 #+swank
 (defun bench (&optional (out (make-broadcast-stream)))
   (time (run *dat-pathname* out)))
+
+#-swank
+(eval-when (:compile-toplevel)
+  (when (and (boundp 'sb-c::*compiler-warning-count*)
+             (> sb-c::*compiler-warning-count* 0))
+    (sb-ext:quit :unix-status 1)))
