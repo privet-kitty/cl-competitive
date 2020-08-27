@@ -78,4 +78,5 @@ for the first time."
   (setf (%uds-end dset) 0))
 
 (defun uds-rollback! (dset)
+  "Rewinds DSET to the snapshotted point."
   (loop while (uds-undo! dset nil)))
