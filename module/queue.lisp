@@ -19,11 +19,11 @@
   "Pushes OBJ to the end of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
-    (if (null list)
-        (setf tail (list obj)
-              list tail)
+    (if list
         (setf (cdr tail) (list obj)
-              tail (cdr tail))))
+              tail (cdr tail))
+        (setf tail (list obj)
+              list tail)))
   queue)
 
 (declaim (inline dequeue))
@@ -45,8 +45,8 @@ is empty."
   "Pushes OBJ to the front of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
-    (if (null list)
+    (if list
+        (push obj list)
         (setf tail (list obj)
-              list tail)
-        (push obj list))
+              list tail))
     queue))
