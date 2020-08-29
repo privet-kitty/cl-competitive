@@ -34,6 +34,15 @@
 
 (defparameter *state* (sb-ext:seed-random-state 123))
 
+(test interval-set/manual
+  (let (iset)
+    (iset-push iset 3 5)
+    (iset-push iset 5 6)
+    (iset-push-point iset 7)
+    (is (equal '(3 6) (multiple-value-list (iset-right-next iset 0))))
+    (is (equal '(7 8) (multiple-value-list (iset-right-next iset 6))))
+    (is (equal '(nil nil) (multiple-value-list (iset-right-next iset 8))))))
+
 (test interval-set/random
   (finishes
     (loop for len from 1 to 500

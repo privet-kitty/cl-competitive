@@ -4,7 +4,7 @@
 
 (defpackage :cp/interval-set
   (:use :cl)
-  (:export #:interval-set #:interval-set-p #:iset-map #:iset-find
+  (:export #:interval-set #:interval-set-p #:iset-map #:iset-find #:iset-right-next
            #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point))
 (in-package :cp/interval-set)
 
@@ -228,4 +228,23 @@ returns (VALUES NIL NIL)."
                    ((< key (%iset-rkey node))
                     (values (%iset-lkey node) (%iset-rkey node)))
                    (t (recur (%iset-rnode node))))))
+    (recur iset)))
+
+(declaim (ftype (function * (values (or null fixnum) (or null fixnum) &optional))
+                iset-right-next))
+(defun iset-right-next (iset key)
+  "Returns the nearest half-open interval that contains KEY or is located on the
+right of it."
+  (declare (optimize (speed 3))
+           (fixnum key))
+  (labels ((recur (node)
+             (cond ((null node) (values nil nil))
+                   ((<= (%iset-rkey node) key)
+                    (recur (%iset-rnode node)))
+                   ((<= (%iset-lkey node) key)
+                    (values (%iset-lkey node) (%iset-rkey node)))
+                   (t (multiple-value-bind (lkey rkey) (recur (%iset-lnode node))
+                        (if lkey
+                            (values lkey rkey)
+                            (values (%iset-lkey node) (%iset-rkey node))))))))
     (recur iset)))
