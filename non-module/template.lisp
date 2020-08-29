@@ -9,11 +9,11 @@
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
 
-(defmacro define-int-types (&rest bits)
-  `(progn
-     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))) bits)
-     ,@(mapcar (lambda (b) `(deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))) bits)))
-(define-int-types 2 4 7 8 15 16 31 32 62 63 64)
+(macrolet ((def-int (b)
+             `(progn (deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))
+                     (deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))))
+           (defs (&rest bits) `(progn ,@(mapcar (lambda (b) `(def-int ,b)) bits))))
+  (defs 2 4 7 8 15 16 31 32 62 63 64))
 
 (defconstant +mod+ 1000000007)
 
