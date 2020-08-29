@@ -23,14 +23,13 @@
 vector is created."
   (declare (optimize (speed 3)))
   (check-type vector simple-bit-vector)
-  (let* ((vector (if (zerop (mod (length vector) 64))
+  (let* ((vector (if (zerop (mod (length vector) sb-vm:n-word-bits))
                      vector
                      (adjust-array vector
                                    (* sb-vm:n-word-bits
                                       (ceiling (length vector) sb-vm:n-word-bits))
                                    :initial-element 0)))
-         (len (length vector))
-         (block-count (floor len sb-vm:n-word-bits))
+         (block-count (floor (length vector) sb-vm:n-word-bits))
          (blocks (make-array (+ 1 block-count)
                              :element-type '(integer 0 #.most-positive-fixnum)
                              :initial-element 0))
@@ -75,7 +74,7 @@ vector is created."
         (- end count1))))
 
 (defun cbv-select (cbv ord)
-  "Detects the position of (1-based) ORD-th 1 in CBV. (CBV-SELECT 0) always
+  "Detects the position of (1-based) ORD-th 1 in CBV. (CBV-SELECT CBV 0) always
 returns 0."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) ord))
@@ -101,6 +100,8 @@ returns 0."
                    (if (<= (- ng ok) 1)
                        ok
                        (let ((mid (ash (+ ok ng) -1)))
+                         ;; FIXME: Is there any better way than calling POPCNT
+                         ;; each time?
                          (if (<= ord (logcount (ldb (byte mid 0) word)))
                              (pos-bisect ok mid)
                              (pos-bisect mid ng))))))
