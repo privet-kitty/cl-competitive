@@ -111,8 +111,9 @@
     dycon))
 
 (defun dycon-map (dycon function)
-  "FUCTION takes an argument, time: When FUNCTION is called, NUM-COMPONENTS and
-DISJOINT-SET become those of the time. Be sure to call DYCON-BUILD beforehand."
+  "FUCTION takes time as an argument: When FUNCTION is called, NUM-COMPONENTS
+and DISJOINT-SET become those of the time. Be sure to call DYCON-BUILD
+beforehand."
   (declare (optimize (speed 3))
            (function function))
   (symbol-macrolet ((comp (dycon-num-components dycon)))
