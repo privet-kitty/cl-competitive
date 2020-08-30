@@ -341,6 +341,7 @@ w.r.t. your intended order. The values are filled with the identity element."
 (defun treap-fold (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
+  (declare (function order))
   (labels ((recur (treap l r)
              (unless treap
                (return-from recur +op-identity+))

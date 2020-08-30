@@ -6,7 +6,7 @@
 
 (defpackage :cp/fast-gcd
   (:use :cl)
-  (:export #:fast-gcd #:fast-lcm #:%fast-fcd))
+  (:export #:fast-gcd #:fast-lcm #:%fast-gcd))
 (in-package :cp/fast-gcd)
 
 (declaim (inline %fast-gcd fast-gcd fast-lcm)
@@ -16,6 +16,7 @@
   (declare ((integer 0 #.most-positive-fixnum) u v))
   (let ((shift (let ((x (logior u v)))
                  (- (integer-length (logand x (- x))) 1))))
+    (declare (optimize (safety 0)))
     (setq u (ash u (- 1 (integer-length (logand u (- u))))))
     (loop (setq v (ash v (- 1 (integer-length (logand v (- v))))))
           (when (> u v)
@@ -26,13 +27,15 @@
                          (ash u shift)))))))
 
 (defun fast-gcd (u v)
-  (declare ((integer 0 #.most-positive-fixnum) u v))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) u v))
   (cond ((zerop u) v)
         ((zerop v) u)
         (t (%fast-gcd u v))))
 
 (defun fast-lcm (u v)
-  (declare ((integer 0 #.most-positive-fixnum) u v))
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) u v))
   (if (or (zerop u) (zerop v))
       0
       (multiple-value-bind (max min)
