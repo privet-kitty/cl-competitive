@@ -4,7 +4,7 @@
 
 (defpackage :cp/deque
   (:use :cl)
-  (:export #:deque-empty-error #:deque-full-error #:deque-invalid-index-error #:define-deque))
+  (:export #:deque-empty-error #:deque-invalid-index-error #:define-deque))
 (in-package :cp/deque)
 
 (declaim (inline %power-of-two-ceiling))
@@ -54,9 +54,9 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
         (adjuster (intern (format nil "%~A-ADJUST" name))))
     `(progn
        (defstruct (,name (:constructor ,constructor
-                             (size
+                             (initial-size
                               &aux
-                              (data (make-array (max 2 (%power-of-two-ceiling size))
+                              (data (make-array (max 2 (%power-of-two-ceiling initial-size))
                                                 :element-type
                                                 ',element-type))))
                          (:copier nil)
@@ -68,6 +68,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                        ,constructor))
 
        (defun ,adjuster (,name)
+         ;; FIXME: change safety to zero when you believe this library is stable
          (declare (optimize (speed 3)))
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name))
