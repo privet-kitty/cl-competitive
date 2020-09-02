@@ -8,7 +8,7 @@
 
 (defpackage :cp/fft
   (:use :cl)
-  (:export #:fft-float #:dft! #:inverse-dft! #:with-fixed-length-fft #:convolute!))
+  (:export #:fft-float #:dft! #:inverse-dft! #:with-fixed-length-fft #:convolve!))
 (in-package :cp/fft)
 
 (deftype fft-float () 'double-float)
@@ -139,8 +139,8 @@ vector of different size."
           (dotimes (i n)
             (setf (aref vector i) (* (aref vector i) /n))))))))
 
-(declaim (inline convolute!))
-(defun convolute! (vector1 vector2 &optional result-vector)
+(declaim (inline convolve!))
+(defun convolve! (vector1 vector2 &optional result-vector)
   "Returns the convolution of two vectors VECTOR1 and VECTOR2. A new vector is
 created when RESULT-VECTOR is null. This function destructively modifies VECTOR1
 and VECTOR2. (They can be restored by INVERSE-DFT!.)"

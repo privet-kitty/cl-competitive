@@ -15,6 +15,6 @@
 
 (test fft-recursive
   (is (fft-array=
-       (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
-                   (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
+       (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
+                  (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
        #(-1 -3 -6 -10 -9 -7 -4 0))))

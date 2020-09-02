@@ -5,7 +5,7 @@
 
 (defpackage :cp/ntt
   (:use :cl :cp/tzcount)
-  (:export #:+ntt-mod+ #:ntt-int #:ntt-vector #:ntt! #:inverse-ntt! #:ntt-convolute
+  (:export #:+ntt-mod+ #:ntt-int #:ntt-vector #:ntt! #:inverse-ntt! #:ntt-convolve
            #:check-ntt-vector #:%mod-inverse #:%mod-power))
 (in-package :cp/ntt)
 
@@ -149,14 +149,14 @@
 
 ;; Change %ADJUST-ARRAY to ADJUST-ARRAY when if what you want is a destructive
 ;; operation.
-(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolute))
-(defun ntt-convolute (vector1 vector2)
+(declaim (ftype (function * (values ntt-vector &optional)) ntt-convolve))
+(defun ntt-convolve (vector1 vector2)
   (declare (optimize (speed 3))
            (vector vector1 vector2))
   (let ((len1 (length vector1))
         (len2 (length vector2)))
     (when (or (zerop len1) (zerop len2))
-      (return-from ntt-convolute (make-array 0 :element-type 'ntt-int)))
+      (return-from ntt-convolve (make-array 0 :element-type 'ntt-int)))
     (let* ((mul-len (max 0 (- (+ len1 len2) 1)))
            ;; power of two ceiling
            (required-len (ash 1 (integer-length (max 0 (- mul-len 1)))))

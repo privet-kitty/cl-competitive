@@ -15,33 +15,33 @@
 
 (test fft-real
   (is (fft-array=
-       (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
-                   (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
+       (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
+                  (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
        #(-1 -3 -6 -10 -9 -7 -4 0)))
 
   ;; use RESULT-VECTOR argument
   (let ((res (make-array 8 :element-type 'fft-float)))
     (is (fft-array=
-         (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
-                     (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
-                     res)
+         (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
+                    (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
+                    res)
          #(-1 -3 -6 -10 -9 -7 -4 0)))
-    (is (eql res (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
-                             (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
-                             res))))
+    (is (eql res (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
+                            (to-fft-array #(-1 -1 -1 -1 0 0 0 0))
+                            res))))
 
   (with-fixed-length-fft 8
     (is 
      (fft-array=
-      (convolute! (to-fft-array #(1 2 3 4 0 0 0 0))
-                  (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
+      (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
+                 (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
       #(-1 -3 -6 -10 -9 -7 -4 0))))
 
   (with-fixed-length-fft 16
     (is 
      (fft-array=
-      (convolute! (to-fft-array #(1 2 3 4 0 0 0 0 0 0 0 0 0 0 0 0))
-                  (to-fft-array #(-1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 0)))
+      (convolve! (to-fft-array #(1 2 3 4 0 0 0 0 0 0 0 0 0 0 0 0))
+                 (to-fft-array #(-1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 0)))
       #(-1 -3 -6 -10 -9 -7 -4 0 0 0 0 0 0 0 0 0))))
 
   ;; base table doesn't have right length
@@ -51,11 +51,11 @@
   ;; not power of two
   (signals simple-error (dft! (to-fft-array #(1 2 3 4 0 0 0))))
   (signals simple-error (inverse-dft! (to-fft-array #(1 2 3 4 0 0 0))))
-  (signals simple-error (convolute! (to-fft-array #(1 2 3 4 0 0 0)) (to-fft-array #(1 2 3 4 0 0 0))))
+  (signals simple-error (convolve! (to-fft-array #(1 2 3 4 0 0 0)) (to-fft-array #(1 2 3 4 0 0 0))))
 
   ;; boundary case
   (let ((zero (make-array 0 :element-type 'fft-float)))
-    (is (equalp #() (convolute! zero zero)))
+    (is (equalp #() (convolve! zero zero)))
     (is (equalp #() (dft! zero)))
     (is (equalp #() (inverse-dft! zero)))))
 

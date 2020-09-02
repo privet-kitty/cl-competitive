@@ -5,10 +5,10 @@
 (in-suite base-suite)
 
 (test ntt/manual
-  (is (equalp #() (ntt-convolute #() #())))
-  (is (equalp #(15) (ntt-convolute #(3) #(5))))
+  (is (equalp #() (ntt-convolve #() #())))
+  (is (equalp #(15) (ntt-convolve #(3) #(5))))
   (is (equalp #(998244308 17 2 998244348 1)
-              (ntt-convolute #(5 998244350 1) #(998244344 998244351 1)))))
+              (ntt-convolve #(5 998244350 1) #(998244344 998244351 1)))))
 
 (defun make-random-polynomial (degree)
   (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))
@@ -25,4 +25,4 @@
              (poly1 (make-random-polynomial len1))
              (poly2 (make-random-polynomial len2)))
         (assert (equalp (poly-mult poly1 poly2 +ntt-mod+)
-                        (ntt-convolute poly1 poly2)))))))
+                        (ntt-convolve poly1 poly2)))))))

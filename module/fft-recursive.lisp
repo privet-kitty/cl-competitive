@@ -5,7 +5,7 @@
 
 (defpackage :cp/fft-recursive
   (:use :cl)
-  (:export #:fft-float #:dft! #:inverse-dft! #:convolute!))
+  (:export #:fft-float #:dft! #:inverse-dft! #:convolve!))
 (in-package :cp/fft-recursive)
 
 (deftype fft-float () 'double-float)
@@ -66,8 +66,8 @@
   "Checks if X is a power of 2."
   (zerop (logand x (- x 1))))
 
-(declaim (inline convolute!))
-(defun convolute! (g h)
+(declaim (inline convolve!))
+(defun convolve! (g h)
   (declare ((simple-array (complex fft-float) (*)) g h))
   (assert (and (power2-p (length g))
                (power2-p (length h))
