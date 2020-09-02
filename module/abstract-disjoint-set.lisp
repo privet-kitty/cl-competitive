@@ -36,17 +36,19 @@
                    ,@(when conc-name `((:conc-name ,(intern conc-string)))))
          (data nil :type (simple-array fixnum (*)))
          (values nil :type (simple-array ,element-type (*))))
-       
-       (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
+
+       (declaim (inline ,rooter)
+                (ftype (function * (values (mod #.array-total-size-limit) &optional))
                        ,rooter))
        (defun ,rooter (,name x)
          "Returns the root of X."
-         (declare (optimize (speed 3))
-                  ((mod #.array-total-size-limit) x))
+         (declare ((mod #.array-total-size-limit) x))
          (let ((data (,data-accessor ,name)))
-           (if (< (aref data x) 0)
-               x
-               (setf (aref data x) (,rooter ,name (aref data x))))))
+           (labels ((recur (x)
+                      (if (< (aref data x) 0)
+                          x
+                          (setf (aref data x) (recur (aref data x))))))
+             (recur x))))
        
        (declaim (inline ,reffer))
        (defun ,reffer (,name x)

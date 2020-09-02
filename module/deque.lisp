@@ -1,5 +1,5 @@
 ;;;
-;;; double-ended queue (ring buffer)
+;;; double-ended queue with ring-buffer
 ;;;
 
 (defpackage :cp/deque
