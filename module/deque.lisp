@@ -11,7 +11,7 @@
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
 
-(deftype index () '(integer 0 #.array-total-size-limit))
+(deftype index () '(integer 0 #.(floor array-total-size-limit 2)))
 
 (define-condition deque-empty-error (error)
   ((queue :initarg :queue :reader deque-empty-error-queue))
@@ -57,8 +57,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                              (initial-size
                               &aux
                               (data (make-array (max 2 (%power-of-two-ceiling initial-size))
-                                                :element-type
-                                                ',element-type))))
+                                                :element-type ',element-type))))
                          (:copier nil)
                          (:predicate nil))
          (data nil :type (simple-array ,element-type (*)))
