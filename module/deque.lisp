@@ -19,15 +19,6 @@
    (lambda (condition stream)
      (format stream "Attempted to pop empty deque ~W" (deque-empty-error-queue condition)))))
 
-(define-condition deque-full-error (error)
-  ((queue :initarg :queue :reader deque-full-error-queue)
-   (item :initarg :item :reader deque-full-error-item))
-  (:report
-   (lambda (condition stream)
-     (format stream "Attempted to push item ~W to full deque ~W"
-             (deque-full-error-item condition)
-             (deque-full-error-queue condition)))))
-
 (define-condition deque-invalid-index-error (error)
   ((queue :initarg :queue :reader deque-invalid-index-error-queue)
    (index :initarg :index :reader deque-invalid-index-error-index))
@@ -38,7 +29,6 @@
              (deque-invalid-index-error-queue condition)))))
 
 ;; TODO: detailed documentation
-;; TODO: add setter; adjust if deque is full
 (defmacro define-deque (name &key (element-type 'fixnum))
   "Defines deque for given ELEMENT-TYPE.
 
@@ -192,7 +182,21 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                   (mask (- length 1))
                   (pos (logand mask (+ front index))))
              (declare (index pos))
-             (aref data pos)))))))
+             (aref data pos))))
+
+       (declaim (inline (setf ,reffer)))
+       (defun (setf ,reffer) (new-value ,name index)
+         (declare (index index))
+         (symbol-macrolet ((front (,front-getter ,name))
+                           (count (,count-getter ,name)))
+           (when (>= index count)
+             (error 'deque-invalid-index-error :index index :queue ,name))
+           (let* ((data (,data-getter ,name))
+                  (length (length data))
+                  (mask (- length 1))
+                  (pos (logand mask (+ front index))))
+             (declare (index pos))
+             (setf (aref data pos) new-value)))))))
 
 #+(or)
 (define-deque deque :element-type fixnum)
