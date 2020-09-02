@@ -7,7 +7,7 @@
   #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
-#+swank (cl-syntax:use-syntax cl-debug-print:debug-print-syntax)
+#+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
 (macrolet ((def-int (b)
              `(progn (deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))
