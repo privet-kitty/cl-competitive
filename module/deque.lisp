@@ -88,7 +88,8 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                  (replace new-data data :start2 front)
                  (when (< length (+ front count))
                    (replace new-data data :start1 (- length front) :end2 front))
-                 (setq data new-data))))))
+                 (setq data new-data
+                       front 0))))))
 
        (declaim (inline ,push-front))
        (defun ,push-front (obj ,name)
