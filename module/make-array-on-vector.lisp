@@ -14,9 +14,12 @@ product of DIMENSIONS must be equal to the length of VECTOR."
          (array (sb-kernel::make-array-header sb-vm::simple-array-widetag array-rank)))
     (declare ((integer 2 (#.array-rank-limit)) array-rank))
     (setf (sb-kernel:%array-available-elements array) (length vector)
-          (sb-kernel:%array-data array) vector
           (sb-kernel:%array-displaced-from array) nil
           (sb-kernel:%array-displaced-p array) nil)
+    (setf (#.(or (find-symbol "%ARRAY-DATA" :sb-kernel)
+                 (find-symbol "%ARRAY-DATA-VECTOR" :sb-kernel))
+             array)
+          vector)
     (dotimes (axis array-rank)
       (setf (sb-kernel:%array-dimension array axis) (pop dimensions)))
     array))
