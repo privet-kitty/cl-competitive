@@ -12,6 +12,9 @@
 ;; NOTE: not tested
 ;; NOTE: MAX-TIME must be positive.
 
+(define-undoable-disjoint-set undoable-disjoint-set
+  :conc-name uds-)
+
 (defstruct (dynamic-connectivity
             (:constructor make-dynamic-connectivity
                 (size max-time
@@ -19,7 +22,7 @@
                       (counter (make-hash-table :test #'equal))
                       (appearance (make-hash-table :test #'equal))
                       (events (make-array 0 :element-type 'list :fill-pointer 0))
-                      (disjoint-set (make-undoable-disjoint-set size max-time))
+                      (disjoint-set (make-undoable-disjoint-set size :buffer-size max-time))
                       (num-components size)))
             (:copier nil)
             (:predicate nil)
