@@ -6,7 +6,8 @@
 
 (defpackage :cp/binomial-coefficient-mod
   (:use :cl)
-  (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:+binom-mod+))
+  (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:+binom-mod+
+           #:*fact* #:*fact-inv* #:*inv*))
 (in-package :cp/binomial-coefficient-mod)
 
 ;; TODO: non-global handling
