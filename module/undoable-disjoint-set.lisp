@@ -67,9 +67,24 @@
              
              (declaim (inline (setf ,reffer)))
              (defun (setf ,reffer) (new-value ,name x)
-               (setf (aref (,contents-accessor ,name)
-                           (,rooter ,name x))
-                     new-value))))
+               (let ((root (,rooter ,name x))
+                     (data (,data-accessor ,name))
+                     (contents (,contents-accessor ,name)))
+                 ;; record
+                 (when (= (,end-accessor ,name) (length (,stack-accessor ,name)))
+                   (setf (,stack-accessor ,name)
+                         (adjust-array (,stack-accessor ,name)
+                                       (the (mod #.array-total-size-limit) (* (,end-accessor ,name) 2)))))
+                 (let ((stack (,stack-accessor ,name))
+                       (end (,end-accessor ,name)))
+                   (setf (aref stack end) root
+                         (aref stack (+ end 1)) root
+                         (aref stack (+ end 2)) (aref data root)
+                         (aref stack (+ end 3)) (aref data root)
+                         (aref stack (+ end 4)) (aref contents root)
+                         (aref stack (+ end 5)) (aref contents root))
+                   (incf (,end-accessor ,name) ,chunk))
+                 (setf (aref contents root) new-value)))))
 
        (declaim (inline ,uniter))
        (defun ,uniter (,name x1 x2)
@@ -118,7 +133,7 @@ for the first time."
                   (,rooter ,name x))))
 
        (defun ,undoer (,name &optional (empty-error-p t))
-         "Undoes the last union operation."
+         "Undoes the last union or set operation."
          (symbol-macrolet ((end (,end-accessor ,name)))
            (if (zerop end)
                (and empty-error-p (error "No undoable updates in ~W" ,name))

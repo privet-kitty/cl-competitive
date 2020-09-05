@@ -10,6 +10,7 @@
   :operator #'max
   :conc-name uds-)
 
+;; FIXME: more organized manual test or randomized test
 (test undoable-disjoint-set/manual
   (let* ((contents (make-array 5
                                :element-type 'double-float
@@ -64,6 +65,19 @@
                (loop for x below 5 collect (uds-ref dset x))))
     (uds-unite! dset 0 4)
     ;; state 4 (= state 3)
+    (is (uds-connected-p dset 1 3))
+    (is (equal '(4 4 1 4 4)
+               (loop for x below 5 collect (uds-size dset x))))
+    (is (equal '(9d0 9d0 7d0 9d0 9d0)
+               (loop for x below 5 collect (uds-ref dset x))))
+    (setf (uds-ref dset 0) 100d0)
+    ;; state 5
+    (is (equal '(4 4 1 4 4)
+               (loop for x below 5 collect (uds-size dset x))))
+    (is (equal '(100d0 100d0 7d0 100d0 100d0)
+               (loop for x below 5 collect (uds-ref dset x))))
+    (uds-undo! dset)
+    ;; state 4
     (is (uds-connected-p dset 1 3))
     (is (equal '(4 4 1 4 4)
                (loop for x below 5 collect (uds-size dset x))))
