@@ -8,7 +8,7 @@
   (:export #:logreverse))
 (in-package :cp/logreverse)
 
-(defparameter *bit-reverse-table*
+(sb-ext:define-load-time-global *bit-reverse-table*
   (make-array 65536 :element-type '(unsigned-byte 16)))
 (declaim ((simple-array (unsigned-byte 16) (65536)) *bit-reverse-table*))
 

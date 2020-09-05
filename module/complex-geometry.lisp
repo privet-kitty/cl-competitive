@@ -12,8 +12,8 @@
 ;; Reference: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 (declaim (inline intersect-p))
 (defun intersect-p (p1 p2 q1 q2 &optional (eps 0))
-  "Returns true iff the line segment from P1 to P2 intersects the one from Q1
-to Q2."
+  "Returns true iff the line segment from P1 to P2 intersects or overwraps with
+the one from Q1 to Q2."
   (labels ((calc-orientation (p q r)
              (let ((val (- (* (- (imagpart q) (imagpart p))
                               (- (realpart r) (realpart q)))
