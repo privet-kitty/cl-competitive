@@ -9,13 +9,11 @@ product of DIMENSIONS must be equal to the length of VECTOR."
   (declare (optimize (speed 3))
            ((simple-array * (*)) vector)
            (list dimensions))
+  (assert (= (the fixnum (reduce #'* dimensions)) (length vector)))
   (let* ((array-rank (length dimensions))
-         (total-size (reduce #'* dimensions))
          (array (sb-kernel::make-array-header sb-vm::simple-array-widetag array-rank)))
-    (declare ((integer 2 (#.array-rank-limit)) array-rank)
-             ((mod #.array-total-size-limit) total-size))
-    (assert (= total-size (length vector)))
-    (setf (sb-kernel:%array-available-elements array) total-size
+    (declare ((integer 2 (#.array-rank-limit)) array-rank))
+    (setf (sb-kernel:%array-available-elements array) (length vector)
           (sb-kernel:%array-data array) vector
           (sb-kernel:%array-displaced-from array) nil
           (sb-kernel:%array-displaced-p array) nil)
