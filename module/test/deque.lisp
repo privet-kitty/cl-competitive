@@ -84,7 +84,7 @@
     (dotimes (_ 100)
       (finishes
         (dotimes (_ 500)
-          (ecase (random 8 state)
+          (ecase (random 10 state)
             ;; peek front
             (0 (if list
                    (assert (= (car list) (deque-peek-front deq)))
@@ -122,4 +122,12 @@
                          (value (random 1000 state)))
                      (setf (deque-ref deq index) value
                            (nth index list) value))
-                   (deque-empty-p deq)))))))))
+                   (deque-empty-p deq)))
+            ;; empty-p
+            (8 (assert (if list
+                           (not (deque-empty-p deq))
+                           (deque-empty-p deq))))
+            ;; reinitialize
+            (9
+             (deque-reinitialize deq)
+             (setq list nil))))))))
