@@ -5,7 +5,7 @@
 (defpackage :cp/min-cost-flow
   (:use :cl :cp/max-flow)
   (:export #:cedge #:cedge-p #:copy-cedge #:add-cedge #:+inf-cost+ #:cost-type
-           #:cedge-reversed #:cedge-cost #:cedge-capacity #:cedge-to
+           #:cedge-reversed #:cedge-cost #:cedge-capacity #:cedge-to #:cedge-default-capacity
            #:not-enough-capacity-error #:not-enough-capacity-error-graph
            #:not-enough-capacity-error-flow #:not-enough-capacity-error-score))
 (in-package :cp/min-cost-flow)

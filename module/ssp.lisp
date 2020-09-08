@@ -7,7 +7,9 @@
 (defstruct (heap (:constructor make-heap
                      (size
                       &aux (costs (make-array (1+ size) :element-type 'cost-type))
-                           (vertices (make-array (1+ size) :element-type 'fixnum)))))
+                           (vertices (make-array (1+ size) :element-type 'fixnum))))
+                 (:copier nil)
+                 (:predicate nil))
   (costs nil :type (simple-array cost-type (*)))
   (vertices nil :type (simple-array fixnum (*)))
   (position 1 :type (integer 1 #.most-positive-fixnum)))
@@ -22,17 +24,17 @@
             (adjust-array (heap-vertices heap) (* position 2))))
     (let ((costs (heap-costs heap))
           (vertices (heap-vertices heap)))
-      (labels ((update (pos)
+      (labels ((heapify (pos)
                  (declare (optimize (safety 0)))
                  (unless (= pos 1)
                    (let ((parent-pos (ash pos -1)))
                      (when (< (aref costs pos) (aref costs parent-pos))
                        (rotatef (aref costs pos) (aref costs parent-pos))
                        (rotatef (aref vertices pos) (aref vertices parent-pos))
-                       (update parent-pos))))))
+                       (heapify parent-pos))))))
         (setf (aref costs position) cost
               (aref vertices position) vertex)
-        (update position)
+        (heapify position)
         (incf position)
         heap))))
 
@@ -41,7 +43,7 @@
   (symbol-macrolet ((position (heap-position heap)))
     (let ((costs (heap-costs heap))
           (vertices (heap-vertices heap)))
-      (labels ((update (pos)
+      (labels ((heapify (pos)
                  (declare (optimize (safety 0))
                           ((integer 1 #.most-positive-fixnum) pos))
                  (let* ((child-pos1 (+ pos pos))
@@ -52,11 +54,11 @@
                              (unless (< (aref costs pos) (aref costs child-pos1))
                                (rotatef (aref costs pos) (aref costs child-pos1))
                                (rotatef (aref vertices pos) (aref vertices child-pos1))
-                               (update child-pos1))
+                               (heapify child-pos1))
                              (unless (< (aref costs pos) (aref costs child-pos2))
                                (rotatef (aref costs pos) (aref costs child-pos2))
                                (rotatef (aref vertices pos) (aref vertices child-pos2))
-                               (update child-pos2)))
+                               (heapify child-pos2)))
                          (unless (< (aref costs pos) (aref costs child-pos1))
                            (rotatef (aref costs pos) (aref costs child-pos1))
                            (rotatef (aref vertices pos) (aref vertices child-pos1))))))))
@@ -64,7 +66,7 @@
           (decf position)
           (setf (aref costs 1) (aref costs position)
                 (aref vertices 1) (aref vertices position))
-          (update 1))))))
+          (heapify 1))))))
 
 (declaim (inline heap-empty-p))
 (defun heap-empty-p (heap)
@@ -75,11 +77,12 @@
   (setf (heap-position heap) 1)
   heap)
 
-(defun min-cost-flow! (graph src-idx dest-idx flow &key edge-count)
+(defun min-cost-flow! (graph src-idx dest-idx flow &key edge-count (if-overflow :error))
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
 GRAPH. Destructively modifies GRAPH.
 
-EDGE-COUNT := initial reserved size for heap (it should be the number of edges)"
+EDGE-COUNT := initial reserved size for heap (it should be the number of edges)
+IF-OVERFLOW := :error | nil"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) flow)
            ((simple-array list (*)) graph))
@@ -93,56 +96,59 @@ EDGE-COUNT := initial reserved size for heap (it should be the number of edges)"
                            (declare (sb-ext:muffle-conditions style-warning))
                          (make-array size :element-type 'cedge)))
            (potential (make-array size :element-type 'cost-type :initial-element 0))
-           (dist (make-array size :element-type 'cost-type))
+           (dists (make-array size :element-type 'cost-type))
            (pqueue (make-heap edge-count))
            (res 0))
       (declare (fixnum edge-count)
                (cost-type res))
       ;; FIXME: Actually we must do Bellman-Ford here to handle negative edges
       ;; properly. Currently this function returns a correct result also for a
-      ;; graph containing negative edges, if no negative **cycles** are
+      ;; graph that contains negative edges, if no negative **cycles** are
       ;; contained. In this case, however, the worst-case time complexity is
-      ;; exponential. If the input network is for a weighted bipartite matching
-      ;; containing negative weights, this function completely works without any
-      ;; problems.
-      (loop while (> flow 0)
-            do (fill dist +inf-cost+)
-               (setf (aref dist src-idx) 0)
-               (heap-reinitialize pqueue)
-               (heap-push 0 src-idx pqueue)
-               (loop until (heap-empty-p pqueue)
-                     do (multiple-value-bind (cost v) (heap-pop pqueue)
-                          (declare (cost-type cost)
-                                   (fixnum v))
-                          (when (<= cost (aref dist v))
-                            (dolist (edge (aref graph v))
-                              (let* ((next-v (cedge-to edge))
-                                     (next-cost (the-cost-type
-                                                 (+ (aref dist v)
-                                                    (cedge-cost edge)
-                                                    (aref potential v)
-                                                    (- (aref potential next-v))))))
-                                (when (and (> (cedge-capacity edge) 0)
-                                           (> (aref dist next-v) next-cost))
-                                  (setf (aref dist next-v) next-cost
-                                        (aref prev-vertices next-v) v
-                                        (aref prev-edges next-v) edge)
-                                  (heap-push next-cost next-v pqueue)))))))
-               (when (= (aref dist dest-idx) +inf-cost+)
-                 (error 'not-enough-capacity-error :flow flow :graph graph :score res))
-               (let ((max-flow flow))
-                 (declare (fixnum max-flow))
-                 (dotimes (v size)
-                   (setf (aref potential v)
-                         (min +inf-cost+
-                              (+ (aref potential v) (aref dist v)))))
-                 (do ((v dest-idx (aref prev-vertices v)))
-                     ((= v src-idx))
-                   (setf max-flow (min max-flow (cedge-capacity (aref prev-edges v)))))
-                 (decf flow max-flow)
-                 (incf res (the cost-type (* max-flow (aref potential dest-idx))))
-                 (do ((v dest-idx (aref prev-vertices v)))
-                     ((= v src-idx))
-                   (decf (cedge-capacity (aref prev-edges v)) max-flow)
-                   (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow))))
+      ;; exponential. As a special case, if an input network is for a weighted
+      ;; bipartite matching that contains negative weights, this function
+      ;; completely works without any problems.
+      (loop (when (<= flow 0)
+              (return))
+            (fill dists +inf-cost+)
+            (setf (aref dists src-idx) 0)
+            (heap-reinitialize pqueue)
+            (heap-push 0 src-idx pqueue)
+            (loop until (heap-empty-p pqueue)
+                  do (multiple-value-bind (cost v) (heap-pop pqueue)
+                       (declare (cost-type cost)
+                                (fixnum v))
+                       (when (<= cost (aref dists v))
+                         (dolist (edge (aref graph v))
+                           (let* ((next-v (cedge-to edge))
+                                  (next-cost (the-cost-type
+                                              (+ (aref dists v)
+                                                 (cedge-cost edge)
+                                                 (aref potential v)
+                                                 (- (aref potential next-v))))))
+                             (when (and (> (cedge-capacity edge) 0)
+                                        (> (aref dists next-v) next-cost))
+                               (setf (aref dists next-v) next-cost
+                                     (aref prev-vertices next-v) v
+                                     (aref prev-edges next-v) edge)
+                               (heap-push next-cost next-v pqueue)))))))
+            (when (= (aref dists dest-idx) +inf-cost+)
+              (if if-overflow
+                  (error 'not-enough-capacity-error :flow flow :graph graph :score res)
+                  (return)))
+            (let ((max-flow flow))
+              (declare (fixnum max-flow))
+              (dotimes (v size)
+                (setf (aref potential v)
+                      (min +inf-cost+
+                           (+ (aref potential v) (aref dists v)))))
+              (do ((v dest-idx (aref prev-vertices v)))
+                  ((= v src-idx))
+                (setq max-flow (min max-flow (cedge-capacity (aref prev-edges v)))))
+              (decf flow max-flow)
+              (incf res (the cost-type (* max-flow (aref potential dest-idx))))
+              (do ((v dest-idx (aref prev-vertices v)))
+                  ((= v src-idx))
+                (decf (cedge-capacity (aref prev-edges v)) max-flow)
+                (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow))))
       res)))
