@@ -2,10 +2,12 @@
 ;;; 2-SAT
 ;;;
 
+;; NOTE: use LOGNOT for negation
+
 (defpackage :cp/2sat
   (:use :cl :cp/scc)
   (:export #:2sat #:make-2sat #:2sat-p
-           #:negate #:add-implication #:add-disjunction #:2sat-solve))
+           #:add-implication #:add-disjunction #:2sat-solve))
 (in-package :cp/2sat)
 
 (defstruct (2sat (:constructor make-2sat
@@ -17,34 +19,30 @@
   (graph nil :type (simple-array list (*)))
   (scc nil :type (or null scc)))
 
-(declaim (inline negate))
-(defun negate (p)
-  (- -1 p))
-
 (declaim (inline %add-implication))
 (defun %add-implication (2sat p q)
   (declare (fixnum p q))
   (let ((size (2sat-size 2sat))
         (graph (2sat-graph 2sat)))
     (when (< p 0)
-      (setq p (+ size (- -1 p))))
+      (setq p (+ size (lognot p))))
     (when (< q 0)
-      (setq q (+ size (- -1 q))))
+      (setq q (+ size (lognot q))))
     (push q (aref graph p))
     2sat))
 
 (defun add-implication (2sat p q)
   (declare (fixnum p q))
   (%add-implication 2sat p q)
-  (%add-implication 2sat (negate q) (negate p))
+  (%add-implication 2sat (lognot q) (lognot p))
   2sat)
 
 (declaim (inline add-disjunction))
 (defun add-disjunction (2sat p q)
   "Adds `P or Q' to 2SAT."
   (declare (fixnum p q))
-  (%add-implication 2sat (negate p) q)
-  (%add-implication 2sat (negate q) p)
+  (%add-implication 2sat (lognot p) q)
+  (%add-implication 2sat (lognot q) p)
   2sat)
 
 (declaim (inline 2sat-solve))
