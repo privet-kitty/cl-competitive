@@ -8,12 +8,12 @@
   (:export #:find-max-clique))
 (in-package :cp/bron-kerbosch)
 
-;; TODO: deal with an ordinary adjacency matrix
+;; TODO: take an ordinary adjacency matrix as an input
 (declaim (inline find-max-clique))
 (defun find-max-clique (neighbors)
-  "Returns an unsigned fixnum as the bit-set indicating a maximum clique. Each
-NEIGHBORS[i] must also be the unsigned fixnum indicating the neighbors of the
-vertex i."
+  "Returns an unsigned fixnum as the bit-set that indicates a maximum
+clique. Each NEIGHBORS[i] must also be the unsigned fixnum that indicates the
+neighbors of vertex i."
   (let ((n (length neighbors))
         (result-set 0)
         (result-size 0))
@@ -31,8 +31,8 @@ vertex i."
                    (let ((pivot 0)
                          (max -1)
                          (p-or-x (logior p x)))
-                     ;; Choose the pivot vertex in P∪X as the vertex with the
-                     ;; most neighbors in P
+                     ;; Find a vertex in P∪X that has the most neighbors in P
+                     ;; and use it as a pivot vertex
                      (loop for u from (tzcount p-or-x) below (integer-length p-or-x)
                            do (when (logbitp u p-or-x)
                                 (let ((num-neighbors (logcount (logand p (aref neighbors u)))))
