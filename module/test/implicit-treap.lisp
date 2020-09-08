@@ -131,40 +131,40 @@
       (is (= -8 (itreap-fold itreap1 2 4)))
       (is (= 3 (itreap-fold itreap1 2 3))))))
 
-(test implicit-treap-range/bisect
+(test implicit-treap-fold/bisect
   (let ((itreap (itreap 5 2 4 2 1 4 2 1 -1)))
-    (is (= 0 (itreap-range-bisect-left itreap 6 #'>)))
-    (is (= 0 (itreap-range-bisect-left itreap 5 #'>)))
-    (is (= 1 (itreap-range-bisect-left itreap 4 #'>)))
-    (is (= 1 (itreap-range-bisect-left itreap 3 #'>)))
-    (is (= 1 (itreap-range-bisect-left itreap 2 #'>)))
-    (is (= 4 (itreap-range-bisect-left itreap 1 #'>)))
-    (is (= 8 (itreap-range-bisect-left itreap 0 #'>)))
-    (is (= 8 (itreap-range-bisect-left itreap -1 #'>)))
-    (is (= 9 (itreap-range-bisect-left itreap -2 #'>)))
+    (is (= 0 (itreap-fold-bisect-left itreap 6 #'>)))
+    (is (= 0 (itreap-fold-bisect-left itreap 5 #'>)))
+    (is (= 1 (itreap-fold-bisect-left itreap 4 #'>)))
+    (is (= 1 (itreap-fold-bisect-left itreap 3 #'>)))
+    (is (= 1 (itreap-fold-bisect-left itreap 2 #'>)))
+    (is (= 4 (itreap-fold-bisect-left itreap 1 #'>)))
+    (is (= 8 (itreap-fold-bisect-left itreap 0 #'>)))
+    (is (= 8 (itreap-fold-bisect-left itreap -1 #'>)))
+    (is (= 9 (itreap-fold-bisect-left itreap -2 #'>)))
 
     ;; START arg
-    (is (= 3 (itreap-range-bisect-left itreap 6 #'> 3)))
-    (is (= 3 (itreap-range-bisect-left itreap 5 #'> 3)))
-    (is (= 3 (itreap-range-bisect-left itreap 4 #'> 3)))
-    (is (= 3 (itreap-range-bisect-left itreap 3 #'> 3)))
-    (is (= 3 (itreap-range-bisect-left itreap 2 #'> 3)))
-    (is (= 4 (itreap-range-bisect-left itreap 1 #'> 3)))
-    (is (= 8 (itreap-range-bisect-left itreap 0 #'> 3)))
-    (is (= 8 (itreap-range-bisect-left itreap -1 #'> 3)))
-    (is (= 9 (itreap-range-bisect-left itreap -2 #'> 3)))
+    (is (= 3 (itreap-fold-bisect-left itreap 6 #'> 3)))
+    (is (= 3 (itreap-fold-bisect-left itreap 5 #'> 3)))
+    (is (= 3 (itreap-fold-bisect-left itreap 4 #'> 3)))
+    (is (= 3 (itreap-fold-bisect-left itreap 3 #'> 3)))
+    (is (= 3 (itreap-fold-bisect-left itreap 2 #'> 3)))
+    (is (= 4 (itreap-fold-bisect-left itreap 1 #'> 3)))
+    (is (= 8 (itreap-fold-bisect-left itreap 0 #'> 3)))
+    (is (= 8 (itreap-fold-bisect-left itreap -1 #'> 3)))
+    (is (= 9 (itreap-fold-bisect-left itreap -2 #'> 3)))
 
-    (is (= 8 (itreap-range-bisect-left itreap 6 #'> 8)))
-    (is (= 8 (itreap-range-bisect-left itreap -1 #'> 8)))
-    (is (= 9 (itreap-range-bisect-left itreap -2 #'> 8)))
+    (is (= 8 (itreap-fold-bisect-left itreap 6 #'> 8)))
+    (is (= 8 (itreap-fold-bisect-left itreap -1 #'> 8)))
+    (is (= 9 (itreap-fold-bisect-left itreap -2 #'> 8)))
 
-    (is (= 9 (itreap-range-bisect-left itreap -10 #'> 9)))
-    (is (= 9 (itreap-range-bisect-left itreap 10 #'> 9)))
+    (is (= 9 (itreap-fold-bisect-left itreap -10 #'> 9)))
+    (is (= 9 (itreap-fold-bisect-left itreap 10 #'> 9)))
 
-    (signals invalid-itreap-index-error (itreap-range-bisect-left itreap 10 #'> 10))
+    (signals invalid-itreap-index-error (itreap-fold-bisect-left itreap 10 #'> 10))
 
     ;; null case
-    (is (zerop (itreap-range-bisect-left nil 10 #'<)))))
+    (is (zerop (itreap-fold-bisect-left nil 10 #'<)))))
 
 (test implicit-treap/sorted
   (declare (notinline itreap-bisect-left itreap-bisect-right))
