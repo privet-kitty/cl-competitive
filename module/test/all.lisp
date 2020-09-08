@@ -45,6 +45,7 @@
   (:import-from :cp/test/fft-recursive)
   (:import-from :cp/test/find-argopt)
   (:import-from :cp/test/find-cycle)
+  (:import-from :cp/test/floor-sum)
   (:import-from :cp/test/fkm)
   (:import-from :cp/test/ford-fulkerson)
   (:import-from :cp/test/gabow-edmonds)
