@@ -3,10 +3,9 @@
   (:export #:solve-quad-equation))
 (in-package :cp/quad-equation)
 
-;; TODO: handling for the cases a == 0
 (declaim (inline solve-quad-equation))
 (defun solve-quad-equation (a b c)
-  "Solves ax^2 + bx + c = 0"
+  "Solves ax^2 + bx + c = 0. A must not be zero."
   (assert (not (zerop a)))
   (let* ((a (float a 1d0))
          (b (float b 1d0))

@@ -9,9 +9,11 @@
                                   (allow-trailing-point t))
   "Writes a double float X to STREAM using a fixed-point expression.
 
-MAX-DECIMAL-PLACES is the maximum number of digits after decimal point. The
-actual number of output digits can be less than this number, however. If
-ALLOW-TRAILING-POINT is false, an expression like `123.' is modified to `123.0'"
+MAX-DECIMAL-PLACES is the maximum number of digits after decimal point. (The
+actual number of output digits can be less than this number, however.)
+
+If ALLOW-TRAILING-POINT is false, an expression like `123.' is modified to
+`123.0'"
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) max-decimal-places)
            (double-float x))
