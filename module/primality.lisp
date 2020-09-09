@@ -1,32 +1,34 @@
 ;;;
-;;; Primality test (Miller-Rabin)
+;;; Primality test (deterministic Miller-Rabin)
 ;;;
 
-;; Tuned for 64-bit SBCL ((INTEGER 0 #.MOST-POSITIVE-FIXNUM) == (UNSIGNED-BYTE
-;; 62))
+;; Tuned for SBCL on x86-64 ((INTEGER 0 #.MOST-POSITIVE-FIXNUM) ==
+;; (UNSIGNED-BYTE 62))
 
 (defpackage :cp/primality
-  (:use :cl)
+  (:use :cl :cp/tzcount)
   (:export #:prime-p))
 (in-package :cp/primality)
 
 (defun %strong-probable-prime-p (n base)
   (declare (optimize (speed 3))
            ((unsigned-byte 62) n base))
-  (or (= n base) ; KLUDGE: is it really approriate to put this form here?
+  (or (= n base)
       (labels ((mod-power (base power)
-                 (declare ((unsigned-byte 62) base power)
-                          #+sbcl (values (unsigned-byte 62) &optional))
-                 (cond ((zerop power) 1)
-                       ((evenp power)
-                        (mod-power (mod (* base base) n) (ash power -1)))
-                       (t (mod (* base (mod-power base (- power 1))) n)))))
+                 (declare ((unsigned-byte 62) base power))
+                 (loop with res of-type (unsigned-byte 62) = 1
+                       while (> power 0)
+                       when (oddp power)
+                       do (setq res (mod (* res base) n))
+                       do (setq base (mod (* base base) n)
+                                power (ash power -1))
+                       finally (return res))))
         (let* ((d (floor (- n 1) (logand (- n 1) (- 1 n))))
                (y (mod-power base d)))
           (declare ((unsigned-byte 62) y))
           (or (= y 1)
               (= y (- n 1))
-              (let ((s (- (integer-length (logand (- n 1) (- 1 n))) 1)))
+              (let ((s (tzcount (- n 1))))
                 (loop repeat (- s 1)
                       do (setq y (mod (* y y) n))
                          (when (<= y 1) (return nil))
