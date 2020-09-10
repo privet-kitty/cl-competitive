@@ -14,13 +14,13 @@ IDENTITY := object (identity element of the monoid)
 SUM-TYPE := nil | type specifier
 
 Defines no structure; 2D BIT is just a 2-dimensional array. This macro defines
-three functions: <NAME>-UPDATE!, <NAME>-SUM and COERCE-TO-<NAME>!.
+three functions: <NAME>-UPDATE!, <NAME>-FOLD and COERCE-TO-<NAME>!.
 
 SUM-TYPE is used only for the type declaration: each sum is declared to be this
 type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
-         (fname-sum (intern (format nil "~A-SUM" name)))
+         (fname-fold (intern (format nil "~A-FOLD" name)))
          (fname-coerce (intern (format nil "COERCE-TO-~A!" name))))
     `(progn
        (declaim (inline ,fname-update))
@@ -39,8 +39,8 @@ type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
                      (funcall ,operator (aref bitree i j) delta))))
            bitree))
        
-       (declaim (inline ,fname-sum))
-       (defun ,fname-sum (bitree end1 end2)
+       (declaim (inline ,fname-fold))
+       (defun ,fname-fold (bitree end1 end2)
          "Returns the sum of the rectangle region: array[0][0] + array[0][1] +
 ... + array[END1-1][END2-1]."
          (declare ((integer 0 #.most-positive-fixnum) end1 end2))

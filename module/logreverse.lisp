@@ -29,11 +29,10 @@
   (declare ((unsigned-byte 64) x)
            ((integer 0 64) size))
   (let ((table *bit-reverse-table*))
-    (ash (logior
-          (ash (aref table (logand x #xffff)) 48)
-          (ash (aref table (logand (ash x -16) #xffff)) 32)
-          (ash (aref table (logand (ash x -32) #xffff)) 16)
-          (aref table (logand (ash x -48) #xffff)))
+    (ash (logior (ash (aref table (logand x #xffff)) 48)
+                 (ash (aref table (logand (ash x -16) #xffff)) 32)
+                 (ash (aref table (logand (ash x -32) #xffff)) 16)
+                 (aref table (logand (ash x -48) #xffff)))
          (- size 64))))
 
 ;; Below is a somewhat slower but space efficient bit-reversal
