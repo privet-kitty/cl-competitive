@@ -59,7 +59,7 @@
 
 (declaim (inline treap-key))
 (defun treap-key (treap)
-  "Returns the key of the (nullable) TREAP."
+  "Returns the key of (nullable) TREAP."
   (and treap (%treap-key treap)))
 
 (declaim (inline treap-accumulator))
@@ -118,7 +118,7 @@
 
 (declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
 (defun treap-split (treap key &key (order #'<))
-  "Destructively splits the TREAP with reference to KEY and returns two treaps,
+  "Destructively splits TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   (declare (function order)
            ((or null treap) treap))
@@ -222,11 +222,11 @@ CL:CONCATENATE."
                right)))))
 
 (defun treap-delete (treap key &key (order #'<))
-  "Destructively deletes the KEY in TREAP and returns the resultant
-treap. Returns the unmodified TREAP If KEY doesn't exist. You cannot rely on the
-side effect. Use the returned value.
+  "Destructively deletes KEY in TREAP and returns the resultant treap. Returns
+unmodified TREAP If KEY doesn't exist. You cannot rely on the side effect. Use
+the returned value.
 
- (Note that this function deletes at most one node even if duplicated keys
+ (Note that this function deletes at most one node even if duplicate keys
 exist.)"
   (declare ((or null treap) treap)
            (function order))
@@ -287,7 +287,7 @@ take two arguments: KEY and VALUE."
                  object))))
 
 (defmacro do-treap ((key-var value-var treap &optional result) &body body)
-  "Successively binds the key and value of INODE[0], ..., INODE[SIZE-1] to
+  "Successively binds the keys and the values of INODE[0], ..., INODE[SIZE-1] to
 KEY-VAR and VALUE-VAR and executes BODY."
   `(block nil
      (treap-map (lambda (,key-var ,value-var) ,@body) ,treap)
@@ -305,9 +305,9 @@ KEY-VAR and VALUE-VAR and executes BODY."
 ;; TODO: take a sorted list as the argument
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
-  "Makes a treap using each key of the given SORTED-VECTOR in O(n) time. Note
-that this function doesn't check if the SORTED-VECTOR is actually sorted
-w.r.t. your intended order. The values are filled with the identity element."
+  "Makes a treap using each key of SORTED-VECTOR in O(n) time. Note that this
+function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
+intended order. The values are filled with the identity element."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
@@ -430,7 +430,7 @@ be NIL, then it is regarded as the (negative or positive) infinity."
       (%treap-key treap)))
 
 ;;;
-;;; Bisection search w.r.t. key
+;;; Binary search w.r.t. key
 ;;;
 
 ;; NOTE: These functions intentionally don't return the assigned value. That is
@@ -511,7 +511,7 @@ smaller than any keys in TREAP."
   "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
 
 Note:
-- This function handles a **closed** interval. 
+- This function deals with a **closed** interval. 
 - This function returns NIL instead if TREAP[<1st key>]+ ... + TREAP[<last
 key>] < VALUE.
 - The prefix sums of TREAP (TREAP[<1st key>], TREAP[<1st key>] + TREAP[<2nd
