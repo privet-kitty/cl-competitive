@@ -81,6 +81,7 @@
   (:import-from :cp/test/placeholder-syntax)
   (:import-from :cp/test/polynomial)
   (:import-from :cp/test/polynomial-ntt)
+  (:import-from :cp/test/power)
   (:import-from :cp/test/primality)
   (:import-from :cp/test/quad-equation)
   (:import-from :cp/test/queue)
