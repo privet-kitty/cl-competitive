@@ -1,5 +1,5 @@
 ;;;
-;;; Fast Zeta/Moebius transforms w.r.t. divisor or multiple in O(nloglog(n)).
+;;; Fast Zeta/Moebius transforms w.r.t. divisor or multiple in O(nloglog(n)) time.
 ;;;
 
 (defpackage :cp/zeta-integer
@@ -11,7 +11,7 @@
 (declaim (inline divisor-transform!))
 (defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
   "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in
-O(nloglog(n)). Ignores VECTOR[0] when HANDLE-ZERO is NIL."
+O(nloglog(n)) time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
          (sieve (make-array n :element-type 'bit :initial-element 1)))
@@ -30,8 +30,8 @@ O(nloglog(n)). Ignores VECTOR[0] when HANDLE-ZERO is NIL."
 
 (declaim (inline inverse-divisor-transform!))
 (defun inverse-divisor-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nloglog(n)). Ignores
-VECTOR[0] when HANDLE-ZERO is NIL."
+  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nloglog(n))
+time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
          (sieve (make-array n :element-type 'bit :initial-element 1)))
@@ -50,8 +50,8 @@ VECTOR[0] when HANDLE-ZERO is NIL."
 
 (declaim (inline multiple-transform!))
 (defun multiple-transform! (vector &optional (op+ #'+) (handle-zero t))
-  "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of i in
-O(nloglog(n)). (To be precise, all the multiples smaller than the length of
+  "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of in
+O(nloglog(n)) time. (To be precise, all the multiples smaller than the length of
 VECTOR.) Ignores VECTOR[0] when HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
@@ -90,14 +90,14 @@ HANDLE-ZERO is NIL."
     vector))
 
 ;;;
-;;; (Slower) Zeta/Moebius transforms w.r.t. divisor or multiple in O(nlog(n))
+;;; (Slower) Zeta/Moebius transforms w.r.t. divisor or multiple in O(nlog(n)) time
 ;;;
 
 #|
 (declaim (inline divisor-transform!))
 (defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
   "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in
-O(nlog(n))."
+O(nlog(n)) time."
   (declare (vector vector))
   (let ((n (length vector)))
     (when handle-zero
@@ -112,7 +112,7 @@ O(nlog(n))."
 
 (declaim (inline inverse-divisor-transform!))
 (defun inverse-divisor-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nlog(n))."
+  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nlog(n)) time."
   (declare (vector vector))
   (let ((n (length vector)))
     (loop for i from 1 below (ceiling n 2)
@@ -129,7 +129,7 @@ O(nlog(n))."
 (declaim (inline multiple-transform!))
 (defun multiple-transform! (vector &optional (op+ #'+) (handle-zero t))
   "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of i in
-O(nlog(n)). (To be precise, all the multiples smaller than the length of
+O(nlog(n)) time. (To be precise, all the multiples smaller than the length of
 VECTOR.)"
   (declare (vector vector))
   (let ((n (length vector)))
@@ -146,7 +146,7 @@ VECTOR.)"
 
 (declaim (inline inverse-multiple-transform!))
 (defun inverse-multiple-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of MULTIPLE-TRANSFORM! in O(nlog(n))."
+  "Does the inverse transform of MULTIPLE-TRANSFORM! in O(nlog(n)) time."
   (declare (vector vector))
   (let ((n (length vector)))
     (when handle-zero
