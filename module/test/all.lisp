@@ -40,6 +40,7 @@
   (:import-from :cp/test/ext-gcd)
   (:import-from :cp/test/f2)
   (:import-from :cp/test/farey)
+  (:import-from :cp/test/farey-next)
   (:import-from :cp/test/fft)
   (:import-from :cp/test/fft-real)
   (:import-from :cp/test/fft-recursive)
