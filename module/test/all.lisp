@@ -78,6 +78,7 @@
   (:import-from :cp/test/parallel-sequence)
   (:import-from :cp/test/partition-number)
   (:import-from :cp/test/persistent-disjoint-set)
+  (:import-from :cp/test/phase)
   (:import-from :cp/test/placeholder-syntax)
   (:import-from :cp/test/polynomial)
   (:import-from :cp/test/polynomial-ntt)
