@@ -195,6 +195,7 @@ given."
                    node))))
     (build 0 (length sorted-vector))))
 
+(declaim (ftype (function * (values (or null treap) &optional)) treap-merge))
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
 smaller (or larger, depending on the order) than those of RIGHT.

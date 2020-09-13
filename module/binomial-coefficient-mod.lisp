@@ -18,14 +18,14 @@
                              #.(+ (expt 10 9) 7)))
 
 (sb-ext:define-load-time-global *fact*
-    (make-array +binom-size+ :element-type '(unsigned-byte 31))
-    "table of factorials")
+  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  "table of factorials")
 (sb-ext:define-load-time-global *fact-inv*
-    (make-array +binom-size+ :element-type '(unsigned-byte 31))
-    "table of inverses of factorials")
+  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  "table of inverses of factorials")
 (sb-ext:define-load-time-global *inv*
-    (make-array +binom-size+ :element-type '(unsigned-byte 31))
-    "table of inverses of non-negative integers")
+  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  "table of inverses of non-negative integers")
 (declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 
 (defun initialize-binom ()
