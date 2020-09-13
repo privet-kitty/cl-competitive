@@ -6,8 +6,9 @@
 
 (test mod-inverse/random
   (let ((state (sb-ext:seed-random-state 0)))
-    (dotimes (i 100)
-      (let ((a (random 100 state))
-            (m (+ 2 (random 100 state))))
-        (assert (or (/= 1 (gcd a m))
-                    (= 1 (mod (* a (mod-inverse a m)) m))))))))
+    (finishes
+      (dotimes (i 1000)
+        (let ((a (random 100 state))
+              (m (+ 2 (random 100 state))))
+          (assert (or (/= 1 (gcd a m))
+                      (= 1 (mod (* a (mod-inverse a m)) m)))))))))

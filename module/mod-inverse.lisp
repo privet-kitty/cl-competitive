@@ -19,7 +19,4 @@
              (rotatef a b)
              (decf u (the fixnum (* quot v)))
              (rotatef u v))
-    (setq u (mod u modulus))
-    (if (< u 0)
-        (+ u modulus)
-        u)))
+    (mod u modulus)))
