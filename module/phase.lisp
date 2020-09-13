@@ -6,6 +6,7 @@
 (declaim (inline phase<))
 (defun phase< (p1 p2)
   "Returns true iff (< (phase p1) (phase p2))."
+  (declare (number p1 p2))
   (let ((x1 (realpart p1))
         (y1 (imagpart p1))
         (x2 (realpart p2))
@@ -20,4 +21,3 @@
           ((and (> y2 0) (< y1 0)) t)
           ((and (< y2 0) (> y1 0)) nil)
           (t (> (* x1 y2) (* x2 y1))))))
-

@@ -9,7 +9,7 @@
 
 (defpackage :cp/disjoint-sparse-table
   (:use :cl)
-  (:export #:make-disjoint-sparse-table #:dst-query))
+  (:export #:make-disjoint-sparse-table #:dst-fold))
 (in-package :cp/disjoint-sparse-table)
 
 ;; NOTE: This constructor is slow on SBCL version earlier than 1.5.6 as the type
@@ -51,15 +51,15 @@
                       (funcall binop (aref table i (- k 1)) (aref vector k)))))))))
     table))
 
-(declaim (inline dst-query))
-(defun dst-query (table binop left right &optional identity)
+(declaim (inline dst-fold))
+(defun dst-fold (table binop left right &optional identity)
   "Queries the interval [LEFT, RIGHT). Returns IDENTITY for a null interval [x,
 x)."
   (declare ((integer 0 #.most-positive-fixnum) left right)
            ((simple-array * (* *)) table))
   (when (>= left right)
     (assert (= left right))
-    (return-from dst-query identity))
+    (return-from dst-fold identity))
   (setq right (- right 1)) ;; change to closed interval
   (if (= left right)
       (aref table 0 left)

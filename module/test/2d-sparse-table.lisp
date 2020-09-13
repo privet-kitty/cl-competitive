@@ -13,14 +13,14 @@
                                          (1 6 2 3 7)
                                          (0 9 5 9 0))
                                      #'max)))
-    (is (= 35 (2dst-query table #'max 0 1 0 4 35)))
-    (is (= 35 (2dst-query table #'max 1 3 2 3 35)))
-    (is (= 9 (2dst-query table #'max 0 0 4 5)))
-    (is (= 6 (2dst-query table #'max 1 2 2 3)))
-    (is (= 6 (2dst-query table #'max 1 2 3 4)))
-    (is (= 7 (2dst-query table #'max 1 2 3 5)))))
+    (is (= 35 (2dst-fold table #'max 0 1 0 4 35)))
+    (is (= 35 (2dst-fold table #'max 1 3 2 3 35)))
+    (is (= 9 (2dst-fold table #'max 0 0 4 5)))
+    (is (= 6 (2dst-fold table #'max 1 2 2 3)))
+    (is (= 6 (2dst-fold table #'max 1 2 3 4)))
+    (is (= 7 (2dst-fold table #'max 1 2 3 5)))))
 
-(defun query-max (matrix i1 j1 i2 j2 identity)
+(defun fold-max (matrix i1 j1 i2 j2 identity)
   (declare ((simple-array fixnum (* *)) matrix)
            (fixnum i1 j1 i2 j2 identity))
   (let ((res identity))
@@ -55,5 +55,5 @@
                       for i2 from i1 to m
                       do (loop
                            for j2 from j1 to n
-                           do (assert (= (2dst-query table #'max i1 j1 i2 j2 -12345)
-                                         (query-max matrix i1 j1 i2 j2 -12345))))))))))))
+                           do (assert (= (2dst-fold table #'max i1 j1 i2 j2 -12345)
+                                         (fold-max matrix i1 j1 i2 j2 -12345))))))))))))

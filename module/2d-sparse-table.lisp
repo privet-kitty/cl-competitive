@@ -7,7 +7,7 @@
 
 (defpackage :cp/2d-sparse-table
   (:use :cl)
-  (:export #:make-2d-sparse-table #:2dst-query))
+  (:export #:make-2d-sparse-table #:2dst-fold))
 (in-package :cp/2d-sparse-table)
 
 (declaim (inline make-2d-sparse-table))
@@ -51,8 +51,8 @@
                                          (min (- m 1) (+ row width)) col)))))))
       table)))
 
-(declaim (inline 2dst-query))
-(defun 2dst-query (table binop i1 j1 i2 j2 &optional identity)
+(declaim (inline 2dst-fold))
+(defun 2dst-fold (table binop i1 j1 i2 j2 &optional identity)
   "Queries the rectangle region [I1, I2) * [J1, J2). Returns IDENTITY if the
 specified region is empty."
   (declare ((integer 0 #.most-positive-fixnum) i1 j1 i2 j2))
