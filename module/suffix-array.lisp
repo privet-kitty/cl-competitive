@@ -1,0 +1,153 @@
+;;;
+;;; SA-IS
+;;; Reference:
+;;; https://github.com/atcoder/ac-library/blob/master/atcoder/string.hpp
+;;;
+
+(defpackage :cp/suffix-array
+  (:use :cl)
+  (:export #:make-suffix-array #:sa-int #:sa-vector))
+(in-package :cp/suffix-array)
+
+(deftype sa-int () '(signed-byte 32))
+(deftype sa-vector () '(simple-array sa-int (*)))
+
+(declaim (ftype (function * (values sa-vector &optional)) %sa-is))
+(defun %sa-is (vector size)
+  (declare (optimize (speed 3))
+           (sa-vector vector)
+           ((integer 1 #.(- (ash 1 31) 1)) size))
+  (let* ((n (length vector))
+         (sa (make-array n :element-type 'sa-int :initial-element 0))
+         (ls (make-array n :element-type 'bit :initial-element 0)))
+    (when (<= n 1)
+      (return-from %sa-is sa))
+    (loop for i from (- n 2) downto 0
+          do (setf (aref ls i)
+                   (cond ((= (aref vector i) (aref vector (+ i 1)))
+                          (aref ls (+ i 1)))
+                         ((< (aref vector i) (aref vector (+ i 1)))
+                          1)
+                         (t 0))))
+    (let ((sum-l (make-array (+ size 1) :element-type 'sa-int :initial-element 0))
+          (sum-s (make-array (+ size 1) :element-type 'sa-int :initial-element 0)))
+      (dotimes (i n)
+        (if (zerop (aref ls i))
+            (incf (aref sum-s (aref vector i)))
+            (incf (aref sum-l (+ 1 (aref vector i))))))
+      (dotimes (i (+ size 1))
+        (incf (aref sum-s i) (aref sum-l i))
+        (when (< i size)
+          (incf (aref sum-l (+ i 1)) (aref sum-s i))))
+      (labels
+          ((induce! (lms)
+             (declare (sa-vector lms))
+             (fill sa -1)
+             (let ((buf (copy-seq sum-s)))
+               (loop for d across lms
+                     unless (= d n)
+                     do (setf (aref sa (aref buf (aref vector d))) d)
+                        (incf (aref buf (aref vector d))))
+               (replace buf sum-l)
+               (setf (aref sa (aref buf (aref vector (- n 1)))) (- n 1))
+               (incf (aref buf (aref vector (- n 1))))
+               (loop for i below n
+                     for v = (aref sa i)
+                     when (and (>= v 1) (= 0 (aref ls (- v 1))))
+                     do (setf (aref sa (aref buf (aref vector (- v 1)))) (- v 1))
+                        (incf (aref buf (aref vector (- v 1)))))
+               (replace buf sum-l)
+               (loop for i from (- n 1) downto 0
+                     for v = (aref sa i)
+                     when (and (>= v 1) (= 1 (aref ls (- v 1))))
+                     do (decf (aref buf (+ 1 (aref vector (- v 1)))))
+                        (setf (aref sa (aref buf (+ 1 (aref vector (- v 1))))) (- v 1))))))
+        (let ((lms-map (make-array (+ n 1) :element-type 'sa-int :initial-element -1))
+              (m 0))
+          (declare (sa-int m))
+          (loop for i from 1 below n
+                when (and (= 0 (aref ls (- i 1)))
+                          (= 1 (aref ls i)))
+                do (setf (aref lms-map i) m)
+                   (incf m))
+          (let ((lms (make-array m :element-type 'sa-int :initial-element 0)))
+            (let ((end 0))
+              (declare (sa-int end))
+              (loop for i from 1 below n
+                    when (and (= 0 (aref ls (- i 1)))
+                              (= 1 (aref ls i)))
+                    do (setf (aref lms end) i)
+                       (incf end))
+              (setq lms (adjust-array lms end)))
+            (induce! lms)
+            (unless (zerop m)
+              (let ((sorted-lms (make-array m :element-type 'sa-int :initial-element 0))
+                    (rec-vector (make-array m :element-type 'sa-int :initial-element 0))
+                    (rec-size 0))
+                (declare (sa-int rec-size)
+                         (sa-vector sorted-lms))
+                (let ((end 0))
+                  (declare (sa-int end))
+                  (loop for v across sa
+                        unless (= -1 (aref lms-map v))
+                        do (setf (aref sorted-lms end) v)
+                           (incf end))
+                  (setq sorted-lms (adjust-array sorted-lms end)))
+                (setf (aref rec-vector (aref lms-map (aref sorted-lms 0))) 0)
+                (loop for i from 1 below m
+                      for l = (aref sorted-lms (- i 1))
+                      for r = (aref sorted-lms i)
+                      for end-l = (if (< (+ 1 (aref lms-map l)) m)
+                                      (aref lms (+ 1 (aref lms-map l)))
+                                      n)
+                      for end-r = (if (< (+ 1 (aref lms-map r)) m)
+                                      (aref lms (+ 1 (aref lms-map r)))
+                                      n)
+                      for same = t
+                      when (= (- end-l l) (- end-r r))
+                      do (loop while (and (< l end-l) (= (aref vector l) (aref vector r)))
+                               do (incf l)
+                                  (incf r))
+                         (when (or (= l n) (/= (aref vector l) (aref vector r)))
+                           (setq same nil))
+                      else
+                      do (setq same nil)
+                      unless same
+                      do (incf rec-size)
+                      do (setf (aref rec-vector (aref lms-map (aref sorted-lms i)))
+                               rec-size))
+                (let ((rec-sa (%sa-is rec-vector rec-size)))
+                  (dotimes (i m)
+                    (setf (aref sorted-lms i) (aref lms (aref rec-sa i))))
+                  (induce! sorted-lms))))))))
+    sa))
+
+(declaim (inline make-suffix-array))
+(defun make-suffix-array (vector &key key order alphabet-size)
+  "Returns the suffix array of VECTOR. The order of elements is determined by
+KEY or ORDER.
+
+KEY := function that returns a non-negative integer less than 2^31
+ORDER := strict total order on the elements of VECTOR"
+  (declare (vector vector)
+           ((or null (integer 1 #.(- (ash 1 31) 1))) alphabet-size))
+  (assert (and (or key order)
+               (not (and key order))))
+  (if order
+      (let* ((n (length vector))
+             (ords (make-array n :element-type 'sa-int :initial-element 0)))
+        (dotimes (i n)
+          (setf (aref ords i) i))
+        (setq ords (sort ords order :key (lambda (i) (aref vector i))))
+        (let* ((vector2 (make-array n :element-type 'sa-int :initial-element 0))
+               (end 0))
+          (dotimes (i n)
+            (when (and (> i 0)
+                       (funcall order
+                                (aref vector (aref ords (- i 1)))
+                                (aref vector (aref ords i))))
+              (incf end))
+            (setf (aref vector2 (aref ords i)) end))
+          (%sa-is vector2 end)))
+      (%sa-is (map 'sa-vector (or key #'identity) vector)
+              (or alphabet-size (+ (reduce #'max vector :key key) 1)))))
