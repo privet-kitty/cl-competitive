@@ -16,7 +16,7 @@
 (defun %sa-is (vector size)
   (declare (optimize (speed 3))
            (sa-vector vector)
-           ((integer 1 #.(- (ash 1 31) 1)) size))
+           ((integer 0 #.(- (ash 1 31) 1)) size))
   (let* ((n (length vector))
          (sa (make-array n :element-type 'sa-int :initial-element 0))
          (ls (make-array n :element-type 'bit :initial-element 0)))
