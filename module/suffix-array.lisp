@@ -6,7 +6,7 @@
 
 (defpackage :cp/suffix-array
   (:use :cl)
-  (:export #:make-suffix-array #:sa-int #:sa-vector))
+  (:export #:sa-int #:sa-vector #:make-suffix-array #:make-lcp-array))
 (in-package :cp/suffix-array)
 
 (deftype sa-int () '(signed-byte 32))
@@ -151,3 +151,30 @@ ORDER := strict total order on the elements of VECTOR"
           (%sa-is vector2 end)))
       (%sa-is (map 'sa-vector (or key #'identity) vector)
               (or alphabet-size (+ (reduce #'max vector :key key) 1)))))
+
+(declaim (inline make-lcp-array))
+(defun make-lcp-array (vector sa &key (test #'eql))
+  "Returns the LCP array."
+  (declare (vector vector)
+           (sa-vector sa))
+  (let* ((n (length vector))
+         (rev (make-array n :element-type 'sa-int :initial-element 0))
+         (lcp (make-array (- n 1) :element-type 'sa-int :initial-element 0))
+         (height 0))
+    (declare (sa-int height))
+    (assert (and (= n (length sa)) (>= n 1)))
+    (dotimes (i n)
+      (setf (aref rev (aref sa i)) i))
+    (dotimes (i n)
+      (when (> height 0)
+        (decf height))
+      (unless (zerop (aref rev i))
+        (let  ((j (aref sa (- (aref rev i) 1))))
+          (loop while (and (< (+ j height) n)
+                           (< (+ i height) n)
+                           (funcall test
+                                    (aref vector (+ j height))
+                                    (aref vector (+ i height))))
+                do (incf height))
+          (setf (aref lcp (- (aref rev i) 1)) height))))
+    lcp))
