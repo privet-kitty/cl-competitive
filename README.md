@@ -138,7 +138,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Geometry
 - [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
-- [phase<.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/phase.lisp) order by amplitude (`atan`)
+- [phase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/phase.lisp) order by amplitude (`atan`)
 - [circumcenter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/circumcenter.lisp) circumcenter
 - [welzl.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/welzl.lisp) smallest circle problem (Welzl's algorithm)
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull.lisp) 2D convex hull (monotone chain algorithm)

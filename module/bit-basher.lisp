@@ -4,7 +4,7 @@
 (in-package :cp/bit-basher)
 
 ;;;
-;;; Complement to the bitwise operations in CLHS
+;;; Complement to the bitwise operations in ANSI CL
 ;;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
