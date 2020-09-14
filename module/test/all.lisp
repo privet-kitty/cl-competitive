@@ -104,6 +104,7 @@
   (:import-from :cp/test/shuffle)
   (:import-from :cp/test/sliding-window)
   (:import-from :cp/test/succinct-bit-vector)
+  (:import-from :cp/test/suffix-array)
   (:import-from :cp/test/stirling2)
   (:import-from :cp/test/swag)
   (:import-from :cp/test/symmetric-group)
