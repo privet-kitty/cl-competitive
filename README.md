@@ -97,7 +97,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [walsh-hadamard.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/walsh-hadamard.lisp) fast Walsh-Hadamard transform
 - [zeta-transform.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/zeta-transform.lisp) fast zeta/Möbius transform
 - [zeta-integer.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/zeta-integer.lisp) fast zeta/Möbius transform w.r.t. divisors or multiples of integer
-- [farey.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/farey.lisp) Farey sequence
+- [farey.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/farey.lisp) iteration on Farey sequence
+- [farey-next.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/farey-next.lisp) next/previous element on Farey sequence
 
 ### Real and complex
 - [fft.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fft.lisp) complex FFT (radix-2)
@@ -137,6 +138,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Geometry
 - [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
+- [phase<.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/phase.lisp) order by amplitude (`atan`)
 - [circumcenter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/circumcenter.lisp) circumcenter
 - [welzl.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/welzl.lisp) smallest circle problem (Welzl's algorithm)
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull.lisp) 2D convex hull (monotone chain algorithm)
