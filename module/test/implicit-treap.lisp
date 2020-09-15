@@ -146,41 +146,82 @@
           do (itreap-push elm itreap idx))
     itreap))
 
-(test implicit-treap-fold/bisect
+(test implicit-treap-fold-bisect
   (declare (notinline itreap-fold-bisect))
   (let ((list '(5 2 4 2 1 4 2 1 -1)))
-    (is (= 0 (itreap-fold-bisect (%make list) 6 #'>)))
-    (is (= 0 (itreap-fold-bisect (%make list) 5 #'>)))
-    (is (= 1 (itreap-fold-bisect (%make list) 4 #'>)))
-    (is (= 1 (itreap-fold-bisect (%make list) 3 #'>)))
-    (is (= 1 (itreap-fold-bisect (%make list) 2 #'>)))
-    (is (= 4 (itreap-fold-bisect (%make list) 1 #'>)))
-    (is (= 8 (itreap-fold-bisect (%make list) 0 #'>)))
-    (is (= 8 (itreap-fold-bisect (%make list) -1 #'>)))
-    (is (= 9 (itreap-fold-bisect (%make list) -2 #'>)))
-
+    (is (= 0 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)))))
+    (is (= 0 (itreap-fold-bisect (%make list) (lambda (x) (> x 5)))))
+    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 4)))))
+    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 3)))))
+    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 2)))))
+    (is (= 4 (itreap-fold-bisect (%make list) (lambda (x) (> x 1)))))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 0)))))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)))))
+    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)))))
+    
     ;; START arg
-    (is (= 3 (itreap-fold-bisect (%make list) 6 #'> 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) 5 #'> 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) 4 #'> 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) 3 #'> 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) 2 #'> 3)))
-    (is (= 4 (itreap-fold-bisect (%make list) 1 #'> 3)))
-    (is (= 8 (itreap-fold-bisect (%make list) 0 #'> 3)))
-    (is (= 8 (itreap-fold-bisect (%make list) -1 #'> 3)))
-    (is (= 9 (itreap-fold-bisect (%make list) -2 #'> 3)))
+    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)) 3)))
+    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 5)) 3)))
+    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 4)) 3)))
+    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 3)) 3)))
+    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 2)) 3)))
+    (is (= 4 (itreap-fold-bisect (%make list) (lambda (x) (> x 1)) 3)))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 0)) 3)))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)) 3)))
+    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)) 3)))
 
-    (is (= 8 (itreap-fold-bisect (%make list) 6 #'> 8)))
-    (is (= 8 (itreap-fold-bisect (%make list) -1 #'> 8)))
-    (is (= 9 (itreap-fold-bisect (%make list) -2 #'> 8)))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)) 8)))
+    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)) 8)))
+    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)) 8)))
 
-    (is (= 9 (itreap-fold-bisect (%make list) -10 #'> 9)))
-    (is (= 9 (itreap-fold-bisect (%make list) 10 #'> 9)))
+    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -10)) 9)))
+    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x 10)) 9)))
 
-    (signals invalid-itreap-index-error (itreap-fold-bisect (%make list) 10 #'> 10))
+    (signals invalid-itreap-index-error
+      (itreap-fold-bisect (%make list) (lambda (x) (> x 10)) 10))
 
     ;; null case
-    (is (zerop (itreap-fold-bisect nil 10 #'<)))))
+    (is (zerop (itreap-fold-bisect nil (lambda (x) (> x 10)))))))
+
+(test implicit-treap-fold-bisect-from-end
+  (declare (notinline itreap-fold-bisect-from-end))
+  (let ((list '(5 -3 -3 2 -1 4 2 1 3)))
+    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 6)))))
+    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 5)))))
+    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 4)))))
+    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 3)))))
+    (is (= 8 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)))))
+    (is (= 8 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 1)))))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 0)))))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -1)))))
+    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -2)))))
+    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)))))
+    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)))))
+    
+    ;; END arg
+    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 6)) 6)))
+    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 5)) 6)))
+    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 4)) 6)))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 3)) 6)))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)) 6)))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 1)) 6)))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 0)) 6)))
+    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -1)) 6)))
+    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -2)) 6)))
+    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)) 6)))
+    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)) 6)))
+
+    (is (= 4 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)) 4)))
+    (is (= 2 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)) 2)))
+    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)) 2)))
+
+    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 10)) 0)))
+
+    (signals invalid-itreap-index-error
+      (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 10)) 10))
+
+    ;; null case
+    (is (zerop (itreap-fold-bisect-from-end nil (lambda (x) (> x 10)))))))
 
 (test implicit-treap/sorted
   (declare (notinline itreap-bisect-left itreap-bisect-right))

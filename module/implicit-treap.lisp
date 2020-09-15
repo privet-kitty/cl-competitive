@@ -9,7 +9,8 @@
            #:make-itreap #:invalid-itreap-index-error #:itreap-ref
            #:itreap-split #:itreap-merge #:itreap-insert #:itreap-delete
            #:itreap-push #:itreap-pop #:itreap-map #:do-itreap
-           #:itreap-fold #:itreap-fold-bisect #:itreap-update #:itreap-reverse
+           #:itreap-fold #:itreap-fold-bisect #:itreap-fold-bisect-from-end
+           #:itreap-update #:itreap-reverse
            #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort))
 (in-package :cp/implicit-treap)
 
@@ -416,18 +417,16 @@ each time."
 ;; FIXME: might be problematic when two priorities collide and START is not
 ;; zero. (It will be negligible from the viewpoint of probability, however.)
 (declaim (inline itreap-fold-bisect))
-(defun itreap-fold-bisect (itreap value order &optional (start 0))
-  "Returns the smallest index that satisfies ITREAP[START]+ ITREAP[START+1] +
-... + ITREAP[index] >= VALUE (if ORDER is #'<).
+(defun itreap-fold-bisect (itreap test &optional (start 0))
+  "Returns the largest index that satisfies (FUNCALL TEST (OP ITREAP[START]
+ITREAP[START+1] ... ITREAP[index-1])).
 
 Note:
-- This function deals with a **closed** interval.
-- This function returns the length of ITREAP instead if ITREAP[START]+
-... +ITREAP[length-1] < VALUE.
-- The prefix sums of ITREAP, (ITREAP[START], ITREAP[START]+ITREAP[START+1], ...)
-  must be monotone w.r.t. ORDER.
-- ORDER must be a strict order"
+- (FUNCALL TEST +OP-IDENTITY+) must be true.
+- TEST must be monotone in the target range.
+"
   (declare ((integer 0 #.most-positive-fixnum) start))
+  (assert (funcall test +op-identity+))
   (multiple-value-bind (itreap-prefix itreap)
       (if (zerop start)
           (values nil itreap)
@@ -441,13 +440,9 @@ Note:
            (force-down itreap)
            (let ((sum prev-sum))
              (prog1
-                 (cond ((not (funcall order
-                                      (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))
-                                      value))
+                 (cond ((not (funcall test (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))))
                         (recur (%itreap-left itreap) offset prev-sum))
-                       ((not (funcall order
-                                      (setq sum (op sum (%itreap-value itreap)))
-                                      value))
+                       ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
                         (+ offset (itreap-count (%itreap-left itreap))))
                        (t
                         (recur (%itreap-right itreap)
@@ -456,6 +451,43 @@ Note:
                (force-up itreap)))))
       (prog1 (+ start (recur itreap 0 +op-identity+))
         (itreap-merge itreap-prefix itreap)))))
+
+(declaim (inline itreap-fold-bisect-from-end))
+(defun itreap-fold-bisect-from-end (itreap test &optional end)
+  "Returns the smallest index that satisfies (FUNCALL TEST (OP ITREAP[END-1]
+  ITREAP[END-2] ... ITREAP[index])).
+
+Note:
+- (FUNCALL TEST +OP-IDENTITY+) must be true.
+- TEST must be monotone in the target range.
+"
+  (declare ((or null (integer 0 #.most-positive-fixnum)) end))
+  (assert (funcall test +op-identity+))
+  (multiple-value-bind (itreap itreap-suffix)
+      (if end
+          (itreap-split itreap end)
+          (values itreap nil))
+    (labels
+        ((recur (itreap offset prev-sum)
+           (declare ((integer 0 #.most-positive-fixnum) offset)
+                    #+sbcl (values (integer 0 #.most-positive-fixnum)))
+           (unless itreap
+             (return-from recur offset))
+           (force-down itreap)
+           (let ((sum prev-sum))
+             (prog1
+                 (cond ((not (funcall test (setq sum (op (itreap-accumulator (%itreap-right itreap)) sum))))
+                        (recur (%itreap-right itreap) offset prev-sum))
+                       ((not (funcall test (setq sum (op (%itreap-value itreap) sum))))
+                        (+ offset (itreap-count (%itreap-right itreap))))
+                       (t
+                        (recur (%itreap-left itreap)
+                               (+ offset (itreap-count (%itreap-right itreap)) 1)
+                               sum)))
+               (force-up itreap)))))
+      (prog1 (- (or end (itreap-count itreap))
+                (recur itreap 0 +op-identity+))
+        (itreap-merge itreap itreap-suffix)))))
 
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
