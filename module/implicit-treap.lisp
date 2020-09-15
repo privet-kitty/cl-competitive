@@ -9,7 +9,7 @@
            #:make-itreap #:invalid-itreap-index-error #:itreap-ref
            #:itreap-split #:itreap-merge #:itreap-insert #:itreap-delete
            #:itreap-push #:itreap-pop #:itreap-map #:do-itreap
-           #:itreap-fold #:itreap-fold-bisect-left #:itreap-update #:itreap-reverse
+           #:itreap-fold #:itreap-fold-bisect #:itreap-update #:itreap-reverse
            #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort))
 (in-package :cp/implicit-treap)
 
@@ -415,8 +415,8 @@ each time."
 
 ;; FIXME: might be problematic when two priorities collide and START is not
 ;; zero. (It will be negligible from the viewpoint of probability, however.)
-(declaim (inline itreap-fold-bisect-left))
-(defun itreap-fold-bisect-left (itreap value order &optional (start 0))
+(declaim (inline itreap-fold-bisect))
+(defun itreap-fold-bisect (itreap value order &optional (start 0))
   "Returns the smallest index that satisfies ITREAP[START]+ ITREAP[START+1] +
 ... + ITREAP[index] >= VALUE (if ORDER is #'<).
 
