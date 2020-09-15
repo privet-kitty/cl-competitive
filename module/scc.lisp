@@ -9,7 +9,8 @@
 (in-package :cp/scc)
 
 (defstruct (scc (:constructor %make-scc (graph components sizes count))
-                (:copier nil))
+                (:copier nil)
+                (:predicate nil))
   (graph nil :type vector)
   ;; components[i] := strongly connected component of the i-th vertex
   (components nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
@@ -92,7 +93,8 @@
          (components (scc-components scc))
          (condensed (make-array comp-n :element-type t)))
     (dotimes (i comp-n)
-      (setf (aref condensed i) (make-hash-table :test #'eql)))
+      ;; Resorting to EQ is substandard, though I use it here for efficiency.
+      (setf (aref condensed i) (make-hash-table :test #'eq)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))
         (dolist (neighbor (aref graph i))
@@ -101,5 +103,6 @@
               (setf (gethash neighbor-comp (aref condensed i-comp)) t))))))
     (dotimes (i comp-n)
       (setf (aref condensed i)
-            (loop for x being each hash-key of (aref condensed i) collect x)))
+            (loop for x being each hash-key of (aref condensed i)
+                  collect x)))
     condensed))

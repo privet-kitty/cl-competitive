@@ -3,6 +3,7 @@
 ;;;
 
 ;; NOTE: use LOGNOT for negation
+;; A
 
 (defpackage :cp/2sat
   (:use :cl :cp/scc)
@@ -32,6 +33,10 @@
     2sat))
 
 (defun add-implication (2sat p q)
+  "Adds `P implies Q' to 2SAT.
+
+Example:
+ (add-implication 2sat (lognot p) q) ; (not P) implies Q"
   (declare (fixnum p q))
   (%add-implication 2sat p q)
   (%add-implication 2sat (lognot q) (lognot p))
