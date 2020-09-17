@@ -7,7 +7,7 @@
 (defun map-run-length (function seq &key (test #'eql))
   "Applies FUNCTION to each equal successive element of SEQ. FUNCTION must take
 two arguments: the first one receives an element in SEQ and the second one
-receives the number of the successive elements equal to the first.
+receives the number of the successive elements equal to the first one.
 
 Example: (map-run-length (lambda (x c) (format t \"~D ~D~%\" x c)) #(1 1 1 2 2 1 3))
 1 3

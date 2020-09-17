@@ -31,9 +31,9 @@ and denominator."
 (declaim (ftype (function * (values (or fixnum (complex fixnum)) &optional))
                 phase-next phase-prev))
 (defun phase-next (point max-denom)
-  "Consider all the grid points (x, y) where |x|, |y| <= MAX-DENOM and they are
-  sorted anticlockwise by amplitude. This function returns the `next' point in
-  this sequence."
+  "Consider all the grid points (x, y) where |x|, |y| <= MAX-DENOM and x and y
+are coprime. Also they are sorted anticlockwise by amplitude. This function
+returns the `next' point in this sequence."
   (declare ((integer 0 #.most-positive-fixnum) max-denom))
   (assert (not (zerop point)))
   (let* ((x (realpart point))
@@ -58,9 +58,9 @@ and denominator."
              (* (calc (- y) x) #c(0 -1)))))))
 
 (defun phase-prev (point max-denom)
-  "Consider all the grid points (x, y) where |x|, |y| <= MAX-DENOM and they are
-  sorted anticlockwise by amplitude. This function returns the `previous' point in
-  this sequence."
+  "Consider all the grid points (x, y) where |x|, |y| <= MAX-DENOM and x and y
+are coprime. Also they are sorted anticlockwise by amplitude. This function
+returns the `previous' point in this sequence."
   (declare ((integer 0 #.most-positive-fixnum) max-denom))
   (assert (not (zerop point)))
   (let* ((x (realpart point))
