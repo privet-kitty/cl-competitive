@@ -6,6 +6,11 @@
 
 (test map-run-length
   (map-run-length (lambda (x y) (error "Must not be called.")) #())
+  (map-run-length (lambda (x y) (error "Must not be called.")) '())
+  (let ((result '((3 . 1))))
+    (map-run-length (lambda (x y) (assert (equal (cons x y) (pop result)))) #(3)))
+  (let ((result '((3 . 1))))
+    (map-run-length (lambda (x y) (assert (equal (cons x y) (pop result)))) '(3)))
   (let ((result '((1 . 1) (2 . 2) (3 . 2) (1 . 3) (2 . 2))))
     (map-run-length (lambda (x y) (assert (equal (cons x y) (pop result))))
                     #(1 2 2 3 3 1 1 1 2 2)))

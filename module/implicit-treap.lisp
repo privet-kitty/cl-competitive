@@ -454,8 +454,8 @@ Note:
 
 (declaim (inline itreap-fold-bisect-from-end))
 (defun itreap-fold-bisect-from-end (itreap test &optional end)
-  "Returns the smallest index that satisfies (FUNCALL TEST (OP ITREAP[END-1]
-  ITREAP[END-2] ... ITREAP[index])).
+  "Returns the smallest index that satisfies (FUNCALL TEST (OP ITREAP[index]
+  ITREAP[index+1] ... ITREAP[END-1])).
 
 Note:
 - (FUNCALL TEST +OP-IDENTITY+) must be true.
@@ -491,7 +491,7 @@ Note:
 
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
-  "Updates ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
+  "Updates ITRAP by ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
   (declare ((integer 0 #.most-positive-fixnum) l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
