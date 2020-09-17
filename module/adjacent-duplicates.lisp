@@ -20,7 +20,8 @@
                  do (setf prev (aref seq pos)
                           (aref seq end) (aref seq pos)
                           end (+ 1 end)))
-           ;; KLUDGE: Resorting to ADJUST-ARRAY is maybe substandard. 
+           ;; This is somewhat crude but I won't fix it for now, as it suffices
+           ;; at least in competitive programming & on SBCL.
            (if (array-has-fill-pointer-p seq)
                (adjust-array seq end :fill-pointer end)
                (adjust-array seq end)))))
