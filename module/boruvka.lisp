@@ -5,17 +5,14 @@
 ;;; Ahuja, Magnanti, Orlin. Network Flows: Theory, Algorithms, and Applications.
 ;;;
 
+;; CAUTION: IT'S BUGGY. DON'T USE IT.
+
 (defpackage :cp/boruvka
   (:use :cl)
   (:export #:find-mst))
 (in-package :cp/boruvka)
 
 (defconstant +inf-cost+ most-positive-fixnum)
-
-;; Here I express each connected component as a cycle with singly-linked list,
-;; though Ahuja's book adopts doubly-linked list. I learned about this technique
-;; in noshi91's article: http://noshi91.hatenablog.com/entry/2019/07/19/180606
-;; (Japanese)
 
 (declaim (inline find-mst)
          (ftype (function * (values (simple-array fixnum (*))
