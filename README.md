@@ -124,7 +124,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lca.lisp) lowest common anscestor (binary lifting)
 - [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/min-cost-flow.lisp) minimum cost flow (SSP)
-- [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/boruvka.lisp) minimum spanning tree (Borůvka's algorithm)
+<!-- - [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/boruvka.lisp) minimum spanning tree (Borůvka's algorithm) -->
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
 - [euler-tour.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/euler-tour.lisp) Euler tour of tree
