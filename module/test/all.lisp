@@ -92,7 +92,6 @@
   (:import-from :cp/test/radix-heap)
   (:import-from :cp/test/range-tree-fc)
   (:import-from :cp/test/read-line-into)
-  (:import-from :cp/test/reference-heap)
   (:import-from :cp/test/ref-able-treap)
   (:import-from :cp/test/relative-error)
   (:import-from :cp/test/rolling-hash31)
