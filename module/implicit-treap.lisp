@@ -3,6 +3,8 @@
 ;;; (treap with implicit key)
 ;;;
 
+;; TODO: abstraction
+
 (defpackage :cp/implicit-treap
   (:use :cl)
   (:export #:itreap #:itreap-p #:itreap-count #:itreap-accumulator

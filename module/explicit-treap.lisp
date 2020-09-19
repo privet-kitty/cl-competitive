@@ -3,6 +3,8 @@
 ;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
 ;;;
 
+;; TODO: abstraction
+
 (defpackage :cp/explicit-treap
   (:use :cl)
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator

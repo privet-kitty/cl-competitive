@@ -8,6 +8,8 @@
 ;; on a treap. Always use the returned value.
 ;; - An empty treap is NIL.
 
+;; TODO: abstraction
+
 (defpackage :cp/ref-able-treap
   (:use :cl)
   (:export #:treap #:treap-count #:treap-find #:treap-position #:treap-bisect-left
