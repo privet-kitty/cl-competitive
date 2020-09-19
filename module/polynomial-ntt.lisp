@@ -1,9 +1,11 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt)
-  (:export #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add #:multipoint-eval))
+  (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add #:multipoint-eval))
 (in-package :cp/polynomial-ntt)
 
-;; TODO: utilize convolution as selectable module
+(define-ntt #.+ntt-mod+
+  :convolve poly-multiply
+  :mod-inverse %mod-inverse)
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 (defun poly-inverse (poly &optional result-length)
@@ -25,8 +27,8 @@
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
             while (< i result-length)
-            for decr = (ntt-convolve (ntt-convolve res res)
-                                     (subseq poly 0 (min (length poly) (* 2 i))))
+            for decr = (poly-multiply (poly-multiply res res)
+                                      (subseq poly 0 (min (length poly) (* 2 i))))
             for decr-len = (length decr)
             do (setq res (adjust-array res (* 2 i) :initial-element 0))
                (dotimes (j (* 2 i))
@@ -50,7 +52,7 @@
     (setq poly1 (nreverse (subseq poly1 0 deg1))
           poly2 (nreverse (subseq poly2 0 deg2)))
     (let* ((res-len (+ 1 (- deg1 deg2)))
-           (res (adjust-array (ntt-convolve poly1 (poly-inverse poly2 res-len))
+           (res (adjust-array (poly-multiply poly1 (poly-inverse poly2 res-len))
                               res-len)))
       (nreverse res))))
 
@@ -97,7 +99,7 @@
         (poly2 (coerce poly2 'ntt-vector)))
     (when (loop for x across poly1 always (zerop x))
       (return-from poly-mod (make-array 0 :element-type 'ntt-int)))
-    (let* ((res (poly-sub poly1 (ntt-convolve (poly-floor poly1 poly2) poly2)))
+    (let* ((res (poly-sub poly1 (poly-multiply (poly-floor poly1 poly2) poly2)))
            (end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (subseq res 0 end))))
 
@@ -124,8 +126,8 @@
               (%build l mid (+ 1 (* pos 2)))
               (%build mid r (+ 2 (* pos 2)))
               (setf (aref table pos)
-                    (ntt-convolve (aref table (+ 1 (* pos 2)))
-                                  (aref table (+ 2 (* pos 2))))))))
+                    (poly-multiply (aref table (+ 1 (* pos 2)))
+                                   (aref table (+ 2 (* pos 2))))))))
       (sb-int:named-let %eval ((poly poly) (l 0) (r len) (pos 0))
         (declare ((integer 0 #.most-positive-fixnum) l r pos))
         (if (= (- r l) 1)

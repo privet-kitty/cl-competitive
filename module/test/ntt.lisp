@@ -1,28 +1,51 @@
 (defpackage :cp/test/ntt
   (:use :cl :fiveam :cp/ntt :cp/polynomial)
-  (:import-from :cp/test/base #:base-suite))
+  (:import-from :cp/test/base #:base-suite)
+  (:import-from :cp/ntt #:%calc-generator))
 (in-package :cp/test/ntt)
 (in-suite base-suite)
 
-(test ntt/manual
-  (is (equalp #() (ntt-convolve #() #())))
-  (is (equalp #(15) (ntt-convolve #(3) #(5))))
-  (is (equalp #(998244308 17 2 998244348 1)
-              (ntt-convolve #(5 998244350 1) #(998244344 998244351 1)))))
+(define-ntt #.+ntt-mod+)
 
-(defun make-random-polynomial (degree)
+(test ntt/manual
+  (is (equalp #() (convolve #() #())))
+  (is (equalp #(15) (convolve #(3) #(5))))
+  (is (equalp #(998244308 17 2 998244348 1)
+              (convolve #(5 998244350 1) #(998244344 998244351 1)))))
+
+(defun make-random-polynomial (degree state)
   (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))
     (dotimes (i degree res)
-      (setf (aref res i) (random +ntt-mod+)))
+      (setf (aref res i) (random +ntt-mod+ state)))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (adjust-array res end))))
 
+(defun generator-p (x modulus)
+  (let ((marked (make-array modulus :element-type 'bit :initial-element 0)))
+    (loop with value = 1
+          until (= 1 (aref marked value))
+          do (setf (aref marked value) 1
+                   value (mod (* value x) modulus))
+          finally (return
+                    (cond ((/= value 1) nil)
+                          ((= (- modulus 1) (count 1 marked)) t)
+                          (t nil))))))
+
+(test %calc-generator
+  (finishes
+    (loop for modulus from 2 to 3000
+          for generator = (%calc-generator modulus)
+          when (sb-int:positive-primep modulus)
+          do (assert (generator-p generator modulus))))
+  (is (= 3 (%calc-generator 998244353))))
+
 (test ntt/random
   (finishes
-    (dotimes (_ 1000)
-      (let* ((len1 (random 10))
-             (len2 (random 10))
-             (poly1 (make-random-polynomial len1))
-             (poly2 (make-random-polynomial len2)))
-        (assert (equalp (poly-mult poly1 poly2 +ntt-mod+)
-                        (ntt-convolve poly1 poly2)))))))
+    (let ((state (sb-ext:seed-random-state 0)))
+      (dotimes (_ 1000)
+        (let* ((len1 (random 10 state))
+               (len2 (random 10 state))
+               (poly1 (make-random-polynomial len1 state))
+               (poly2 (make-random-polynomial len2 state)))
+          (assert (equalp (poly-mult poly1 poly2 +ntt-mod+)
+                          (convolve poly1 poly2))))))))

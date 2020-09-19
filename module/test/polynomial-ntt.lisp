@@ -25,7 +25,7 @@
              (poly2 (make-random-polynomial len2)))
         ;; inverse
         (when (find-if #'plusp poly1)
-          (let ((res (ntt-convolve poly1 (poly-inverse poly1))))
+          (let ((res (poly-multiply poly1 (poly-inverse poly1))))
             (assert (= 1 (aref res 0)))
             (loop for i from 1 below len1
                   do (assert (zerop (aref res i))))))
