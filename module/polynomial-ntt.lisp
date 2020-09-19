@@ -5,7 +5,7 @@
 
 ;; TODO: utilize convolution as selectable module
 
-(declaim (ftype (function * (values ntt-vector &optional)) ntt-inverse))
+(declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 (defun poly-inverse (poly &optional result-length)
   (declare (optimize (speed 3))
            (vector poly)

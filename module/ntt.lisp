@@ -137,8 +137,8 @@
             (setf (aref vector i) (mod* inv-len (aref vector i))))))
       vector)))
 
-;; FIXME: Here I resort to SBCL's behaviour. Actually ADJUST-ARRAY isn't
-;; guaranteed to preserve the given VECTOR.
+;; KLUDGE: This function depends on SBCL's behaviour. Actually ADJUST-ARRAY
+;; isn't guaranteed to preserve the given VECTOR.
 (declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
 (defun %adjust-array (vector length)
   (declare (vector vector))
