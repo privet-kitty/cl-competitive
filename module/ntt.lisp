@@ -2,6 +2,7 @@
 ;;; Fast Number Theoretic Transform
 ;;; Reference:
 ;;; https://github.com/ei1333/library/blob/master/math/fft/number-theoretic-transform-friendly-mod-int.cpp
+;;; https://github.com/atcoder/ac-library/tree/master/atcoder
 ;;;
 
 (defpackage :cp/ntt
