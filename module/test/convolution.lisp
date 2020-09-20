@@ -47,12 +47,14 @@
       result)))
 
 (test convolution/random
-  (dotimes (_ 1000)
-    (let ((vector1 (make-array (random 20) :element-type 'fixnum))
-          (vector2 (make-array (random 20) :element-type 'fixnum)))
-      (dotimes (i (length vector1))
-        (setf (aref vector1 i) (random 1000)))
-      (dotimes (i (length vector2))
-        (setf (aref vector2 i) (random 1000)))
-      (is (equalp (convolve vector1 vector2)
-                  (convolve-naive vector1 vector2))))))
+  (finishes
+    (let ((state (sb-ext:seed-random-state 0)))
+      (dotimes (_ 1000)
+        (let ((vector1 (make-array (random 20 state) :element-type 'fixnum))
+              (vector2 (make-array (random 20 state) :element-type 'fixnum)))
+          (dotimes (i (length vector1))
+            (setf (aref vector1 i) (random 1000 state)))
+          (dotimes (i (length vector2))
+            (setf (aref vector2 i) (random 1000 state)))
+          (assert (equalp (convolve vector1 vector2)
+                          (convolve-naive vector1 vector2))))))))
