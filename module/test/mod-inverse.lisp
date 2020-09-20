@@ -5,10 +5,8 @@
 (in-suite base-suite)
 
 (test mod-inverse/random
-  (let ((state (sb-ext:seed-random-state 0)))
-    (finishes
-      (dotimes (i 1000)
-        (let ((a (random 100 state))
-              (m (+ 2 (random 100 state))))
-          (assert (or (/= 1 (gcd a m))
-                      (= 1 (mod (* a (mod-inverse a m)) m)))))))))
+  (let ((*num-trials* 1000))
+    (for-all ((a (gen-integer :min 0 :max 1000))
+              (m (gen-integer :min 2 :max 1000)))
+      (is (or (/= 1 (gcd a m))
+              (= 1 (mod (* a (mod-inverse a m)) m)))))))
