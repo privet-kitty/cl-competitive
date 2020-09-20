@@ -51,7 +51,7 @@ non-destructive."
                            do (funcall function x)))))))
 
 (defmacro do-binsorted ((var sequence range-max &key from-end key finally) &body body)
-  "DO-style macro of MAP-BINSORTED"
+  "DO-style macro for MAP-BINSORTED"
   `(block nil
      (map-binsorted (lambda (,var) ,@body) ,sequence ,range-max
                     :from-end ,from-end :key ,key)
