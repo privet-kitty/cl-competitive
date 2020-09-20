@@ -77,39 +77,64 @@
   (setf (heap-position heap) 1)
   heap)
 
-(defun min-cost-flow! (graph src-idx dest-idx flow &key edge-count (if-overflow :error))
+(defmacro the-cost-type (form)
+  (reduce (lambda (x y) `(,(car form) (the cost-type ,x) (the cost-type ,y)))
+          (cdr form)))
+
+(defun min-cost-flow! (graph src-idx dest-idx flow &key edge-count (if-overflow :error) bellman-ford)
   "Returns the minimum cost to send FLOW units from SRC-IDX to DEST-IDX in
-GRAPH. Destructively modifies GRAPH.
+GRAPH. This function destructively modifies GRAPH.
 
 EDGE-COUNT := initial reserved size for heap (it should be the number of edges)
-IF-OVERFLOW := :error | nil"
+IF-OVERFLOW := :error | nil
+
+If BELLMAN-FORD is true, this function does Bellman-Ford before all. It should
+be enabled for a graph that contains negative edges: Currently this function
+returns a correct result for a graph that contains negative edges, even when
+BELLMAN-FORD is disabled (only if no negative **cycles** are contained, of
+course). In this case, however, the worst-case time complexity is
+exponential.
+
+As a special case, if an input network is for a weighted bipartite matching that
+contains negative weights, this function works without Bellman-Ford."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) flow)
+           ((integer 0 #.most-positive-fixnum) flow src-idx dest-idx)
            ((simple-array list (*)) graph))
-  (macrolet ((the-cost-type (form)
-               (reduce (lambda (x y) `(,(car form) (the cost-type ,x) (the cost-type ,y)))
-		       (cdr form))))
-    (let* ((size (length graph))
-           (edge-count (or edge-count (* size 2)))
-           (prev-vertices (make-array size :element-type 'fixnum :initial-element 0))
-           (prev-edges (locally
-                           (declare (sb-ext:muffle-conditions style-warning))
-                         (make-array size :element-type 'cedge)))
-           (potential (make-array size :element-type 'cost-type :initial-element 0))
-           (dists (make-array size :element-type 'cost-type))
-           (pqueue (make-heap edge-count))
-           (res 0))
-      (declare (fixnum edge-count)
-               (cost-type res))
-      ;; FIXME: Actually we must do Bellman-Ford here to handle negative edges
-      ;; properly. Currently this function returns a correct result also for a
-      ;; graph that contains negative edges, if no negative **cycles** are
-      ;; contained. In this case, however, the worst-case time complexity is
-      ;; exponential. As a special case, if an input network is for a weighted
-      ;; bipartite matching that contains negative weights, this function
-      ;; completely works without any problems.
+  (let* ((size (length graph))
+         (edge-count (or edge-count (* size 2)))
+         (prev-vertices (make-array size :element-type 'fixnum :initial-element 0))
+         (prev-edges (locally
+                         (declare (sb-ext:muffle-conditions style-warning))
+                       (make-array size :element-type 'cedge)))
+         (potential (make-array size :element-type 'cost-type :initial-element 0))
+         (dists (make-array size :element-type 'cost-type))
+         (pqueue (make-heap edge-count))
+         (res 0))
+    (declare (fixnum edge-count)
+             (cost-type res))
+    (labels ((update-potential ()
+               (when (= (aref dists dest-idx) +inf-cost+)
+                 (if if-overflow
+                     (error 'not-enough-capacity-error :flow flow :graph graph :score res)
+                     (return-from min-cost-flow! res)))
+               (dotimes (v size)
+                 (setf (aref potential v)
+                       (min +inf-cost+ (+ (aref potential v) (aref dists v)))))))
+      (when bellman-ford
+        (fill dists +inf-cost+)
+        (setf (aref dists src-idx) 0)
+        (dotimes (_ (- size 1))
+          (dotimes (v size)
+            (let ((dist (aref dists v)))
+              (when (< dist +inf-cost+)
+                (dolist (cedge (aref graph v))
+                  (when (> (cedge-capacity cedge) 0)
+                    (let ((to (cedge-to cedge)))
+                      (setf (aref dists to)
+                            (min (aref dists to) (+ dist (cedge-cost cedge)))))))))))
+        (update-potential))
       (loop (when (<= flow 0)
-              (return))
+              (return-from min-cost-flow! res))
             (fill dists +inf-cost+)
             (setf (aref dists src-idx) 0)
             (heap-reinitialize pqueue)
@@ -132,16 +157,9 @@ IF-OVERFLOW := :error | nil"
                                      (aref prev-vertices next-v) v
                                      (aref prev-edges next-v) edge)
                                (heap-push next-cost next-v pqueue)))))))
-            (when (= (aref dists dest-idx) +inf-cost+)
-              (if if-overflow
-                  (error 'not-enough-capacity-error :flow flow :graph graph :score res)
-                  (return)))
+            (update-potential)
             (let ((max-flow flow))
-              (declare (fixnum max-flow))
-              (dotimes (v size)
-                (setf (aref potential v)
-                      (min +inf-cost+
-                           (+ (aref potential v) (aref dists v)))))
+              (declare ((integer 0 #.most-positive-fixnum) max-flow))
               (do ((v dest-idx (aref prev-vertices v)))
                   ((= v src-idx))
                 (setq max-flow (min max-flow (cedge-capacity (aref prev-edges v)))))
@@ -150,5 +168,5 @@ IF-OVERFLOW := :error | nil"
               (do ((v dest-idx (aref prev-vertices v)))
                   ((= v src-idx))
                 (decf (cedge-capacity (aref prev-edges v)) max-flow)
-                (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow))))
-      res)))
+                (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow)))))
+    (error "Reached unreachable line")))

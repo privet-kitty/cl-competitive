@@ -24,4 +24,17 @@
   (let ((graph (make-graph)))
     (signals not-enough-capacity-error (min-cost-flow! graph 0 4 90)))
   (let ((graph (make-graph)))
-    (is (= 102 (min-cost-flow! graph 0 4 11 :if-overflow nil)))))
+    (is (= 102 (min-cost-flow! graph 0 4 11 :if-overflow nil))))
+
+  (let ((graph (make-graph)))
+    (is (= 80 (min-cost-flow! graph 0 4 9 :bellman-ford t)))
+    (is (= 0 (min-cost-flow! graph 0 4 0 :bellman-ford t))))
+  (let ((graph (make-graph)))
+    (is (= 102 (min-cost-flow! graph 0 4 11 :bellman-ford t))))
+  (let ((graph (make-graph)))
+    (signals not-enough-capacity-error (min-cost-flow! graph 0 4 90 :bellman-ford t)))
+  (let ((graph (make-graph)))
+    (is (= 102 (min-cost-flow! graph 0 4 11 :if-overflow nil :bellman-ford t)))))
+
+(let ((graph (make-graph)))
+  (min-cost-flow! graph 0 4 90 :bellman-ford t))
