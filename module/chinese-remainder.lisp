@@ -33,7 +33,8 @@
   "Solves x ≡ b1 mod m1, x ≡ b2 mod m2. The returned integer is in [0, LCM(m1,
 m2)). Returns LCM(m1, m2) as the second value.
 
-This function returns (VALUES NIL NIL) when the system is infeasible."
+- This function returns (VALUES NIL NIL) when the system is infeasible.
+- If what you need is a positive solution, just adopt LCM instead of zero."
   (declare (integer b1 b2)
            ((integer 1) mod1 mod2))
   (multiple-value-bind (p q) (%ext-gcd/bignum mod1 mod2)
@@ -52,7 +53,8 @@ This function returns (VALUES NIL NIL) when the system is infeasible."
 [0, LCM(m_1, m_2, ..., m_k)). Returns LCM(m_1, m_2, ..., m_k} as the second
 value.
 
-This function returns (VALUES NIL NIL) when the system is infeasible.
+- This function returns (VALUES NIL NIL) when the system is infeasible.
+- If what you need is a positive solution, just adopt LCM instead of zero.
 
 REMS := vector of integers
 MODULI := vector of positive integers"
