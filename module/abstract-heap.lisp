@@ -16,7 +16,7 @@
 (defmacro define-binary-heap (name &key order (element-type 'fixnum))
   "Defines a binary heap specialized for the given order and the element
 type. This macro defines a structure of the given NAME and relevant functions:
-MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-REINITIALIZE, <NAME>-EMPTY-P,
+MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-CLEAR, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK.
 
 If ORDER is not given, heap for dynamic order is defined instead: -PUSH and -POP
@@ -25,7 +25,7 @@ functions take order as an argument."
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
          (fname-pop (intern (format nil "~A-POP" string-name)))
-         (fname-reinitialize (intern (format nil "~A-REINITIALIZE" string-name)))
+         (fname-clear (intern (format nil "~A-CLEAR" string-name)))
          (fname-empty-p (intern (format nil "~A-EMPTY-P" string-name)))
          (fname-count (intern (format nil "~A-COUNT" string-name)))
          (fname-peek (intern (format nil "~A-PEEK" string-name)))
@@ -102,8 +102,8 @@ functions take order as an argument."
                  (setf (aref data 1) (aref data position))
                  (heapify 1))))))
 
-       (declaim (inline ,fname-reinitialize))
-       (defun ,fname-reinitialize (heap)
+       (declaim (inline ,fname-clear))
+       (defun ,fname-clear (heap)
          "Makes HEAP empty."
          (setf (,acc-position heap) 1)
          heap)
@@ -120,7 +120,8 @@ functions take order as an argument."
 
        (declaim (inline ,fname-peek))
        (defun ,fname-peek (heap)
-         "Returns the topmost element of HEAP."
+         "Returns the topmost element of HEAP. Signals HEAP-EMPTY-ERROR if HEAP
+is empty."
          (if (= 1 (,acc-position heap))
              (error 'heap-empty-error :heap heap)
              (aref (,acc-data heap) 1))))))
