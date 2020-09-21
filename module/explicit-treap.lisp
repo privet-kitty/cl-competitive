@@ -28,25 +28,25 @@
 
 (declaim (inline op))
 (defun op (x y)
-  "Is the operator comprising a monoid"
+  "Is the operator comprising a monoid."
   (min x y))
 
 (defconstant +op-identity+ most-positive-fixnum
   "identity element w.r.t. OP")
 
 (declaim (inline updater-op))
-(defun updater-op (a b)
+(defun updater-op (lazy x)
   "Is the operator to compute and update LAZY value."
-  (+ a b))
+  (+ lazy x))
 
 (defconstant +updater-identity+ 0
   "identity element w.r.t. UPDATER-OP")
 
 ;; FIXME: Should the left and right end of the target interval be included?
 (declaim (inline modifier-op))
-(defun modifier-op (a b)
+(defun modifier-op (acc lazy)
   "Is the operator to update ACCUMULATOR based on LAZY value."
-  (+ a b))
+  (+ acc lazy))
 
 (defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy))
                   (:copier nil)
@@ -228,8 +228,8 @@ CL:CONCATENATE."
 unmodified TREAP If KEY doesn't exist. You cannot rely on the side effect. Use
 the returned value.
 
- (Note that this function deletes at most one node even if duplicate keys
-exist.)"
+ (Note that this function deletes only a node even if duplicate keys are
+ contained.)"
   (declare ((or null treap) treap)
            (function order))
   (when treap
@@ -304,13 +304,12 @@ in ascending order, and executes BODY."
         finally (return res)))
 
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
-;; TODO: take a sorted list as the argument
 (declaim (inline make-treap))
 (defun make-treap (size key-function &optional value-function)
   "Makes a treap in O(n) time using each key returned by (KEY-FUNCTION
 <index>). Note that this function doesn't check if the keys are really sorted
-w.r.t. your intended order. The values are filled with VALUE-FUNCTION in the
-same way. If it is not given, the identity element is used."
+w.r.t. your intended order. The values are filled by VALUE-FUNCTION in the same
+way. If it is not given, the identity element is used."
   (declare ((integer 0 #.most-positive-fixnum) size)
            (function key-function)
            ((or null function) value-function))
@@ -347,7 +346,7 @@ same way. If it is not given, the identity element is used."
     (build 0 size)))
 
 (defun treap-fold (treap &key left right (order #'<))
-  "Queries the sum of the half-open interval specified by the keys: [LEFT,
+  "Returns the sum (w.r.t. OP) of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
   (declare (function order))
   (labels ((recur (treap l r)
@@ -398,6 +397,8 @@ infinity."
 
 (declaim (inline treap-ref))
 (defun treap-ref (treap key &key (order #'<))
+  "Returns the value that is assigned to KEY if it exists. Otherwise returns
+NIL."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
              (when treap
@@ -425,6 +426,7 @@ infinity."
     (recur treap)))
 
 (defun treap-first (treap)
+  "Returns the leftmost key of TREAP."
   (declare (optimize (speed 3))
            (treap treap))
   (if (%treap-left treap)
@@ -432,6 +434,7 @@ infinity."
       (%treap-key treap)))
 
 (defun treap-last (treap)
+  "Returns the rightmost key of TREAP."
   (declare (optimize (speed 3))
            (treap treap))
   (if (%treap-right treap)
@@ -543,8 +546,7 @@ key>], ...) must be monotone w.r.t. ORDER.
                                     (setq sum (op sum (%treap-value treap)))
                                     value))
                       (%treap-key treap))
-                     (t
-                      (recur (%treap-right treap) sum)))
+                     (t (recur (%treap-right treap) sum)))
              (force-up treap)))))
     (recur treap +op-identity+)))
 
@@ -566,7 +568,6 @@ key>], ...) must be monotone w.r.t. ORDER.
                                     (setq sum (op (%treap-value treap) sum))
                                     value))
                       (%treap-key treap))
-                     (t
-                      (recur (%treap-left treap) sum)))
+                     (t (recur (%treap-left treap) sum)))
              (force-up treap)))))
     (recur treap +op-identity+)))
