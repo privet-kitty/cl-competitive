@@ -58,7 +58,6 @@ MINFACTOR-TABLE := vector (MINFACTOR-TABLE[k] is the minimal prime factor of k)"
                                (loop-finish)))
                       finally (return (cons prime exponent)))))
 
-
 (declaim (inline euler-phi))
 (defun euler-phi (x minfactor-table)
   (declare (fixnum x)

@@ -3,7 +3,7 @@
   (:export #:dict<))
 (in-package :cp/dictionary-order)
 
-;; from UIOP:LEXICOGRAPHIC<
+;; based on UIOP:LEXICOGRAPHIC<
 (declaim (inline dict<))
 (defun dict< (element< x y)
   "Lexicographically compare two sequences using the function element< to

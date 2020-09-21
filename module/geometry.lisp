@@ -1,6 +1,6 @@
 ;;;
 ;;; Utilities for 2D geometry
-;;; (better to use complex-geometry.lisp)
+;;; (You'd better use cp/complex-geometry)
 ;;;
 
 (defpackage :cp/geometry

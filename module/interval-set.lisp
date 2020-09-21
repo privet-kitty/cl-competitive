@@ -4,7 +4,7 @@
 
 (defpackage :cp/interval-set
   (:use :cl)
-  (:export #:interval-set #:interval-set-p #:iset-map #:iset-find #:iset-right-next
+  (:export #:interval-set #:interval-set-p #:iset-map #:iset-find #:iset-find>=
            #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point))
 (in-package :cp/interval-set)
 
@@ -16,11 +16,11 @@
                          (:conc-name %iset-)
                          (:copier nil))
   "This structure maintains an ordered set of half-open intervals with a
-balanced binary search tree (treap). Every fundamental operation takes expected
-O(log(n)) time.
+balanced binary search tree (aka treap). Every fundamental operation takes
+expected O(log(n)) time.
 
 NOTE: For every destructive operation, you cannot rely on a side effect but have
-to use a returned value. (i.e. same as destructive operations to list)
+to use a returned value. (i.e. same as destructive operations to cons)
 "
   (lkey 0 :type fixnum)
   (rkey 0 :type fixnum)
@@ -231,10 +231,10 @@ returns (VALUES NIL NIL)."
     (recur iset)))
 
 (declaim (ftype (function * (values (or null fixnum) (or null fixnum) &optional))
-                iset-right-next))
-(defun iset-right-next (iset key)
+                iset-find>=))
+(defun iset-find>= (iset key)
   "Returns the nearest half-open interval that contains KEY or is located on the
-right of it."
+larger side of it. Returns (VALUES NIL NIL) if neither exists."
   (declare (optimize (speed 3))
            (fixnum key))
   (labels ((recur (node)
