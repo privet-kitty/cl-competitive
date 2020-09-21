@@ -11,13 +11,15 @@
   (is (equalp (make-divisors-table 0) #())))
 
 (test enum-ascending-divisors
-  (loop for x from 1 to 1000
-        do (is (equalp (loop for y from 1 to x
-                             when (zerop (mod x y))
-                             collect y)
-                       (enum-ascending-divisors x)))))
+  (finishes
+    (loop for x from 1 to 1000
+          do (assert (equalp (loop for y from 1 to x
+                                   when (zerop (mod x y))
+                                   collect y)
+                             (enum-ascending-divisors x))))))
 
 (test enum-divisors
-  (loop for x from 1 to 1000
-        do (is (set-equal (enum-ascending-divisors x)
-                          (enum-divisors x)))))
+  (finishes
+    (loop for x from 1 to 1000
+          do (assert (set-equal (enum-ascending-divisors x)
+                                (enum-divisors x))))))
