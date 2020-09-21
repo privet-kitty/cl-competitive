@@ -289,8 +289,8 @@ take two arguments: KEY and VALUE."
                  object))))
 
 (defmacro do-treap ((key-var value-var treap &optional result) &body body)
-  "Successively binds the keys and the values of INODE[0], ..., INODE[SIZE-1] to
-KEY-VAR and VALUE-VAR and executes BODY."
+  "Successively binds the keys and the values of TREAP to KEY-VAR and VALUE-VAR
+in ascending order, and executes BODY."
   `(block nil
      (treap-map (lambda (,key-var ,value-var) ,@body) ,treap)
      ,result))
@@ -306,11 +306,14 @@ KEY-VAR and VALUE-VAR and executes BODY."
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
 ;; TODO: take a sorted list as the argument
 (declaim (inline make-treap))
-(defun make-treap (sorted-vector)
-  "Makes a treap using each key of SORTED-VECTOR in O(n) time. Note that this
-function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
-intended order. The values are filled with the identity element."
-  (declare (vector sorted-vector))
+(defun make-treap (size key-function &optional value-function)
+  "Makes a treap in O(n) time using each key returned by (KEY-FUNCTION
+<index>). Note that this function doesn't check if the keys are really sorted
+w.r.t. your intended order. The values are filled with VALUE-FUNCTION in the
+same way. If it is not given, the identity element is used."
+  (declare ((integer 0 #.most-positive-fixnum) size)
+           (function key-function)
+           ((or null function) value-function))
   (labels ((heapify (top)
              (when top
                (let ((prioritized-node top))
@@ -331,14 +334,16 @@ intended order. The values are filled with the identity element."
              (if (= l r)
                  nil
                  (let* ((mid (ash (+ l r) -1))
-                        (node (%make-treap (aref sorted-vector mid)
+                        (node (%make-treap (funcall key-function mid)
                                            (random most-positive-fixnum)
-                                           +op-identity+)))
+                                           (if value-function
+                                               (funcall value-function mid)
+                                               +op-identity+))))
                    (setf (%treap-left node) (build l mid))
                    (setf (%treap-right node) (build (+ mid 1) r))
                    (heapify node)
                    node))))
-    (build 0 (length sorted-vector))))
+    (build 0 size)))
 
 (defun treap-fold (treap &key left right (order #'<))
   "Queries the sum of the half-open interval specified by the keys: [LEFT,
@@ -364,8 +369,9 @@ RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
 
 (declaim (inline treap-update))
 (defun treap-update (treap x &key left right (order #'<))
-  "Updates TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r). L and/or R can
-be NIL, then it is regarded as the (negative or positive) infinity."
+  "Updates TREAP by TREAP[KEY] := (OP TREAP[KEY] X) for all KEY in [l, r). L
+and/or R can be NIL, then it is regarded as the (negative or positive)
+infinity."
   (assert (not (and left right (funcall order right left))))
   (labels ((recur (treap l r)
              (when treap
@@ -432,7 +438,7 @@ be NIL, then it is regarded as the (negative or positive) infinity."
       (%treap-key treap)))
 
 ;;;
-;;; Binary search w.r.t. key
+;;; Binary search by key
 ;;;
 
 ;; NOTE: These functions intentionally don't return the assigned value. That is

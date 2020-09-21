@@ -196,7 +196,7 @@ identity element unless INITIAL-CONTENTS are supplied."
                    (invalid-itreap-index-error-itreap condition)))))))
 
 (defun itreap-split (itreap index)
-  "Destructively splits the ITREAP into two nodes [0, INDEX) and [INDEX, N),
+  "Destructively splits ITREAP into two nodes [0, INDEX) and [INDEX, N),
 where N is the number of the elements in ITREAP."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index))
