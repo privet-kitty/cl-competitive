@@ -38,12 +38,6 @@
         finally (return vector)))
 
 ;; Example: count inversions in a sequence
-(declaim (inline make-inverse-table))
-(defun make-inverse-table (vector &key (test #'eql))
-  (let ((table (make-hash-table :test test :size (length vector))))
-    (dotimes (i (length vector) table)
-      (setf (gethash (aref vector i) table) i))))
-
 (declaim (inline make-inverse-lookup-table))
 (defun make-inverse-lookup-table (vector &key (test #'eql))
   "Assigns each value of the (usually sorted) VECTOR of length n to the integers
