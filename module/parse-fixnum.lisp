@@ -1,3 +1,9 @@
+;; OBSOLETE
+(defpackage :cp/parse-fixnum
+  (:use :cl)
+  (:export #:parse-fixnum))
+(in-package :cp/parse-fixnum)
+
 (defun parse-fixnum (simple-base-string &key (start 0) end)
   "Is a variant of SBCL(x64)'s PARSE-INTEGER, specialized for FIXNUM."
   (declare (optimize (speed 3)))

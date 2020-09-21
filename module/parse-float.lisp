@@ -1,3 +1,4 @@
+;; OBSOLETE
 (defpackage :cp/parse-float
   (:use :cl)
   (:export #:parse-double-float))

@@ -1,3 +1,4 @@
+;; OBSOLETE
 (defpackage :cp/parse-bignum
   (:use :cl)
   (:export #:parse-bignum))
