@@ -342,6 +342,7 @@ same way. If it is not given, the identity element is used."
                    (setf (%treap-left node) (build l mid))
                    (setf (%treap-right node) (build (+ mid 1) r))
                    (heapify node)
+                   (force-up node)
                    node))))
     (build 0 size)))
 
