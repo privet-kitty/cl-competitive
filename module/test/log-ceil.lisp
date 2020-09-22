@@ -56,3 +56,13 @@
                      always (and (>= (expt base log) x)
                                  (or (zerop log)
                                      (< (expt base (- log 1)) x)))))))
+
+
+(test log-ceil/random
+  (let ((*num-trials* 1000))
+    (for-all ((base (gen-integer :min 2))
+              (x (gen-integer :min 1)))
+      (let ((log (log-ceil x base)))
+        (is (and (>= (expt base log) x)
+                 (or (zerop log)
+                     (< (expt base (- log 1)) x))))))))
