@@ -5,7 +5,7 @@
 
 (declaim (inline log2-ceil))
 (defun log2-ceil (x)
-  "Rounds up log2(x). Special case: (log2-ceil 0) |-> 0"
+  "Rounds up log2(x). Special case: (log2-ceil 0) = 0"
   (let ((ceil (ceiling x)))
     (declare ((integer 0) ceil))
     (integer-length (- ceil 1))))

@@ -32,8 +32,6 @@
   (loop for i from l below r
         do (setf (aref vector i) 0)))
 
-(defparameter *state* (sb-ext:seed-random-state 123))
-
 (test interval-set/manual
   (let (iset)
     (iset-push iset 3 5)
@@ -44,20 +42,21 @@
     (is (equal '(nil nil) (multiple-value-list (iset-find>= iset 8))))))
 
 (test interval-set/random
-  (finishes
-    (loop for len from 1 to 500
-          for vector = (make-array len :element-type 'bit :initial-element 0)
-          for iset = nil
-          do (dotimes (_ 500)
-               (let ((l (random (+ 1 len) *state*))
-                     (r (random (+ 1 len) *state*)))
-                 (when (> l r) (rotatef l r))
-                 (if (zerop (random 2))
-                     (progn
-                       (add-interval vector l r)
-                       (iset-push iset l r))
-                     (progn
-                       (delete-interval vector l r)
-                       (iset-pop iset l r)))
-                 (assert (equal (to-interval-list iset)
-                                (to-interval-list vector))))))))
+  (let ((state (sb-ext:seed-random-state 123)))
+    (finishes
+      (loop for len from 1 to 500
+            for vector = (make-array len :element-type 'bit :initial-element 0)
+            for iset = nil
+            do (dotimes (_ 500)
+                 (let ((l (random (+ 1 len) state))
+                       (r (random (+ 1 len) state)))
+                   (when (> l r) (rotatef l r))
+                   (if (zerop (random 2))
+                       (progn
+                         (add-interval vector l r)
+                         (iset-push iset l r))
+                       (progn
+                         (delete-interval vector l r)
+                         (iset-pop iset l r)))
+                   (assert (equal (to-interval-list iset)
+                                  (to-interval-list vector)))))))))
