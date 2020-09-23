@@ -168,5 +168,4 @@ contains negative weights, this function works without Bellman-Ford."
               (do ((v dest-idx (aref prev-vertices v)))
                   ((= v src-idx))
                 (decf (cedge-capacity (aref prev-edges v)) max-flow)
-                (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow)))))
-    (error "Reached unreachable line")))
+                (incf (cedge-capacity (cedge-reversed (aref prev-edges v))) max-flow)))))))
