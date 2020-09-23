@@ -15,6 +15,8 @@
     (is (= 6 (deque-pop-front deque)))
     (is (= 8 (deque-pop-back deque)))
     (is (= 7 (deque-pop-back deque)))
+    (signals deque-empty-error (deque-peek-front deque))
+    (signals deque-empty-error (deque-peek-back deque))
     (signals deque-empty-error (deque-pop-front deque))
     (signals deque-empty-error (deque-pop-back deque))))
 
