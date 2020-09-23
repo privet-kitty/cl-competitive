@@ -14,9 +14,9 @@
 
 (declaim (inline calc-window-opt))
 (defun calc-window-opt (vector width order)
-  "Computes all the minima (or maxima) of the subsequences of the given width,
-VECTOR[i, i+WIDTH), in O(n). Returns a vector, whose i-th element is the
-minimum (or maximum) of the subsequence beginning with the index i.
+  "Computes the minima (or maxima) of all the subarray of the given
+width (VECTOR[i, i+WIDTH)) in O(n). Returns a vector, whose i-th element is the
+minimum (or maximum) of the array beginning with the index i.
 
 ORDER := strict order (#'< corresponds to slide min. and #'> to slide max.)"
   (declare (vector vector)

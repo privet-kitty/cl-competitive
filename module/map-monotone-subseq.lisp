@@ -8,12 +8,11 @@
 ;; TODO: integrate these two functions
 (declaim (inline map-monotone-subseq))
 (defun map-monotone-subseq (function vector order)
-  "Applies FUNCTION to each monotone subsequence (or substring, strictly
-speaking) of VECTOR. FUNCTION must take two arguments, L and R, where the
-interval [L, R) corresponds to a monotone subsequence.
+  "Applies FUNCTION to each monotone subarray of VECTOR. FUNCTION must take two
+arguments, L and R, where an interval [L, R) corresponds to a monotone subarray.
 
-SEQ[l, r) is monotone iff (FUNCALL ORDER SEQ[i] SEQ[i+1]) always returns
-true in this range."
+Definition: SEQ[l, r) is monotone iff (FUNCALL ORDER SEQ[i] SEQ[i+1]) always
+returns true in this range."
   (declare (vector vector)
            (function function order))
   (unless (zerop (length vector))
@@ -26,9 +25,9 @@ true in this range."
 
 (declaim (inline map-altering-monotone-subseq))
 (defun map-altering-monotone-subseq (function vector order)
-  "Alternately applies FUNCTION to each increasing subsequence and decreasing
+  "Alternately applies FUNCTION to each increasing subarray and decreasing
 one (if ORDER is #'<, for example). FUNCTION must take two arguments, L and R,
-where the **closed** interval [L, R] corresponds to a monotone subsequence.
+where a **closed** interval [L, R] corresponds to a monotone subarray.
 
 `Decreasing and then increasing' can also be realized by passing a descending
 order (e.g. #'>) to ORDER. Non-decreasing (#'<=) and non-increasing (#'>=) are

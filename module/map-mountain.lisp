@@ -6,10 +6,10 @@
 ;; not tested
 
 ;; NOTE: Use MAP-ALTERING-MONOTONE-SUBSEQ instead to deal with non-decreasing or
-;; non-increasing subsequence.
+;; non-increasing subarray.
 (declaim (inline map-mountain))
 (defun map-mountain (function vector &key (order #'<))
-  "Applies FUNCTION to each `increasing and then decreasing' subsequence of
+  "Applies FUNCTION to each `increasing and then decreasing' subarray of
 VECTOR. FUNCTION must take three arguments: index of left end, index of summit,
 index of right end.
 
