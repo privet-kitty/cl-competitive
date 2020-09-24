@@ -4,6 +4,8 @@
            #:lagrange-interpolation))
 (in-package :cp/lagrange-interpolation)
 
+;; NOTE & TODO: not optimized
+
 (defun calc-lagrange-base (args values modulus &key (element-type '(unsigned-byte 31)))
   "Returns a vector of coefficients of lagrange base: vector[k] is equal to the
 coefficient of (x-a_1)(x-a_2)...(x-a_n)/(x-a_k). Let f(x) is a polynomial what
