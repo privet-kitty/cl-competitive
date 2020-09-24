@@ -70,5 +70,5 @@ submission."
                  (let ((symbol (find-symbol "*URL*" :cl-user)))
                    (if (and symbol (boundp symbol))
                        (symbol-value symbol)
-                       (error "Don't know to which URL to do submission"))))))
+                       (error "Don't know to which URL to login"))))))
     (run-program "oj" `("login" ,url) :output *standard-output* :search t)))
