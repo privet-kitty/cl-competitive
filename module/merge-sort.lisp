@@ -9,7 +9,7 @@
 
 (declaim (inline %merge))
 (defun %merge (l mid r source-vec dest-vec order key)
-  (declare ((integer 0 #.array-total-size-limit) l mid r)
+  (declare ((mod #.array-total-size-limit) l mid r)
            (function order key))
   (loop with pos1 = l
         with pos2 = mid
@@ -37,7 +37,7 @@
 (declaim (inline %insertion-sort!))
 (defun %insertion-sort! (vector order l r key)
   (declare (function order key)
-           ((integer 0 #.array-total-size-limit) l r))
+           ((mod #.array-total-size-limit) l r))
   (loop for end from (+ l 1) below r
         do (loop for i from end above l
                  while (funcall order
@@ -62,7 +62,7 @@ ORDER := strict order"
   (let* ((end (or end (length vector)))
          ;; TODO: avoid to allocate excessive size
          (buffer (make-array end :element-type (array-element-type vector))))
-    (declare ((integer 0 #.array-total-size-limit) start end))
+    (declare ((mod #.array-total-size-limit) start end))
     (labels ((recur (l r merge-to-vector-p)
                (declare ((mod #.array-total-size-limit) l r))
                (if (and (<= (- r l) 32) merge-to-vector-p)
