@@ -4,16 +4,17 @@
     #+swank '(optimize (speed 3) (safety 2))
     #-swank '(optimize (speed 3) (safety 0) (debug 0))
     #'equal)
-  #+swank (ql:quickload '(:cl-debug-print :fiveam) :silent t)
+  #+swank (ql:quickload '(:cl-debug-print :fiveam :cp/tools) :silent t)
+  #+swank (use-package :cp/tools :cl-user)
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
-(macrolet ((def-int (b)
+(macrolet ((def (b)
              `(progn (deftype ,(intern (format nil "UINT~A" b)) () '(unsigned-byte ,b))
                      (deftype ,(intern (format nil "INT~A" b)) () '(signed-byte ,b))))
-           (defs (&rest bits) `(progn ,@(mapcar (lambda (b) `(def-int ,b)) bits))))
-  (defs 2 4 7 8 15 16 31 32 62 63 64))
+           (define-int-types (&rest bits) `(progn ,@(mapcar (lambda (b) `(def ,b)) bits))))
+  (define-int-types 2 4 7 8 15 16 31 32 62 63 64))
 
 (defconstant +mod+ 1000000007)
 
@@ -46,35 +47,10 @@
 ;;;
 
 #+swank
-(defun get-clipbrd ()
-  (with-output-to-string (out)
-    #+os-windows (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)
-    #+os-unix (run-program "xsel" '("-b" "-o") :output out :search t)))
-
-#+swank (defparameter *this-pathname* (uiop:current-lisp-file-pathname))
-#+swank (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *this-pathname*))
-
-#+swank
-(defun run (&optional thing (out *standard-output*))
-  "THING := null | string | symbol | pathname
-
-null: run #'MAIN using the text on clipboard as input.
-string: run #'MAIN using the string as input.
-symbol: alias of FIVEAM:RUN!.
-pathname: run #'MAIN using the text file as input."
-  (let* ((*standard-output* (or out (make-string-output-stream)))
-         (res (etypecase thing
-                (null
-                 (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
-                   (main)))
-                (string
-                 (with-input-from-string (*standard-input* (delete #\Return thing))
-                   (main)))
-                (symbol (5am:run! thing))
-                (pathname
-                 (with-open-file (*standard-input* thing)
-                   (main))))))
-    (if out res (get-output-stream-string *standard-output*))))
+(progn
+  (defparameter *this-pathname* (uiop:current-lisp-file-pathname))
+  (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *this-pathname*))
+  (defparameter *url* "PROBLEM_URL_TO_BE_REPLACED"))
 
 #+swank
 (defun gen-dat ()
