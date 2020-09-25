@@ -86,6 +86,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bounded-partition-number.lisp) partition number with upper-bound
 - [dynamic-mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dynamic-mod-operations.lisp) addition/multiplication with dynamic modulus
 - [mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-operations.lisp) addition/multiplication with static modulus
+- [lagrange-interpolation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lagrange-interpolation.lisp) Lagrange interpolation
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eratosthenes.lisp) enumeration of primes; prime factorization
 - [ext-eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ext-eratosthenes.lisp) faster prime factorization than naive trial division
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors
