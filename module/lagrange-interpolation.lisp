@@ -32,7 +32,9 @@ MODULUS must be coprime with any integers that appear in computation."
 
 (defun lagrange-interpolation (args values modulus &key (element-type '(unsigned-byte 31)))
   "Does polynomial interpolation and returns a vector of coefficients: vector[k]
-:= coefficient of x^k."
+:= coefficient of x^k. ARGS may not have duplicate values."
+  (declare (vector args values)
+           ((integer 1 #.most-positive-fixnum) modulus))
   (let* ((n (length values))
          (base (calc-lagrange-base args values modulus :element-type element-type))
          (dp (make-array (list (+ n 1) n) :element-type element-type :initial-element 0))
@@ -40,9 +42,6 @@ MODULUS must be coprime with any integers that appear in computation."
          (tmp (make-array n :element-type element-type :initial-element 0)))
     (when (zerop n)
       (return-from lagrange-interpolation result))
-    ;; KLUDGE: this kind of error should be signalled in MOD-INVERSE.
-    (dotimes (i n)
-      (assert (= 1 (gcd modulus (aref args i)))))
     (setf (aref dp 0 0) 1)
     (loop for i from 1 to n
           for arg = (aref args (- i 1))
@@ -54,18 +53,24 @@ MODULUS must be coprime with any integers that appear in computation."
                                     (mod (* arg (aref dp (- i 1) j)) modulus))
                                  modulus))))
     (dotimes (k n)
-      (let* ((arg (aref args k))
-             (/arg (mod-inverse arg modulus)))
-        (setf (aref tmp 0) (mod (* (aref dp n 0) (- /arg)) modulus))
-        (loop for j from 1 below n
-              do (setf (aref tmp j)
-                       (mod (* (mod (- (aref tmp (- j 1)) (aref dp n j)) modulus)
-                               /arg)
-                            modulus)))
+      (let* ((arg (aref args k)))
+        (declare (fixnum arg))
+        (if (zerop arg)
+            ;; special treatment to avoid division by zero
+            (loop for j from 0 below (- n 1)
+                  do (setf (aref tmp j) (aref dp n (+ j 1)))
+                  finally (setf (aref tmp (- n 1)) 1))
+            (let ((/arg (mod-inverse arg modulus)))
+              (setf (aref tmp 0) (mod (* (aref dp n 0) (- /arg)) modulus))
+              (loop for j from 1 below n
+                    do (setf (aref tmp j)
+                             (mod (* (mod (- (aref tmp (- j 1)) (aref dp n j)) modulus)
+                                     /arg)
+                                  modulus)))))
         (let ((coef (aref base k)))
-          (dotimes (i n)
-            (setf (aref result i)
-                  (mod (+ (aref result i)
-                          (mod (* coef (aref tmp i)) modulus))
+          (dotimes (j n)
+            (setf (aref result j)
+                  (mod (+ (aref result j)
+                          (mod (* coef (aref tmp j)) modulus))
                        modulus))))))
     result))

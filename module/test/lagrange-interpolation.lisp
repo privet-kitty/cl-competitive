@@ -14,10 +14,18 @@
   (is (equalp #(0 0 0) (calc-lagrange-base #(1 2 3) #(20 22 32) 1))))
 
 (test lagrange-interpolation
-  (is (equalp #(26 999999997 4)
-              (lagrange-interpolation #(1 2 3) #(20 22 32) +mod+)))
-  (is (equalp #(26 999999997 4 0)
-              (lagrange-interpolation #(1 2 3 -1) #(20 22 32 40) +mod+)))
+  (let ((args #(1 2 3))
+        (values #(20 22 32)))
+    (is (equalp #(26 999999997 4) (lagrange-interpolation args values +mod+)))
+    (is (equalp args #(1 2 3)))
+    (is (equalp values #(20 22 32))))
+  (let ((args #(1 0 2 3))
+        (values #(20 26 22 32)))
+    (is (equalp #(26 999999997 4 0) (lagrange-interpolation args values +mod+)))
+    (is (equalp args #(1 0 2 3)))
+    (is (equalp values #(20 26 22 32))))
+  (is (equalp #(0) (lagrange-interpolation #(0) #(0) +mod+)))
+  (is (equalp #(1000000003 2) (lagrange-interpolation #(0 2) #(-4 0) +mod+)))
   (is (equalp #() (lagrange-interpolation #() #() +mod+)))
   (is (equalp #(20) (lagrange-interpolation #(1234) #(20) +mod+)))
   ;; mod 1
