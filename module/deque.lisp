@@ -28,14 +28,13 @@
              (deque-invalid-index-error-index condition)
              (deque-invalid-index-error-queue condition)))))
 
-;; TODO: detailed documentation
 (defmacro define-deque (name &key (element-type 'fixnum))
   "Defines deque for given ELEMENT-TYPE.
 
 constructor: MAKE-<NAME>.
 basic operations: <NAME>-PUSH-FRONT, <NAME>-PUSH-BACK, <NAME>-POP-FRONT,
 <NAME>-POP-BACK.
-accessor: <NAME>-REF.
+accessor: <NAME>-REF. <NAME>-PEEK-FRONT, <NAME>-PEEK-BACK
 utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 "
   (let ((push-front (intern (format nil "~A-PUSH-FRONT" name)))
@@ -67,7 +66,8 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
                        ,constructor))
 
        (defun ,adjuster (,name)
-         ;; FIXME: change safety to zero when you believe this library is stable
+         ;; FIXME: Change the safety to zero when you believe this library is
+         ;; stable.
          (declare (optimize (speed 3)))
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name))
@@ -83,6 +83,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,push-front))
        (defun ,push-front (obj ,name)
+         "Adds OBJ to the front of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (,adjuster ,name)
@@ -98,6 +99,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,pop-front))
        (defun ,pop-front (,name)
+         "Removes and returns the first element of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (when (zerop count)
@@ -113,6 +115,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,peek-front))
        (defun ,peek-front (,name)
+         "Returns the first element of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (when (zerop count)
@@ -122,6 +125,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,push-back))
        (defun ,push-back (obj ,name)
+         "Adds OBJ to the end of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (,adjuster ,name)
@@ -136,6 +140,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,pop-back))
        (defun ,pop-back (,name)
+         "Removes and returns the last element of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (when (zerop count)
@@ -150,6 +155,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,peek-back))
        (defun ,peek-back (,name)
+         "Returns the last element of deque."
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))
            (when (zerop count)
@@ -163,15 +169,17 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,empty-p))
        (defun ,empty-p (,name)
+         "Returns true iff deque is empty."
          (zerop (,count-getter ,name)))
 
        (declaim (inline ,reinitializer))
        (defun ,reinitializer (,name)
+         "Removes all the element of deque."
          (setf (,count-getter ,name) 0))
 
        (declaim (inline ,reffer))
        (defun ,reffer (,name index)
-         "Returns the INDEX-th element from the top. (0-based)"
+         "Returns the (0-based) INDEX-th element from the front."
          (declare (index index))
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))

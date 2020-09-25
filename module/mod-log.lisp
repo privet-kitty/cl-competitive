@@ -45,7 +45,7 @@ Returns NIL if it is infeasible."
         ;; := gp' and solve x^(k-1) ≡ y'x'^(-1) mod p' instead. See
         ;; https://math.stackexchange.com/questions/131127/ for the detail.
         (if (= x y)
-            ;; This is tha special treatment for the case x ≡ y. Without this
+            ;; This is the special treatment for the case x ≡ y. Without this
             ;; (mod-log 4 0 4) returns not 1 but 2.
             1
             (multiple-value-bind (y-prime rem) (floor y g)

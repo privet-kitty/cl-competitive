@@ -10,9 +10,7 @@
            #:deque-peek-front #:deque-peek-back #:deque-empty-p))
 (in-package :cp/double-stack-deque)
 
-(defstruct (deque (:constructor make-deque
-                      (&optional list
-                       &aux (stack1 list)))
+(defstruct (deque (:constructor make-deque (&optional list &aux (stack1 list)))
                   (:conc-name %deque-)
                   (:copier nil)
                   (:predicate nil))
@@ -27,11 +25,13 @@
 
 (declaim (inline deque-push-front))
 (defun deque-push-front (obj deque)
+  "Adds OBJ to the front of DEQUE."
   (push obj (%deque-stack1 deque))
   deque)
 
 (declaim (inline deque-push-back))
 (defun deque-push-back (obj deque)
+  "Adds OBJ to the end of DEQUE."
   (push obj (%deque-stack2 deque))
   deque)
 
@@ -51,6 +51,7 @@
 
 (declaim (inline deque-pop-front))
 (defun deque-pop-front (deque)
+  "Removes and returns the first element of DEQUE."
   (symbol-macrolet ((stack1 (%deque-stack1 deque))
                     (stack2 (%deque-stack2 deque)))
     (unless stack1
@@ -64,6 +65,7 @@
 
 (declaim (inline deque-pop-back))
 (defun deque-pop-back (deque)
+  "Removes and returns the last element of DEQUE."
   (symbol-macrolet ((stack1 (%deque-stack1 deque))
                     (stack2 (%deque-stack2 deque)))
     (unless stack2
@@ -77,6 +79,7 @@
 
 (declaim (inline deque-peek-front))
 (defun deque-peek-front (deque)
+  "Returns the first element of DEQUE."
   (symbol-macrolet ((stack1 (%deque-stack1 deque))
                     (stack2 (%deque-stack2 deque)))
     (unless stack1
@@ -90,6 +93,7 @@
 
 (declaim (inline deque-peek-back))
 (defun deque-peek-back (deque)
+  "Returns the last element of DEQUE."
   (symbol-macrolet ((stack1 (%deque-stack1 deque))
                     (stack2 (%deque-stack2 deque)))
     (unless stack2
@@ -103,5 +107,6 @@
 
 (declaim (inline deque-empty-p))
 (defun deque-empty-p (deque)
+  "Returns true iff DEQUE is empty."
   (not (or (%deque-stack1 deque)
            (%deque-stack2 deque))))
