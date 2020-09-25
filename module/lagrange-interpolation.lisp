@@ -54,7 +54,7 @@ MODULUS must be coprime with any integers that appear in computation."
            (tmp (make-array n :element-type element-type :initial-element 0)))
       (when (zerop n)
         (return-from lagrange-interpolation result))
-      (setf (aref dp 0 0) 1)
+      (setf (aref dp 0 0) (mod 1 modulus))
       (loop for i from 1 to n
             for arg = (aref args (- i 1))
             do (setf (aref dp i 0)
@@ -71,7 +71,7 @@ MODULUS must be coprime with any integers that appear in computation."
               ;; special treatment to avoid division by zero
               (loop for j from 0 below (- n 1)
                     do (setf (aref tmp j) (aref dp n (+ j 1)))
-                    finally (setf (aref tmp (- n 1)) 1))
+                    finally (setf (aref tmp (- n 1)) (mod 1 modulus)))
               (let ((/arg (mod-inverse arg modulus)))
                 (setf (aref tmp 0) (mod (* (aref dp n 0) (- /arg)) modulus))
                 (loop for j from 1 below n
