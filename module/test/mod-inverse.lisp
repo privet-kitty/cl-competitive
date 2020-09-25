@@ -9,7 +9,8 @@
         do (is (zerop (mod-inverse x 1)))))
 
 (test mod-inverse/random
-  (let ((*num-trials* 1000))
+  (let ((*num-trials* 1000)
+        (*test-dribble* nil))
     (for-all ((a (gen-integer :min 0 :max 1000))
               (m (gen-integer :min 2 :max 1000)))
       (is (or (/= 1 (gcd a m))
