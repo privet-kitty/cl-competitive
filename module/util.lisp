@@ -1,8 +1,11 @@
-(defpackage :cp/tools
+(defpackage :cp/util
   (:use :cl :sb-ext)
   (:import-from :fiveam)
-  (:export #:run #:get-clipbrd #:submit #:sub #:login))
-(in-package :cp/tools)
+  (:export #:run #:get-clipbrd #:submit #:sub #:login #:*lisp-file-pathname* #:*problem-url*))
+(in-package :cp/util)
+
+(defvar *lisp-file-pathname*)
+(defvar *problem-url*)
 
 (defun get-clipbrd ()
   (with-output-to-string (out)
@@ -45,15 +48,13 @@ pathname: run MAIN using the text file as input.
   "Submits PATHNAME to URL. If TEST is true, this function verifies the code
 with (RUN :SAMPLE) before submission."
   (let ((url (or url
-                 (let ((symbol (find-symbol "*URL*" :cl-user)))
-                   (if (and symbol (boundp symbol))
-                       (symbol-value symbol)
-                       (error "Don't know to which URL to do submission")))))
+                 (if (boundp '*problem-url*)
+                     *problem-url*
+                     (error "Don't know to which URL to do submission"))))
         (pathname (or pathname
-                      (let ((symbol (find-symbol "*THIS-PATHNAME*" :cl-user)))
-                        (if (and symbol (boundp symbol))
-                            (symbol-value symbol)
-                            (error "Don't know which file to submit")))))
+                      (if (boundp '*lisp-file-pathname*)
+                          *lisp-file-pathname*
+                          (error "Don't know which file to submit"))))
         (wait 2.5))
     (when (or (not test) (run :sample))
       (format t "Submit in ~A seconds~%" wait)
@@ -68,8 +69,7 @@ with (RUN :SAMPLE) before submission."
 
 (defun login (&optional url)
   (let ((url (or url
-                 (let ((symbol (find-symbol "*URL*" :cl-user)))
-                   (if (and symbol (boundp symbol))
-                       (symbol-value symbol)
-                       (error "Don't know to which URL to login"))))))
+                 (if (boundp '*problem-url*)
+                     *problem-url*
+                     (error "Don't know to which URL to login")))))
     (run-program "oj" `("login" ,url) :output *standard-output* :search t)))

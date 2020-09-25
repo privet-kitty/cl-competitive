@@ -4,8 +4,8 @@
     #+swank '(optimize (speed 3) (safety 2))
     #-swank '(optimize (speed 3) (safety 0) (debug 0))
     #'equal)
-  #+swank (ql:quickload '(:cl-debug-print :fiveam :cp/tools) :silent t)
-  #+swank (use-package :cp/tools :cl-user)
+  #+swank (ql:quickload '(:cl-debug-print :fiveam :cp/util) :silent t)
+  #+swank (use-package :cp/util :cl-user)
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
@@ -48,9 +48,9 @@
 
 #+swank
 (progn
-  (defparameter *this-pathname* (uiop:current-lisp-file-pathname))
-  (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *this-pathname*))
-  (defparameter *url* "PROBLEM_URL_TO_BE_REPLACED"))
+  (defparameter *lisp-file-pathname* (uiop:current-lisp-file-pathname))
+  (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *lisp-file-pathname*))
+  (defparameter *problem-url* "PROBLEM_URL_TO_BE_REPLACED"))
 
 #+swank
 (defun gen-dat ()
