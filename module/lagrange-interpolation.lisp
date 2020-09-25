@@ -27,6 +27,10 @@ MODULUS must be coprime with any integers that appear in computation."
         (dotimes (j n)
           (unless (= i j)
             (setq denom (mod (* denom (- arg (the fixnum (aref args j)))) modulus))))
+        ;; FIXME: this kind of error should be signalled by mod-inverse, though
+        ;; I put it here for now, because it is fairly easy mistake to take.
+        (when (zerop denom)
+          (error 'division-by-zero :operands (list 0 modulus) :operation 'mod-inverse))
         (setf (aref result i)
               (mod (* value (mod-inverse denom modulus)) modulus))))
     result))
