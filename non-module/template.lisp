@@ -63,6 +63,8 @@
 
 #-swank
 (eval-when (:compile-toplevel)
-  (when (and (boundp 'sb-c::*compiler-warning-count*)
-             (> sb-c::*compiler-warning-count* 0))
-    (sb-ext:quit :unix-status 1)))
+  (when (or (> sb-c::*compiler-warning-count* 0)
+            sb-c::*undefined-warnings*)
+    (error "count: ~D, undefined warnings: ~A"
+           sb-c::*compiler-warning-count*
+           sb-c::*undefined-warnings*)))
