@@ -20,15 +20,15 @@
                  do (setf prev (aref seq pos)
                           (aref seq end) (aref seq pos)
                           end (+ 1 end)))
-           ;; This is somewhat crude but I won't fix it for now, as it suffices
-           ;; at least in competitive programming & on SBCL.
            (if (array-has-fill-pointer-p seq)
-               (adjust-array seq end :fill-pointer end)
+               (progn
+                 (setf (fill-pointer seq) end)
+                 seq)
                (adjust-array seq end)))))
     (list
      (let ((tmp seq))
        (loop while (cdr tmp)
              when (funcall test (first tmp) (second tmp))
              do (setf (cdr tmp) (cddr tmp))
-             else do (setq tmp (cdr tmp)))
+             else do (pop tmp))
        seq))))
