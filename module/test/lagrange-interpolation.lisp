@@ -14,6 +14,7 @@
   (is (equalp #(0 0 0) (calc-lagrange-base #(1 2 3) #(20 22 32) 1))))
 
 (test lagrange-interpolation
+  (declare (notinline lagrange-interpolation))
   (let ((args #(1 2 3))
         (values #(20 22 32)))
     (is (equalp #(26 999999997 4) (lagrange-interpolation args values +mod+)))
