@@ -5,9 +5,15 @@
 (in-package :cp/test/polynomial-ntt)
 (in-suite base-suite)
 
-(test polynomial-ntt/manual
+(test poly-inverse/manual
   (signals division-by-zero (poly-inverse #()))
   (signals division-by-zero (poly-inverse #(0 2))))
+
+(test poly-total-prod/manual
+  (let ((polys #(#(998244343 1) #(998244347 1) #(0 1))))
+    (is (equalp #(0 60 998244337 1) (poly-total-prod polys))))
+  (is (equalp #(1) (poly-total-prod #())))
+  (is (equalp #(1) (poly-total-prod #(#(1))))))
 
 (defun make-random-polynomial (degree)
   (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))

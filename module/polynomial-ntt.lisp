@@ -1,6 +1,7 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt)
-  (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add #:multipoint-eval))
+  (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
+           #:multipoint-eval #:poly-total-prod))
 (in-package :cp/polynomial-ntt)
 
 (define-ntt #.+ntt-mod+
@@ -102,6 +103,24 @@
     (let* ((res (poly-sub poly1 (poly-multiply (poly-floor poly1 poly2) poly2)))
            (end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (subseq res 0 end))))
+
+(declaim (ftype (function * (values ntt-vector &optional)) poly-total-prod))
+(defun poly-total-prod (polys)
+  "Returns the total polynomial product: polys[0] * polys[1] * ... * polys[n-1]."
+  (declare (vector polys))
+  (let* ((n (length polys))
+         (dp (make-array n :element-type t)))
+    (declare ((mod #.array-total-size-limit) n))
+    (when (zerop n)
+      (return-from poly-total-prod (make-array 1 :element-type 'ntt-int :initial-element 1)))
+    (replace dp polys)
+    (loop for width of-type (mod #.array-total-size-limit) = 1 then (ash width 1)
+          while (< width n)
+          do (loop for i of-type (mod #.array-total-size-limit) from 0 by (* width 2)
+                   while (< (+ i width) n)
+                   do (setf (aref dp i)
+                            (poly-multiply (aref dp i) (aref dp (+ i width))))))
+    (coerce (aref dp 0) 'ntt-vector)))
 
 (declaim (ftype (function * (values ntt-vector &optional)) multipoint-eval))
 (defun multipoint-eval (poly points)
