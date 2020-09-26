@@ -65,7 +65,8 @@
            ,result)))))
 
 (defun mod-inverse (integer modulus)
-  "Solves ax ≡ 1 mod m. INTEGER and MODULUS must be coprime."
+  "Solves ax ≡ 1 mod m. INTEGER and MODULUS must be coprime. Signals
+DIVISION-BY-ZERO for a non-coprime input when safety >= 1."
   (declare (optimize (speed 3))
            (sb-ext:muffle-conditions sb-ext:compiler-note))
   (mod-inverse integer modulus))
