@@ -3,7 +3,6 @@
   (:export #:mod-inverse))
 (in-package :cp/mod-inverse)
 
-;; TODO: signal DIVISION-BY-ZERO for non-coprime input when safety >= 1
 (declaim (inline mod-inverse)
          (ftype (function * (values (mod #.most-positive-fixnum) &optional)) mod-inverse))
 (defun mod-inverse (a modulus)
