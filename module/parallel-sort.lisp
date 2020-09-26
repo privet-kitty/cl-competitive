@@ -7,9 +7,6 @@
   (:export #:parallel-sort!))
 (in-package :cp/parallel-sort)
 
-;; TODO: throw an error if there are two ore more identical vectors in the given
-;; vectors
-
 (declaim (inline %median3))
 (defun %median3 (x y z order)
   (if (funcall order x y)
@@ -28,7 +25,9 @@
   "Destructively sorts VECTOR w.r.t. ORDER and applies the same permutation to
 all the vectors in VECTORS.
 
-Note: not randomized; shuffle the inputs if necessary"
+- Not randomized; shuffle the inputs if necessary.
+- The consequence is undefined when two or more identical vectors (w.r.t. EQ)
+  are given."
   (declare (vector vector))
   (labels
       ((recur (left right)
