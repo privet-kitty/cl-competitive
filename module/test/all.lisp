@@ -122,4 +122,5 @@
   (:import-from :cp/test/write-double-float)
   (:import-from :cp/test/zeta-integer)
   (:import-from :cp/test/zeta-transform)
-  (:import-from :cp/test/z-algorithm))
+  (:import-from :cp/test/z-algorithm)
+  (:import-from :cp/experimental/test/mod-inverse))
