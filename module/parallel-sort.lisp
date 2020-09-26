@@ -22,8 +22,8 @@
               z))))
 
 (defun parallel-sort! (vector order &rest vectors)
-  "Destructively sorts VECTOR w.r.t. ORDER and applies the same permutation to
-all the vectors in VECTORS.
+  "Destructively sorts VECTOR by ORDER and applies the same permutation to all
+the vectors in VECTORS.
 
 - Not randomized; shuffle the inputs if necessary.
 - The consequence is undefined when two or more identical vectors (w.r.t. EQ)
