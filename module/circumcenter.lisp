@@ -7,7 +7,7 @@
 (declaim (inline calc-circumcenter))
 (defun calc-circumcenter (p1 p2 p3 &optional (eps 1d-8))
   "Returns the center of circumcirlce if it exists, otherwise returns NIL. May
-throw a floating exception if EPS is too small."
+throw a floating point exception if EPS is too small."
   (declare ((real 0) eps))
   (let* ((x1 (realpart p1))
          (y1 (imagpart p1))

@@ -27,8 +27,8 @@
   "Destructively flips the bits in the range [START, END)."
   (declare (optimize (speed 3))
            (simple-bit-vector sb-vector)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
   (setq end (or end (length sb-vector)))
   (assert (<= start end (length sb-vector)))
   (multiple-value-bind (start/64 start%64) (floor start 64)
@@ -63,8 +63,8 @@
   "Counts 1's in the range [START, END)."
   (declare (optimize (speed 3))
            (simple-bit-vector sb-vector)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
   (setq end (or end (length sb-vector)))
   (assert (<= start end (length sb-vector)))
   (multiple-value-bind (start/64 start%64) (floor start 64)
@@ -74,7 +74,7 @@
           (logcount (ldb (byte (- end%64 start%64) start%64)
                          (sb-kernel:%vector-raw-bits sb-vector start/64)))
           (let ((result 0))
-            (declare ((integer 0 #.most-positive-fixnum) result))
+            (declare ((mod #.array-total-size-limit) result))
             (incf result (logcount (ldb (byte (- 64 start%64) start%64)
                                         (sb-kernel:%vector-raw-bits sb-vector start/64))))
             (loop for i from (+ 1 start/64) below end/64
@@ -138,7 +138,7 @@
 ;; TODO: right shift
 (defun bit-lshift (bit-vector delta &optional result-vector end)
   "Left-shifts BIT-VECTOR by DELTA bits and fills the new bits with zero.
-The behaviour is the same as the bit-wise operations in CLHS: The result is
+The behaviour is the same as the bit-wise operations in ANSI CL: The result is
 copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
 is NIL, a new bit-vector of the same length is created. If END is specified,
 this function shifts only the range [0, END) of BIT-VECTOR and copies it to the
@@ -149,8 +149,8 @@ i.e. (bit-lshift #*1011000 2) |-> #*0010110"
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
-           ((integer 0 #.most-positive-fixnum) delta)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) delta)
+           ((or null (mod #.array-total-size-limit)) end))
   (setq result-vector
         (etypecase result-vector
           (null (make-array (length bit-vector) :element-type 'bit :initial-element 0))
@@ -207,7 +207,7 @@ i.e. (bit-lshift #*1011000 2) |-> #*0010110"
 ;; We must implement the right shift beforehand.
 ;; (defun bit-rotate (bit-vector delta &optional result-vector)
 ;;   (declare (optimize (speed 3))
-;;            ((integer 0 #.most-positive-fixnum) delta)
+;;            ((mod #.array-total-size-limit) delta)
 ;;            (simple-bit-vector bit-vector)
 ;;            ((or null simple-bit-vector) result-vector))
 ;;   (assert (not (eql bit-vector result-vector)))

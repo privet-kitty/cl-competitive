@@ -9,7 +9,7 @@
 (declaim (inline calc-lagrange-base))
 (defun calc-lagrange-base (args values modulus &key (element-type '(unsigned-byte 31)))
   "Returns a vector of coefficients of lagrange base: vector[k] is equal to the
-coefficient of (x-a_1)(x-a_2)...(x-a_n)/(x-a_k). Let f(x) is a polynomial what
+coefficient of (x-a_1)(x-a_2)...(x-a_n)/(x-a_k). Let f(x) is the polynomial what
 we want to know. Then it must hold f(ARGS[i]) = VALUES[i] for all i.
 
 MODULUS must be coprime with any integers that appear in computation."
@@ -28,7 +28,7 @@ MODULUS must be coprime with any integers that appear in computation."
           (unless (= i j)
             (setq denom (mod (* denom (- arg (the fixnum (aref args j)))) modulus))))
         ;; FIXME: this kind of error should be signalled by mod-inverse, though
-        ;; I put it here for now, because it is fairly easy mistake to take.
+        ;; I put it here for now, because it is a fairly easy mistake to take.
         (when (zerop denom)
           (error 'division-by-zero :operands (list 0 modulus) :operation 'mod-inverse))
         (setf (aref result i)
