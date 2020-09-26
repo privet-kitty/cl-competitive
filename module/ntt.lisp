@@ -16,7 +16,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (declaim (inline %tzcount))
   (defun %tzcount (x)
-    "Returns the number of trailing zero bits. Note that (%TZCOUNT 0) = -1."
+    "Returns the number of the trailing zero bits. Note that (%TZCOUNT 0) = -1."
     (- (integer-length (logand x (- x))) 1))
   (defun %mod-power (base exp modulus)
     (declare (ntt-int base exp modulus))
@@ -67,8 +67,8 @@
                when ok
                do (return g)))))))
 
-;; KLUDGE: This function depends on SBCL's behaviour. Actually ADJUST-ARRAY
-;; isn't guaranteed to preserve the given VECTOR.
+;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
+;; isn't guaranteed to preserve a given VECTOR in ANSI CL.
 (declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
 (defun %adjust-array (vector length)
   (declare (vector vector))
