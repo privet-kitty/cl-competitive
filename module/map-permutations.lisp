@@ -17,12 +17,11 @@ to VECTOR each time. VECTOR comes back to the original order in the end."
              (declare ((mod #.array-total-size-limit) start end))
              (if (> start end)
                  (funcall function vector)
-                 (progn
-                   (recur (1+ start) end)
-                   (loop for i from (1+ start) below end
-                         do (rotatef (aref vector start) (aref vector i))
-                            (recur (1+ start) end)
-                            (rotatef (aref vector start) (aref vector i)))))))
+                 (loop initially (recur (+ 1 start) end)
+                       for i from (+ 1 start) below end
+                       do (rotatef (aref vector start) (aref vector i))
+                          (recur (+ 1 start) end)
+                          (rotatef (aref vector start) (aref vector i))))))
     (recur start (or end (length vector)))))
 
 ;; NOTE: It tends to be slow on SBCL version earlier than 1.5.0, as
@@ -40,9 +39,9 @@ the combination vector is modified in FUNCION."
     (labels ((recur (pos prev)
                (if (= pos length)
                    (funcall function result)
-                   (loop for i from (1+ prev) below n
+                   (loop for i from (+ 1 prev) below n
                          do (setf (aref result pos) (aref vector i))
-                            (recur (1+ pos) i)))))
+                            (recur (+ 1 pos) i)))))
       (recur 0 -1))))
 
 (declaim (inline map-permutations))

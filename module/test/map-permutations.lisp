@@ -29,7 +29,6 @@
                  (uiop:while-collecting (collect)
                    (do-permutations (perm (vector 1 2 3) 0)
                      (collect (copy-seq perm))))))
-
   ;; empty case
   (is (set-equal '(#())
                  (uiop:while-collecting (collect)
