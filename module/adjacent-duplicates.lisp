@@ -7,8 +7,7 @@
 (defun delete-adjacent-duplicates (seq &key (test #'eql))
   "Destructively deletes adjacent duplicates of SEQ: e.g. #(1 1 1 2 2 1 3) ->
 #(1 2 1 3)"
-  (declare (sequence seq)
-           (function test))
+  (declare (sequence seq))
   (etypecase seq
     (vector
      (if (zerop (length seq))
@@ -29,6 +28,6 @@
      (let ((tmp seq))
        (loop while (cdr tmp)
              when (funcall test (first tmp) (second tmp))
-             do (setf (cdr tmp) (cddr tmp))
+             do (pop (cdr tmp))
              else do (pop tmp))
        seq))))
