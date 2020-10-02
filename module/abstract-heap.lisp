@@ -4,7 +4,7 @@
 
 (defpackage :cp/abstract-heap
   (:use :cl)
-  (:export #:heap-empty-error #:define-binary-heap))
+  (:export #:define-binary-heap #:heap-empty-error #:heap-empty-error-heap))
 (in-package :cp/abstract-heap)
 
 (define-condition heap-empty-error (error)
@@ -38,15 +38,13 @@ static order, as it cannot be inlined."
          (order (or order 'order)))
     `(progn
        (locally
-           ;; prevent style warnings
            (declare #+sbcl (sb-ext:muffle-conditions style-warning))
          (defstruct (,name
                      (:constructor ,fname-make
                          (size
                           ,@(when dynamic-order '(order))
                           &aux
-                          (data (make-array (1+ size)
-                                            :element-type ',(if (eql element-type '*) t  element-type))))))
+                          (data (make-array (1+ size) :element-type ',element-type)))))
            (data nil :type (simple-array ,element-type (*)))
            (position 1 :type (integer 1 #.array-total-size-limit))
            ,@(when dynamic-order
@@ -64,8 +62,7 @@ static order, as it cannot be inlined."
                                  (min (- array-total-size-limit 1)
                                       (* position 2)))))
            (let ((data (,acc-data heap))
-                 ,@(when dynamic-order
-                     `((order (,acc-order heap)))))
+                 ,@(when dynamic-order `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
                         (declare (optimize (speed 3) (safety 0)))
@@ -87,8 +84,7 @@ HEAP-EMPTY-ERROR if HEAP is empty."
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))
            (let ((data (,acc-data heap))
-                 ,@(when dynamic-order
-                     `((order (,acc-order heap)))))
+                 ,@(when dynamic-order `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
                         (declare (optimize (speed 3) (safety 0))
