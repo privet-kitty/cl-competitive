@@ -4,7 +4,7 @@
 
 (defpackage :cp/cumulative-sum
   (:use :cl)
-  (:export #:define-cumulative-sum))
+  (:export #:define-cumulative-sum #:2dcumul-get #:2dcumul-build!))
 (in-package :cp/cumulative-sum)
 
 (defun %classify-vars (lo-vars hi-vars)
@@ -91,3 +91,5 @@ given (n-dimensional) rectangle."
                (declare ((mod #.array-total-size-limit) ,@dims))
                ,@(loop for offset below rank
                        collect (%make-updater-form 'array vars dims dims+1 offset +)))))))))
+
+(define-cumulative-sum 2dcumul 2)

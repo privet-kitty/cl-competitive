@@ -26,8 +26,6 @@
                 (aref cumul-table i j))))))
   cumul-table)
 
-(define-cumulative-sum 2d 2)
-
 (test cumulative-sum/2d
   (let ((state (sb-ext:seed-random-state 0)))
     (finishes
@@ -42,7 +40,7 @@
                 (setf (aref table1 (+ i 1) (+ j 1)) value
                       (aref table2 (+ i 1) (+ j 1)) value))))
           (%2d-build! table1)
-          (2d-build! table2)
+          (2dcumul-build! table2)
           (dotimes (_ 100)
             (let ((i0 (random (+ h 1) state))
                   (i1 (random (+ h 1) state))
@@ -51,7 +49,7 @@
               (when (> i0 i1) (rotatef i0 i1))
               (when (> j0 j1) (rotatef j0 j1))
               (assert (= (%2d-get table1 i0 j0 i1 j1)
-                         (2d-get table2 i0 j0 i1 j1))))))))))
+                         (2dcumul-get table2 i0 j0 i1 j1))))))))))
 
 (defun %4d-get (array lo0 lo1 lo2 lo3 hi0 hi1 hi2 hi3)
   (let ((value 0))

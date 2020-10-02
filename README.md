@@ -51,6 +51,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dice.lisp) six-sided dice
 
 ### General algorithms
+- [cumulative-sum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/cumulative-sum.lisp) n-dimensional cumulative sum
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
 - [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) maximum (minimum) of unimodal function
 - [quicksort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quicksort.lisp) quicksort
