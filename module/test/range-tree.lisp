@@ -1,5 +1,5 @@
 (defpackage :cp/test/range-tree
-  (:use :cl :fiveam :cp/range-tree :cp/2dcumul)
+  (:use :cl :fiveam :cp/range-tree :cp/cumulative-sum)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/range-tree)
 (in-suite base-suite)
