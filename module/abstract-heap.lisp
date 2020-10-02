@@ -19,8 +19,8 @@ type. This macro defines a structure of the given NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-CLEAR, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK.
 
-If ORDER is not given, heap for dynamic order is defined instead: -PUSH and -POP
-functions take order as an argument."
+If ORDER is not given, heap for dynamic order is defined instead: the
+constructor takes an order as an argument."
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -32,6 +32,8 @@ functions take order as an argument."
          (fname-make (intern (format nil "MAKE-~A" string-name)))
          (acc-position (intern (format nil "~A-POSITION" string-name)))
          (acc-data (intern (format nil "~A-DATA" string-name)))
+         (acc-order (intern (format nil "~A-ORDER" string-name)))
+         (dynamic-order (null order))
          (order (or order 'order)))
     `(progn
        (locally
@@ -40,14 +42,17 @@ functions take order as an argument."
          (defstruct (,name
                      (:constructor ,fname-make
                          (size
+                          ,@(when dynamic-order '(order))
                           &aux
                           (data (make-array (1+ size)
                                             :element-type ',(if (eql element-type '*) t  element-type))))))
            (data nil :type (simple-array ,element-type (*)))
-           (position 1 :type (integer 1 #.array-total-size-limit))))
+           (position 1 :type (integer 1 #.array-total-size-limit))
+           ,@(when dynamic-order
+               `((order nil :type function)))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
-       (defun ,fname-push (obj heap ,@(when (eql order 'order) '(order)))
+       (defun ,fname-push (obj heap)
          "Adds OBJ to HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
@@ -57,7 +62,9 @@ functions take order as an argument."
                    (adjust-array (,acc-data heap)
                                  (min (- array-total-size-limit 1)
                                       (* position 2)))))
-           (let ((data (,acc-data heap)))
+           (let ((data (,acc-data heap))
+                 ,@(when dynamic-order
+                     `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
                         (declare (optimize (speed 3) (safety 0)))
@@ -72,12 +79,14 @@ functions take order as an argument."
                heap))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-pop))
-       (defun ,fname-pop (heap ,@(when (eql order 'order) '(order)))
+       (defun ,fname-pop (heap)
          "Removes and returns the element at the top of HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))
-           (let ((data (,acc-data heap)))
+           (let ((data (,acc-data heap))
+                 ,@(when dynamic-order
+                     `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
                         (declare (optimize (speed 3) (safety 0))
