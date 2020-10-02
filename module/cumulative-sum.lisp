@@ -56,6 +56,8 @@ functions: <NAME>-BUILD! and <NAME>-GET. The first function receives an array
 and (destructively) makes it to store cumulative sums. The second function takes
 the built array and 2*RANK indices, and returns the sum of a
 given (n-dimensional) rectangle."
+  (check-type name (or symbol string))
+  (check-type rank (integer 1))
   (let* ((package (or package #+sbcl (sb-int:sane-package) #-sbcl *package*))
          (getter (intern (format nil "~A-GET" name) package))
          (builder (intern (format nil "~A-BUILD!" name) package))
