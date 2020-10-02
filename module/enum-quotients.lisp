@@ -15,7 +15,8 @@ be given; then A[i]A[j] <= N iff j < M-i."
   (let ((k 1)
         (result (make-array (* 2 (isqrt n))
                             :element-type '(integer 0 #.most-positive-fixnum)
-                            :adjustable t :fill-pointer 0)))
+                            :adjustable t
+                            :fill-pointer 0)))
     (loop (vector-push-extend k result)
           (when (> k n)
             (return result))

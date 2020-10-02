@@ -20,7 +20,8 @@ MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-CLEAR, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK.
 
 If ORDER is not given, heap for dynamic order is defined instead: the
-constructor takes an order as an argument."
+constructor takes an order function as an argument. Note that it is slow than a
+static order, as it cannot be inlined."
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -80,7 +81,8 @@ constructor takes an order as an argument."
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-pop))
        (defun ,fname-pop (heap)
-         "Removes and returns the element at the top of HEAP."
+         "Removes and returns the element at the top of HEAP. Signals
+HEAP-EMPTY-ERROR if HEAP is empty."
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))
