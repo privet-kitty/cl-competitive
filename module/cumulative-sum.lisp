@@ -4,7 +4,7 @@
 
 (defpackage :cp/cumulative-sum
   (:use :cl)
-  (:export #:define-cumulative-sum #:2dcumul-get #:2dcumul-build!))
+  (:export #:define-cumulative-sum #:2dcumul-get #:2dcumul-build! #:2dcumul-update!))
 (in-package :cp/cumulative-sum)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -27,7 +27,7 @@
   (defun %rotate (list offset)
     (append (subseq list offset) (subseq list 0 offset)))
 
-  (defun %make-updater-form (array vars dims dims+1 offset plus)
+  (defun %make-updater-form (array vars dims dims+1 offset inc-macro)
     (let* ((rank (length vars))
            (rot-vars (%rotate vars offset))
            (rot-dims (%rotate dims offset))
@@ -39,9 +39,7 @@
                             collect (if (= i target-pos) `(+ ,var 1) var))))
       (labels ((recur (vars dims dims+1)
                  (cond ((null vars)
-                        `(setf (aref ,array ,@dest-vars)
-                               (,plus (aref ,array ,@dest-vars)
-                                      (aref ,array ,@src-vars))))
+                        `(,inc-macro (aref ,array ,@dest-vars) (aref ,array ,@src-vars)))
                        ((null (cdr vars))
                         `(dotimes (,(car vars) ,(car dims))
                            ,(recur (cdr vars) (cdr dims) (cdr dims+1))))
@@ -52,15 +50,24 @@
 
 (defmacro define-cumulative-sum (name rank &key (+ '+) (- '-) package)
   "Provides <RANK>-dimensional cumulative sum. This function defines two
-functions: <NAME>-BUILD! and <NAME>-GET. The first function receives an array
-and (destructively) makes it to store cumulative sums. The second function takes
-the built array and 2*RANK indices, and returns the sum of a
-given (n-dimensional) rectangle."
+functions: <NAME>-BUILD!, <NAME>-GET, and <NAME>-UPDATE!.
+
+<NAME>-BUILD! takes an array and (destructively) makes it to store cumulative
+sums.
+<NAME>-GET takes the built array and 2*RANK indices, and returns the sum of a
+given (n-dimensional) rectangle.
+<NAME>-UPDATE! takes a (non-built) array, a value, and 2*RANK indices. This
+function updates the region of a given (n-dimensional) rectangle by the
+value. After this array is finalized with <NAME>-BUILD!, you can get any
+rectangle sums by <NAME>-GET."
   (check-type name (or symbol string))
   (check-type rank (integer 1))
   (let* ((package (or package #+sbcl (sb-int:sane-package) #-sbcl *package*))
          (getter (intern (format nil "~A-GET" name) package))
          (builder (intern (format nil "~A-BUILD!" name) package))
+         (updater (intern (format nil "~A-UPDATE!" name) package))
+         (inc-macro (gensym "INCF"))
+         (dec-macro (gensym "DECF"))
          ;; FIXME: awkward parameter naming
          (lo-vars (case rank
                     (1 '(l))
@@ -75,24 +82,38 @@ given (n-dimensional) rectangle."
          (dims+1 (loop for i below rank collect (intern (format nil "DIM~A+1" i) package)))
          (dims (loop for i below rank collect (intern (format nil "DIM~A" i) package)))
          (vars (loop for i below rank collect (intern (format nil "I~A" i) package))))
-    (multiple-value-bind (plus-vars-list minus-vars-list) (%classify-vars lo-vars hi-vars)
-      `(progn
-         (declaim (inline ,getter))
-         (defun ,getter (array ,@lo-vars ,@hi-vars)
-           ;; FIXME: should we use funcall?
-           (,- (,+ ,@(loop for vars in plus-vars-list
-                           collect `(aref array ,@vars)))
-               (,+ ,@(loop for vars in minus-vars-list
-                           collect `(aref array ,@vars)))))
-         (declaim (inline ,builder))
-         (defun ,builder (array)
-           (destructuring-bind ,dims+1 (array-dimensions array)
-             (declare ((mod #.array-total-size-limit) ,@dims+1))
-             (let ,(loop for dim in dims
-                         for dim+1 in dims+1
-                         collect `(,dim (- ,dim+1 1)))
-               (declare ((mod #.array-total-size-limit) ,@dims))
-               ,@(loop for offset below rank
-                       collect (%make-updater-form 'array vars dims dims+1 offset +)))))))))
+    `(progn
+       (define-modify-macro ,inc-macro (new-value) ,+)
+       (define-modify-macro ,dec-macro (new-value) ,-)
+       (declaim (inline ,getter))
+       ,(multiple-value-bind (plus-vars-list minus-vars-list)
+            (%classify-vars lo-vars hi-vars)
+          `(defun ,getter (array ,@lo-vars ,@hi-vars)
+             (let ((result (aref array ,@hi-vars)))
+               ,@(loop for vars in plus-vars-list
+                       unless (equal vars hi-vars)
+                       collect `(,inc-macro result (aref array ,@vars)))
+               ,@(loop for vars in minus-vars-list
+                       collect `(,dec-macro result (aref array ,@vars)))
+               result)))
+       (declaim (inline ,updater))
+       ,(multiple-value-bind (plus-vars-list minus-vars-list)
+            (%classify-vars hi-vars lo-vars)
+          `(defun ,updater (array delta ,@lo-vars ,@hi-vars)
+             ,@(loop for vars in plus-vars-list
+                     collect `(,inc-macro (aref array ,@vars) delta))
+             ,@(loop for vars in minus-vars-list
+                     collect `(,dec-macro (aref array ,@vars) delta))
+             array))
+       (declaim (inline ,builder))
+       (defun ,builder (array)
+         (destructuring-bind ,dims+1 (array-dimensions array)
+           (declare ((mod #.array-total-size-limit) ,@dims+1))
+           (let ,(loop for dim in dims
+                       for dim+1 in dims+1
+                       collect `(,dim (- ,dim+1 1)))
+             (declare ((mod #.array-total-size-limit) ,@dims))
+             ,@(loop for offset below rank
+                     collect (%make-updater-form 'array vars dims dims+1 offset inc-macro))))))))
 
 (define-cumulative-sum 2dcumul 2)
