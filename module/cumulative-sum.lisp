@@ -27,7 +27,7 @@
   (defun %rotate (list offset)
     (append (subseq list offset) (subseq list 0 offset)))
 
-  (defun %make-updater-form (array vars dims dims+1 offset inc-macro)
+  (defun %make-builder-form (array vars dims dims+1 offset inc-macro)
     (let* ((rank (length vars))
            (rot-vars (%rotate vars offset))
            (rot-dims (%rotate dims offset))
@@ -114,6 +114,6 @@ rectangle sums by <NAME>-GET."
                        collect `(,dim (- ,dim+1 1)))
              (declare ((mod #.array-total-size-limit) ,@dims))
              ,@(loop for offset below rank
-                     collect (%make-updater-form 'array vars dims dims+1 offset inc-macro))))))))
+                     collect (%make-builder-form 'array vars dims dims+1 offset inc-macro))))))))
 
 (define-cumulative-sum 2dcumul 2)
