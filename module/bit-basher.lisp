@@ -1,6 +1,6 @@
 (defpackage :cp/bit-basher
   (:use :cl)
-  (:export #:bit-not! #:bit-count #:bit-lshift))
+  (:export #:bit-not! #:bit-fill! #:bit-count #:bit-lshift #:bit-rshift #:bit-shift))
 (in-package :cp/bit-basher)
 
 ;;;
@@ -21,7 +21,7 @@
          (logior (the (unsigned-byte 64) (ash (logand ,new ,mask) ,posn))
                  (the (unsigned-byte 64) (logand ,int (lognot (ash ,mask ,posn)))))))))
 
-(defconstant +most-positive-word+ #.(- (ash 1 64) 1))
+(defconstant +most-positive-word+ (ldb (byte 64 0) -1))
 
 (defun bit-not! (sb-vector &optional (start 0) end)
   "Destructively flips the bits in the range [START, END)."
@@ -55,6 +55,38 @@
                          (sb-kernel:%vector-raw-bits sb-vector end/64))))))))
   sb-vector)
 
+(declaim (ftype (function * (values simple-bit-vector &optional)) bit-fill!))
+(defun bit-fill! (sb-vector bit &optional (start 0) end)
+  "Destructively ets the bits in the range [START, END) to BIT."
+  (declare (optimize (speed 3))
+           (simple-bit-vector sb-vector)
+           (bit bit)
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
+  (setq end (or end (length sb-vector)))
+  (assert (<= start end (length sb-vector)))
+  (let ((mask (if (zerop bit) 0 +most-positive-word+)))
+    (multiple-value-bind (start/64 start%64) (floor start 64)
+      (multiple-value-bind (end/64 end%64) (floor end 64)
+        (if (= start/64 end/64)
+            (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
+                  (u64-dpb (ldb (byte (- end%64 start%64) 0) mask)
+                           (byte (- end%64 start%64) start%64)
+                           (sb-kernel:%vector-raw-bits sb-vector start/64)))
+            (progn
+              (setf (sb-kernel:%vector-raw-bits sb-vector start/64)
+                    (u64-dpb (sb-kernel:%vector-raw-bits sb-vector start/64)
+                             (byte start%64 0)
+                             mask))
+              (loop for i from (+ 1 start/64) below end/64
+                    do (setf (sb-kernel:%vector-raw-bits sb-vector i) mask))
+              (unless (zerop end%64)
+                (setf (sb-kernel:%vector-raw-bits sb-vector end/64)
+                      (dpb mask
+                           (byte end%64 0)
+                           (sb-kernel:%vector-raw-bits sb-vector end/64)))))))))
+  sb-vector)
+
 ;; (count 1 simple-bit-vector) is sufficiently fast on SBCL when handling whole
 ;; vector. If START or END are specified, however, it is slow as the transformer
 ;; for COUNT doesn't work. See
@@ -84,58 +116,7 @@
                                           (sb-kernel:%vector-raw-bits sb-vector end/64)))))
             result)))))
 
-;; unfinished
-;; (defun bit-shift (bit-vector delta &optional result-vector)
-;;   "Shifts BIT-VECTOR by DELTA bits and fills the new bits with zero. Positive
-;; DELTA means left-shifting and negative DELTA means right-shifting.
-
-;; The behaviour is the same as the bit-wise operations in CLHS: The result is
-;; copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
-;; is NIL, a new bit-vector of the same length is created."
-;;   (declare (simple-bit-vector bit-vector)
-;;            ((or null (eql t) simple-bit-vector) result-vector)
-;;            (fixnum delta))
-;;   (setq result-vector
-;;         (etypecase result-vector
-;;           (null (make-array (length bit-vector) :element-type 'bit :initial-element 0))
-;;           ((eql t) bit-vector)
-;;           (simple-bit-vector result-vector)))
-;;   (when (>= delta 0)
-;;     (return-from bit-shift (bit-lshift bit-vector delta result-vector)))
-;;   (let* ((delta (- delta))
-;;          (end (length bit-vector)))
-;;     (unless (zerop end)
-;;       (multiple-value-bind (d/64 d%64) (floor delta 64)
-;;         (multiple-value-bind (end/64 end%64) (floor end 64)
-;;           ;; process the initial word separately
-;;           (when (and (> d%64 0) (< d/64 (ceiling end 64)))
-;;             (setf (ldb (byte (- 64 d%64) 0)
-;;                        (sb-kernel:%vector-raw-bits result-vector 0))
-;;                   (ldb (byte (- 64 d%64) d%64)
-;;                        (sb-kernel:%vector-raw-bits bit-vector d/64))))
-;;           (do ((i (ceiling delta 64) (+ i 1)))
-;;               ((>= i end/64))
-;;             (setf (ldb (byte d%64 (- 64 d%64))
-;;                        (sb-kernel:%vector-raw-bits result-vector (- i d/64 1)))
-;;                   (ldb (byte d%64 0)
-;;                        (sb-kernel:%vector-raw-bits bit-vector i)))
-;;             (setf (ldb (byte (- 64 d%64) 0)
-;;                        (sb-kernel:%vector-raw-bits result-vector (- i d/64)))
-;;                   (ldb (byte (- 64 d%64) d%64)
-;;                        (sb-kernel:%vector-raw-bits bit-vector i))))
-;;           ;; process the last word separately
-;;           (unless (zerop end%64)
-;;             (setf (ldb (byte d%64 (- 64 d%64))
-;;                        (sb-kernel:%vector-raw-bits result-vector (- end/64 d/64 1)))
-;;                   (ldb (byte (min d%64 end%64) 0)
-;;                        (sb-kernel:%vector-raw-bits bit-vector end/64)))
-;;             (setf (ldb (byte (- 64 d%64) 0)
-;;                        (sb-kernel:%vector-raw-bits result-vector (- end/64 d/64)))
-;;                   (ldb (byte (max 0 (- end%64 d%64)) d%64)
-;;                        (sb-kernel:%vector-raw-bits bit-vector end/64)))))))
-;;     result-vector))
-
-;; TODO: right shift
+(declaim (ftype (function * (values simple-bit-vector &optional)) bit-lshift))
 (defun bit-lshift (bit-vector delta &optional result-vector end)
   "Left-shifts BIT-VECTOR by DELTA bits and fills the new bits with zero.
 The behaviour is the same as the bit-wise operations in ANSI CL: The result is
@@ -158,53 +139,43 @@ i.e. (bit-lshift #*1011000 2) |-> #*0010110"
           (simple-bit-vector result-vector)))
   (setq end (or end (length bit-vector)))
   (assert (<= end (length bit-vector)))
-  (setq end (min end (max 0 (- (length result-vector) delta))))
-  (multiple-value-bind (d/64 d%64) (floor delta 64)
-    (declare (optimize (safety 0))
-             (simple-bit-vector result-vector))
-    (multiple-value-bind (end/64 end%64) (floor end 64)
-      ;; process the last word separately
-      (unless (zerop end%64)
-        (let ((word (sb-kernel:%vector-raw-bits bit-vector end/64)))
-          (setf (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))
-                (u64-dpb word
-                         (byte (min end%64 (- 64 d%64)) d%64)
-                         (sb-kernel:%vector-raw-bits result-vector (+ end/64 d/64))))
-          (when (> end%64 (- 64 d%64))
-            (setf (ldb (byte (- end%64 (- 64 d%64)) 0)
-                       (sb-kernel:%vector-raw-bits result-vector (+ 1 end/64 d/64)))
-                  (ldb (byte (- end%64 (- 64 d%64)) (- 64 d%64)) word)))))
-      ;; Body. We avoid LDB and DPB here for efficiency, though this seems to
-      ;; be somewhat incomprehensible...
-      (let* ((mask0 (ldb (byte 64 0) (lognot (ldb (byte d%64 0) -1))))
-             (mask1-lo (ldb (byte (- 64 d%64) 0) -1))
-             (mask1-hi (ldb (byte 64 0) (lognot (ash mask1-lo d%64)))))
-        (declare ((unsigned-byte 64) mask0 mask1-lo mask1-hi))
-        (do ((i (- end/64 1) (- i 1)))
-            ((< i 0))
-          (let ((word (sb-kernel:%vector-raw-bits bit-vector i))
-                (i+d/64 (+ i d/64)))
-            (declare ((unsigned-byte 64) word)
-                     ((mod #.most-positive-fixnum) i+d/64))
-            (setf (sb-kernel:%vector-raw-bits result-vector i+d/64)
-                  (logior (the (unsigned-byte 64)
-                               (ash (logand word mask1-lo) d%64))
-                          (logand (sb-kernel:%vector-raw-bits result-vector i+d/64)
-                                  mask1-hi)))
-            (setf (sb-kernel:%vector-raw-bits result-vector (+ 1 i+d/64))
-                  (logior (ash word (- d%64 64))
-                          (logand (sb-kernel:%vector-raw-bits result-vector (+ 1 i+d/64))
-                                  mask0))))))
-      ;; zero padding
-      (when (< d/64 (ceiling (length result-vector) 64))
-        (setf (ldb (byte d%64 0) (sb-kernel:%vector-raw-bits result-vector d/64)) 0))
-      ;; REVIEW: May we set the last word of a bit vector to zero beyond the
-      ;; actual bound?
-      (dotimes (i (min d/64 (ceiling (length result-vector) 64)))
-        (setf (sb-kernel:%vector-raw-bits result-vector i) 0))
-      result-vector)))
+  (replace result-vector bit-vector :start1 (min (length result-vector) delta)
+                                    :start2 0 :end2 end)
+  (bit-fill! result-vector 0 0 (min delta (length result-vector))))
 
-;; We must implement the right shift beforehand.
+(declaim (ftype (function * (values simple-bit-vector &optional)) bit-rshift))
+(defun bit-rshift (bit-vector delta &optional result-vector)
+  "Right-shifts BIT-VECTOR by DELTA bits and fills the new bits with zero.
+The behaviour is the same as the bit-wise operations in ANSI CL: The result is
+copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
+is NIL, a new bit-vector of the same length is created.
+
+Note that here `right' means the direction from a larger index to a smaller one,
+i.e. (bit-rshift #*1011000 2) |-> #*1100000"
+  (declare (optimize (speed 3))
+           (simple-bit-vector bit-vector)
+           ((or null (eql t) simple-bit-vector) result-vector)
+           ((mod #.array-total-size-limit) delta))
+  (setq result-vector
+        (etypecase result-vector
+          (null (make-array (length bit-vector) :element-type 'bit :initial-element 0))
+          ((eql t) bit-vector)
+          (simple-bit-vector result-vector)))
+  (replace result-vector bit-vector :start2 (min delta (length bit-vector)))
+  (bit-fill! result-vector 0
+             (min (max 0 (- (length bit-vector) delta)) (length result-vector))))
+
+;; not tested
+(declaim (ftype (function * (values simple-bit-vector &optional)) bit-shift))
+(defun bit-shift (bit-vector delta &optional result-vector)
+  (declare (optimize (speed 3))
+           (simple-bit-vector bit-vector)
+           ((or null (eql t) simple-bit-vector) result-vector)
+           ((integer #.(- array-total-size-limit) #.array-total-size-limit) delta))
+  (if (>= delta 0)
+      (bit-lshift bit-vector delta result-vector)
+      (bit-rshift bit-vector (- delta) result-vector)))
+
 ;; (defun bit-rotate (bit-vector delta &optional result-vector)
 ;;   (declare (optimize (speed 3))
 ;;            ((mod #.array-total-size-limit) delta)

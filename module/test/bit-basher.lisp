@@ -31,20 +31,41 @@
 (defun zero-vector (template-vector)
   (make-array (length template-vector) :element-type 'bit :initial-element 0))
 
-(defun random-test-lshift (size sample)
-  (let ((exemplar (make-array size :element-type 'bit :initial-element 0))
-        (vec1 (make-array size :element-type 'bit))
-        (vec2 (make-array size :element-type 'bit)))
+(defun make-random-bit-vector (size &optional (state *random-state*))
+  (let ((vector (make-array size :element-type 'bit)))
     (dotimes (i size)
-      (setf (aref exemplar i) (random 2)))
-    (dotimes (_ sample)
-      (fill vec2 0)
-      (let ((delta (random 150)))
-        (dotimes (i (max 0 (- size delta)))
-          (setf (aref vec2 (+ i delta)) (aref exemplar i)))
-        (assert (equal vec2 (bit-lshift exemplar delta vec1)))))))
+      (setf (aref vector i) (random 2 state)))
+    vector))
 
-(test bit-lshift
+(defun bit-lshift-naive (vector delta &optional result-vector)
+  (let ((n (length vector)))
+    (setq result-vector
+          (etypecase result-vector
+            (null (make-array (length vector) :element-type 'bit :initial-element 0))
+            ((eql t) vector)
+            (simple-bit-vector result-vector)))
+    (assert (= n (length result-vector)))
+    (loop for i from (- n 1) downto delta
+          do (setf (aref result-vector i) (aref vector (- i delta))))
+    (dotimes (i (min delta n))
+      (setf (aref result-vector i) 0))
+    result-vector))
+
+(defun bit-rshift-naive (vector delta &optional result-vector)
+  (let ((n (length vector)))
+    (setq result-vector
+          (etypecase result-vector
+            (null (make-array n :element-type 'bit :initial-element 0))
+            ((eql t) vector)
+            (simple-bit-vector result-vector)))
+    (assert (= n (length result-vector)))
+    (loop for i from delta below n
+          do (setf (aref result-vector (- i delta)) (aref vector i)))
+    (loop for i from (max 0 (- n delta)) below n
+          do (setf (aref result-vector i) 0))
+    result-vector))
+
+(test bit-lshift/manual
   ;; basic case
   (is (equalp *seq+1* (bit-lshift (copy-seq *seq*) 1)))
   (is (equalp *seq+1* (bit-lshift *seq* 1 (zero-vector *seq*))))
@@ -67,8 +88,9 @@
   (is (equalp *seq+140* (bit-lshift *seq* 890 (zero-vector *seq*))))
   (is (equalp *seq+140* (bit-lshift *seq* 8900000000000000 (zero-vector *seq*))))
 
-   ;; corner case
-  (is (eql *seq* (bit-lshift *seq* 0 t)))
+  ;; corner case
+  (is (eq *seq* (bit-lshift *seq* 0 t)))
+  (is (equalp *seq* (bit-lshift *seq* 0 t)))
   (is (not (eql *seq* (bit-lshift *seq* 0))))
   (is (equalp #* (bit-lshift *seq* 1000000000000000000 #*)))
   (is (equalp #* (bit-lshift #* 1000000000000000000 #*)))
@@ -89,29 +111,107 @@
   (is (equalp #*00101 (bit-lshift *seq* 1 #*00000)))
   (is (equalp #*00001 (bit-lshift *seq* 3 #*00000)))
   (is (equalp #*00000 (bit-lshift *seq* 4 #*00000)))
-  (is (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000)))
+  (is (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000))))
 
-  (random-test-lshift 140 1000)
-  (random-test-lshift 64 1000)
-  (random-test-lshift 128 1000))
+
+(test bit-rshift/manual
+  ;; corner case
+  (is (eq *seq* (bit-rshift *seq* 0 t)))
+  (is (equalp *seq* (bit-rshift *seq* 0 t)))
+  (is (not (eql *seq* (bit-rshift *seq* 0))))
+  (is (equalp #* (bit-rshift *seq* 1000000000000000000 #*)))
+  (is (equalp #* (bit-rshift #* 1000000000000000000 #*)))
+  (is (equalp #*00000 (bit-rshift #* 1000000000000000000 (copy-seq #*00010))))
+  (is (equalp #*00000 (bit-rshift #* 3 (copy-seq #*00010))))
+  
+  ;; smaller dest-vector
+  (is (equalp #*10100 (bit-rshift *seq* 1 #*00000)))
+  (is (equalp #*10010 (bit-rshift *seq* 3 #*00000)))
+  (is (equalp #*00101 (bit-rshift *seq* 4 #*00000)))
+  (is (equalp #*00000 (bit-rshift *seq* 1000000000000000000 #*00000))))
+
+(test bit-lshift/random
+  (let ((state (sb-ext:seed-random-state 0)))
+    (dolist (size '(0 1 10 100 1000 64 128))
+      (dolist (delta '(0 1 10 100 1000 64 128 3))
+        (let* ((vec1 (make-random-bit-vector size state))
+               (vec2 (copy-seq vec1)))
+          (is (equalp (bit-lshift vec1 delta) (bit-lshift-naive vec1 delta)))
+          (bit-lshift vec1 delta t)
+          (bit-lshift-naive vec2 delta t)
+          (is (equalp vec1 vec2)))))
+    (finishes
+      (dotimes (_ 1000)
+        (let* ((size (random 100 state))
+               (delta (random 100 state))
+               (vec1 (make-random-bit-vector size state))
+               (vec2 (copy-seq vec1)))
+          (assert (equalp (bit-lshift vec1 delta) (bit-lshift-naive vec1 delta)))
+          (bit-lshift vec1 delta t)
+          (bit-lshift-naive vec2 delta t)
+          (assert (equalp vec1 vec2)))))))
+
+(test bit-rshift/random
+  (let ((state (sb-ext:seed-random-state 0)))
+    (dolist (size '(0 1 10 100 1000 64 128))
+      (dolist (delta '(0 1 10 100 1000 64 128 3))
+        (let* ((vec1 (make-random-bit-vector size state))
+               (vec2 (copy-seq vec1)))
+          (is (equalp (bit-rshift vec1 delta) (bit-rshift-naive vec1 delta)))
+          (bit-rshift vec1 delta t)
+          (bit-rshift-naive vec2 delta t)
+          (is (equalp vec1 vec2)))))
+    (finishes
+      (dotimes (_ 1000)
+        (let* ((size (random 100 state))
+               (delta (random 100 state))
+               (vec1 (make-random-bit-vector size state))
+               (vec2 (copy-seq vec1)))
+          (assert (equalp (bit-rshift vec1 delta) (bit-rshift-naive vec1 delta)))
+          (bit-rshift vec1 delta t)
+          (bit-rshift-naive vec2 delta t)
+          (assert (equalp vec1 vec2)))))))
+
+(test bitwise-operations/manual
+  (is (equalp #* (bit-not! #*)))
+  (is (equalp #* (bit-fill! #* 0)))
+  (is (equalp #* (bit-fill! #* 1)))
+  (is (equalp #*0 (bit-fill! (copy-seq #*0) 0)))
+  (is (equalp #*0 (bit-fill! (copy-seq #*1) 0)))
+  (is (equalp #*1 (bit-fill! (copy-seq #*0) 1)))
+  (is (equalp #*1 (bit-fill! (copy-seq #*1) 1)))
+  (is (equalp #*0 (bit-fill! (copy-seq #*0) 1 1)))
+  (is (equalp #*1 (bit-fill! (copy-seq #*1) 1 1)))
+  (is (equalp #*0 (bit-fill! (copy-seq #*0) 0 0 0)))
+  (is (equalp #*1 (bit-fill! (copy-seq #*1) 0 0 0))))
 
 (test bitwise-operations
-  (let ((target (make-array 140 :element-type 'bit :initial-element 0))
-        (reference (make-array 140 :element-type 'bit :initial-element 0))
-        (state (sb-ext:seed-random-state 0)))
-    (finishes
-      (dotimes (i 100)
-        ;; bit-not!
-        (let ((l (random 141 state))
-              (r (random 141 state)))
-          (unless (<= l r) (rotatef l r))
-          (bit-not! target l r)
-          (loop for i from l below r
-                do (setf (sbit reference i) (logxor 1 (sbit reference i))))
-          (assert (equalp target reference)))
-        ;; bit-count
-        (let ((l (random 141 state))
-              (r (random 141 state)))
-          (unless (<= l r) (rotatef l r))
-          (assert (= (bit-count target l r)
-                     (count 1 target :start l :end r))))))))
+  (dolist (size '(0 1 25 64 128 140))
+    (let ((target (make-array size :element-type 'bit :initial-element 0))
+          (reference (make-array size :element-type 'bit :initial-element 0))
+          (state (sb-ext:seed-random-state 0)))
+      (finishes
+        (dotimes (i 200)
+          ;; bit-not!
+          (let ((l (random (+ size 1) state))
+                (r (random (+ size 1) state)))
+            (unless (<= l r) (rotatef l r))
+            (bit-not! target l r)
+            (loop for i from l below r
+                  do (setf (sbit reference i) (logxor 1 (sbit reference i))))
+            (assert (equalp target reference)))
+          ;; bit-fill!
+          (let ((l (random (+ size 1) state))
+                (r (random (+ size 1) state))
+                (bit (random 2)))
+            (unless (<= l r) (rotatef l r))
+            (bit-fill! target bit l r)
+            (loop for i from l below r
+                  do (setf (sbit reference i) bit))
+            (assert (equalp target reference)))
+          ;; bit-count
+          (let ((l (random (+ size 1) state))
+                (r (random (+ size 1) state)))
+            (unless (<= l r) (rotatef l r))
+            (assert (= (bit-count target l r)
+                       (count 1 target :start l :end r)))))))))
