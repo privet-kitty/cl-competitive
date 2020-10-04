@@ -6,7 +6,7 @@
 
 (defpackage :cp/convolution
   (:use :cl :cp/ntt)
-  (:export #:convolve #:convolution-int #:convolution-vector))
+  (:export #:convolve #:convolution-int #:convolution-vector #:mod-convolve))
 (in-package :cp/convolution)
 
 (deftype convolution-int () '(signed-byte 64))
@@ -48,21 +48,23 @@
   (defconstant +i2+ (nth-value 1 (inv-gcd +m1m3+ +mod2+)))
   (defconstant +i3+ (nth-value 1 (inv-gcd +m1m2+ +mod3+))))
 
-(define-ntt #.+mod1+
+(define-ntt +mod1+
   :ntt ntt1
   :inverse-ntt intt1
   :convolve convolve1)
-(define-ntt #.+mod2+
+(define-ntt +mod2+
   :ntt ntt2
   :inverse-ntt intt2
   :convolve convolve2)
-(define-ntt #.+mod3+
+(define-ntt +mod3+
   :ntt ntt3
   :inverse-ntt intt3
   :convolve convolve3)
 
 ;; TODO: deal with negative number
+(declaim (ftype (function * (values convolution-vector &optional)) convolve))
 (defun convolve (vector1 vector2)
+  "Does non-mod convolution. This function is non-destructive."
   (declare (optimize (speed 3))
            (vector vector1 vector2))
   (let ((n (length vector1))
@@ -88,3 +90,13 @@
                                   '(simple-array (integer 0 #.most-positive-fixnum) (*)))))
             (setf (aref result i) (- x (aref offset (mod diff 5)))))))
       result)))
+
+(defun mod-convolve (vector1 vector2 modulus)
+  "Does convolution on given mod. This function is non-destructive. Beware of
+overflow."
+  (declare (optimize (speed 3))
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let* ((mult (convolve vector1 vector2))
+         (result (make-array (length mult) :element-type 'ntt-int)))
+    (dotimes (i (length mult) result)
+      (setf (aref result i) (mod (aref mult i) modulus)))))

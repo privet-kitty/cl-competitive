@@ -50,8 +50,8 @@
   (finishes
     (let ((state (sb-ext:seed-random-state 0)))
       (dotimes (_ 1000)
-        (let ((vector1 (make-array (random 20 state) :element-type 'fixnum))
-              (vector2 (make-array (random 20 state) :element-type 'fixnum)))
+        (let ((vector1 (make-array (random 30 state) :element-type 'fixnum))
+              (vector2 (make-array (random 30 state) :element-type 'fixnum)))
           (dotimes (i (length vector1))
             (setf (aref vector1 i) (random 1000 state)))
           (dotimes (i (length vector2))

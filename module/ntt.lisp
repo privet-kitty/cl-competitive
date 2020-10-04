@@ -84,8 +84,11 @@
     (assert (zerop (logand len (- len 1)))) ;; power of two
     (check-type len ntt-int)))
 
-(defmacro define-ntt (modulus &key ntt inverse-ntt convolve mod-inverse mod-power)
-  (let* ((ntt (or ntt (intern "NTT!")))
+(defmacro define-ntt (modulus &key ntt inverse-ntt convolve mod-inverse mod-power
+                              &environment env)
+  (assert (constantp modulus))
+  (let* ((modulus (sb-int:constant-form-value modulus env))
+         (ntt (or ntt (intern "NTT!")))
          (inverse-ntt (or inverse-ntt (intern "INVERSE-NTT!")))
          (convolve (or convolve (intern "CONVOLVE")))
          (mod-power (or mod-power (gensym "MOD-POWER")))
@@ -93,8 +96,9 @@
          (ntt-base (gensym "*NTT-BASE*"))
          (ntt-inv-base (gensym "*NTT-INV-BASE*"))
          (base-size (%tzcount (- modulus 1)))
-         (root (%calc-generator modulus)))
-    (assert (typep modulus 'ntt-int))
+         (root (%calc-generator modulus))
+         (modulus (sb-int:constant-form-value modulus env)))
+    (declare (ntt-int modulus))
     `(progn
        (declaim (inline ,mod-power))
        (defun ,mod-power (base exp)
@@ -221,8 +225,7 @@
                      (mod (* (aref vector1 i) (aref vector2 i)) ,modulus)))
              (adjust-array (,inverse-ntt vector1 t) mul-len)))))))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant +ntt-mod+ 998244353))
+(defconstant +ntt-mod+ 998244353)
 
 #+(or)
-(define-ntt #.+ntt-mod+)
+(define-ntt +ntt-mod+)
