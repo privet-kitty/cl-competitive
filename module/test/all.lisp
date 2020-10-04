@@ -76,6 +76,7 @@
   (:import-from :cp/test/mod-power)
   (:import-from :cp/test/mod-operations)
   (:import-from :cp/test/next-permutation)
+  (:import-from :cp/test/next-table)
   (:import-from :cp/test/ntt)
   (:import-from :cp/test/order-statistic)
   (:import-from :cp/test/pairing-heap)
