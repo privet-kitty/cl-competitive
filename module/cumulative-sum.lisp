@@ -57,7 +57,7 @@ functions: <NAME>-BUILD!, <NAME>-GET, and <NAME>-UPDATE!.
 sums. <NAME>-GET takes an already built array and 2*RANK indices, and returns
 the sum of a given (n-dimensional) rectangle. <NAME>-UPDATE! takes a non-built
 array, a value, and 2*RANK indices. This function updates the region of a
-given (n-dimensional) rectangle by the value. After this array is finalized with
+given (n-dimensional) rectangle by the value. After the array is finalized with
 <NAME>-BUILD!, you can get any rectangle sums by <NAME>-GET."
   (check-type name (or symbol string))
   (check-type rank (integer 1))

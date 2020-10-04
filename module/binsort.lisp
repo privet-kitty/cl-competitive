@@ -12,15 +12,15 @@
   "Calls FUNCTION with each ascending non-negative integer in SEQUENCE if KEY is
 null. If KEY is non-nil, this function calls FUNCTION with each element of
 SEQUENCE in the order of the (non-negative) integers that (FUNCALL KEY
-<element>) returns. Any these integers must not exceed RANGE-MAX. If FROM-END is
-true, the descending order is adopted instead. This function is
+<element>) returns. Any of these integers must not exceed RANGE-MAX. If FROM-END
+is true, the descending order is adopted instead. This function is
 non-destructive."
   (declare ((mod #.array-total-size-limit) range-max))
   (if key
       (let ((buckets (make-array (1+ range-max) :element-type 'list :initial-element nil))
             (existing-min most-positive-fixnum)
             (existing-max 0))
-        (declare (dynamic-extent buckets))
+        (declare ((integer 0 #.most-positive-fixnum) existing-min existing-max))
         (sequence:dosequence (e sequence)
           (let ((value (funcall key e)))
             (push e (aref buckets value))
@@ -37,7 +37,7 @@ non-destructive."
       (let ((counts (make-array (1+ range-max) :element-type 'fixnum :initial-element 0))
             (existing-min most-positive-fixnum)
             (existing-max 0))
-        (declare (dynamic-extent counts))
+        (declare ((integer 0 #.most-positive-fixnum) existing-min existing-max))
         (sequence:dosequence (e sequence)
           (incf (aref counts e))
           (setf existing-min (min e existing-min))
