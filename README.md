@@ -9,7 +9,16 @@ The greater part of this library is distributed as public domain, or licensed un
 ## Style
 Although I put this code collection in a ASDF module, this project is primarily made for competitive programming and the whole structure will be quite different from a common ASDF library. I don't recommend that you directly load this module for your software.
 
-On portability: I sometimes resort to SBCL's extension and behaviour: e.g. declaration as assertion, bivalent stream, extensible sequence, `sb-kernel:%vector-raw-bits` and `sb-c:define-source-transform`. To my knowledge, every competition site adopts SBCL.
+On portability: I'll try to write portable code, as long as it doesn't make the code structure too complex. However, I occasionally resort to the extension and the behaviour of SBCL x86-64, mainly for performance reasons. Below is a SBCL-specific feature that I always depend on:
+
+- declaration as assertion
+
+Below are the features that I sometimes use:
+
+- bivalent stream
+- extensible sequence
+- `sb-ext:array-storage-vector` and `sb-kernel:%vector-raw-bits`
+- `sb-c:define-source-transform`
 
 Every data structure and algorithm uses a 0-based index and a half-open interval unless otherwise noted.
 

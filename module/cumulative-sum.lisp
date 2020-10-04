@@ -48,18 +48,17 @@
                            ,(recur (cdr vars) (cdr dims) (cdr dims+1)))))))
         (recur rot-vars rot-dims rot-dims+1)))))
 
+;; TODO: usage example
 (defmacro define-cumulative-sum (name rank &key (+ '+) (- '-) package)
-  "Provides <RANK>-dimensional cumulative sum. This function defines two
+  "Provides <RANK>-dimensional cumulative sum. This function defines three
 functions: <NAME>-BUILD!, <NAME>-GET, and <NAME>-UPDATE!.
 
 <NAME>-BUILD! takes an array and (destructively) makes it to store cumulative
-sums.
-<NAME>-GET takes the built array and 2*RANK indices, and returns the sum of a
-given (n-dimensional) rectangle.
-<NAME>-UPDATE! takes a (non-built) array, a value, and 2*RANK indices. This
-function updates the region of a given (n-dimensional) rectangle by the
-value. After this array is finalized with <NAME>-BUILD!, you can get any
-rectangle sums by <NAME>-GET."
+sums. <NAME>-GET takes an already built array and 2*RANK indices, and returns
+the sum of a given (n-dimensional) rectangle. <NAME>-UPDATE! takes a non-built
+array, a value, and 2*RANK indices. This function updates the region of a
+given (n-dimensional) rectangle by the value. After this array is finalized with
+<NAME>-BUILD!, you can get any rectangle sums by <NAME>-GET."
   (check-type name (or symbol string))
   (check-type rank (integer 1))
   (let* ((package (or package #+sbcl (sb-int:sane-package) #-sbcl *package*))
