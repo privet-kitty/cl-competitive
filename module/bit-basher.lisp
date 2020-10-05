@@ -57,7 +57,7 @@
 
 (declaim (ftype (function * (values simple-bit-vector &optional)) bit-fill!))
 (defun bit-fill! (sb-vector bit &optional (start 0) end)
-  "Destructively ets the bits in the range [START, END) to BIT."
+  "Destructively sets the bits in the range [START, END) to BIT."
   (declare (optimize (speed 3))
            (simple-bit-vector sb-vector)
            (bit bit)
@@ -88,8 +88,8 @@
   sb-vector)
 
 ;; (count 1 simple-bit-vector) is sufficiently fast on SBCL when handling whole
-;; vector. If START or END are specified, however, it is slow as the transformer
-;; for COUNT doesn't work. See
+;; vector. If START or END are specified, however, it is slow as the
+;; deftransform for COUNT doesn't work. See
 ;; https://github.com/sbcl/sbcl/blob/cd7af0d5b15e98e21ace8ef164e0f39019e5ed4b/src/compiler/generic/vm-tran.lisp#L484-L527
 (defun bit-count (sb-vector &optional (start 0) end)
   "Counts 1's in the range [START, END)."

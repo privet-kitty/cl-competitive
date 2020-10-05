@@ -86,7 +86,7 @@
 
 (defmacro define-ntt (modulus &key ntt inverse-ntt convolve mod-inverse mod-power
                               &environment env)
-  (assert (constantp modulus))
+  (assert (constantp modulus env))
   (let* ((modulus (sb-int:constant-form-value modulus env))
          (ntt (or ntt (intern "NTT!")))
          (inverse-ntt (or inverse-ntt (intern "INVERSE-NTT!")))
