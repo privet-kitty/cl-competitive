@@ -8,7 +8,7 @@ branches:
 env:
   global:
     - PATH=~/.roswell/bin:$PATH
-  matrix:
+  jobs:
     - LISP=sbcl-bin/2.0.3 # AtCoder
     - LISP=sbcl-bin/1.5.5 # yukicoder
     - LISP=sbcl-bin/1.4.16 # CS Academy
@@ -22,5 +22,3 @@ script:
   - ros -s fiveam -e '(ql:quickload :cp/test)
                       (or (fiveam:run! (quote cp/test/base:base-suite))
                           (uiop:quit 1))'
-
-sudo: required
