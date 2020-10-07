@@ -11,7 +11,7 @@
 (defun find-diameter (graph)
   "Finds a diameter of a tree. Returns three values: the length of the diameter
 and its two ends."
-  (declare ((array list (*)) graph))
+  (declare (vector graph))
   (let ((end 0)
         (max-depth 0))
     (assert (> (length graph) 0))
@@ -21,7 +21,7 @@ and its two ends."
                  (setq max-depth depth
                        end v))
                (dolist (child (aref graph v))
-                 (declare ((integer 0 #.most-positive-fixnum) child))
+                 (declare ((mod #.array-total-size-limit) child))
                  (unless (= child parent)
                    (traverse child v (+ depth 1))))))
       (traverse 0 array-total-size-limit 0)
