@@ -5,20 +5,19 @@
 ;;;
 
 (defpackage :cp/fast-gcd
-  (:use :cl)
+  (:use :cl :cp/tzcount)
   (:export #:fast-gcd #:fast-lcm #:%fast-gcd))
 (in-package :cp/fast-gcd)
 
-(declaim (inline %fast-gcd fast-gcd fast-lcm)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                %fast-gcd fast-gcd fast-lcm))
+(declaim (inline %fast-gcd fast-gcd fast-lcm))
+
+(declaim (ftype (function * (values (integer 1 #.most-positive-fixnum) &optional)) %fast-gcd))
 (defun %fast-gcd (u v)
   (declare ((integer 0 #.most-positive-fixnum) u v))
-  (let ((shift (let ((x (logior u v)))
-                 (- (integer-length (logand x (- x))) 1))))
+  (let ((shift (tzcount (logior u v))))
     (declare (optimize (safety 0)))
-    (setq u (ash u (- 1 (integer-length (logand u (- u))))))
-    (loop (setq v (ash v (- 1 (integer-length (logand v (- v))))))
+    (setq u (ash u (- (tzcount u))))
+    (loop (setq v (ash v (- (tzcount v))))
           (when (> u v)
             (rotatef u v))
           (decf v u)
@@ -26,6 +25,7 @@
             (return (the (integer 1 #.most-positive-fixnum)
                          (ash u shift)))))))
 
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) fast-gcd))
 (defun fast-gcd (u v)
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) u v))
@@ -33,6 +33,7 @@
         ((zerop v) u)
         (t (%fast-gcd u v))))
 
+(declaim (ftype (function * (values (integer 0) &optional)) fast-lcm))
 (defun fast-lcm (u v)
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) u v))
