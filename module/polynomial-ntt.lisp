@@ -4,7 +4,7 @@
            #:multipoint-eval #:poly-total-prod))
 (in-package :cp/polynomial-ntt)
 
-(define-ntt #.+ntt-mod+
+(define-ntt +ntt-mod+
   :convolve poly-multiply
   :mod-inverse %mod-inverse)
 
@@ -20,7 +20,7 @@
               (zerop (aref poly 0)))
       (error 'division-by-zero
              :operation #'poly-inverse
-             :operands poly))
+             :operands (list poly)))
     (let ((res (make-array 1
                            :element-type 'ntt-int
                            :initial-element (%mod-inverse (aref poly 0))))
@@ -73,7 +73,8 @@
               (if (>= value +ntt-mod+)
                   (- value +ntt-mod+)
                   value))))
-    res))
+    (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
+      (adjust-array res end))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-add))
 (defun poly-add (poly1 poly2)
@@ -90,7 +91,8 @@
               (if (>= value +ntt-mod+)
                   (- value +ntt-mod+)
                   value))))
-    res))
+    (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
+      (adjust-array res end))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-mod))
 (defun poly-mod (poly1 poly2)

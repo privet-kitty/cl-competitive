@@ -40,8 +40,8 @@
           (handler-bind ((division-by-zero (lambda (c) (declare (ignorable c))
                                              (return-from continue))))
             (let* ((p (poly-floor poly1 poly2))
-                   (q (poly-sub poly1 p)))
-              (equalp q (poly-mod poly1 poly2)))))
+                   (q (poly-sub poly1 (poly-multiply poly2 p))))
+              (assert (equalp q (poly-mod poly1 poly2))))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))
                (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
