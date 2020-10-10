@@ -50,7 +50,7 @@ created."
 (declaim (inline poly-floor!))
 (defun poly-floor! (u v modulus &optional quotient)
   "Returns the quotient q(x) and the remainder r(x) over Z/nZ: u(x) = q(x)v(x) +
-r(x), deg(r) < deg(v). This function destructively modifies U. The time
+r(x), deg(r) < deg(v). This function may destructively modify U. The time
 complexity is O((deg(u)-deg(v))deg(v)).
 
 The quotient is stored in QUOTIENT if it is given, otherwise a new vector is
@@ -59,49 +59,39 @@ created.
 Note that MODULUS and V[deg(V)] must be coprime."
   (declare (vector u v)
            ((integer 1 #.most-positive-fixnum) modulus))
+  (assert (not (or (eq v quotient) (eq u quotient))))
   ;; m := deg(u), n := deg(v)
-  (let* ((m (loop for i from (- (length u) 1) downto 0
-                  while (zerop (aref u i))
-                  finally (return i)))
-         (n (loop for i from (- (length v) 1) downto 0
-                  unless (zerop (aref v i))
-                  do (return i)
-                  finally (error 'division-by-zero
-                                 :operation #'poly-floor!
-                                 :operands (list u v))))
+  (let* ((m (or (position 0 u :from-end t :test-not #'eql) -1))
+         (n (or (position 0 v :from-end t :test-not #'eql)
+                (error 'division-by-zero
+                       :operation #'poly-floor!
+                       :operands (list u v))))
          (quot (or quotient
-                   (make-array (max 0 (+ 1 (- m n)))
-                               :element-type (array-element-type u))))
+                   (make-array (max 0 (+ 1 (- m n))) :element-type (array-element-type u))))
          ;; FIXME: Is it better to signal an error in non-coprime case?
          (inv (mod-inverse (aref v n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for k from (- m n) downto 0
-          do (setf (aref quot k)
-                   (mod (* (aref u (+ n k)) inv) modulus))
+          do (setf (aref quot k) (mod (* (aref u (+ n k)) inv) modulus))
              (loop for j from (+ n k -1) downto k
                    do (setf (aref u j)
-                            (mod (- (aref u j)
-                                    (* (aref quot k) (aref v (- j k))))
+                            (mod (- (aref u j) (* (aref quot k) (aref v (- j k))))
                                  modulus))))
-    (loop for i from (- (length u) 1) downto n
-          do (setf (aref u i) 0)
-          finally (return (values quot u)))))
+    (let ((end (+ 1 (or (position 0 u :from-end t :test-not #'eql :end (min n (length u))) -1))))
+      (values quot (adjust-array u end)))))
 
 ;; naive division in O(n^2)
+(declaim (inline poly-mod!))
 (defun poly-mod! (poly divisor modulus)
   "Returns the remainder of POLY divided by DIVISOR over Z/nZ. This function
 destructively modifies POLY."
   (declare (vector poly divisor)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((m (loop for i from (- (length poly) 1) downto 0
-                  while (zerop (aref poly i))
-                  finally (return i)))
-         (n (loop for i from (- (length divisor) 1) downto 0
-                  unless (zerop (aref divisor i))
-                  do (return i)
-                  finally (error 'division-by-zero
-                                 :operation #'poly-mod!
-                                 :operands (list poly divisor))))
+  (let* ((m (or (position 0 poly :from-end t :test-not #'eql) -1))
+         (n (or (position 0 divisor :from-end t :test-not #'eql)
+                (error 'division-by-zero
+                       :operation #'poly-mod!
+                       :operands (list poly divisor))))
          (inv (mod-inverse (aref divisor n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for pivot-deg from m downto n
@@ -112,7 +102,8 @@ destructively modifies POLY."
                             (mod (- (aref poly (- pivot-deg delta))
                                     (* factor (aref divisor (- n delta))))
                                  modulus))))
-    poly))
+    (let ((end (+ 1 (or (position 0 poly :from-end t :test-not #'eql) -1))))
+      (adjust-array poly end))))
 
 (defun poly-power (poly exponent divisor modulus)
   "Returns POLY to the power of EXPONENT modulo DIVISOR over Z/nZ."
