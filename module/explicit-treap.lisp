@@ -228,8 +228,8 @@ CL:CONCATENATE."
 unmodified TREAP If KEY doesn't exist. You cannot rely on the side effect. Use
 the returned value.
 
- (Note that this function deletes only a node even if duplicate keys are
- contained.)"
+\(Note that this function deletes only a node even if duplicate keys are
+contained.)"
   (declare ((or null treap) treap)
            (function order))
   (when treap

@@ -7,40 +7,6 @@
   (:export #:with-cache #:with-caches))
 (in-package :cp/with-cache)
 
-;;
-;; Basic usage:
-;;
-;; (with-cache (:hash-table :test #'equal :key #'cons)
-;;   (defun add (a b)
-;;     (+ a b)))
-;; This function caches the returned values for already passed combinations of
-;; arguments. In this case ADD stores the key (CONS A B) and the returned value
-;; to a hash-table when (ADD A B) is evaluated for the first time. ADD returns
-;; the stored value when it is called with the same arguments (w.r.t. EQUAL)
-;; again.
-;;
-;; The storage for cache can be hash-table or array. Let's see an example for
-;; array:
-;; (with-cache (:array (10 20 30) :initial-element -1 :element-type 'fixnum)
-;;   (defun foo (a b c) ... ))
-;; This form stores the value of FOO in an array created by (make-array (list 10
-;; 20 30) :initial-element -1 :element-type 'fixnum). Note that INITIAL-ELEMENT
-;; must always be given here as it is used as the flag expressing `not yet
-;; stored'. (Therefore INITIAL-ELEMENT should be a value FOO never takes.)
-;;
-;; If you want to ignore some arguments, you can put `*' in dimensions:
-;; (with-cache (:array (10 10 * 10) :initial-element -1)
-;;   (defun foo (a b c d) ...)) ; then C is ignored when querying or storing cache
-;;
-;; Available definition forms in WITH-CACHE are DEFUN, LABELS, FLET, and
-;; SB-INT:NAMED-LET.
-;;
-;; You can trace the memoized function by :TRACE option:
-;; (with-cache (:array (10 10) :initial-element -1 :trace t)
-;;   (defun foo (x y) ...))
-;; Then FOO is traced as with CL:TRACE.
-;;
-
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.
 (declaim (type (integer 0 #.most-positive-fixnum) *recursion-depth*))
 (defparameter *recursion-depth* 0)
@@ -143,7 +109,47 @@
 
 (defmacro with-cache ((cache-type &rest cache-attribs) def-form)
   "CACHE-TYPE := :HASH-TABLE | :ARRAY.
-DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
+DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET.
+
+Basic usage:
+
+\(with-cache (:hash-table :test #'equal :key #'cons)
+  (defun add (a b)
+    (+ a b)))
+
+This function caches the returned values for already passed combinations of
+arguments. In this case ADD stores the key (CONS A B) and the returned value to
+a hash-table when (ADD A B) is evaluated for the first time. When it is called
+with the same arguments (w.r.t. EQUAL) again, ADD will return the stored value
+instead of recomputing it.
+
+The storage for cache can be hash-table or array. Let's see an example for
+array:
+
+\(with-cache (:array (10 20 30) :initial-element -1 :element-type 'fixnum)
+  (defun foo (a b c) ... ))
+
+This form stores the value returned by FOO in an array, which was created
+by (make-array (list 10 20 30) :initial-element -1 :element-type 'fixnum). Note
+that INITIAL-ELEMENT must always be given here as it is used as the flag
+expressing `not yet stored'. (Therefore INITIAL-ELEMENT should be a value FOO
+never takes.)
+
+If you want to ignore some arguments, you can put `*' in dimensions:
+
+\(with-cache (:array (10 10 * 10) :initial-element -1)
+  (defun foo (a b c d) ...)) ; then C is ignored when querying or storing cache
+
+Available definition forms in WITH-CACHE are DEFUN, LABELS, FLET, and
+SB-INT:NAMED-LET.
+
+You can trace a memoized function by :TRACE option:
+
+\(with-cache (:array (10 10) :initial-element -1 :trace t)
+  (defun foo (x y) ...))
+
+Then FOO is traced as with CL:TRACE.
+"
   (multiple-value-bind (cache-symbol cache-form cache-type
                         make-reset-name make-reset-form
                         make-cache-querier)
@@ -190,12 +196,12 @@ DEF-FORM := definition form with DEFUN, LABELS, FLET, or SB-INT:NAMED-LET."
 (defmacro with-caches (cache-specs def-form)
   "DEF-FORM := definition form by LABELS or FLET.
 
- (with-caches (cache-spec1 cache-spec2)
-   (labels ((f (x) ...) (g (y) ...))))
+\(with-caches (cache-spec1 cache-spec2)
+  (labels ((f (x) ...) (g (y) ...))))
 is equivalent to the line up of
- (with-cache cache-spec1 (labels ((f (x) ...))))
+\(with-cache cache-spec1 (labels ((f (x) ...))))
 and
- (with-cache cache-spec2 (labels ((g (y) ...))))
+\(with-cache cache-spec2 (labels ((g (y) ...))))
 
 This macro will be useful to do mutual recursion between memoized local
 functions."

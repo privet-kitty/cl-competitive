@@ -9,14 +9,15 @@
 two arguments: the first one receives an element in SEQ and the second one
 receives the number of the successive elements equal to the first one.
 
-Example: (map-run-length (lambda (x c) (format t \"~D ~D~%\" x c)) #(1 1 1 2 2 1 3))
+Example:
+\(map-run-length (lambda (x c) (format t \"~D ~D~%\" x c)) #(1 1 1 2 2 1 3))
 1 3
 2 2
 1 1
 3 1
 "
   (declare (sequence seq)
-           (function test function))
+           ((or function symbol) test function))
   (etypecase seq
     (vector
      (unless (zerop (length seq))
