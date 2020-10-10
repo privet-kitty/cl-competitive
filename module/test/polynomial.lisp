@@ -6,7 +6,16 @@
 
 (test poly-value
   (is (= 4 (poly-value #(1 2 3) 3 30)))
-  (is (= 1 (poly-value #(1 2 3) 0 30))))
+  (is (= 1 (poly-value #(1 2 3) 0 30)))
+  (is (= 0 (poly-value #() 0 30)))
+  (is (= 0 (poly-value #() 10 30))))
+
+(test poly-mult
+  (declare (notinline poly-mult))
+  (is (equalp #(2 4 6) (poly-mult #(1 2 3) #(2) 10007)))
+  (is (equalp #(10006 10006 10006 3) (poly-mult #(1 2 3) #(-1 1) 10007)))
+  (is (equalp #() (poly-mult #(1 2 3) #() 10007)))
+  (is (equalp #() (poly-mult #() #() 10007))))
 
 (test poly-floor!
   (declare (notinline poly-floor!))
