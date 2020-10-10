@@ -140,7 +140,8 @@ destructively modifies POLY."
 
 (declaim (inline poly-integrate))
 (defun poly-integrate (poly modulus)
-  "Returns an indefinite integrall of POLY. Assumes constant to be zero."
+  "Returns an indefinite integral of POLY. Assumes the integration constant to
+be zero."
   (declare (vector poly)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let* ((n (length poly)))
