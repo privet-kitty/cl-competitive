@@ -46,9 +46,9 @@ When ITERABLE is a hash-table, START and END are ignored."
                (opt-index start))
            (loop for i from start below end
                  for x = (aref iterable i)
-                 do (when (funcall predicate (funcall key x) (funcall key opt-element))
-                      (setq opt-element x
-                            opt-index i)))
+                 when (funcall predicate (funcall key x) (funcall key opt-element))
+                 do (setq opt-element x
+                          opt-index i))
            (values opt-index opt-element))))
       (hash-table
        (assert (and (null start) (null end)))

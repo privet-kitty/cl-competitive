@@ -1,6 +1,6 @@
 (defpackage :cp/anneal
   (:use :cl)
-  (:export #:calc-prob))
+  (:export #:calc-prob #:calc-fast-prob))
 (in-package :cp/anneal)
 
 (declaim (inline calc-prob))
