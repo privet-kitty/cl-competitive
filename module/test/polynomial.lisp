@@ -68,3 +68,31 @@
   (signals division-by-zero (poly-mod! #() #() 10007))
   ;; null dividend
   (is (equalp #() (poly-mod! #() #(10 -5 3 0) 10007))))
+
+(test poly-differentiate!
+  (declare (notinline poly-differentiate!))
+  (is (equalp #(4 10 6 4) (poly-differentiate! #(3 4 5 2 1) 10007)))
+  (is (equalp #(4 10 6 10003) (poly-differentiate! #(-3 4 5 2 -1) 10007)))
+  (is (equalp #() (poly-differentiate! #() 10007)))
+  (is (equalp #() (poly-differentiate! #(3) 10007))))
+
+(test poly-integrate
+  (is (equalp #() (poly-integrate #() 10007)))
+  (is (equalp #(0 3 5004 6672 1) (poly-integrate #(3 1 2 4) 10007)))
+  (is (equalp #(0 3) (poly-integrate #(3) 10007))))
+
+(test poly-shift!
+  (declare (notinline poly-shift!))
+  (is (equalp #(6 1 2 4) (poly-shift! #(3 1 2 4) 3 10007)))
+  (is (equalp #(3 1 2 4) (poly-shift! #(3 1 2 4) 0 10007)))
+  (is (equalp #(6) (poly-shift! #(3) 3 10007)))
+  (is (equalp #(3) (poly-shift! #() 3 10007)))
+  (is (equalp #() (poly-shift! #(3) -3 10007)))
+  (is (equalp #() (poly-shift! #() 0 10007)))
+  (is (equalp #(3) (poly-shift! #(3) 0 10007))))
+
+(test poly-scale!
+  (declare (notinline poly-scale!))
+  (is (equalp #(9 3 6 12) (poly-scale! #(3 1 2 4) 3 10007)))
+  (is (equalp #() (poly-scale! #(3 1 2 4) 0 10007)))
+  (is (equalp #() (poly-scale! #() 3 10007))))

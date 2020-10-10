@@ -1,6 +1,7 @@
 (defpackage :cp/polynomial
   (:use :cl :cp/mod-inverse)
-  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-power))
+  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-power
+           #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!))
 (in-package :cp/polynomial)
 
 ;; NOTE: These are poor man's utilities for polynomial arithmetic. NOT
@@ -130,3 +131,62 @@ destructively modifies POLY."
                   (poly-mod! (poly-mult res res modulus)
                              divisor modulus))))))
     (recur exponent)))
+
+(declaim (inline poly-differentiate!))
+(defun poly-differentiate! (poly modulus)
+  "Returns the derivative of POLY."
+  (declare (vector poly)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((end 0))
+    (declare ((integer 0 #.most-positive-fixnum) end))
+    (dotimes (i (- (length poly) 1))
+      (let ((coef (mod (* (the fixnum (aref poly (+ i 1))) (+ i 1)) modulus)))
+        (declare ((integer 0 #.most-positive-fixnum) coef))
+        (setf (aref poly i) coef)
+        (unless (zerop coef)
+          (incf end))))
+    (adjust-array poly end)))
+
+(declaim (inline poly-integrate))
+(defun poly-integrate (poly modulus)
+  "Returns an indefinite integrall of POLY. Assumes constant to be zero."
+  (declare (vector poly)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let* ((n (length poly)))
+    (when (zerop n)
+      (return-from poly-integrate (make-array 0 :element-type (array-element-type poly))))
+    (let ((result (make-array (+ n 1) :element-type (array-element-type poly) :initial-element 0)))
+      (dotimes (i n)
+        (setf (aref result (+ i 1))
+              (mod (* (the fixnum (aref poly i)) (mod-inverse (+ i 1) modulus)) modulus)))
+      result)))
+
+(declaim (inline poly-shift!))
+(defun poly-shift! (poly constant modulus)
+  "Adds a constant to POLY."
+  (declare (vector poly)
+           (fixnum constant)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((n (length poly))
+        (constant (mod constant modulus)))
+    (if (zerop n)
+        (if (zerop constant)
+            (make-array 0 :element-type (array-element-type poly))
+            (make-array 1 :element-type (array-element-type poly) :initial-element constant))
+        (progn
+          (setf (aref poly 0) (mod (+ (aref poly 0) constant) modulus))
+          (if (and (= n 1) (zerop (aref poly 0)))
+              (make-array 0 :element-type (array-element-type poly))
+              poly)))))
+
+(declaim (inline poly-scale!))
+(defun poly-scale! (poly constant modulus)
+  "Returns a scalar multiplication of POLY."
+  (declare (vector poly)
+           (fixnum constant)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let ((constant (mod constant modulus)))
+    (if (zerop constant)
+        (make-array 0 :element-type (array-element-type poly))
+        (dotimes (i (length poly) poly)
+          (setf (aref poly i) (mod (* constant (the fixnum (aref poly i))) modulus))))))
