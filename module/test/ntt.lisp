@@ -5,10 +5,10 @@
 (in-package :cp/test/ntt)
 (in-suite base-suite)
 
-(define-ntt #.+ntt-mod+)
+(define-ntt +ntt-mod+)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +ntt-mod2+ 1012924417))
-(define-ntt #.+ntt-mod2+
+(define-ntt +ntt-mod2+
   :ntt ntt2
   :inverse-ntt inverse-ntt2
   :convolve convolve2)

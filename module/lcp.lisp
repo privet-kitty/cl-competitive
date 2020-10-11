@@ -9,15 +9,15 @@
   (ranks nil :type (simple-array sa-int (*)))
   (table nil :type (simple-array sa-int (* *))))
 
-(defun make-lcp-table (sa lcp)
+(defun make-lcp-table (sa lcpa)
   "Makes LCP table from a suffix array and an LCP array."
   (declare (optimize (speed 3))
-           ((simple-array sa-int (*)) sa lcp))
+           ((simple-array sa-int (*)) sa lcpa))
   (let* ((n (length sa))
          (ranks (let ((tmp (make-array n :element-type 'sa-int)))
                   (dotimes (i n tmp)
                     (setf (aref tmp (aref sa i)) i))))
-         (table (make-disjoint-sparse-table lcp
+         (table (make-disjoint-sparse-table lcpa
                                             (lambda (i j)
                                               (declare (sa-int i j))
                                               (min i j)))))

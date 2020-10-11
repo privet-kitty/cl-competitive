@@ -42,7 +42,7 @@
       (998244353 3)
       (otherwise
        (let ((divs (make-array 20 :element-type 'ntt-int :initial-element 0))
-             (count 1)
+             (end 1)
              (x (floor (- modulus 1) 2)))
          (declare ((integer 0 #.most-positive-fixnum) x))
          (setf (aref divs 0) 2)
@@ -51,21 +51,17 @@
          (loop for i of-type ntt-int from 3 by 2
                while (<= (* i i) x)
                when (zerop (mod x i))
-               do (setf (aref divs count) i)
-                  (incf count)
+               do (setf (aref divs end) i)
+                  (incf end)
                   (loop while (zerop (mod x i))
                         do (setq x (floor x i))))
          (when (> x 1)
-           (setf (aref divs count) x)
-           (incf count))
+           (setf (aref divs end) x)
+           (incf end))
          (loop for g of-type ntt-int from 2
-               for ok = t
-               do (dotimes (i count)
+               do (dotimes (i end (return-from %calc-generator g))
                     (when (= 1 (%mod-power g (floor (- modulus 1) (aref divs i)) modulus))
-                      (setq ok nil)
-                      (return)))
-               when ok
-               do (return g)))))))
+                      (return)))))))))
 
 ;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
 ;; isn't guaranteed to preserve a given VECTOR in ANSI CL.

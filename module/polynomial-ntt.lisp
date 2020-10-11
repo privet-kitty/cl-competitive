@@ -4,6 +4,8 @@
            #:multipoint-eval #:poly-total-prod))
 (in-package :cp/polynomial-ntt)
 
+;; TODO: integrate with cp/polynomial
+
 (define-ntt +ntt-mod+
   :convolve poly-multiply
   :mod-inverse %mod-inverse)
