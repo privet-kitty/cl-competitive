@@ -54,6 +54,7 @@
   (:import-from :cp/test/fkm)
   (:import-from :cp/test/ford-fulkerson)
   (:import-from :cp/test/gabow-edmonds)
+  (:import-from :cp/test/generator)
   (:import-from :cp/test/geometry)
   (:import-from :cp/test/gray-code)
   (:import-from :cp/test/hl-decomposition)
