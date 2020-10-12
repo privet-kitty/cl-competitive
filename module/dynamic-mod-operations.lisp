@@ -10,8 +10,9 @@
 ;; NOTE: Currently MOD* and MOD+ doesn't apply MOD when the number of
 ;; parameters is one. For simplicity I won't fix it for now.
 
-(declaim ((unsigned-byte 31) *modulus*))
-(defvar *modulus*)
+(defvar *modulus* #.(+ 7 (expt 10 9)))
+(declaim ((unsigned-byte 31) *modulus*)
+         #+sbcl (sb-ext:always-bound *modulus*))
 
 (defun mod* (&rest args)
   (reduce (lambda (x y) (mod (* x y) *modulus*)) args))

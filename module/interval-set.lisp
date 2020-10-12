@@ -155,11 +155,11 @@ order."
                 (declare (fixnum new-lkey new-rkey))
                 (%iset-insert base new-lkey new-rkey))))))))
 
-(defmacro iset-push (iset lkey rkey)
+(defmacro iset-push (lkey rkey iset)
   "PUSH-style macro for ISET-INSERT."
   `(setf ,iset (iset-insert ,iset ,lkey ,rkey)))
 
-(defmacro iset-push-point (iset key)
+(defmacro iset-push-point (key iset)
   "Pushes an interval [KEY, KEY+1) to ISET."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
@@ -204,11 +204,11 @@ order."
               (iset-insert (iset-insert base new-lkey lkey)
                            rkey new-rkey)))))))
 
-(defmacro iset-pop (iset lkey rkey)
+(defmacro iset-pop (lkey rkey iset)
   "POP-style macro for ISET-INSERT."
   `(setf ,iset (iset-delete ,iset ,lkey ,rkey)))
 
-(defmacro iset-pop-point (iset key)
+(defmacro iset-pop-point (key iset)
   "Deletes an interval [KEY, KEY+1) from ISET (if it exists)."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))

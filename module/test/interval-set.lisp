@@ -34,9 +34,9 @@
 
 (test interval-set/manual
   (let (iset)
-    (iset-push iset 3 5)
-    (iset-push iset 5 6)
-    (iset-push-point iset 7)
+    (iset-push 3 5 iset)
+    (iset-push 5 6 iset)
+    (iset-push-point 7 iset)
     (is (equal '(3 6) (multiple-value-list (iset-find>= iset 0))))
     (is (equal '(7 8) (multiple-value-list (iset-find>= iset 6))))
     (is (equal '(nil nil) (multiple-value-list (iset-find>= iset 8))))))
@@ -54,9 +54,9 @@
                    (if (zerop (random 2))
                        (progn
                          (add-interval vector l r)
-                         (iset-push iset l r))
+                         (iset-push l r iset))
                        (progn
                          (delete-interval vector l r)
-                         (iset-pop iset l r)))
+                         (iset-pop l r iset)))
                    (assert (equal (to-interval-list iset)
                                   (to-interval-list vector)))))))))
