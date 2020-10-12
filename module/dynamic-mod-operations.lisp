@@ -11,8 +11,7 @@
 ;; parameters is one. For simplicity I won't fix it for now.
 
 (defvar *modulus* #.(+ 7 (expt 10 9)))
-(declaim ((unsigned-byte 31) *modulus*)
-         #+sbcl (sb-ext:always-bound *modulus*))
+(declaim ((unsigned-byte 31) *modulus*))
 
 (defun mod* (&rest args)
   (reduce (lambda (x y) (mod (* x y) *modulus*)) args))
