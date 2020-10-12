@@ -68,6 +68,7 @@
   (:import-from :cp/test/log-ceil)
   (:import-from :cp/test/logreverse)
   (:import-from :cp/test/make-array-on-vector)
+  (:import-from :cp/test/manhattan-fnn)
   (:import-from :cp/test/map-permutations)
   (:import-from :cp/test/matrix-rotate)
   (:import-from :cp/test/merge-sort)

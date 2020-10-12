@@ -80,6 +80,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
 - [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
+- [manhattan-fnn.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/manhattan-fnn.lisp) farthest neighbor points in d-dimensional L1 space
 - [date.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/date.lisp) some utilities about date
 
 
@@ -119,7 +120,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [log-factorial.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/log-factorial.lisp) logarithm of factorial (logarithm of gamma function)
 
 ### Bit operations
-- [bit-basher.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bit-basher.lisp) 64-times faster operations on simple-bit-vector
+- [bit-basher.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bit-basher.lisp) efficient operations on simple-bit-vector
 - [gray-code.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/gray-code.lisp) Gray code
 - [tzcount.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tzcount.lisp) TZCNT operation
 - [logreverse.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/logreverse.lisp) bit-reversal operation
@@ -147,7 +148,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [mo-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mo-tree.lisp) Mo's algorithm for paths on tree (vertex query)
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/random-graph.lisp) fast generation of random adjacency matrices
 
-### Geometry
+### Euclidean geometry
 - [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
 - [phase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/phase.lisp) order by amplitude (`atan`)
 - [circumcenter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/circumcenter.lisp) circumcenter
