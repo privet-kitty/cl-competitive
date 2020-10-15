@@ -1,9 +1,8 @@
 (in-package :cl-user)
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-int:defconstant-eqx opt
+  (defparameter *opt*
     #+swank '(optimize (speed 3) (safety 2))
-    #-swank '(optimize (speed 3) (safety 0) (debug 0))
-    #'equal)
+    #-swank '(optimize (speed 3) (safety 0) (debug 0)))
   #+swank (ql:quickload '(:cl-debug-print :fiveam :cp/util) :silent t)
   #+swank (use-package :cp/util :cl-user)
   #-swank (set-dispatch-macro-character
