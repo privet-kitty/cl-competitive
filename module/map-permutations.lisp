@@ -12,25 +12,28 @@
 (defun map-permutations! (function vector &optional (start 0) end)
   "Destructively permutes VECTOR[START] ... VECTOR[END-1] and applies FUNCTION
 to VECTOR each time. VECTOR comes back to the original order in the end."
-  (declare (vector vector))
-  (labels ((recur (start end)
-             (declare ((mod #.array-total-size-limit) start end))
-             (if (> start end)
-                 (funcall function vector)
-                 (loop initially (recur (+ 1 start) end)
-                       for i from (+ 1 start) below end
-                       do (rotatef (aref vector start) (aref vector i))
-                          (recur (+ 1 start) end)
-                          (rotatef (aref vector start) (aref vector i))))))
-    (recur start (or end (length vector)))))
+  (declare (vector vector)
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
+  (let ((end (or end (length vector))))
+    (labels ((recur (start)
+               (declare ((mod #.array-total-size-limit) start))
+               (if (> start end)
+                   (funcall function vector)
+                   (loop initially (recur (+ 1 start))
+                         for i from (+ 1 start) below end
+                         do (rotatef (aref vector start) (aref vector i))
+                            (recur (+ 1 start))
+                            (rotatef (aref vector start) (aref vector i))))))
+      (recur start))))
 
 ;; NOTE: It tends to be slow on SBCL version earlier than 1.5.0, as
 ;; constant-folding of ARRAY-ELEMENT-TYPE doesn't work.
 (declaim (inline map-combinations))
 (defun map-combinations (function vector length)
   "Applies FUNCTION to each combination of given length of VECTOR. Note that the
-vector passed to FUNCTION will be recycled. The consequence is undefined when
-the combination vector is modified in FUNCION."
+vector passed to FUNCTION is allocated only once and will be recycled. The
+consequence is undefined when any of these two vectors are modified in FUNCION."
   (declare (vector vector)
            ((mod #.array-total-size-limit) length))
   (assert (<= length (length vector)))

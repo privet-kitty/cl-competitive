@@ -16,7 +16,7 @@ SUM-TYPE := nil | type specifier
 Defines no structure; 2D BIT is just a 2-dimensional array. This macro defines
 three functions: <NAME>-UPDATE!, <NAME>-FOLD and COERCE-TO-<NAME>!.
 
-SUM-TYPE is used only for the type declaration: each sum is declared to be this
+SUM-TYPE is used only for type declarations: each sum is declared to be this
 type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
