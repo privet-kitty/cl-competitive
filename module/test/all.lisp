@@ -103,6 +103,7 @@
   (:import-from :cp/test/rolling-hash31)
   (:import-from :cp/test/rolling-hash62)
   (:import-from :cp/test/run-length)
+  (:import-from :cp/test/run-range)
   (:import-from :cp/test/scc)
   (:import-from :cp/test/ssp)
   (:import-from :cp/test/ssp-slow)
