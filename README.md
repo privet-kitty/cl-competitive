@@ -32,7 +32,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 ## Contents
 
 ### General data structures
-- [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/queue.lisp) queue by singly-linked list
+- [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/queue.lisp) queue with singly-linked list
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/deque.lisp) double-ended queue with ring buffer
 - [double-stack-deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/double-stack-deque.lisp) double-ended queue with two stacks
 - [abstract-heap](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-heap.lisp) binary heap for static order function
@@ -45,8 +45,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [undoable-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/undoable-disjoint-set.lisp) undoable disjoint set
 - [persistent-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-disjoint-set.lisp) partially persistent disjoint set
 - [offline-dynamic-connectivity.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/offline-dynamic-connectivity.lisp) offline dynamic connectivity
-- [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ref-able-treap.lisp) ordered set by treap; analogue of `std::set` or `java.util.TreeSet`
-- [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/explicit-treap.lisp) ordered map by treap; analogue of `std::map` or `java.util.TreeMap`
+- [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ref-able-treap.lisp) ordered set with treap; analogue of `std::set` or `java.util.TreeSet`
+- [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/explicit-treap.lisp) ordered map with treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/implicit-treap.lisp) treap with implicit key
 - [interval-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/interval-set.lisp) ordered set of half-open intervals
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
@@ -159,8 +159,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [rolling-hash31.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash31.lisp) 31-bit rolling hash
 - [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash62.lisp) 62-bit rolling hash
 - [2d-rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-rolling-hash.lisp) 2D 32-bit rolling hash
-- [triemap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/triemap.lisp) map structure by Trie
-- [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trie.lisp) multiset structure by Trie
+- [triemap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/triemap.lisp) map structure with trie
+- [trie.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trie.lisp) multiset structure with trie
 - [z-algorithm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/z-algorithm.lisp) Z-algorithm
 
 ### I/O
