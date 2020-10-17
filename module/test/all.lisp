@@ -12,7 +12,6 @@
   (:import-from :cp/test/bisect)
   (:import-from :cp/test/bit-basher)
   (:import-from :cp/test/block-cut-tree)
-  (:import-from :cp/test/boruvka)
   (:import-from :cp/test/bounded-partition-number)
   (:import-from :cp/test/buffered-read-line)
   (:import-from :cp/test/chinese-remainder)
