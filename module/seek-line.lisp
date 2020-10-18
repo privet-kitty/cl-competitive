@@ -3,11 +3,9 @@
   (:export #:seek-line))
 (in-package :cp/seek-line)
 
-;; Ensures that the next character of the stream is neither LF nor CR.
 (defun seek-line (&optional (stream *standard-input*))
-  (loop
-    (let ((c (peek-char nil stream nil #\eot)))
-      (if (or (char= c #\lf)
-	      (char= c #\cr))
-          (read-char stream)
-          (return)))))
+  "Ensures that the next character of STREAM is neither LF nor CR."
+  (loop for c = (peek-char nil stream nil #\Space)
+        while (or (char= c #\Linefeed)
+                  (char= c #\Return))
+        do (read-char stream)))

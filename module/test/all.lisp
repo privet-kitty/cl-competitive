@@ -105,6 +105,7 @@
   (:import-from :cp/test/run-length)
   (:import-from :cp/test/run-range)
   (:import-from :cp/test/scc)
+  (:import-from :cp/test/seek-line)  
   (:import-from :cp/test/ssp)
   (:import-from :cp/test/ssp-slow)
   (:import-from :cp/test/shuffle)
