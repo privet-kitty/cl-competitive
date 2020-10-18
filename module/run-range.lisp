@@ -7,8 +7,8 @@
 (defun map-run-range (function seq &key (test #'eql))
   "Applies FUNCTION to each equal successive element of SEQ. FUNCTION must take
 three arguments: the first one receives an element in SEQ and the rest ones
-receive the half-open interval in which all the elements are equal to the first
-one.
+receive the left-end and the right-end half-open interval in which all the
+elements are equal to the first one.
 
 Example:
 \(map-run-range (lambda (x l r) (format t \"~D ~D ~D~%\" x l r)) #(1 1 1 2 2 1 3))

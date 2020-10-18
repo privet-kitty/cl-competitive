@@ -3,6 +3,28 @@
   (:export #:make-array-on-vector))
 (in-package :cp/make-array-on-vector)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-c:defknown make-array-on-vector ((simple-array * (*)) list)
+      simple-array (sb-c:flushable)
+    :overwrite-fndb-silently t)
+  ;; (sb-c:defoptimizer (make-array-on-vector sb-c:derive-type) ((vector dims) node)
+  ;;   (block nil
+  ;;     (let* ((vector-type (sb-c::lvar-type vector))
+  ;;            (element-type (when (sb-c::array-type-p vector-type)
+  ;;                            (sb-c::array-type-element-type vector-type)))
+  ;;            (spec `(simple-array
+  ;;                    ,(if (or (null element-type) (sb-c::contains-unknown-type-p element-type))
+  ;;                         '*
+  ;;                         (sb-c::type-specifier element-type))
+  ;;                    ,(if (sb-c::constant-lvar-p dims)
+  ;;                         (let ((constant-dims (sb-c::lvar-value dims)))
+  ;;                           (unless (sb-c::check-array-dimensions constant-dims node)
+  ;;                             (return))
+  ;;                           constant-dims)
+  ;;                         '*))))
+  ;;       (sb-c::careful-specifier-type spec))))
+  )
+
 (defun make-array-on-vector (vector dimensions)
   "Returns a multi-dimensional array that uses VECTOR as its storage. The
 product of DIMENSIONS must be equal to the length of VECTOR."
