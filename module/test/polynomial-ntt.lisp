@@ -1,7 +1,7 @@
 (defpackage :cp/test/polynomial-ntt
   (:use :cl :fiveam :cp/ntt :cp/polynomial-ntt)
   (:import-from :cp/test/base #:base-suite)
-  (:import-from :cp/polynomial #:poly-value))
+  (:import-from :cp/mod-polynomial #:poly-value))
 (in-package :cp/test/polynomial-ntt)
 (in-suite base-suite)
 

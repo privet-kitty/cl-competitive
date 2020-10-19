@@ -1,7 +1,7 @@
-(defpackage :cp/test/polynomial
-  (:use :cl :fiveam :cp/polynomial)
+(defpackage :cp/test/mod-polynomial
+  (:use :cl :fiveam :cp/mod-polynomial)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/polynomial)
+(in-package :cp/test/mod-polynomial)
 (in-suite base-suite)
 
 (test poly-value

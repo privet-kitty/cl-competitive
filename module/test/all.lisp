@@ -88,7 +88,7 @@
   (:import-from :cp/test/persistent-vector)
   (:import-from :cp/test/phase)
   (:import-from :cp/test/placeholder-syntax)
-  (:import-from :cp/test/polynomial)
+  (:import-from :cp/test/mod-polynomial)
   (:import-from :cp/test/polynomial-ntt)
   (:import-from :cp/test/power)
   (:import-from :cp/test/primality)

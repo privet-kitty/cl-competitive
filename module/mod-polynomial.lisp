@@ -1,8 +1,8 @@
-(defpackage :cp/polynomial
+(defpackage :cp/mod-polynomial
   (:use :cl :cp/mod-inverse)
   (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-power
            #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!))
-(in-package :cp/polynomial)
+(in-package :cp/mod-polynomial)
 
 ;; NOTE: These are poor man's utilities for polynomial arithmetic. NOT
 ;; sufficiently equipped in all senses.
