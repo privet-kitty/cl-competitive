@@ -136,7 +136,6 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lca.lisp) lowest common anscestor (binary lifting)
 - [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/min-cost-flow.lisp) minimum cost flow (SSP)
-<!-- - [boruvka.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/boruvka.lisp) minimum spanning tree (Borůvka's algorithm) -->
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
 - [euler-tour.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/euler-tour.lisp) Euler tour of tree
@@ -179,7 +178,6 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Weird things
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a bundle of some slots
-- [increase-spase.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
+- [increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/compile-time-increase-space.lisp) analogue of increase-space at compile time
 - [self-compile.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/self-compile.lisp) self-rewriting compilation
-
