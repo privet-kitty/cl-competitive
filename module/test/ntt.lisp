@@ -1,5 +1,5 @@
 (defpackage :cp/test/ntt
-  (:use :cl :fiveam :cp/ntt :cp/polynomial)
+  (:use :cl :fiveam :cp/ntt :cp/mod-polynomial)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/ntt #:%calc-generator))
 (in-package :cp/test/ntt)
