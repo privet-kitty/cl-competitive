@@ -1,8 +1,8 @@
-(defpackage :cp/test/convolution
-  (:use :cl :fiveam :cp/convolution)
+(defpackage :cp/test/convolution-ntt
+  (:use :cl :fiveam :cp/convolution-ntt)
   (:import-from :cp/test/base #:base-suite)
-  (:import-from :cp/convolution #:inv-gcd))
-(in-package :cp/test/convolution)
+  (:import-from :cp/convolution-ntt #:inv-gcd))
+(in-package :cp/test/convolution-ntt)
 (in-suite base-suite)
 
 ;; from https://github.com/atcoder/ac-library/blob/master/test/unittest/internal_math_test.cpp

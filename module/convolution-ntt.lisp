@@ -4,10 +4,10 @@
 ;;; https://github.com/atcoder/ac-library/blob/master/atcoder/convolution.hpp
 ;;;
 
-(defpackage :cp/convolution
+(defpackage :cp/convolution-ntt
   (:use :cl :cp/ntt)
   (:export #:convolve #:convolution-int #:convolution-vector #:mod-convolve))
-(in-package :cp/convolution)
+(in-package :cp/convolution-ntt)
 
 (deftype convolution-int () '(signed-byte 64))
 (deftype convolution-vector () '(simple-array convolution-int (*)))

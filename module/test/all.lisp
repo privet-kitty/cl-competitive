@@ -21,7 +21,7 @@
   (:import-from :cp/test/complex-geometry)
   (:import-from :cp/test/convex-hull)
   (:import-from :cp/test/convex-hull-trick)
-  (:import-from :cp/test/convolution)
+  (:import-from :cp/test/convolution-ntt)
   (:import-from :cp/test/cumulative-sum)
   (:import-from :cp/test/date)
   (:import-from :cp/test/deque)
