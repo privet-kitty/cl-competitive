@@ -3,8 +3,6 @@
 ;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
 ;;;
 
-;; TODO: abstraction
-
 (defpackage :cp/explicit-treap
   (:use :cl)
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator
@@ -174,7 +172,8 @@ The behavior is undefined when duplicate keys are inserted."
 
 Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
 false. If IF-EXISTS is function and TREAP already contains KEY, TREAP-ENSURE-KEY
-updates the value by the function instead of overwriting it with VALUE."
+updates the value by the function instead of overwriting it with VALUE. You
+cannot rely on the side effect. Use the returned value."
   (declare (function order)
            ((or null treap) treap))
   (labels ((find-and-update (treap)
@@ -520,9 +519,9 @@ smaller than any keys in TREAP."
 
 ;; not tested
 (defun treap-fold-bisect (treap value &key (order #'<))
-  "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
+  "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd
+key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
 
-Note:
 - This function deals with a **closed** interval. 
 - This function returns NIL instead if TREAP[<1st key>]+ ... + TREAP[<last
 key>] < VALUE.
@@ -551,6 +550,15 @@ key>], ...) must be monotone w.r.t. ORDER.
     (recur treap +op-identity+)))
 
 (defun treap-fold-bisect-from-end (treap value &key (order #'<))
+  "Returns the largest existing key that satisfies TREAP[<key>] + ... +
+TREAP[<2nd last key>] + TREAP[last key] >= VALUE (if ORDER is #'<).
+
+- This function deals with a **closed** interval. 
+- This function returns NIL instead if TREAP[<1st key>]+ ... + TREAP[<last
+key>] < VALUE.
+- The suffix sums of TREAP (TREAP[<last key>], TREAP[<2nd last key>] +
+TREAP[<last key>], ...) must be monotone w.r.t. ORDER.
+- ORDER must be a strict order"
   (labels
       ((recur (treap prev-sum)
          (unless treap
