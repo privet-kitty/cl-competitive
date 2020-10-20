@@ -58,7 +58,7 @@ with (RUN :SAMPLE) before submission."
         (wait 2.5))
     (when (or (not test) (run :sample))
       (format t "Submit in ~A seconds~%" wait)
-      (sleep wait)
+      ;; (sleep wait)
       (run-program "oj" `("submit" "--yes" "--wait" "0" ,url ,(namestring pathname))
                    :output *standard-output*
                    :search t))))
