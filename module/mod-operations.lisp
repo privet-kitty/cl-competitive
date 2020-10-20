@@ -7,38 +7,49 @@
   (:export #:define-mod-operations))
 (in-package :cp/mod-operations)
 
-;; NOTE: Currently MOD* and MOD+ doesn't apply MOD when the number of
-;; parameters is one. For simplicity I won't fix it for now.
 (defmacro define-mod-operations (divisor &optional (package (sb-int:sane-package)))
   (let ((mod* (intern "MOD*" package))
         (mod+ (intern "MOD+" package))
+        (mod- (intern "MOD-" package))
         (incfmod (intern "INCFMOD" package))
         (decfmod (intern "DECFMOD" package))
         (mulfmod (intern "MULFMOD" package)))
     `(progn
        (defun ,mod* (&rest args)
-         (reduce (lambda (x y) (mod (* x y) ,divisor)) args))
-
+         (cond ((cdr args) (reduce (lambda (x y) (mod (* x y) ,divisor)) args))
+               (args (mod (car args) ,divisor))
+               (t 1)))
        (defun ,mod+ (&rest args)
-         (reduce (lambda (x y) (mod (+ x y) ,divisor)) args))
+         (cond ((cdr args) (reduce (lambda (x y) (mod (+ x y) ,divisor)) args))
+               (args (mod (car args) ,divisor))
+               (t 0)))
+       (defun ,mod- (&rest args)
+         (if (cdr args)
+             (reduce (lambda (x y) (mod (- x y) ,divisor)) args)
+             (mod (- (car args)) ,divisor)))
 
        #+sbcl
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (locally (declare (sb-ext:muffle-conditions warning))
            (sb-c:define-source-transform ,mod* (&rest args)
-             (if (null args)
-                 1
-                 (reduce (lambda (x y) `(mod (* ,x ,y) ,',divisor)) args)))
+             (case (length args)
+               (0 1)
+               (1 `(mod ,(car args) ,',divisor))
+               (otherwise (reduce (lambda (x y) `(mod (* ,x ,y) ,',divisor)) args))))
            (sb-c:define-source-transform ,mod+ (&rest args)
-             (if (null args)
-                 0
-                 (reduce (lambda (x y) `(mod (+ ,x ,y) ,',divisor)) args)))))
+             (case (length args)
+               (0 0)
+               (1 `(mod ,(car args) ,',divisor))
+               (otherwise (reduce (lambda (x y) `(mod (+ ,x ,y) ,',divisor)) args))))
+           (sb-c:define-source-transform ,mod- (&rest args)
+             (case (length args)
+               (0 (values nil t))
+               (1 `(mod (- ,(car args)) ,',divisor))
+               (otherwise (reduce (lambda (x y) `(mod (- ,x ,y) ,',divisor)) args))))))
 
        (define-modify-macro ,incfmod (delta)
          (lambda (x y) (mod (+ x y) ,divisor)))
-
        (define-modify-macro ,decfmod (delta)
          (lambda (x y) (mod (- x y) ,divisor)))
-
        (define-modify-macro ,mulfmod (multiplier)
          (lambda (x y) (mod (* x y) ,divisor))))))
