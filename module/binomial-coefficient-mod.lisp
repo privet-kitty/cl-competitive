@@ -6,8 +6,8 @@
 
 (defpackage :cp/binomial-coefficient-mod
   (:use :cl)
-  (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:+binom-mod+
-           #:*fact* #:*fact-inv* #:*inv*))
+  (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:multichoose
+           #:+binom-mod+ #:*fact* #:*fact-inv* #:*inv*))
 (in-package :cp/binomial-coefficient-mod)
 
 ;; TODO: non-global handling
@@ -62,6 +62,10 @@
   (if (or (< n k) (< n 0) (< k 0))
       0
       (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +binom-mod+)))
+
+(declaim (inline multichoose))
+(defun multichoose (n k)
+  (binom (+ n k -1) (+ k -1)))
 
 ;; TODO: compiler macro or source-transform
 (declaim (inline multinomial))
