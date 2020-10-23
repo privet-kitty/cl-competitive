@@ -547,7 +547,7 @@ You cannot rely on the side effect. Use the returned value."
 
 (declaim (inline itreap-bisect-left)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-left))
-(defun itreap-bisect-left (itreap value order)
+(defun itreap-bisect-left (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= VALUE, where >= is the complement of ORDER. In other words,
 this function returns a leftmost index at which value can be inserted with
@@ -556,7 +556,7 @@ VALUE. The time complexity is O(log(n))."
   (labels ((recur (count itreap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null itreap) nil)
-                   ((funcall order (%itreap-value itreap) value)
+                   ((funcall order (funcall key (%itreap-value itreap)) value)
                     (recur count (%itreap-right itreap)))
                    (t
                     (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
@@ -567,7 +567,7 @@ VALUE. The time complexity is O(log(n))."
 
 (declaim (inline itreap-bisect-right)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-right))
-(defun itreap-bisect-right (itreap value order)
+(defun itreap-bisect-right (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 VALUE < ITREAP[index], where < is ORDER. In other words, this function
 returns a rightmost index at which VALUE can be inserted with keeping the
@@ -576,7 +576,7 @@ complexity is O(log(n))."
   (labels ((recur (count itreap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null itreap) nil)
-                   ((funcall order value (%itreap-value itreap))
+                   ((funcall order value (funcall key (%itreap-value itreap)))
                     (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
                       (or (recur left-count (%itreap-left itreap))
                           left-count)))
