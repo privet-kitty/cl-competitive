@@ -10,10 +10,12 @@
 ;; TODO: maybe better to use Prüfer sequence?
 
 ;; NOT TESTED
-(defun make-random-tree (size)
+(defun make-random-tree (size &optional weight-function state)
   "Returns an undirected random tree of the given size."
-  (declare ((integer 0 #.most-positive-fixnum) size))
-  (let ((graph (make-array size :element-type 'list :initial-element nil))
+  (declare ((integer 0 #.most-positive-fixnum) size)
+           ((or null function) weight-function))
+  (let ((state (or state *random-state*))
+        (graph (make-array size :element-type 'list :initial-element nil))
         (dset (make-array size :element-type 'fixnum :initial-element -1))
         (count 0))
     (declare ((integer 0 #.most-positive-fixnum) count))
@@ -32,11 +34,15 @@
                    (incf (aref dset root1) (aref dset root2))
                    (setf (aref dset root2) root1)))))
       (loop until (= count (- size 1))
-            for u = (random size)
-            for v = (random size)
+            for u = (random size state)
+            for v = (random size state)
             unless (= (ds-root u) (ds-root v))
             do (ds-unite u v)
-               (push u (aref graph v))
-               (push v (aref graph u))
+               (if weight-function
+                   (let ((weight (funcall weight-function u v)))
+                     (push (cons u weight) (aref graph v))
+                     (push (cons v weight) (aref graph u)))
+                   (progn (push u (aref graph v))
+                          (push v (aref graph u))))
                (incf count)))
     graph))
