@@ -55,10 +55,10 @@ with (RUN :SAMPLE) before submission."
                       (if (boundp '*lisp-file-pathname*)
                           *lisp-file-pathname*
                           (error "Don't know which file to submit"))))
-        (wait 2.5))
+        (wait 0.0))
     (when (or (not test) (run :sample))
       (format t "Submit in ~A seconds~%" wait)
-      ;; (sleep wait)
+      (sleep wait)
       (run-program "oj" `("submit" "--yes" "--wait" "0" ,url ,(namestring pathname))
                    :output *standard-output*
                    :search t))))
