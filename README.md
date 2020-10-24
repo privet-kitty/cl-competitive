@@ -135,7 +135,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [ford-fulkerson.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ford-fulkerson.lisp) maximum flow (Ford-Fulkerson algorithm)
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lca.lisp) lowest common anscestor (binary lifting)
-- [lca-edge](https://github.com/privet-kitty/cl-competitive/blob/master/module/lca-edge.lisp) LCA and path queries on a tree or forest with weighted edge (binary lifting)
+- [tree-binary-lifting-edge](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-binary-lifting-edge.lisp) LCA and path queries on a tree or forest with weighted edge (binary lifting)
 - [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/min-cost-flow.lisp) minimum cost flow (SSP)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
