@@ -8,13 +8,13 @@
   (let ((state (or state *random-state*)))
     (make-random-tree
      n
-     (lambda (_ __)
-       (declare (ignore _ __))
-       (let* ((len (random 5 state))
-              (res (make-string len :element-type 'base-char)))
-         (dotimes (i len res)
-           (setf (aref res i) (code-char (+ 97 (random 26 state)))))))
-     state)))
+     :weight-key (lambda (_ __)
+                   (declare (ignore _ __))
+                   (let* ((len (random 5 state))
+                          (res (make-string len :element-type 'base-char)))
+                     (dotimes (i len res)
+                       (setf (aref res i) (code-char (+ 97 (random 26 state)))))))
+     :state state)))
 
 (defun naive-fold (graph start end)
   (labels ((dfs (v parent path)

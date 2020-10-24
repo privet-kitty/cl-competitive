@@ -10,10 +10,13 @@
 ;; TODO: maybe better to use Prüfer sequence?
 
 ;; NOT TESTED
-(defun make-random-tree (size &optional weight-function state)
-  "Returns an undirected random tree of the given size."
+(defun make-random-tree (size &key weight-key state same-weight)
+  "Returns an undirected random tree of the given size.
+
+If SAME-WEIGHT is true, it guarantees that an inward edge and the corresponding
+outward edge have the same weight."
   (declare ((integer 0 #.most-positive-fixnum) size)
-           ((or null function) weight-function))
+           ((or null function) weight-key))
   (let ((state (or state *random-state*))
         (graph (make-array size :element-type 'list :initial-element nil))
         (dset (make-array size :element-type 'fixnum :initial-element -1))
@@ -38,10 +41,11 @@
             for v = (random size state)
             unless (= (ds-root u) (ds-root v))
             do (ds-unite u v)
-               (if weight-function
-                   (let ((weight (funcall weight-function u v)))
-                     (push (cons u weight) (aref graph v))
-                     (push (cons v weight) (aref graph u)))
+               (if weight-key
+                   (let* ((weight1 (funcall weight-key u v))
+                          (weight2 (if same-weight weight1 (funcall weight-key v u))))
+                     (push (cons v weight1) (aref graph u))
+                     (push (cons u weight2) (aref graph v)))
                    (progn (push u (aref graph v))
                           (push v (aref graph u))))
                (incf count)))

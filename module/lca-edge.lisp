@@ -1,5 +1,5 @@
 ;;;
-;;; LCA and path queries on a tree with weighted edge (binary lifting)
+;;; LCA and path queries on a tree (or forest) with weighted edge (binary lifting)
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;
@@ -13,6 +13,7 @@
 (in-package :cp/lca-edge)
 
 ;; TODO: abstraction
+
 ;; PAY ATTENTION TO THE STACK SIZE! THE CONSTRUCTOR DOES DFS.
 
 (deftype lca-vertex-number () '(signed-byte 32))
@@ -35,10 +36,10 @@
                                      :initial-element -1))
                  (parents (make-array (list size max-level)
                                       :element-type 'lca-vertex-number))
-                 (table-forth (make-array (list size max-level)
+                 (table-out (make-array (list size max-level)
                                           :element-type 'lca-element-type
                                           :initial-element +identity+))
-                 (table-back (make-array (list size max-level)
+                 (table-in (make-array (list size max-level)
                                          :element-type 'lca-element-type
                                          :initial-element +identity+))))
             (:conc-name lca-)
@@ -46,8 +47,8 @@
   (max-level nil :type (integer 0 #.most-positive-fixnum))
   (depths nil :type (simple-array lca-vertex-number (*)))
   (parents nil :type (simple-array lca-vertex-number (* *)))
-  (table-forth nil :type (simple-array lca-element-type (* *)))
-  (table-back nil :type (simple-array lca-element-type (* *))))
+  (table-out nil :type (simple-array lca-element-type (* *)))
+  (table-in nil :type (simple-array lca-element-type (* *))))
 
 (defun make-lca-table (graph &key root (vertex-key #'identity) (weight-key #'identity))
   "GRAPH := vector of adjacency lists
@@ -65,8 +66,8 @@ ROOT; GRAPH must be tree in the latter case."
          (depths (lca-depths lca-table))
          (parents (lca-parents lca-table))
          (max-level (lca-max-level lca-table))
-         (table-forth (lca-table-forth lca-table))
-         (table-back (lca-table-back lca-table)))
+         (table-out (lca-table-out lca-table))
+         (table-in (lca-table-in lca-table)))
     (labels ((dfs (v parent depth)
                (declare (lca-vertex-number v parent))
                (setf (aref depths v) depth
@@ -74,11 +75,11 @@ ROOT; GRAPH must be tree in the latter case."
                (dolist (edge (aref graph v))
                  (let ((child (funcall vertex-key edge)))
                    (declare (lca-vertex-number child))
-                   (unless (= child parent)
-                     (let ((value (funcall weight-key edge)))
-                       (setf (aref table-forth child 0) value
-                             (aref table-back child 0) value))
-                     (dfs child v (+ 1 depth)))))))
+                   (if (= child parent)
+                       (setf (aref table-out v 0) (funcall weight-key edge))
+                       (progn
+                         (setf (aref table-in child 0) (funcall weight-key edge))
+                         (dfs child v (+ 1 depth))))))))
       (if root
           (dfs root -1 0)
           (dotimes (v size)
@@ -90,10 +91,10 @@ ROOT; GRAPH must be tree in the latter case."
               (setf (aref parents v (+ k 1)) -1)
               (let ((parent (aref parents v k)))
                 (setf (aref parents v (+ k 1)) (aref parents parent k)
-                      (aref table-forth v (+ k 1)) (op (aref table-forth v k)
-                                                       (aref table-forth parent k))
-                      (aref table-back v (+ k 1)) (op (aref table-back parent k)
-                                                      (aref table-back v k)))))))
+                      (aref table-out v (+ k 1)) (op (aref table-out v k)
+                                                     (aref table-out parent k))
+                      (aref table-in v (+ k 1)) (op (aref table-in parent k)
+                                                    (aref table-in v k)))))))
       lca-table)))
 
 (define-condition two-vertices-disconnected-error (error)
@@ -146,8 +147,8 @@ ROOT; GRAPH must be tree in the latter case."
          (v vertex2)
          (depths (lca-depths lca-table))
          (parents (lca-parents lca-table))
-         (table-forth (lca-table-forth lca-table))
-         (table-back (lca-table-back lca-table))
+         (table-out (lca-table-out lca-table))
+         (table-in (lca-table-in lca-table))
          (max-level (lca-max-level lca-table))
          (res1 +identity+)
          (res2 +identity+))
@@ -156,17 +157,17 @@ ROOT; GRAPH must be tree in the latter case."
     (if (<= (aref depths u) (aref depths v))
         (dotimes (k max-level)
           (when (logbitp k (- (aref depths v) (aref depths u)))
-            (setq res2 (op (aref table-back v k) res2)
+            (setq res2 (op (aref table-in v k) res2)
                   v (aref parents v k))))
         (dotimes (k max-level)
           (when (logbitp k (- (aref depths u) (aref depths v)))
-            (setq res1 (op res1 (aref table-forth u k))
+            (setq res1 (op res1 (aref table-out u k))
                   u (aref parents u k)))))
     (unless (= u v)
       (loop for k from (- max-level 1) downto 0
             unless (= (aref parents u k) (aref parents v k))
-            do (setq res1 (op res1 (aref table-forth u k))
-                     res2 (op (aref table-back v k) res2)
+            do (setq res1 (op res1 (aref table-out u k))
+                     res2 (op (aref table-in v k) res2)
                      u (aref parents u k)
                      v (aref parents v k))
             finally (when (= (aref parents u 0) -1)
@@ -174,8 +175,8 @@ ROOT; GRAPH must be tree in the latter case."
                              :lca-table lca-table
                              :vertex1 vertex1
                              :vertex2 vertex2))
-                    (setq res1 (op res1 (aref table-forth u 0))
-                          res2 (op (aref table-back v 0) res2))))
+                    (setq res1 (op res1 (aref table-out u 0))
+                          res2 (op (aref table-in v 0) res2))))
     (op res1 res2)))
 
 (declaim (inline lca-distance))
