@@ -5,8 +5,8 @@
 
 (declaim (ftype (function * (values (or null (integer 0 #.most-positive-fixnum)) &optional)) mod-log))
 (defun mod-log (x y modulus &key from-zero)
-  "Returns the smallest positive integer k that satiefies x^k ≡ y mod p.
-Returns NIL if it is infeasible."
+  "Returns the smallest positive (or non-negative, when FROM-ZERO is true)
+integer k that satiefies x^k = y mod p. Returns NIL if it is infeasible."
   (declare (optimize (speed 3))
            (integer x y)
            ((integer 1 #.most-positive-fixnum) modulus))
@@ -19,12 +19,14 @@ Returns NIL if it is infeasible."
       (return-from mod-log 0))
     (if (= g 1)
         ;; coprime case
-        (let* ((m (+ 1 (isqrt (- modulus 1)))) ; smallest integer equal to or
-                                               ; larger than sqrt(p)
+        (let* (;; smallest integer equal to or larger than sqrt(p)
+               (m (+ 1 (isqrt (- modulus 1))))
                (x^m (loop for i below m
                           for res of-type (integer 0 #.most-positive-fixnum) = x
                           then (mod (* res x) modulus)
                           finally (return res)))
+               ;; Using EQ for fixnum is substandard but I use it here for
+               ;; efficiency.
                (table (make-hash-table :size m :test 'eq)))
           ;; Constructs TABLE: yx^j |-> j (j = 0, ..., m-1)
           (loop for j from 0 below m
@@ -42,10 +44,10 @@ Returns NIL if it is infeasible."
                      (return (- (* i m) j)))
                 finally (return nil)))
         ;; If x and p are not coprime, let g := gcd(x, p), x := gx', y := gy', p
-        ;; := gp' and solve x^(k-1) ≡ y'x'^(-1) mod p' instead. See
+        ;; := gp' and solve x^(k-1) = y'x'^(-1) mod p' instead. See
         ;; https://math.stackexchange.com/questions/131127/ for the detail.
         (if (= x y)
-            ;; This is the special treatment for the case x ≡ y. Without this
+            ;; This is the special treatment for the case x = y. Without this
             ;; (mod-log 4 0 4) returns not 1 but 2.
             1
             (multiple-value-bind (y-prime rem) (floor y g)
