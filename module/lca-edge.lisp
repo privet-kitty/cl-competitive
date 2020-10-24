@@ -1,5 +1,5 @@
 ;;;
-;;; LCA and path queries on a tree (or forest) with weighted edge (binary lifting)
+;;; LCA and path queries on a tree or forest with weighted edge (binary lifting)
 ;;; build: O(nlog(n))
 ;;; query: O(log(n))
 ;;;
@@ -18,12 +18,14 @@
 
 (deftype lca-vertex-number () '(signed-byte 32))
 
+(deftype lca-element-type () 'string)
 (sb-int:defconstant-eqx +identity+ "" #'equal)
 
+;; OP must comprise a monoid but doesn't need to be commutative
 (declaim (inline op))
-(defun op (x y) (concatenate 'simple-base-string x y))
-
-(deftype lca-element-type () 'string)
+(defun op (x y)
+  (declare (lca-element-type x y))
+  (concatenate 'simple-base-string x y))
 
 (defstruct (lca-table
             (:constructor %make-lca-table
@@ -37,11 +39,11 @@
                  (parents (make-array (list size max-level)
                                       :element-type 'lca-vertex-number))
                  (table-out (make-array (list size max-level)
-                                          :element-type 'lca-element-type
-                                          :initial-element +identity+))
+                                        :element-type 'lca-element-type
+                                        :initial-element +identity+))
                  (table-in (make-array (list size max-level)
-                                         :element-type 'lca-element-type
-                                         :initial-element +identity+))))
+                                       :element-type 'lca-element-type
+                                       :initial-element +identity+))))
             (:conc-name lca-)
             (:copier nil))
   (max-level nil :type (integer 0 #.most-positive-fixnum))
@@ -180,10 +182,10 @@ ROOT; GRAPH must be tree in the latter case."
     (op res1 res2)))
 
 (declaim (inline lca-distance))
-(defun lca-distance (lca-table u v)
-  "Returns the distance between two vertices U and V."
+(defun lca-distance (lca-table vertex1 vertex2)
+  "Returns the distance between two vertices."
   (declare (optimize (speed 3)))
   (let ((depths (lca-depths lca-table))
-        (lca (lca-get-lca lca-table u v)))
-    (+ (- (aref depths u) (aref depths lca))
-       (- (aref depths v) (aref depths lca)))))
+        (lca (lca-get-lca lca-table vertex1 vertex2)))
+    (+ (- (aref depths vertex1) (aref depths lca))
+       (- (aref depths vertex2) (aref depths lca)))))

@@ -113,10 +113,10 @@ ROOT; GRAPH must be tree in the latter case."
                           (return (aref parents u 0)))))))
 
 (declaim (inline lca-distance))
-(defun lca-distance (lca-table u v)
-  "Returns the distance between two vertices U and V."
+(defun lca-distance (lca-table vertex1 vertex2)
+  "Returns the distance between two vertices."
   (declare (optimize (speed 3)))
   (let ((depths (lca-depths lca-table))
-        (lca (lca-get-lca lca-table u v)))
-    (+ (- (aref depths u) (aref depths lca))
-       (- (aref depths v) (aref depths lca)))))
+        (lca (lca-get-lca lca-table vertex1 vertex2)))
+    (+ (- (aref depths vertex1) (aref depths lca))
+       (- (aref depths vertex2) (aref depths lca)))))

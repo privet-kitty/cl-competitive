@@ -1,5 +1,5 @@
 ;;;
-;;; Mo's algorithm for paths on tree (handling queries w.r.t. vertex)
+;;; Mo's algorithm for paths on a tree with weighted vertex
 ;;;
 ;;; Reference:
 ;;; https://ei1333.hateblo.jp/entry/2017/09/11/211011 (Japanese)
