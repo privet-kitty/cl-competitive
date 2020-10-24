@@ -72,6 +72,7 @@
   (:import-from :cp/test/matrix-rotate)
   (:import-from :cp/test/merge-sort)
   (:import-from :cp/test/mex)
+  (:import-from :cp/test/mod-binomial)
   (:import-from :cp/test/mod-inverse)
   (:import-from :cp/test/mod-linear-algebra)
   (:import-from :cp/test/mod-log)
