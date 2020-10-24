@@ -9,9 +9,8 @@
     :derive-type (creation-result-type-specifier-nth-arg 1)
     :overwrite-fndb-silently t))
 
-;; TODO: deftransform for fixed length of arguments
-(defun zip (function sequence-type &rest seqs)
-  (declare (function function))
+;; TODO: deftransform for arguments of fixed length
+(defun zip (sequence-type &rest seqs)
   (let* ((len (loop for seq in seqs
                     minimize (length seq)))
          (nodes (loop for seq in seqs

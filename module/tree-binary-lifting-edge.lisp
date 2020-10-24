@@ -17,11 +17,12 @@
    (vertex2 :initarg :vertex2 :accessor two-vertices-disconnected-error-vertex2))
   (:report
    (lambda (c s)
-     (format s "~W and ~W are disconnected on lca structure ~W"
+     (format s "~W and ~W are disconnected on structure ~W"
              (two-vertices-disconnected-error-vertex1 c)
              (two-vertices-disconnected-error-vertex2 c)
              (two-vertices-disconnected-error-struct c)))))
 
+;; TODO: binary search (four kinds?)
 (defmacro define-tree-binary-lifting-edge
     (name &key op identity (vertex-integer '(signed-byte 32)) element-type)
   "Defines a structure to deal with LCA and path query on a tree or forest with

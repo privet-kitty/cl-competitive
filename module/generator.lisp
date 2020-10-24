@@ -17,8 +17,8 @@
                      power (ash power -1)))
       res))
   (defun calc-generator (modulus &optional start)
-    "Searches a generator (starting at START, in ascending order)
-w.r.t. MODULUS. MODULUS must be prime."
+    "Finds the smallest generator equal to or larger than START. MODULUS must be
+prime."
     (declare ((integer 3 #.most-positive-fixnum) modulus)
              ((or null (integer 2 #.most-positive-fixnum)) start))
     (let ((start (or start 2)))
