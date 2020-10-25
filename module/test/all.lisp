@@ -98,6 +98,7 @@
   (:import-from :cp/test/quicksort)
   (:import-from :cp/test/radix-heap)
   (:import-from :cp/test/range-tree-fc)
+  (:import-from :cp/test/ratio-to-decimal)
   (:import-from :cp/test/read-line-into)
   (:import-from :cp/test/ref-able-treap)
   (:import-from :cp/test/relative-error)

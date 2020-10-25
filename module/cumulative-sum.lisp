@@ -50,7 +50,7 @@
 
 ;; TODO: usage example
 (defmacro define-cumulative-sum (name rank &key (+ '+) (- '-) package)
-  "Provides <RANK>-dimensional cumulative sum. This function defines three
+  "Provides <RANK>-dimensional cumulative sum. This macro defines three
 functions: <NAME>-BUILD!, <NAME>-GET, and <NAME>-UPDATE!.
 
 <NAME>-BUILD! takes an array and (destructively) makes it to store cumulative

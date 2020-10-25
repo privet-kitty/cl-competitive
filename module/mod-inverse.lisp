@@ -3,7 +3,7 @@
   (:export #:mod-inverse))
 (in-package :cp/mod-inverse)
 
-;; This implementation currently doesn't signal an error for a no-coprime
+;; This implementation currently doesn't signal an error for a non-coprime
 ;; input. See cp/experimental/mod-inverse if you need a safer mod-inverse.
 (declaim (inline mod-inverse)
          (ftype (function * (values (mod #.most-positive-fixnum) &optional)) mod-inverse))
