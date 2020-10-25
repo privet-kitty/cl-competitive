@@ -1,15 +1,18 @@
-;;;
-;;; Disjoint set by Union-Find algorithm over arbitrary monoid
-;;;
-
-;; not tested
-
 (defpackage :cp/abstract-disjoint-set
   (:use :cl)
-  (:export #:define-disjoint-set))
+  (:export #:define-disjoint-set)
+  (:documentation "Disjoint set by Union-Find algorithm over arbitrary
+  monoid (union by size & path compression)"))
 (in-package :cp/abstract-disjoint-set)
 
-(defmacro define-disjoint-set (name &key (operation '#'+) (element-type 'fixnum) (union-by-size t) conc-name)
+(defmacro define-disjoint-set (name &key (op '#'+) (identity 0) (element-type 'fixnum) (union-by-size t) conc-name)
+  "Defines a disjoint set over arbitrary monoid.
+
+OP is a binary operator comprising a monoid. It doesn't need to be commutative,
+but a non-commutative operator doesn't make sense in many cases. (Since OP is
+always called with (funcall OP <value of smaller index> <value of larger
+index>), non-commutative operator will make sense when union is always applied
+to adjacent components.)"
   (check-type name symbol)
   (let* ((conc-string (if conc-name
                           (symbol-name conc-name)
@@ -27,7 +30,9 @@
                    (:constructor ,constructor
                        (size
                         &optional
-                        (contents (make-array size :element-type ',element-type))
+                        (contents (make-array size
+                                              :element-type ',element-type
+                                              :initial-element ,identity))
                         &aux
                         (values
                          (prog1 contents
@@ -68,15 +73,15 @@ connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
          (let ((root1 (,rooter ,name x1))
                (root2 (,rooter ,name x2)))
            (unless (= root1 root2)
-             (let ((data (,data-accessor ,name))
-                   (values (,values-accessor ,name)))
+             (let* ((data (,data-accessor ,name))
+                    (values (,values-accessor ,name)))
                ;; ensure the size of root1 >= the size of root2
                ,@(when union-by-size
                    '((when (> (aref data root1) (aref data root2))
                        (rotatef root1 root2))))
                (incf (aref data root1) (aref data root2))
                (setf (aref values root1)
-                     (funcall ,operation (aref values root2) (aref values root1)))
+                     (funcall ,op (aref values (min root1 root2)) (aref values (max root1 root2))))
                (setf (aref data root2) root1)))))
 
        (declaim (inline ,connectivity-checker))
@@ -92,7 +97,8 @@ connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
 
 #+(or)
 (define-disjoint-set disjoint-set
-  :operation #'max
+  :op #'max
+  :identity 0
   :element-type fixnum
   :conc-name ds-
   :union-by-size nil)
