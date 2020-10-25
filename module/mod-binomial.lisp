@@ -3,8 +3,6 @@
   (:export #:mod-binomial))
 (in-package :cp/mod-binomial)
 
-;; not tested
-
 (declaim (inline mod-binomial))
 (defun mod-binomial (n k modulus)
   (declare ((integer 0 #.most-positive-fixnum) modulus))
