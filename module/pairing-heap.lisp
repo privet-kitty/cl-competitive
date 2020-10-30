@@ -27,7 +27,7 @@
   (cond ((null node1) node2)
         ((null node2) node1)
         (t
-         ;; ensure NODE1 < NODE2
+         ;; ensure NODE1 <= NODE2
          (when (funcall order (%pheap-key node2) (%pheap-key node1))
            (rotatef node1 node2))
          (setf (%pheap-next node2) (%pheap-head node1)
@@ -55,7 +55,7 @@
                      a)))))
     (recur node)))
 
-;; Implementation 2, manual stack by list
+;; Implementation 2, manual stack with list
 ;; Pros: stack safe
 ;; Cons: most consing, 15% slower
 
@@ -77,7 +77,7 @@
       (setf node (pheap-merge part node order)))
     node))
 
-;; Implementation 3, manual stack by PHEAP
+;; Implementation 3, manual stack with PHEAP object
 ;; Pros: stack safe, no consing
 ;; Cons: a bit trickey, 5% slower
 
