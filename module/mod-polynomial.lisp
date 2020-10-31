@@ -1,169 +1,169 @@
 (defpackage :cp/mod-polynomial
   (:use :cl :cp/mod-inverse)
   (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-div #:poly-div! #:poly-power
-           #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!))
+           #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!)
+  (:documentation "Provides fundamental operations to polynomials over Z/nZ."))
 (in-package :cp/mod-polynomial)
 
-;; NOTE: These are poor man's utilities for polynomial arithmetic. NOT
-;; sufficiently equipped in all senses.
+;; TODO: make another modules for non-modular polynomials, or introduce some
+;; abstraction to integrate it
 
 (declaim (inline poly-value))
-(defun poly-value (poly x modulus)
-  "Evaluates POLY at X."
-  (declare (vector poly)
+(defun poly-value (p x modulus)
+  "Evaluates P at X."
+  (declare (vector p)
            (fixnum x)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((res 0))
     (declare (fixnum res))
-    (loop for i from (- (length poly) 1) downto 0
-          do (setq res (mod (+ (mod (* res x) modulus) (aref poly i)) modulus)))
+    (loop for i from (- (length p) 1) downto 0
+          do (setq res (mod (+ (mod (* res x) modulus) (aref p i)) modulus)))
     res))
 
-;; naive multiplication in O(n^2)
 (declaim (inline poly-mult))
-(defun poly-mult (u v modulus &optional result-vector)
-  "Multiplies two polynomials u(x) and v(x) over Z/nZ in O(deg(u)deg(v)) time.
+(defun poly-mult (p1 p2 modulus &optional result-vector)
+  "Multiplies two polynomials P1(x) and P2(x) in O(deg(P1)deg(P2)) time.
 
 The result is stored in RESULT-VECTOR if it is given, otherwise a new vector is
 created."
-  (declare (vector u v)
+  (declare (vector p1 p2)
            ((or null vector) result-vector)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((deg1 (- (length u) 1))
-         (deg2 (- (length v) 1))
+  (let* ((deg1 (- (length p1) 1))
+         (deg2 (- (length p2) 1))
          (len (max 0 (+ deg1 deg2 1))))
     (declare ((integer -1 (#.array-total-size-limit)) deg1 deg2 len))
     (when (or (= -1 deg1) (= -1 deg2))
-      (return-from poly-mult (make-array 0 :element-type (array-element-type u))))
-    (let ((res (or result-vector (make-array len :element-type (array-element-type u)))))
+      (return-from poly-mult (make-array 0 :element-type (array-element-type p1))))
+    (let ((res (or result-vector (make-array len :element-type (array-element-type p1)))))
       (declare ((integer -1 (#.array-total-size-limit)) len))
       (dotimes (d len res)
         ;; 0 <= i <= deg1, 0 <= j <= deg2
         (loop with coef of-type (integer 0 #.most-positive-fixnum) = 0
               for i from (max 0 (- d deg2)) to (min d deg1)
               for j = (- d i)
-              do (setq coef (mod (+ coef (* (aref u i) (aref v j))) modulus))
+              do (setq coef (mod (+ coef (* (aref p1 i) (aref p2 j))) modulus))
               finally (setf (aref res d) coef))))))
 
 (declaim (inline poly-div))
-(defun poly-div (u v modulus &optional result-length)
-  "Returns u(x)/v(x), regarding polynomial as formal power series. The length of
-the returned vector is the same as u(x), when RESULT-LENGTH is null."
-  (declare (vector u v)
+(defun poly-div (p1 p2 modulus &optional result-length)
+  "Divides P1(x) by P2(x), regarding them as formal power series. The length of
+the returned vector is the same as P1, when RESULT-LENGTH is null. Time
+complexity is O(deg(P1)deg(P2))."
+  (declare (vector p1 p2)
            ((or null (integer 0 #.most-positive-fixnum)) result-length)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((len1 (length u))
-         (len2 (+ 1 (or (position 0 v :from-end t :test-not #'eql)
+  (let* ((len1 (length p1))
+         (len2 (+ 1 (or (position 0 p2 :from-end t :test-not #'eql)
                         (error 'division-by-zero
                                :operation #'poly-div
-                               :operands (list u v)))))
+                               :operands (list p1 p2)))))
          (len (or result-length len1))
-         (res (make-array len :element-type (array-element-type u)))
+         (res (make-array len :element-type (array-element-type p1)))
          ;; FIXME: Is it better to signal an error in non-coprime case?
-         (inv (mod-inverse (aref v 0) modulus)))
+         (inv (mod-inverse (aref p2 0) modulus)))
     (declare ((integer 0 #.most-positive-fixnum) len1 len2 len))
     (dotimes (i len res)
-      (let ((coef (mod (* inv (- (if (< i len1) (aref u i) 0)
+      (let ((coef (mod (* inv (- (if (< i len1) (aref p1 i) 0)
                                  (aref res i)))
                        modulus)))
         (setf (aref res i) coef)
         (loop for j from 1 below (min (- len i) len2)
               do (setf (aref res (+ i j))
-                       (mod (+ (aref res (+ i j)) (* coef (aref v j))) modulus)))))))
+                       (mod (+ (aref res (+ i j)) (* coef (aref p2 j))) modulus)))))))
 
 (declaim (inline poly-div!))
-(defun poly-div! (u v modulus)
-  "Returns u(x)/v(x), regarding polynomial as formal power series. The result is
-stored in u(x)."
-  (declare (vector u v)
+(defun poly-div! (p1 p2 modulus)
+  "Returns P1(x)/P2(x), regarding polynomial as formal power series. The result
+is stored in P1. Time complexity is O(deg(P1)deg(P2))."
+  (declare (vector p1 p2)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((len1 (length u))
-         (len2 (+ 1 (or (position 0 v :from-end t :test-not #'eql)
+  (let* ((len1 (length p1))
+         (len2 (+ 1 (or (position 0 p2 :from-end t :test-not #'eql)
                         (error 'division-by-zero
                                :operation #'poly-div
-                               :operands (list u v)))))
+                               :operands (list p1 p2)))))
          ;; FIXME: Is it better to signal an error in non-coprime case?
-         (inv (mod-inverse (aref v 0) modulus)))
+         (inv (mod-inverse (aref p2 0) modulus)))
     (declare ((integer 0 #.most-positive-fixnum) len1 len2))
-    (dotimes (i len1 u)
-      (let ((coef (mod (* inv (aref u i)) modulus)))
-        (setf (aref u i) coef)
+    (dotimes (i len1 p1)
+      (let ((coef (mod (* inv (aref p1 i)) modulus)))
+        (setf (aref p1 i) coef)
         (loop for j from 1 below (min (- len1 i) len2)
-              do (setf (aref u (+ i j))
-                       (mod (- (aref u (+ i j)) (* coef (aref v j))) modulus)))))))
+              do (setf (aref p1 (+ i j))
+                       (mod (- (aref p1 (+ i j)) (* coef (aref p2 j))) modulus)))))))
 
 ;; naive division in O(n^2)
 ;; Reference: http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf
 (declaim (inline poly-floor!))
-(defun poly-floor! (u v modulus &optional quotient)
-  "Returns the quotient q(x) and the remainder r(x) over Z/nZ: u(x) = q(x)v(x) +
-r(x), deg(r) < deg(v). This function may destructively modify U. The time
-complexity is O((deg(u)-deg(v))deg(v)).
+(defun poly-floor! (p1 p2 modulus &optional quotient)
+  "Returns the quotient q(x) and the remainder r(x): P1(x) = q(x)P2(x) + r(x),
+deg(r) < deg(P2). The time complexity is O((deg(P1)-deg(P2))deg(P2)).
 
 The quotient is stored in QUOTIENT if it is given, otherwise a new vector is
-created.
+created. This function doesn't modify P2.
 
-Note that MODULUS and V[deg(V)] must be coprime."
-  (declare (vector u v)
+Note that MODULUS and P2[deg(P2)] must be coprime."
+  (declare (vector p1 p2)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (assert (not (or (eq v quotient) (eq u quotient))))
-  ;; m := deg(u), n := deg(v)
-  (let* ((m (or (position 0 u :from-end t :test-not #'eql) -1))
-         (n (or (position 0 v :from-end t :test-not #'eql)
+  (assert (not (or (eq p2 quotient) (eq p1 quotient))))
+  ;; m := deg(p1), n := deg(p2)
+  (let* ((m (or (position 0 p1 :from-end t :test-not #'eql) -1))
+         (n (or (position 0 p2 :from-end t :test-not #'eql)
                 (error 'division-by-zero
                        :operation #'poly-floor!
-                       :operands (list u v))))
+                       :operands (list p1 p2))))
          (quot (or quotient
-                   (make-array (max 0 (+ 1 (- m n))) :element-type (array-element-type u))))
+                   (make-array (max 0 (+ 1 (- m n))) :element-type (array-element-type p1))))
          ;; FIXME: Is it better to signal an error in non-coprime case?
-         (inv (mod-inverse (aref v n) modulus)))
+         (inv (mod-inverse (aref p2 n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for k from (- m n) downto 0
-          do (setf (aref quot k) (mod (* (aref u (+ n k)) inv) modulus))
+          do (setf (aref quot k) (mod (* (aref p1 (+ n k)) inv) modulus))
              (loop for j from (+ n k -1) downto k
-                   do (setf (aref u j)
-                            (mod (- (aref u j) (* (aref quot k) (aref v (- j k))))
+                   do (setf (aref p1 j)
+                            (mod (- (aref p1 j) (* (aref quot k) (aref p2 (- j k))))
                                  modulus))))
-    (let ((end (+ 1 (or (position 0 u :from-end t :test-not #'eql :end (min n (length u))) -1))))
-      (values quot (adjust-array u end)))))
+    (let ((end (+ 1 (or (position 0 p1 :from-end t :test-not #'eql :end (min n (length p1))) -1))))
+      (values quot (adjust-array p1 end)))))
 
 ;; naive division in O(n^2)
 (declaim (inline poly-mod!))
-(defun poly-mod! (poly divisor modulus)
-  "Returns the remainder of POLY divided by DIVISOR over Z/nZ. This function
-destructively modifies POLY."
-  (declare (vector poly divisor)
+(defun poly-mod! (p divisor modulus)
+  "Returns the remainder of P divided by DIVISOR over Z/nZ. This function
+destructively modifies P."
+  (declare (vector p divisor)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((m (or (position 0 poly :from-end t :test-not #'eql) -1))
+  (let* ((m (or (position 0 p :from-end t :test-not #'eql) -1))
          (n (or (position 0 divisor :from-end t :test-not #'eql)
                 (error 'division-by-zero
                        :operation #'poly-mod!
-                       :operands (list poly divisor))))
+                       :operands (list p divisor))))
          (inv (mod-inverse (aref divisor n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for pivot-deg from m downto n
           for factor of-type (integer 0 #.most-positive-fixnum)
-             = (mod (* (aref poly pivot-deg) inv) modulus)
+             = (mod (* (aref p pivot-deg) inv) modulus)
           do (loop for delta from 0 to n
-                   do (setf (aref poly (- pivot-deg delta))
-                            (mod (- (aref poly (- pivot-deg delta))
+                   do (setf (aref p (- pivot-deg delta))
+                            (mod (- (aref p (- pivot-deg delta))
                                     (* factor (aref divisor (- n delta))))
                                  modulus))))
-    (let ((end (+ 1 (or (position 0 poly :from-end t :test-not #'eql) -1))))
-      (adjust-array poly end))))
+    (let ((end (+ 1 (or (position 0 p :from-end t :test-not #'eql) -1))))
+      (adjust-array p end))))
 
-(defun poly-power (poly exponent divisor modulus)
-  "Returns POLY to the power of EXPONENT modulo DIVISOR over Z/nZ."
-  (declare (vector poly divisor)
+(defun poly-power (p exponent divisor modulus)
+  "Returns P to the power of EXPONENT modulo DIVISOR."
+  (declare (vector p divisor)
            ((integer 0 #.most-positive-fixnum) exponent)
            ((integer 1 #.most-positive-fixnum) modulus))
   (labels
       ((recur (power)
          (declare ((integer 0 #.most-positive-fixnum) power))
          (cond ((zerop power)
-                (make-array 1 :element-type (array-element-type poly) :initial-element 1))
+                (make-array 1 :element-type (array-element-type p) :initial-element 1))
                ((oddp power)
-                (poly-mod! (poly-mult poly (recur (- power 1)) modulus)
+                (poly-mod! (poly-mult p (recur (- power 1)) modulus)
                            divisor modulus))
                ((let ((res (recur (floor power 2))))
                   (poly-mod! (poly-mult res res modulus)
@@ -171,61 +171,61 @@ destructively modifies POLY."
     (recur exponent)))
 
 (declaim (inline poly-differentiate!))
-(defun poly-differentiate! (poly modulus)
-  "Returns the derivative of POLY."
-  (declare (vector poly)
+(defun poly-differentiate! (p modulus)
+  "Returns the derivative of P."
+  (declare (vector p)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((end 0))
     (declare ((integer 0 #.most-positive-fixnum) end))
-    (dotimes (i (- (length poly) 1))
-      (let ((coef (mod (* (the fixnum (aref poly (+ i 1))) (+ i 1)) modulus)))
+    (dotimes (i (- (length p) 1))
+      (let ((coef (mod (* (the fixnum (aref p (+ i 1))) (+ i 1)) modulus)))
         (declare ((integer 0 #.most-positive-fixnum) coef))
-        (setf (aref poly i) coef)
+        (setf (aref p i) coef)
         (unless (zerop coef)
           (incf end))))
-    (adjust-array poly end)))
+    (adjust-array p end)))
 
 (declaim (inline poly-integrate))
-(defun poly-integrate (poly modulus)
-  "Returns an indefinite integral of POLY. Assumes the integration constant to
+(defun poly-integrate (p modulus)
+  "Returns an indefinite integral of P. Assumes the integration constant to
 be zero."
-  (declare (vector poly)
+  (declare (vector p)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let* ((n (length poly)))
+  (let* ((n (length p)))
     (when (zerop n)
-      (return-from poly-integrate (make-array 0 :element-type (array-element-type poly))))
-    (let ((result (make-array (+ n 1) :element-type (array-element-type poly) :initial-element 0)))
+      (return-from poly-integrate (make-array 0 :element-type (array-element-type p))))
+    (let ((result (make-array (+ n 1) :element-type (array-element-type p) :initial-element 0)))
       (dotimes (i n)
         (setf (aref result (+ i 1))
-              (mod (* (the fixnum (aref poly i)) (mod-inverse (+ i 1) modulus)) modulus)))
+              (mod (* (the fixnum (aref p i)) (mod-inverse (+ i 1) modulus)) modulus)))
       result)))
 
 (declaim (inline poly-shift!))
-(defun poly-shift! (poly constant modulus)
-  "Adds a constant to POLY."
-  (declare (vector poly)
+(defun poly-shift! (p constant modulus)
+  "Adds a constant to P."
+  (declare (vector p)
            (fixnum constant)
            ((integer 1 #.most-positive-fixnum) modulus))
-  (let ((n (length poly))
+  (let ((n (length p))
         (constant (mod constant modulus)))
     (if (zerop n)
         (if (zerop constant)
-            (make-array 0 :element-type (array-element-type poly))
-            (make-array 1 :element-type (array-element-type poly) :initial-element constant))
+            (make-array 0 :element-type (array-element-type p))
+            (make-array 1 :element-type (array-element-type p) :initial-element constant))
         (progn
-          (setf (aref poly 0) (mod (+ (aref poly 0) constant) modulus))
-          (if (and (= n 1) (zerop (aref poly 0)))
-              (make-array 0 :element-type (array-element-type poly))
-              poly)))))
+          (setf (aref p 0) (mod (+ (aref p 0) constant) modulus))
+          (if (and (= n 1) (zerop (aref p 0)))
+              (make-array 0 :element-type (array-element-type p))
+              p)))))
 
 (declaim (inline poly-scale!))
-(defun poly-scale! (poly constant modulus)
-  "Returns a scalar multiplication of POLY."
-  (declare (vector poly)
+(defun poly-scale! (p constant modulus)
+  "Returns a scalar multiplication of P."
+  (declare (vector p)
            (fixnum constant)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((constant (mod constant modulus)))
     (if (zerop constant)
-        (make-array 0 :element-type (array-element-type poly))
-        (dotimes (i (length poly) poly)
-          (setf (aref poly i) (mod (* constant (the fixnum (aref poly i))) modulus))))))
+        (make-array 0 :element-type (array-element-type p))
+        (dotimes (i (length p) p)
+          (setf (aref p i) (mod (* constant (the fixnum (aref p i))) modulus))))))

@@ -1,6 +1,7 @@
 (defpackage :cp/matrix-rotate
   (:use :cl)
-  (:export #:matrix-rotate #:matrix-transpose))
+  (:export #:matrix-rotate #:matrix-transpose)
+  (:documentation "Provides rotation and transposition of matrix."))
 (in-package :cp/matrix-rotate)
 
 (defun matrix-rotate (matrix rot)
