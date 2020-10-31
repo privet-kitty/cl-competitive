@@ -1,6 +1,6 @@
 (defpackage :cp/mod-polynomial
   (:use :cl :cp/mod-inverse)
-  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-power
+  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-div #:poly-div! #:poly-power
            #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!))
 (in-package :cp/mod-polynomial)
 
@@ -44,6 +44,53 @@ created."
               for j = (- d i)
               do (setq coef (mod (+ coef (* (aref u i) (aref v j))) modulus))
               finally (setf (aref res d) coef))))))
+
+(declaim (inline poly-div))
+(defun poly-div (u v modulus &optional result-length)
+  "Returns u(x)/v(x), regarding polynomial as formal power series. The length of
+the returned vector is the same as u(x), when RESULT-LENGTH is null."
+  (declare (vector u v)
+           ((or null (integer 0 #.most-positive-fixnum)) result-length)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let* ((len1 (length u))
+         (len2 (+ 1 (or (position 0 v :from-end t :test-not #'eql)
+                        (error 'division-by-zero
+                               :operation #'poly-div
+                               :operands (list u v)))))
+         (len (or result-length len1))
+         (res (make-array len :element-type (array-element-type u)))
+         ;; FIXME: Is it better to signal an error in non-coprime case?
+         (inv (mod-inverse (aref v 0) modulus)))
+    (declare ((integer 0 #.most-positive-fixnum) len1 len2 len))
+    (dotimes (i len res)
+      (let ((coef (mod (* inv (- (if (< i len1) (aref u i) 0)
+                                 (aref res i)))
+                       modulus)))
+        (setf (aref res i) coef)
+        (loop for j from 1 below (min (- len i) len2)
+              do (setf (aref res (+ i j))
+                       (mod (+ (aref res (+ i j)) (* coef (aref v j))) modulus)))))))
+
+(declaim (inline poly-div!))
+(defun poly-div! (u v modulus)
+  "Returns u(x)/v(x), regarding polynomial as formal power series. The result is
+stored in u(x)."
+  (declare (vector u v)
+           ((integer 1 #.most-positive-fixnum) modulus))
+  (let* ((len1 (length u))
+         (len2 (+ 1 (or (position 0 v :from-end t :test-not #'eql)
+                        (error 'division-by-zero
+                               :operation #'poly-div
+                               :operands (list u v)))))
+         ;; FIXME: Is it better to signal an error in non-coprime case?
+         (inv (mod-inverse (aref v 0) modulus)))
+    (declare ((integer 0 #.most-positive-fixnum) len1 len2))
+    (dotimes (i len1 u)
+      (let ((coef (mod (* inv (aref u i)) modulus)))
+        (setf (aref u i) coef)
+        (loop for j from 1 below (min (- len1 i) len2)
+              do (setf (aref u (+ i j))
+                       (mod (- (aref u (+ i j)) (* coef (aref v j))) modulus)))))))
 
 ;; naive division in O(n^2)
 ;; Reference: http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf
