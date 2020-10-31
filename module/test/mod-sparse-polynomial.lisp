@@ -35,4 +35,6 @@
         (if (zerop (length p2))
             (signals division-by-zero (poly-sparse-div! (copy-seq p1) p2 +mod+))
             (is (equalp (poly-div! (copy-seq p1) p2-dense +mod+)
-                        (poly-sparse-div! (copy-seq p1) p2 +mod+))))))))
+                        (poly-sparse-div! (copy-seq p1) p2 +mod+))))
+        (is (equalp (subseq (poly-mult p1 p2-dense +mod+) 0 (length p1))
+                    (poly-sparse-mult! p1 p2 +mod+)))))))
