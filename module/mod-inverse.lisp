@@ -26,7 +26,7 @@
 
 (defun %mod-inverse (integer modulus)
   (declare (optimize (speed 3) (safety 0))
-           (sb-ext:muffle-conditions sb-ext:compiler-note))
+           #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
   (macrolet ((frob (utype stype)
                `(let ((a integer)
                       (b modulus)
@@ -51,8 +51,6 @@
 (defun mod-inverse (integer modulus)
   "Solves ax = 1 mod m. INTEGER and MODULUS must be coprime. Signals
 DIVISION-BY-ZERO for a non-coprime input."
-  (declare (optimize (speed 3))
-           #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
   (let* ((integer (mod integer modulus))
          (result (%mod-inverse integer modulus)))
     (unless (or (= 1 (mod (* integer result) modulus)) (= 1 modulus))
