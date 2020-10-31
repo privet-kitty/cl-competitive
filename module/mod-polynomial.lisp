@@ -124,11 +124,11 @@ Note that MODULUS and P2[deg(P2)] must be coprime."
     (let ((end (+ 1 (or (position 0 p1 :from-end t :test-not #'eql :end (min n (length p1))) -1))))
       (values quot (adjust-array p1 end)))))
 
-;; naive division in O(n^2)
 (declaim (inline poly-mod!))
 (defun poly-mod! (p divisor modulus)
   "Returns the remainder of P divided by DIVISOR over Z/nZ. This function
-destructively modifies P."
+destructively modifies P. The time complexity is
+O((deg(P)-deg(DIVISOR))deg(DIVISOR))."
   (declare (vector p divisor)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let* ((m (or (position 0 p :from-end t :test-not #'eql) -1))

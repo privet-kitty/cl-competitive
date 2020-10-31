@@ -104,15 +104,6 @@
   (is (equalp #() (poly-scale! #(3 1 2 4) 0 +mod+)))
   (is (equalp #() (poly-scale! #() 3 +mod+))))
 
-
-
-(defun make-random-polynomial (degree state)
-  (let ((res (make-array degree :element-type '(unsigned-byte 31) :initial-element 0)))
-    (dotimes (i degree res)
-      (setf (aref res i) (random +mod+ state)))
-    (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
-      (adjust-array res end))))
-
 (defun poly= (p1 p2)
   (let* ((len1 (length p1))
          (len2 (length p2))

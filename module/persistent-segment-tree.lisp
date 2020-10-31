@@ -14,6 +14,10 @@
 ;; - avoid sb-int:power-of-two-ceiling
 ;; - out-of-bound error
 
+(declaim (inline %power-of-two-ceiling))
+(defun %power-of-two-ceiling (x)
+  (ash 1 (integer-length (- x 1))))
+
 (declaim (inline make-node))
 (defstruct (node (:constructor make-node (&optional (value 0))))
   (value 0 :type fixnum)
@@ -55,7 +59,7 @@
                        (recur (node-right root) (ash (+ l r) -1) r))))))
     (recur (%psegtree-root psegtree)
            0
-           (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))))
+           (%power-of-two-ceiling (%psegtree-length psegtree)))))
 
 (defun psegtree-inc (psegtree index delta)
   "Returns a new psegtree updated by PSEGTREE[INDEX] += DELTA. This function is
