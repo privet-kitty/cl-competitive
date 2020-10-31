@@ -115,6 +115,13 @@
                        ((< i len2) (zerop (aref p2 i)))
                        (t (error "Huh?"))))))
 
+(defun make-random-polynomial (degree state)
+  (let ((res (make-array degree :element-type '(unsigned-byte 31) :initial-element 0)))
+    (dotimes (i degree res)
+      (setf (aref res i) (random +mod+ state)))
+    (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
+      (adjust-array res end))))
+
 (test mod-polynomial/random
   (declare (notinline poly-mult poly-div))
   (let ((state (sb-ext:seed-random-state 0))

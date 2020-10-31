@@ -91,7 +91,6 @@ is stored in P1. Time complexity is O(deg(P1)deg(P2))."
               do (setf (aref p1 (+ i j))
                        (mod (- (aref p1 (+ i j)) (* coef (aref p2 j))) modulus)))))))
 
-;; naive division in O(n^2)
 ;; Reference: http://web.cs.iastate.edu/~cs577/handouts/polydivide.pdf
 (declaim (inline poly-floor!))
 (defun poly-floor! (p1 p2 modulus &optional quotient)
