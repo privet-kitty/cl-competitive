@@ -29,5 +29,8 @@
   (is (equalp #(1000000003 2) (lagrange-interpolation #(0 2) #(-4 0) +mod+)))
   (is (equalp #() (lagrange-interpolation #() #() +mod+)))
   (is (equalp #(20) (lagrange-interpolation #(1234) #(20) +mod+)))
+  ;; signal division-by-zero for degenerative input
+  (signals division-by-zero (lagrange-interpolation #(2 2) #(5 6) +mod+))
+  (signals division-by-zero (lagrange-interpolation #(2 2) #(5 5) +mod+))
   ;; mod 1
   (is (equalp #(0 0 0) (lagrange-interpolation #(1 2 3) #(20 22 32) 1))))

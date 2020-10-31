@@ -60,7 +60,6 @@ complexity is O(deg(P1)deg(P2))."
                                :operands (list p1 p2)))))
          (len (or result-length len1))
          (res (make-array len :element-type (array-element-type p1)))
-         ;; FIXME: Is it better to signal an error in non-coprime case?
          (inv (mod-inverse (aref p2 0) modulus)))
     (declare ((integer 0 #.most-positive-fixnum) len1 len2 len))
     (dotimes (i len res)
@@ -83,7 +82,6 @@ is stored in P1. Time complexity is O(deg(P1)deg(P2))."
                         (error 'division-by-zero
                                :operation #'poly-div
                                :operands (list p1 p2)))))
-         ;; FIXME: Is it better to signal an error in non-coprime case?
          (inv (mod-inverse (aref p2 0) modulus)))
     (declare ((integer 0 #.most-positive-fixnum) len1 len2))
     (dotimes (i len1 p1)
@@ -115,7 +113,6 @@ Note that MODULUS and P2[deg(P2)] must be coprime."
                        :operands (list p1 p2))))
          (quot (or quotient
                    (make-array (max 0 (+ 1 (- m n))) :element-type (array-element-type p1))))
-         ;; FIXME: Is it better to signal an error in non-coprime case?
          (inv (mod-inverse (aref p2 n) modulus)))
     (declare ((integer -1 (#.array-total-size-limit)) m n))
     (loop for k from (- m n) downto 0
