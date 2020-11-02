@@ -1,5 +1,5 @@
 ;;;
-;;; Select i-th order statistic in O(n)
+;;; Select i-th order statistic in expected linear time
 ;;;
 
 (defpackage :cp/order-statistic
@@ -17,7 +17,7 @@ elements smaller than VECTOR[PIVOT-IDX] are moved to the front of i and those
 larger behind i. Note that this function deals with the **closed** interval [L,
 R]."
   (declare (vector vector)
-           ((integer 0 #.most-positive-fixnum) l r))
+           ((mod #.array-total-size-limit) l r))
   (rotatef (aref vector pivot-idx)
            (aref vector l))
   (let ((pivot (aref vector l))
@@ -51,18 +51,20 @@ R]."
 (declaim (inline select-ith!))
 (defun select-ith! (vector order i &optional (start 0) end)
   "Returns the (0-based) i-th smallest element of VECTOR (if order is #'<, for
-example). Destructively modifies VECTOR."
+example). Destructively modifies VECTOR.
+
+ORDER := strict order"
   (declare (vector vector)
-           ((integer 0 #.most-positive-fixnum) i start))
+           ((mod #.array-total-size-limit) i start))
   (assert (< i (length vector)))
   (labels ((recur (l r i)
-             (declare ((integer 0 #.most-positive-fixnum) l r i))
+             (declare ((mod #.array-total-size-limit) l r i))
              (when (= l r)
                (return-from recur (aref vector r)))
              (let* ((pivot-idx (+ l (random (+ 1 (- r l)))))
                     (mid (%hoare-partition! vector l r pivot-idx order))
                     (delta (- mid l)))
-               (declare ((integer 0 #.most-positive-fixnum) pivot-idx))
+               (declare ((mod #.array-total-size-limit) pivot-idx))
                (cond ((= i delta)
                       (return-from recur (aref vector mid)))
                      ((< i delta)

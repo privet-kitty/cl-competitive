@@ -11,15 +11,13 @@
     (dotimes (i (length vector))
       (setf (aref vector i) (random 10 state)))
     (let ((sorted (sort (copy-seq vector) #'>)))
-      (finishes
-        (dotimes (i (length vector))
-          (assert (= (aref sorted i)
-                     (select-ith! (copy-seq vector) #'> i)))))))
-  (let ((vector (vector 1 1 1 1 1 1 1)))
-    (finishes
       (dotimes (i (length vector))
-        (assert (= (aref vector i)
-                   (select-ith! (copy-seq vector) #'> i))))))
+        (is (= (aref sorted i)
+               (select-ith! (copy-seq vector) #'> i))))))
+  (let ((vector (vector 1 1 1 1 1 1 1)))
+    (dotimes (i (length vector))
+      (is (= (aref vector i)
+             (select-ith! (copy-seq vector) #'> i)))))
   ;; empty case
   (signals error (select-ith! (vector) #'< 0))
   (is (= 10 (select-ith! (vector 10) #'< 0))))
