@@ -5,8 +5,9 @@
 (in-suite base-suite)
 
 (test tree-centroid
-  (let ((tc (make-tree-centroid (coerce #((1) (0 2) (1 3) (2))
-                                        '(simple-array list (*))))))
+  (let ((tc (make-tree-centroid (coerce #(((1)) ((0) (2)) ((1) (3)) ((2)))
+                                        '(simple-array list (*)))
+                                :vertex-key #'car)))
     (dotimes (root 4)
       (multiple-value-bind (c1 children1 c2 children2) (tc-find-centroid tc root)
         (declare (ignore children1 children2))
