@@ -11,7 +11,9 @@ vector is NOT sorted."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) x))
   (let* ((sqrt (isqrt x))
-         (result (make-array (isqrt sqrt) ; FIXME: currently set the initial size to x^1/4
+         ;; FIXME: Currently I set the initial size to x^1/4, but it's not based
+         ;; on a proper reason.
+         (result (make-array (isqrt sqrt)
                              :element-type '(integer 0 #.most-positive-fixnum)
                              :fill-pointer 0)))
     (loop for i from 1 to sqrt
@@ -22,9 +24,8 @@ vector is NOT sorted."
                    (vector-push-extend quot result)))))
     result))
 
-;; Below is a variant that returns a sorted list.
 (defun enum-ascending-divisors (n)
-  "Returns the ascending list of all the divisors of N."
+  "Returns an ascending list of all the divisors of N."
   (declare (optimize (speed 3))
            ((integer 1 #.most-positive-fixnum) n))
   (if (= n 1)
@@ -39,7 +40,7 @@ vector is NOT sorted."
                             (if (zerop rem)
                                 (progn
                                   (setf (cdr first-half) (list i))
-                                  (setf second-half (cons quot second-half))
+                                  (push quot second-half)
                                   (%enum (1+ i) (cdr first-half) second-half))
                                 (%enum (1+ i) first-half second-half))))
                          ((= i sqrt) ; N is a square number here
