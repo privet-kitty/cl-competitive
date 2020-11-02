@@ -5,7 +5,7 @@
 (defpackage :cp/complex-geometry
   (:use :cl)
   (:export #:intersect-p #:calc-internal-angle #:calc-angle #:on-line-segment-p
-           #:cross-product #:dot-product #:inside-convex-polygon-p))
+           #:cross* #:dot* #:inside-convex-polygon-p))
 (in-package :cp/complex-geometry)
 
 ;; not tested
@@ -51,12 +51,12 @@ vector C2. The range is [0, 2PI)."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
 (declaim (inline cross-product))
-(defun cross-product (p1 p2)
+(defun cross* (p1 p2)
   (- (* (realpart p1) (imagpart p2))
      (* (imagpart p1) (realpart p2))))
 
 (declaim (inline dot-product))
-(defun dot-product (p1 p2)
+(defun dot* (p1 p2)
   (+ (* (realpart p1) (realpart p2))
      (* (imagpart p1) (imagpart p2))))
 
