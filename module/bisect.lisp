@@ -18,8 +18,7 @@ monotonically non-decreasing with respect to ORDER.
 - The range [START, END) is half-open.
 - END must be explicitly specified if TARGET is function.
 - KEY is applied to each element of TARGET before comparison."
-  (declare (function key order)
-           (integer start)
+  (declare (integer start)
            ((or null integer) end))
   (macrolet
       ((frob (accessor &optional declaration)
@@ -59,8 +58,7 @@ respect to ORDER.
 - The range [START, END) is half-open.
 - END must be explicitly specified if TARGET is function.
 - KEY is applied to each element of TARGET before comparison."
-  (declare (function key order)
-           (integer start)
+  (declare (integer start)
            ((or null integer) end))
   (macrolet
       ((frob (accessor &optional declaration)
