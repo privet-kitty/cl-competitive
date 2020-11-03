@@ -4,14 +4,13 @@
 
 (defpackage :cp/persistent-segment-tree
   (:use :cl)
-  (:export #:psegtree #:make-psegtree #:psegtree-fold #:psegtree-inc #:%psegtree-inc!x))
+  (:export #:psegtree #:make-psegtree #:psegtree-fold #:psegtree-update #:%psegtree-update!))
 (in-package :cp/persistent-segment-tree)
 
 ;; TODO:
 ;; - abstraction
 ;; - test
 ;; - linear-time initialization
-;; - avoid sb-int:power-of-two-ceiling
 ;; - out-of-bound error
 
 (declaim (inline %power-of-two-ceiling))
@@ -31,7 +30,6 @@
   (root nil :type node))
 
 (defun make-psegtree (length)
-  "Note that the actual length becomes a power of two."
   (declare ((integer 0 #.most-positive-fixnum) length))
   (let ((n (ash 1 (integer-length (- length 1))))) ; power of two ceiling
     (labels ((recur (i)
@@ -61,17 +59,18 @@
            0
            (%power-of-two-ceiling (%psegtree-length psegtree)))))
 
-(defun psegtree-inc (psegtree index delta)
-  "Returns a new psegtree updated by PSEGTREE[INDEX] += DELTA. This function is
-non-destructive."
+(defun psegtree-update (psegtree index updater)
+  "Returns a new psegtree updated by PSEGTREE[INDEX] = (FUNCALL UPDATER
+PSEGTREE[INDEX]). This function is non-destructive."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index)
-           (fixnum delta))
+           (function updater))
   (labels ((recur (root l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
-             (cond ((or (<= (+ index 1) l) (<= r index)))
-                   ((and (<= index l) (<= r (+ index 1)))
-                    (incf (node-value root) delta))
+             (cond ((or (< index l) (<= r index)))
+                   ((= (- r l) 1)
+                    (setf (node-value root)
+                          (funcall updater (node-value root))))
                    (t
                     (let ((new-lnode (copy-node (node-left root)))
                           (new-rnode (copy-node (node-right root))))
@@ -84,22 +83,25 @@ non-destructive."
                                (node-value (node-right root)))))))))
     (let ((new-psegtree (copy-psegtree psegtree))
           (new-root (copy-node (%psegtree-root psegtree))))
-      (recur new-root 0 (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))
+      (recur new-root 0 (%power-of-two-ceiling (%psegtree-length psegtree)))
       (setf (%psegtree-root new-psegtree) new-root)
       new-psegtree)))
 
-;; NOTE: Almost always PSEGTREE-INC is suitable. Pay close attention when you
-;; use this destructive version.
-(defun %psegtree-inc! (psegtree index delta)
-  "Destructively update PSEGTREE by PSEGTREE[INDEX] += DELTA."
+(defun %psegtree-update! (psegtree index updater)
+  "Destructively update PSEGTREE by PSEGTREE[INDEX] = (FUNCALL UPDATER
+PSEGTREE[INDEX]).
+
+NOTE: Almost always you should use PSEGTREE-UPDATE. Pay close attention when you
+use this destructive version."
   (declare (optimize (speed 3))
            ((integer 0 #.most-positive-fixnum) index)
-           (fixnum delta))
+           (function updater))
   (labels ((recur (root l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
-             (cond ((or (<= (+ index 1) l) (<= r index)))
-                   ((and (<= index l) (<= r (+ index 1)))
-                    (incf (node-value root) delta))
+             (cond ((or (< index l) (<= r index)))
+                   ((= (- r l) 1)
+                    (setf (node-value root)
+                          (funcall updater (node-value root))))
                    (t
                     (recur (node-left root) l (ash (+ l r) -1))
                     (recur (node-right root) (ash (+ l r) -1) r)
@@ -108,7 +110,7 @@ non-destructive."
                              (node-value (node-right root))))))))
     (recur (%psegtree-root psegtree)
            0
-           (sb-int:power-of-two-ceiling (%psegtree-length psegtree)))
+           (%power-of-two-ceiling (%psegtree-length psegtree)))
     psegtree))
 
 (defmethod print-object ((object psegtree) stream)
