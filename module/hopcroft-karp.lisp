@@ -9,7 +9,7 @@
            #:bgraph-add-edge! #:bgraph-build-matching! #:bgraph-decompose))
 (in-package :cp/hopcroft-karp)
 
-;; NOTE: The number of elements in the graph must be less than 2^32-1 as we use
+;; NOTE: The number of elements in a graph must be less than 2^32-1 as we use
 ;; (UNSIGNED-BYTE 32) here for efficiency.
 
 ;; NOTE: Pay attention to the stack size!
@@ -47,7 +47,7 @@
         (q-front 0)
         (q-end 0)
         (found nil))
-    (declare ((integer 0 #.most-positive-fixnum) q-front q-end))
+    (declare ((mod #.array-total-size-limit) q-front q-end))
     (labels ((enqueue (obj)
                (setf (aref queue q-end) obj)
                (incf q-end))
@@ -77,13 +77,13 @@
 (defun %find-matching (bgraph src levels1 levels2)
   "Does DFS and makes matching greedily on the residual network."
   (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) src)
+           ((mod #.array-total-size-limit) src)
            ((simple-array (unsigned-byte 32) (*)) levels1 levels2))
   (let ((matching1 (bgraph-matching1 bgraph))
         (matching2 (bgraph-matching2 bgraph))
         (graph1 (bgraph-graph1 bgraph)))
     (labels ((dfs (v)
-               (declare ((integer 0 #.most-positive-fixnum) v))
+               (declare ((mod #.array-total-size-limit) v))
                (dolist (next (aref graph1 v))
                  (when (= (aref levels2 next) (+ 1 (aref levels1 v)))
                    (setf (aref levels2 next) +graph-inf-distance+) ; mark visited
@@ -112,7 +112,7 @@ unmatched vertex, -1 is stored."
          (levels2 (make-array size2 :element-type '(unsigned-byte 32)))
          (queue (make-array (+ size1 size2) :element-type '(unsigned-byte 32)))
          (count 0))
-    (declare ((integer 0 #.most-positive-fixnum) count))
+    (declare ((mod #.array-total-size-limit) count))
     (loop while (%fill-levels bgraph levels1 levels2 queue)
           do (dotimes (v size1)
                (when (and (= -1 (aref matching1 v))
@@ -133,7 +133,7 @@ GRAPH := vector of adjacency lists"
          (nums (make-array n :element-type 'fixnum))
          (size0 0)
          (size1 0))
-    (declare ((integer 0 #.most-positive-fixnum) size0 size1))
+    (declare ((mod #.array-total-size-limit) size0 size1))
     (labels ((dfs (vertex color)
                (cond ((zerop (aref visited vertex))
                       (setf (aref visited vertex) 1
@@ -191,7 +191,7 @@ algorithm. BGRAPH-BUILD-MATCHING! must be called beforehand."
          (stack (make-array total-size :element-type '(integer 0 #.most-positive-fixnum)))
          (end 0) ; stack pointer
          (in-stack (make-array total-size :element-type 'bit :initial-element 0)))
-    (declare ((integer 0 #.most-positive-fixnum) ord end comp-index source sink total-size))
+    (declare ((mod #.array-total-size-limit) ord end comp-index source sink total-size))
     (labels ((%push (v)
                (setf (aref stack end) v
                      (aref in-stack v) 1)
@@ -224,12 +224,12 @@ algorithm. BGRAPH-BUILD-MATCHING! must be called beforehand."
                             do (frob v (+ size1 next))))
                      ((and (< v size1) (= -1 (aref matching1 v)))
                       (dolist (next (aref graph1 v))
-                        (declare ((integer 0 #.most-positive-fixnum) next))
+                        (declare ((mod #.array-total-size-limit) next))
                         (frob v (+ next size1))))
                      ((and (< v size1) (/= -1 (aref matching1 v)))
                       (frob v source)
                       (dolist (next (aref graph1 v))
-                        (declare ((integer 0 #.most-positive-fixnum) next))
+                        (declare ((mod #.array-total-size-limit) next))
                         (unless (= next (aref matching1 v))
                           (frob v (+ next size1)))))
                      ((= -1 (aref matching2 (- v size1)))
@@ -238,7 +238,7 @@ algorithm. BGRAPH-BUILD-MATCHING! must be called beforehand."
                       ;; (assert (/= -1 (aref matching2 (- v size1))))
                       (frob v (aref matching2 (- v size1)))))
                (when (= (aref lowlinks v) (aref ords v))
-                 (loop for size of-type (integer 0 #.most-positive-fixnum) from 1
+                 (loop for size of-type (mod #.array-total-size-limit) from 1
                        for w = (%pop)
                        do (setf (aref components w) comp-index)
                        until (= v w)
