@@ -49,6 +49,7 @@
 (progn
   (defparameter *lisp-file-pathname* (uiop:current-lisp-file-pathname))
   (setq *default-pathname-defaults* (uiop:pathname-directory-pathname *lisp-file-pathname*))
+  (uiop:chdir *default-pathname-defaults*)
   (defparameter *dat-pathname* (uiop:merge-pathnames* "test.dat" *lisp-file-pathname*))
   (defparameter *problem-url* "PROBLEM_URL_TO_BE_REPLACED"))
 
