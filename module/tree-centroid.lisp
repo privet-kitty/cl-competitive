@@ -71,10 +71,16 @@
 
 (declaim (inline tc-disable-vertex))
 (defun tc-disable-vertex (tree-centroid vertex)
-  "Cuts the graph at the given vertex. (used for recursive decompositions)"
+  "Cuts the graph at VERTEX. (used for recursive decompositions)"
   (declare (tc-vertex-integer vertex))
   (setf (aref (tc-validities tree-centroid) vertex) 0)
   nil)
+
+(declaim (inline tc-valid-p))
+(defun tc-valid-p (tree-centroid vertex)
+  "Returns true iff VERTEX is not disabled."
+  (declare (tc-vertex-integer vertex))
+  (= 1 (aref (tc-validities tree-centroid) vertex)))
 
 (define-condition tree-centroid-disabled-vertex-error (error)
   ((tree-centroid :initarg :tree-centroid :accessor tree-centroid-disabled-vertex-error-tree-centroid)
