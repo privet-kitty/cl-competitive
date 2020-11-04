@@ -1,10 +1,7 @@
-;;;
-;;; n-dimensional cumulative sum
-;;;
-
 (defpackage :cp/cumulative-sum
   (:use :cl)
-  (:export #:define-cumulative-sum #:2dcumul-get #:2dcumul-build! #:2dcumul-update!))
+  (:export #:define-cumulative-sum #:2dcumul-get #:2dcumul-build! #:2dcumul-update!)
+  (:documentation "Provides n-dimensional cumulative sum."))
 (in-package :cp/cumulative-sum)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -53,11 +50,11 @@
   "Provides <RANK>-dimensional cumulative sum. This macro defines three
 functions: <NAME>-BUILD!, <NAME>-GET, and <NAME>-UPDATE!.
 
-<NAME>-BUILD! takes an array and (destructively) makes it to store cumulative
+<NAME>-BUILD! takes an array and (destructively) makes it store cumulative
 sums. <NAME>-GET takes an already built array and 2*RANK indices, and returns
 the sum of a given (n-dimensional) rectangle. <NAME>-UPDATE! takes a non-built
 array, a value, and 2*RANK indices. This function updates the region of a
-given (n-dimensional) rectangle by the value. After the array is finalized with
+given (n-dimensional) rectangle by the value; after the array is finalized with
 <NAME>-BUILD!, you can get any rectangle sums by <NAME>-GET."
   (check-type name (or symbol string))
   (check-type rank (integer 1))
