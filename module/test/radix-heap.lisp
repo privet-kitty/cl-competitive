@@ -1,5 +1,5 @@
 (defpackage :cp/test/radix-heap
-  (:use :cl :fiveam :cp/radix-heap :cp/abstract-heap)
+  (:use :cl :fiveam :cp/radix-heap :cp/binary-heap)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/radix-heap)
 (in-suite base-suite)

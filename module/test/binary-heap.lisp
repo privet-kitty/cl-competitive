@@ -1,14 +1,14 @@
-(defpackage :cp/test/abstract-heap
-  (:use :cl :fiveam :cp/abstract-heap)
+(defpackage :cp/test/binary-heap
+  (:use :cl :fiveam :cp/binary-heap)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/abstract-heap)
+(in-package :cp/test/binary-heap)
 (in-suite base-suite)
 
 (define-binary-heap sheap
   :order #'<
   :element-type (unsigned-byte 32))
 
-(test abstract-heap/static-order/manual
+(test binary-heap/static-order/manual
   (let ((h (make-sheap 7)))
     (is (= 0 (sheap-count h)))
     (dolist (x '(6 18 22 15 27 9 11))
@@ -41,7 +41,7 @@
 (define-binary-heap dheap
   :element-type base-char)
 
-(test abstract-heap/dynamic-order/manual
+(test binary-heap/dynamic-order/manual
   (let ((h (make-dheap 5 #'char<)))
     (is (= 0 (dheap-count h)))
     (dolist (x '(#\a #\c #\e #\b #\z #\d))

@@ -4,7 +4,7 @@
 ;;;
 
 (defpackage :cp/prim
-  (:use :cl :cp/abstract-heap)
+  (:use :cl :cp/binary-heap)
   (:export #:find-mst))
 (in-package :cp/prim)
 

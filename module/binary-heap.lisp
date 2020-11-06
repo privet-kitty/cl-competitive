@@ -2,10 +2,10 @@
 ;;; Binary heap
 ;;;
 
-(defpackage :cp/abstract-heap
+(defpackage :cp/binary-heap
   (:use :cl)
   (:export #:define-binary-heap #:heap-empty-error #:heap-empty-error-heap))
-(in-package :cp/abstract-heap)
+(in-package :cp/binary-heap)
 
 (define-condition heap-empty-error (error)
   ((heap :initarg :heap :reader heap-empty-error-heap))
@@ -19,9 +19,9 @@ type. This macro defines a structure of the given NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-CLEAR, <NAME>-EMPTY-P,
 <NAME>-COUNT, and <NAME>-PEEK.
 
-If ORDER is not given, heap for dynamic order is defined instead: the
-constructor takes an order function as an argument. Note that it is slow than a
-static order, as it cannot be inlined."
+If ORDER is not given, heap for dynamic order is defined instead, and the
+constructor takes an order function as an argument. Note that it will be
+slightly slower than a static order, as it cannot be inlined."
   (check-type name symbol)
   (let* ((string-name (string name))
          (fname-push (intern (format nil "~A-PUSH" string-name)))
@@ -65,7 +65,8 @@ static order, as it cannot be inlined."
                  ,@(when dynamic-order `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
-                        (declare (optimize (speed 3) (safety 0)))
+                        (declare (optimize (speed 3) (safety 0))
+                                 ((mod #.array-total-size-limit) pos))
                         (unless (= pos 1)
                           (let ((parent-pos (ash pos -1)))
                             (when (funcall ,order (aref data pos) (aref data parent-pos))
@@ -88,9 +89,10 @@ HEAP-EMPTY-ERROR if HEAP is empty."
              (declare ((simple-array ,element-type (*)) data))
              (labels ((heapify (pos)
                         (declare (optimize (speed 3) (safety 0))
-                                 ((integer 1 #.array-total-size-limit) pos))
+                                 ((mod #.array-total-size-limit) pos))
                         (let* ((child-pos1 (+ pos pos))
                                (child-pos2 (1+ child-pos1)))
+                          (declare ((mod #.array-total-size-limit) child-pos1 child-pos2))
                           (when (<= child-pos1 position)
                             (if (<= child-pos2 position)
                                 (if (funcall ,order (aref data child-pos1) (aref data child-pos2))
