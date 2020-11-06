@@ -35,7 +35,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/queue.lisp) queue with singly-linked list
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/deque.lisp) double-ended queue with ring buffer
 - [double-stack-deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/double-stack-deque.lisp) double-ended queue with two stacks
-- [abstract-heap](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-heap.lisp) binary heap for static order function
+- [binary-heap](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-heap.lisp) binary heap for static or dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/pairing-heap.lisp) meldable heap (pairing heap)
 - [radix-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/radix-heap.lisp) radix heap
 - [abstract-segtree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/abstract-segtree.lisp) segment tree on arbitrary monoid
