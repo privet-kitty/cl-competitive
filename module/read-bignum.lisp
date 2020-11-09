@@ -1,7 +1,7 @@
-(defpackage :read-bignum
+(defpackage :cp/read-bignum
   (:use :cl)
   (:export #:read-bignum))
-(in-package :read-bignum)
+(in-package :cp/read-bignum)
 
 (declaim (ftype (function * (values integer &optional)) read-bignum))
 (defun read-bignum (&optional (in *standard-input*))
