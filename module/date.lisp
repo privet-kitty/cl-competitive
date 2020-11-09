@@ -1,6 +1,6 @@
 (defpackage :cp/date
   (:use :cl)
-  (:export #:leap-year-p #:get-day-of-week #:get-julian-day-number))
+  (:export #:leap-year-p #:get-day-of-week #:date-to-jdn #:jdn-to-date))
 (in-package :cp/date)
 
 (declaim (inline leap-year-p))
@@ -31,12 +31,33 @@ Note that DAY and MONTH are 1-based."
               (* 6 (mod (- year 1) 400)))
            7))))
 
-(declaim (inline date-to-jnd))
-(defun date-to-jnd (day month year)
-  "Converts a Gregorian calendar date to Julian day number. (It will be used to
-get the number of days between two dates."
+(declaim (inline date-to-jdn))
+(defun date-to-jdn (day month year)
+  "Converts a Gregorian calendar date to Julian day number."
+  (declare ((integer 1 31) day)
+           ((integer 1 12) month)
+           (fixnum year))
   (+ (truncate (* 1461 (+ year 4800 (truncate (- month 14) 12))) 4)
      (truncate (* 367 (- month 2 (* 12 (truncate (- month 14) 12)))) 12)
      (- (truncate (* 3 (truncate (+ year 4900 (truncate (- month 14) 12)) 100)) 4))
      day
      -32075))
+
+;; Reference: https://forum.arduino.cc/index.php?topic=557576.msg3802719#msg3802719
+(declaim (inline jdn-to-date)
+         (ftype (function * (values (integer 1 31) (integer 1 12) integer &optional))
+                jdn-to-date))
+(defun jdn-to-date (jdn)
+  "Converts a Julian day number to Gregotian calendar date."
+  (declare ((integer -32043) jdn)) ;; broken under this value
+  (let* ((l (+ jdn 68569))
+         (n (truncate (* 4 l) 146097))
+         (l (- l (truncate (+ (* 146097 n) 3) 4)))
+         (year (truncate (* 4000 (+ l 1)) 1461001))
+         (l (+ (- l (truncate (* 1461 year) 4)) 31))
+         (month (truncate (* 80 l) 2447))
+         (day (- l (truncate (* 2447 month) 80)))
+         (l (truncate month 11))
+         (month (- (+ month 2) (* 12 l)))
+         (year (+ year l (* 100 (- n 49)))))
+    (values day month year)))

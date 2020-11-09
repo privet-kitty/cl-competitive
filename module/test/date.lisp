@@ -5,7 +5,8 @@
 (in-suite base-suite)
 
 (defun get-day-of-week2 (day month year)
-  (declare (fixnum day month year))
+  (declare (optimize (speed 3))
+           (fixnum day month year))
   (when (< year 2800)
     (incf year (* 2800 (ceiling (- 2800 year) 2800))))
   (mod (+ 1 (nth-value
@@ -28,3 +29,15 @@
                                         month)
                 do (assert (= (get-day-of-week day month year)
                               (get-day-of-week2 day month year))))))))
+
+(test jdn
+  (finishes
+    (loop for jdn from -32043 to 100000
+          do (multiple-value-bind (day month year) (jdn-to-date jdn)
+               (assert (= jdn (date-to-jdn day month year))))))
+  (let ((state (sb-ext:seed-random-state 0)))
+    (finishes
+      (dotimes (_ 100000)
+        (let ((jdn (random #.(expt 10 7) state)))
+          (multiple-value-bind (day month year) (jdn-to-date jdn)
+            (assert (= jdn (date-to-jdn day month year)))))))))
