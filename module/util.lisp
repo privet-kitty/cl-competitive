@@ -1,5 +1,5 @@
 (defpackage :cp/util
-  (:use :cl :sb-ext)
+  (:use :cl)
   (:import-from :fiveam)
   (:export #:run #:get-clipbrd #:submit #:sub #:login #:*lisp-file-pathname* #:*problem-url*))
 (in-package :cp/util)
@@ -10,9 +10,9 @@
 (defun get-clipbrd ()
   (with-output-to-string (out)
     #+os-windows
-    (run-program "powershell.exe" '("-Command" "Get-Clipboard") :output out :search t)
+    (uiop:run-program '("powershell.exe" "-Command" "Get-Clipboard") :output out)
     #+os-unix
-    (run-program "xsel" '("-b" "-o") :output out :search t)))
+    (uiop:run-program '("xsel" "-b" "-o") :output out)))
 
 (defun run (&optional input (out *standard-output*) main)
   "INPUT := null | string | symbol | pathname
@@ -59,9 +59,8 @@ with (RUN :SAMPLE) before submission."
     (when (or (not test) (run :sample))
       (format t "Submit in ~A seconds~%" wait)
       (sleep wait)
-      (run-program "oj" `("submit" "--yes" "--wait" "0" ,url ,(namestring pathname))
-                   :output *standard-output*
-                   :search t))))
+      (uiop:run-program `("oj" "submit" "--yes" "--wait" "0" ,url ,(namestring pathname))
+                        :output *standard-output*))))
 
 (defun sub (&key url pathname (test t))
   "Is an alias of CP/TOOLS:SUBMIT."
@@ -72,4 +71,4 @@ with (RUN :SAMPLE) before submission."
                  (if (boundp '*problem-url*)
                      *problem-url*
                      (error "Don't know to which URL to login")))))
-    (run-program "oj" `("login" ,url) :output *standard-output* :search t)))
+    (uiop:run-program `("oj" "login" ,url) :output *standard-output*)))
