@@ -1,17 +1,9 @@
-;;;
-;;; Quicksort (deterministic median-of-three partitioning)
-;;;
-
 (defpackage :cp/quicksort
   (:use :cl)
-  (:export #:quicksort! #:quicksort-by2!))
+  (:export #:quicksort! #:quicksort-by2!)
+  (:documentation "Provides quicksort (deterministic median-of-three
+partitioning)"))
 (in-package :cp/quicksort)
-
-;; NOTE: This quicksort is NOT randomized. You should shuffle an input when you
-;; need to avoid getting hacked.
-
-;; Reference:
-;; Hannu Erkio, The worst case permutation for median-of-three quicksort
 
 (declaim (inline %median3))
 (defun %median3 (x y z order)
@@ -29,7 +21,13 @@
 
 (declaim (inline quicksort!))
 (defun quicksort! (vector order &key (start 0) end)
-  "Destructively sorts VECTOR w.r.t. ORDER."
+  "Destructively sorts VECTOR w.r.t. ORDER.
+
+NOTE: This quicksort is NOT randomized. You need to shuffle an input to avoid
+getting hacked.
+
+Reference:
+Hannu Erkio, The worst case permutation for median-of-three quicksort"
   (declare (vector vector))
   (unless end
     (setq end (length vector)))
@@ -43,7 +41,7 @@
                                    (aref vector (ash (+ l r) -1))
                                    (aref vector r)
                                    order)))
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare ((mod #.array-total-size-limit) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
                          do (incf l))
                    (loop while (funcall order pivot (aref vector r))
@@ -58,6 +56,7 @@
     (recur start (- end 1))
     vector))
 
+;; TODO: move to another module
 (declaim (inline quicksort-by2!))
 (defun quicksort-by2! (vector order)
   "Destructively sorts VECTOR by two elements. This function regards
@@ -73,7 +72,7 @@ first elements (i.e. VECTOR[i] for even i)."
                                    (aref vector (ash (ash (+ l r) -2) 1))
                                    (aref vector r)
                                    order)))
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare ((mod #.array-total-size-limit) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
                          do (incf l 2))
                    (loop while (funcall order pivot (aref vector r))
