@@ -1,11 +1,8 @@
-;;;
-;;; Ordered set of half-open intervals
-;;;
-
 (defpackage :cp/interval-set
   (:use :cl)
   (:export #:interval-set #:interval-set-p #:iset-map #:iset-find #:iset-find>=
-           #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point))
+           #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point)
+  (:documentation "Provides ordered set of half-open intervals."))
 (in-package :cp/interval-set)
 
 ;; TODO: more rich operations
@@ -160,7 +157,7 @@ order."
   `(setf ,iset (iset-insert ,iset ,lkey ,rkey)))
 
 (defmacro iset-push-point (key iset)
-  "Pushes an interval [KEY, KEY+1) to ISET."
+  "Adds an interval [KEY, KEY+1) to ISET."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
        (setf ,iset (iset-insert ,iset ,tmp (+ ,tmp 1))))))
@@ -234,7 +231,7 @@ returns (VALUES NIL NIL)."
                 iset-find>=))
 (defun iset-find>= (iset key)
   "Returns the nearest half-open interval that contains KEY or is located on the
-larger side of it. Returns (VALUES NIL NIL) if neither exists."
+larger side of it. Returns (VALUES NIL NIL) if neither of them exist."
   (declare (optimize (speed 3))
            (fixnum key))
   (labels ((recur (node)

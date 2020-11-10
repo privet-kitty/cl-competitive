@@ -1,6 +1,7 @@
 (defpackage :cp/util
   (:use :cl)
   (:import-from :fiveam)
+  #+sbcl (:import-from :sb-sprof)
   (:export #:run #:get-clipbrd #:submit #:sub #:login #:*lisp-file-pathname* #:*problem-url*))
 (in-package :cp/util)
 
