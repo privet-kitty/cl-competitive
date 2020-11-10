@@ -49,8 +49,8 @@
 
 (declaim (inline mod-inverse))
 (defun mod-inverse (integer modulus)
-  "Solves ax = 1 mod m. INTEGER and MODULUS must be coprime. Signals
-DIVISION-BY-ZERO for a non-coprime input."
+  "Solves ax = 1 mod m. Signals DIVISION-BY-ZERO when INTEGER and MODULUS are
+not coprime."
   (let* ((integer (mod integer modulus))
          (result (%mod-inverse integer modulus)))
     (unless (or (= 1 (mod (* integer result) modulus)) (= 1 modulus))
