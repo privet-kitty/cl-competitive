@@ -4,7 +4,7 @@
 
 (defpackage :cp/read-float
   (:use :cl)
-  (:export #:read-float))
+  (:export #:read-decimal #:read-float))
 (in-package :cp/read-float)
 
 ;; TODO: test

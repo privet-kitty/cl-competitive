@@ -32,7 +32,7 @@
 
 (test jdn
   (finishes
-    (loop for jdn from -32043 to 100000
+    (loop for jdn from -32044 to 100000
           do (multiple-value-bind (day month year) (jdn-to-date jdn)
                (assert (= jdn (date-to-jdn day month year))))))
   (let ((state (sb-ext:seed-random-state 0)))

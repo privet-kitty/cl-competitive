@@ -49,7 +49,7 @@ Note that DAY and MONTH are 1-based."
                 jdn-to-date))
 (defun jdn-to-date (jdn)
   "Converts a Julian day number to Gregotian calendar date."
-  (declare ((integer -32043) jdn)) ;; broken under this value
+  (declare ((integer -32044) jdn)) ;; broken under this value
   (let* ((l (+ jdn 68569))
          (n (truncate (* 4 l) 146097))
          (l (- l (truncate (+ (* 146097 n) 3) 4)))
