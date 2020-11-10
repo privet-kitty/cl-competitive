@@ -7,7 +7,8 @@
   (:export #:define-mod-operations))
 (in-package :cp/mod-operations)
 
-(defmacro define-mod-operations (divisor &optional (package (sb-int:sane-package)))
+(defmacro define-mod-operations
+    (divisor &optional (package #+sbcl (sb-int:sane-package) #-sbcl *package*))
   (let ((mod* (intern "MOD*" package))
         (mod+ (intern "MOD+" package))
         (mod- (intern "MOD-" package))
