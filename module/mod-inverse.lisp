@@ -1,6 +1,6 @@
 (defpackage :cp/mod-inverse
   (:use :cl)
-  (:import-from :sb-c #:lvar-type #:integer-type-numeric-bounds)
+  #+sbcl (:import-from :sb-c #:lvar-type #:integer-type-numeric-bounds)
   (:export #:mod-inverse))
 (in-package :cp/mod-inverse)
 
