@@ -62,7 +62,7 @@
 (defun bench (&optional (out (make-broadcast-stream)))
   (time (run *dat-pathname* out)))
 
-#-swank
+#+(and sbcl (not swank))
 (eval-when (:compile-toplevel)
   (when (or (> sb-c::*compiler-warning-count* 0)
             sb-c::*undefined-warnings*)
