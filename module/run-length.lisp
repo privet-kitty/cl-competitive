@@ -3,6 +3,8 @@
   (:export #:map-run-length))
 (in-package :cp/run-length)
 
+(deftype fixnum+ () '(integer 1 #.most-positive-fixnum))
+
 (declaim (inline map-run-length))
 (defun map-run-length (function seq &key (test #'eql))
   "Applies FUNCTION to each equal successive element of SEQ. FUNCTION must take
@@ -18,25 +20,16 @@ Example:
 "
   (declare (sequence seq)
            ((or function symbol) test function))
-  (etypecase seq
-    (vector
-     (unless (zerop (length seq))
-       (let ((prev (aref seq 0))
-             (start 0))
-         (loop for pos from 1 below (length seq)
-               unless (funcall test prev (aref seq pos))
-               do (funcall function prev (- pos start))
-                  (setf prev (aref seq pos)
-                        start pos)
-               finally (funcall function prev (- pos start))))))
-    (list
-     (when seq
-       (labels ((recur (lst prev count)
-                  (declare ((integer 0 #.most-positive-fixnum) count))
-                  (cond ((null lst)
-                         (funcall function prev count))
-                        ((funcall test prev (car lst))
-                         (recur (cdr lst) prev (+ 1 count)))
-                        (t (funcall function prev count)
-                           (recur (cdr lst) (car lst) 1)))))
-         (recur (cdr seq) (car seq) 1))))))
+  (unless (sb-sequence:emptyp seq)
+    (let ((prev (elt seq 0))
+          (start 0)
+          (pos 0))
+      (declare ((integer 0 #.most-positive-fixnum) start pos))
+      (sb-sequence:dosequence (elm seq)
+        (unless (or (zerop pos) (funcall test prev elm))
+          (funcall function prev (the fixnum+ (- pos start)))
+          (setq prev elm
+                start pos))
+        (incf pos))
+      (funcall function prev (the fixnum+ (- pos start)))
+      nil)))
