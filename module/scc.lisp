@@ -78,7 +78,7 @@
               (- comp-index (aref components v) 1)))
       (dotimes (i (ash comp-index -1))
         (rotatef (aref sizes i) (aref sizes (- comp-index i 1))))
-      (%make-scc graph components sizes comp-index))))
+      (%make-scc graph components (adjust-array sizes comp-index) comp-index))))
 
 ;; FIXME: Constant factor of this implementation is too large. Can we avoid
 ;; hash-table?
