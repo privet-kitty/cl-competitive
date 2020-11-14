@@ -58,7 +58,10 @@
                       sb-gray:fundamental-binary-output-stream
                       sb-gray:fundamental-binary-input-stream)
   ((queue :initform (make-queue) :initarg :queue :reader octet-pipe-queue)
-   (timeout :initform nil :initarg :timeout :reader octet-pipe-timeout)))
+   (timeout :initform nil :initarg :timeout :reader octet-pipe-timeout)
+   (logger :initform nil :initarg :logger :reader octet-pipe-logger)
+   (start-line-p :initform t :initarg :start-line-p :reader octet-pipe-start-line-p)
+   (prefix :initform "" :initarg :prefix :reader octet-pipe-prefix)))
 
 (defmethod sb-gray:stream-read-byte ((stream octet-pipe))
   (with-slots (queue timeout) stream
@@ -69,9 +72,18 @@
   (let ((byte (sb-gray:stream-read-byte stream)))
     (if (eql byte :eof) :eof (code-char byte))))
 
+;; NOTE: concurrent write is not safe
 (defmethod sb-gray:stream-write-byte ((stream octet-pipe) integer)
   (check-type integer (unsigned-byte 8))
-  (enqueue integer (octet-pipe-queue stream))
+  (with-slots (queue logger prefix start-line-p) stream
+    (enqueue integer queue)
+    (when logger
+      (when start-line-p
+        (write-string prefix logger)
+        (setq start-line-p nil))
+      (write-char (code-char integer) logger)
+      (when (= #.(char-code #\Newline) integer)
+        (setq start-line-p t))))
   integer)
 
 (defmethod sb-gray:stream-write-char ((stream octet-pipe) character)
@@ -89,20 +101,26 @@
     (enqueue-front byte (octet-pipe-queue stream))
     nil))
 
-(defun interact (solver grader &optional (timeout 1.0))
+(defun interact (solver grader &optional output (timeout 1.0))
   "Makes two threads for SOLVER and GRADER, and connect each other's input and
 output with pipe."
-  (let ((solver-out-grader-in (make-instance 'octet-pipe :timeout timeout))
-        (grader-out-solver-in (make-instance 'octet-pipe :timeout timeout)))
-    (sb-thread:make-thread
-     (lambda (in out)
-       (let ((*standard-input* in)
-             (*standard-output* out))
-         (funcall solver)))
-     :arguments (list grader-out-solver-in solver-out-grader-in))
-    (sb-thread:make-thread
-     (lambda (in out)
-       (let ((*standard-input* in)
-             (*standard-output* out))
-         (funcall grader)))
-     :arguments (list solver-out-grader-in grader-out-solver-in))))
+  (declare ((or null stream) output)
+           ((or null real) timeout))
+  (labels ((make-pipe (prefix)
+             (make-instance 'octet-pipe :timeout timeout :logger output :prefix prefix)))
+    (let* ((solver-out-grader-in (make-pipe "solver: "))
+           (grader-out-solver-in (make-pipe "grader: "))
+           (solver-thread (sb-thread:make-thread
+                           (lambda (in out)
+                             (let ((*standard-input* in)
+                                   (*standard-output* out))
+                               (funcall solver)))
+                           :arguments (list grader-out-solver-in solver-out-grader-in)))
+           (grader-thread (sb-thread:make-thread
+                           (lambda (in out)
+                             (let ((*standard-input* in)
+                                   (*standard-output* out))
+                               (funcall grader)))
+                           :arguments (list solver-out-grader-in grader-out-solver-in))))
+      (sb-thread:join-thread solver-thread)
+      (sb-thread:join-thread grader-thread))))
