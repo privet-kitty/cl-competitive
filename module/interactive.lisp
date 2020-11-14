@@ -100,7 +100,7 @@
   "Makes two threads for SOLVER and GRADER, and connect each other's input and
 output with pipe."
   (declare ((or null stream) output)
-           ((or null real) timeout))
+           ((or null (real 0)) timeout))
   (labels ((make-pipe (prefix)
              (make-instance 'octet-pipe :timeout timeout :logger output :prefix prefix)))
     (let* ((solver-out-grader-in (make-pipe "solver: "))
