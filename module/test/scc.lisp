@@ -70,7 +70,7 @@ REVGRAPH := NIL | reversed graph of GRAPH"
          (posts (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (components (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (sizes (make-array n :element-type '(integer 0 #.most-positive-fixnum)
-                            :initial-element 0))
+                              :initial-element 0))
          (pointer 0)
          (ord 0) ; ordinal number for a strongly connected component
          )
@@ -100,7 +100,7 @@ REVGRAPH := NIL | reversed graph of GRAPH"
             when (zerop (aref visited v))
             do (reversed-dfs v ord)
                (incf ord))
-      (cp/scc::%make-scc graph components sizes ord))))
+      (cp/scc::%make-scc graph components (adjust-array sizes ord) ord))))
 
 ;; We believe two SCC's are identical if the sorted SIZES are identical.
 (defun scc= (scc1 scc2)
