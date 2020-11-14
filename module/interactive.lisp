@@ -13,7 +13,6 @@
   (list nil :type list)
   (tail nil :type list))
 
-(declaim (inline enqueue))
 (defun enqueue (obj queue)
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
@@ -25,22 +24,18 @@
                 list tail))))
   queue)
 
-(declaim (inline dequeue))
 (defun dequeue (queue)
   (sb-thread:with-mutex ((queue-lock queue))
     (pop (queue-list queue))))
 
-(declaim (inline queue-empty-p))
 (defun queue-empty-p (queue)
   (sb-thread:with-mutex ((queue-lock queue))
     (null (queue-list queue))))
 
-(declaim (inline queue-peek))
 (defun queue-peek (queue)
   (sb-thread:with-mutex ((queue-lock queue))
     (car (queue-list queue))))
 
-(declaim (inline enqueue-front))
 (defun enqueue-front (obj queue)
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
