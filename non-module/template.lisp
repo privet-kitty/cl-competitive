@@ -25,7 +25,8 @@
 
 (declaim (inline println))
 (defun println (obj &optional (stream *standard-output*))
-  (let ((*read-default-float-format* 'double-float))
+  (let ((*read-default-float-format*
+          (if (typep obj 'double-float) 'double-float *read-default-float-format*)))
     (prog1 (princ obj stream) (terpri stream))))
 
 ;; BEGIN_INSERTED_CONTENTS
