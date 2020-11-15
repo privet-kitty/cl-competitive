@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:define-disjoint-set)
   (:documentation "Disjoint set by Union-Find algorithm over arbitrary
-  monoid (union by size & path compression)"))
+monoid (union by size & path compression)"))
 (in-package :cp/abstract-disjoint-set)
 
 (defmacro define-disjoint-set (name &key (op '#'+) (identity 0) (element-type 'fixnum) (union-by-size t) conc-name)
@@ -69,7 +69,8 @@ to adjacent components.)"
        (declaim (inline ,uniter))
        (defun ,uniter (,name x1 x2)
          "Destructively unites X1 and X2 and returns true iff X1 and X2 become
-connected for the first time. (If UNION-BY-SIZE is disabled, X1 becomes root.)"
+connected for the first time. (If UNION-BY-SIZE is disabled, it is guaranteed
+that X1 becomes root.)"
          (let ((root1 (,rooter ,name x1))
                (root2 (,rooter ,name x2)))
            (unless (= root1 root2)
