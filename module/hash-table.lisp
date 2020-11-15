@@ -1,7 +1,8 @@
 (defpackage :cp/hash-table
   (:use :cl)
-  (:export #:hash-table-keys #:hash-table-values #:alist-hash-table
-           #:keys-hash-table #:hash-table-nunion #:hash-table-intersection #:hash-table-intersect-p))
+  (:export #:hash-table-keys #:hash-table-values #:alist-hash-table #:keys-hash-table
+           #:hash-table-nunion #:hash-table-intersection #:hash-table-intersect-p
+           #:hash-table-merge))
 (in-package :cp/hash-table)
 
 (declaim (inline hash-table-keys))
@@ -52,3 +53,14 @@
              (when (gethash key hash-table1)
                (return-from hash-table-intersect-p t)))
            hash-table2))
+
+(declaim (inline hash-table-merge))
+(defun hash-table-merge (hash-table1 hash-table2 &key (op #'+) (identity 0))
+  (when (< (hash-table-count hash-table1) (hash-table-count hash-table2))
+    (rotatef hash-table1 hash-table2))
+  (maphash (lambda (key value2)
+             (let ((value1 (gethash key hash-table1 identity)))
+               (setf (gethash key hash-table1)
+                     (funcall op value1 value2))))
+           hash-table2)
+  hash-table1)
