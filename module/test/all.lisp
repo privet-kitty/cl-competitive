@@ -103,6 +103,7 @@
   (:import-from :cp/test/range-tree-fc)
   (:import-from :cp/test/ratio-to-decimal)
   (:import-from :cp/test/read-line-into)
+  (:import-from :cp/test/rectangle-in-histogram)
   (:import-from :cp/test/ref-able-treap)
   (:import-from :cp/test/relative-error)
   (:import-from :cp/test/rolling-hash31)
