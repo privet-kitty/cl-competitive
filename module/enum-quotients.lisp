@@ -3,6 +3,8 @@
   (:export #:enum-quotients))
 (in-package :cp/enum-quotients)
 
+(declaim (ftype (function * (values (array (integer 0 #.most-positive-fixnum) (*)) &optional))
+                enum-quotients))
 (defun enum-quotients (n)
   "Given a positive integer N, floor(N/k) takes at most O(sqrt(N)) values for k
 in {1, ..., N}. ENUM-QUOTIENTS returns the ascending vector of minimal integers

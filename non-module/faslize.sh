@@ -37,7 +37,14 @@ FASL_PATHNAME="${BASENAME}.fasl"
 ros run -L ${IMPL} -- --no-userinit --noprint --eval "(compile-file \"${LISP_PATHNAME}\" :verbose nil :print nil)" --quit
 BASE64=$(base64 ${FASL_PATHNAME})
 
-template="(defpackage :faslize (:use :cl) (:export #:*fasl-pathname*))
+if [ $IS_SHORT -eq 0 ]; then
+    HEADER_COMMENT="Source code is attached to the bottom."
+else
+    HEADER_COMMENT=""
+fi
+
+template=";; This file is compiled with ${IMPL}. ${HEADER_COMMENT}
+(defpackage :faslize (:use :cl) (:export #:*fasl-pathname*))
 (in-package :faslize)
 (defparameter *fasl64* \"${BASE64}\")
 (defparameter *fasl-pathname* (make-pathname :defaults *load-pathname* :type \"fasl\"))
@@ -59,7 +66,7 @@ echo "${template}"
 
 if [ ${IS_SHORT} -eq 0 ]; then
     echo ";;;"
-    echo ";;; Original source:"
+    echo ";;; Original source"
     echo ";;;"
     echo ""
     echo "#|"
