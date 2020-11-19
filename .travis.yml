@@ -9,10 +9,11 @@ env:
   global:
     - PATH=~/.roswell/bin:$PATH
   jobs:
+    - LISP=sbcl-bin/2.0.6 # CS Academy
     - LISP=sbcl-bin/2.0.3 # AtCoder
     - LISP=sbcl-bin/1.5.5 # yukicoder
-    - LISP=sbcl-bin/1.4.16 # CS Academy
     - LISP=sbcl-bin/1.3.13 # CodeChef
+    - LISP=sbcl-bin/1.3.1 # Hackerearth
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
