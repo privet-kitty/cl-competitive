@@ -43,18 +43,27 @@ else
     HEADER_COMMENT=""
 fi
 
-template=";; This file is compiled with ${IMPL}. ${HEADER_COMMENT}
+TEMPLATE=";; This file is compiled with ${IMPL}. ${HEADER_COMMENT}
 (defpackage :faslize (:use :cl) (:export #:*fasl-pathname*))
 (in-package :faslize)
 (defparameter *fasl64* \"${BASE64}\")
 (defparameter *fasl-pathname* (make-pathname :defaults *load-pathname* :type \"fasl\"))
-(with-open-file (out *fasl-pathname* :direction :output
-                                     :if-exists :supersede
-                                     :element-type '(unsigned-byte 8))
-  (sb-ext:run-program \"base64\" '(\"-id\" \"-\")
-                      :search t
-                      :input (make-string-input-stream *fasl64*)
-                      :output out))
+
+;; KLUDGE: Some judge (e.g. Hackerearth) doesn't allow writing to /tmp
+(let ((tmpdir (namestring (make-pathname :defaults *load-pathname* :name nil :type nil)))
+      (saved (function sb-impl::get-temporary-directory)))
+  (sb-ext:unlock-package :sb-impl)
+  (setf (symbol-function 'sb-impl::get-temporary-directory) (constantly tmpdir))
+  (with-open-file (out *fasl-pathname* :direction :output
+                                       :if-exists :supersede
+                                       :element-type '(unsigned-byte 8))
+    (sb-ext:run-program \"base64\" '(\"-id\" \"-\")
+                        :search t
+                        :input (make-string-input-stream *fasl64*)
+                        :output out))
+  (setf (symbol-function 'sb-impl::get-temporary-directory) saved)
+  (sb-ext:lock-package :sb-impl))
+
 (in-package :cl-user)
 (handler-bind ((sb-fasl::invalid-fasl-version
                  (lambda (c) (invoke-restart (find-restart 'continue c)))))
@@ -62,7 +71,7 @@ template=";; This file is compiled with ${IMPL}. ${HEADER_COMMENT}
 (sb-ext:quit)
 "
 
-echo "${template}"
+echo "${TEMPLATE}"
 
 if [ ${IS_SHORT} -eq 0 ]; then
     echo ";;;"
