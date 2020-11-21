@@ -11,7 +11,8 @@
   ((heap :initarg :heap :reader heap-empty-error-heap))
   (:report
    (lambda (condition stream)
-     (format stream "Attempted to pop empty heap ~W" (heap-empty-error-heap condition)))))
+     (format stream "Attempted to get an element from empty heap ~W"
+             (heap-empty-error-heap condition)))))
 
 (defmacro define-binary-heap (name &key order (element-type 'fixnum))
   "Defines a binary heap specialized for the given order and the element
@@ -37,18 +38,19 @@ slightly slower than a static order, as it cannot be inlined."
          (dynamic-order (null order))
          (order (or order 'order)))
     `(progn
-       (locally
-           (declare #+sbcl (sb-ext:muffle-conditions style-warning))
-         (defstruct (,name
-                     (:constructor ,fname-make
-                         (size
-                          ,@(when dynamic-order '(order))
-                          &aux
-                          (data (make-array (1+ size) :element-type ',element-type)))))
-           (data nil :type (simple-array ,element-type (*)))
-           (position 1 :type (integer 1 #.array-total-size-limit))
-           ,@(when dynamic-order
-               `((order nil :type function)))))
+       (defstruct (,name
+                   (:constructor ,fname-make
+                       (size
+                        ,@(when dynamic-order '(order))
+                        &aux
+                        (data
+                         (locally
+                             (declare #+sbcl (sb-ext:muffle-conditions style-warning))
+                           (make-array (1+ size) :element-type ',element-type))))))
+         (data nil :type (simple-array ,element-type (*)))
+         (position 1 :type (integer 1 #.array-total-size-limit))
+         ,@(when dynamic-order
+             `((order nil :type function))))
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
        (defun ,fname-push (obj heap)
