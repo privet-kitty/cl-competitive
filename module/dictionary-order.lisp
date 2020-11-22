@@ -1,6 +1,6 @@
 (defpackage :cp/dictionary-order
   (:use :cl)
-  (:export #:dict<))
+  (:export #:dict< #:dict<=))
 (in-package :cp/dictionary-order)
 
 ;; based on UIOP:LEXICOGRAPHIC<
@@ -31,3 +31,7 @@ Y will also be strict."
                         ((funcall element< (aref y i) (aref x i)) nil)
                         (t (recur (+ i 1) (+ j 1))))))
          (recur 0 0))))))
+
+(declaim (inline dict<=))
+(defun dict<= (element< x y)
+  (not (dict< element< y x)))
