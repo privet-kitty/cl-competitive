@@ -1,7 +1,12 @@
 (defpackage :cp/date
   (:use :cl)
-  (:export #:leap-year-p #:get-day-of-week #:date-to-jdn #:jdn-to-date))
+  (:export #:*month-days* #:leap-year-p #:get-day-of-week #:date-to-jdn #:jdn-to-date))
 (in-package :cp/date)
+
+(declaim ((simple-array (unsigned-byte 8) (*)) *month-days*))
+(defparameter *month-days*
+  #.(coerce #(31 28 31 30 31 30 31 31 30 31 30 31)
+            '(simple-array (unsigned-byte 8) (*))))
 
 (declaim (inline leap-year-p))
 (defun leap-year-p (year)
