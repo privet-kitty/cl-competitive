@@ -8,7 +8,11 @@
   "Merges new item to the set of possible sum of values. VECTOR must be strictly
 increasing.
 
-VECTOR := increasing sequence of sum of values"
+VECTOR := increasing sequence of sum of values
+
+Example:
+\(subset-sum-merge #(0 1 4) 3)
+-> #(0 1 3 4 7)"
   (declare (vector vector)
            ((integer 0 #.most-positive-fixnum) new-value))
   (let* ((n (length vector))
