@@ -19,8 +19,9 @@ Example: (make-prime-table 10) => #*0011010100"
   (let ((table (make-array sup :element-type 'bit :initial-element 0))
         (sup/64 (ceiling sup 64)))
     ;; special treatment for p = 2
-    (dotimes (i sup/64)
-      (setf (sb-kernel:%vector-raw-bits table i) #xAAAAAAAAAAAAAAAA))
+    (when (> sup 2)
+      (dotimes (i sup/64)
+        (setf (sb-kernel:%vector-raw-bits table i) #xAAAAAAAAAAAAAAAA)))
     (setf (sbit table 1) 0
           (sbit table 2) 1)
     ;; p >= 3
