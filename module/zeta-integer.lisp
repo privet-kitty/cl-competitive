@@ -93,69 +93,67 @@ HANDLE-ZERO is NIL."
 ;;; (Slower) Zeta/Moebius transforms w.r.t. divisor or multiple in O(nlog(n)) time
 ;;;
 
-#|
-(declaim (inline divisor-transform!))
-(defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
-  "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in
-O(nlog(n)) time."
-  (declare (vector vector))
-  (let ((n (length vector)))
-    (when handle-zero
-      (loop for i from 1 below n
-            do (setf (aref vector 0)
-                     (funcall op+ (aref vector 0) (aref vector i)))))
-    (loop for i from (- (ceiling n 2) 1) downto 1
-          do (loop for j from (+ i i) below n by i
-                   do (setf (aref vector j)
-                            (funcall op+ (aref vector i) (aref vector j)))))
-    vector))
+;; (declaim (inline divisor-transform!))
+;; (defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
+;;   "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in
+;; O(nlog(n)) time."
+;;   (declare (vector vector))
+;;   (let ((n (length vector)))
+;;     (when handle-zero
+;;       (loop for i from 1 below n
+;;             do (setf (aref vector 0)
+;;                      (funcall op+ (aref vector 0) (aref vector i)))))
+;;     (loop for i from (- (ceiling n 2) 1) downto 1
+;;           do (loop for j from (+ i i) below n by i
+;;                    do (setf (aref vector j)
+;;                             (funcall op+ (aref vector i) (aref vector j)))))
+;;     vector))
 
-(declaim (inline inverse-divisor-transform!))
-(defun inverse-divisor-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nlog(n)) time."
-  (declare (vector vector))
-  (let ((n (length vector)))
-    (loop for i from 1 below (ceiling n 2)
-          do (loop for j from (+ i i) below n by i
-                   do (setf (aref vector j)
-                            (funcall op- (aref vector j) (aref vector i)))))
-    (when handle-zero
-      (loop for i from 1 below n
-            do (setf (aref vector 0)
-                     (funcall op- (aref vector 0) (aref vector i)))))
-    vector))
-
-
-(declaim (inline multiple-transform!))
-(defun multiple-transform! (vector &optional (op+ #'+) (handle-zero t))
-  "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of i in
-O(nlog(n)) time. (To be precise, all the multiples smaller than the length of
-VECTOR.)"
-  (declare (vector vector))
-  (let ((n (length vector)))
-    (loop for i from 1 below (ceiling n 2)
-          do (loop for j from (+ i i) below n by i
-                   do (setf (aref vector i)
-                            (funcall op+ (aref vector i) (aref vector j)))))
-    (when handle-zero
-      (loop for i from 1 below n
-            do (setf (aref vector i)
-                     (funcall op+ (aref vector 0) (aref vector i)))))
-    vector))
+;; (declaim (inline inverse-divisor-transform!))
+;; (defun inverse-divisor-transform! (vector &optional (op- #'-) (handle-zero t))
+;;   "Does the inverse transform of DIVISOR-TRANSFORM! in O(nlog(n)) time."
+;;   (declare (vector vector))
+;;   (let ((n (length vector)))
+;;     (loop for i from 1 below (ceiling n 2)
+;;           do (loop for j from (+ i i) below n by i
+;;                    do (setf (aref vector j)
+;;                             (funcall op- (aref vector j) (aref vector i)))))
+;;     (when handle-zero
+;;       (loop for i from 1 below n
+;;             do (setf (aref vector 0)
+;;                      (funcall op- (aref vector 0) (aref vector i)))))
+;;     vector))
 
 
-(declaim (inline inverse-multiple-transform!))
-(defun inverse-multiple-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of MULTIPLE-TRANSFORM! in O(nlog(n)) time."
-  (declare (vector vector))
-  (let ((n (length vector)))
-    (when handle-zero
-      (loop for i from 1 below n
-            do (setf (aref vector i)
-                     (funcall op- (aref vector i) (aref vector 0)))))
-    (loop for i from (- (ceiling n 2) 1) downto 1
-          do (loop for j from (+ i i) below n by i
-                   do (setf (aref vector i)
-                            (funcall op- (aref vector i) (aref vector j)))))
-    vector))
-;|#
+;; (declaim (inline multiple-transform!))
+;; (defun multiple-transform! (vector &optional (op+ #'+) (handle-zero t))
+;;   "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of i in
+;; O(nlog(n)) time. (To be precise, all the multiples smaller than the length of
+;; VECTOR.)"
+;;   (declare (vector vector))
+;;   (let ((n (length vector)))
+;;     (loop for i from 1 below (ceiling n 2)
+;;           do (loop for j from (+ i i) below n by i
+;;                    do (setf (aref vector i)
+;;                             (funcall op+ (aref vector i) (aref vector j)))))
+;;     (when handle-zero
+;;       (loop for i from 1 below n
+;;             do (setf (aref vector i)
+;;                      (funcall op+ (aref vector 0) (aref vector i)))))
+;;     vector))
+
+
+;; (declaim (inline inverse-multiple-transform!))
+;; (defun inverse-multiple-transform! (vector &optional (op- #'-) (handle-zero t))
+;;   "Does the inverse transform of MULTIPLE-TRANSFORM! in O(nlog(n)) time."
+;;   (declare (vector vector))
+;;   (let ((n (length vector)))
+;;     (when handle-zero
+;;       (loop for i from 1 below n
+;;             do (setf (aref vector i)
+;;                      (funcall op- (aref vector i) (aref vector 0)))))
+;;     (loop for i from (- (ceiling n 2) 1) downto 1
+;;           do (loop for j from (+ i i) below n by i
+;;                    do (setf (aref vector i)
+;;                             (funcall op- (aref vector i) (aref vector j)))))
+;;     vector))
