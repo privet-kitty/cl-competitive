@@ -6,7 +6,8 @@
   #+swank (ql:quickload '(:cl-debug-print :fiveam :cp/util) :silent t)
   #+swank (use-package :cp/util :cl-user)
   #-swank (set-dispatch-macro-character
-           #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t)))))
+           #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t))))
+  #+sbcl (setq *random-state* (seed-random-state (nth-value 1 (get-time-of-day)))))
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
 (macrolet ((def (b)
