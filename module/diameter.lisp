@@ -14,6 +14,7 @@ and its two ends."
   (declare (vector graph))
   (let ((end 0)
         (max-depth 0))
+    (declare ((mod #.array-total-size-limit) end max-depth))
     (assert (> (length graph) 0))
     (labels ((traverse (v parent depth)
                (declare ((integer 0 #.array-total-size-limit) v parent depth))
