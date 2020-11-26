@@ -23,10 +23,11 @@ Below are the features that I sometimes use:
 Every data structure and algorithm uses a 0-based index and a half-open interval unless otherwise noted.
 
 ## Test environment
+- SBCL 2.0.6 (x64, linux) &mdash; CS Academy's version
 - SBCL 2.0.3 (x64, linux) &mdash; AtCoder's version
 - SBCL 1.5.5 (x64, linux) &mdash; yukicoder's version
-- SBCL 1.4.16 (x64, linux) &mdash; CS Academy's version
 - SBCL 1.3.13 (x64, linux) &mdash; CodeChef's version
+- SBCL 1.3.1 (x64, linux) &mdash; HackerEarth's version
 
 
 ## Contents
