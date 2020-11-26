@@ -79,6 +79,7 @@
   (:import-from :cp/test/mod-linear-algebra)
   (:import-from :cp/test/mod-log)
   (:import-from :cp/test/mod-power)
+  (:import-from :cp/test/mod-power-table)
   (:import-from :cp/test/mod-sparse-polynomial)
   (:import-from :cp/test/mod-polynomial)
   (:import-from :cp/test/mod-operations)

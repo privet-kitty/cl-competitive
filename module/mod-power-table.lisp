@@ -11,7 +11,7 @@
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((res (make-array length :element-type element-type)))
     (unless (zerop length)
-      (setf (aref res 0) 1)
+      (setf (aref res 0) (mod 1 modulus))
       (loop for i from 1 below length
             do (setf (aref res i)
                      (mod (* base (aref res (- i 1))) modulus))))
