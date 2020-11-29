@@ -232,3 +232,7 @@
     (is (= 0 (itreap-bisect-right (%make list) 4 #'>)))
     (is (= 2 (itreap-bisect-right (%make list) 3 #'>)))
     (is (= 9 (itreap-bisect-right (%make list) 1 #'>)))))
+
+(test implicit-treap/reverse
+  (declare (notinline itreap-reverse))
+  (is (null (itreap-reverse nil 0 0))))
