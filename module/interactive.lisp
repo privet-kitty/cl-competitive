@@ -99,7 +99,7 @@
 (defun interact (solver grader &optional output (timeout 1.0))
   "Makes two threads for SOLVER and GRADER, and connect each other's input and
 output with pipe. When OUTPUT is a stream, a whole conversation between two
-threads are written to it."
+threads is written to it."
   (declare ((or null stream) output)
            ((or null (real 0)) timeout))
   (labels ((make-pipe (prefix)
