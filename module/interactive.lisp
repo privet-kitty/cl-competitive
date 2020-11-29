@@ -118,5 +118,5 @@ threads is written to it."
                                    (*standard-output* out))
                                (funcall grader)))
                            :arguments (list solver-out-grader-in grader-out-solver-in))))
-      (sb-thread:join-thread solver-thread)
-      (sb-thread:join-thread grader-thread))))
+      (sb-thread:join-thread solver-thread :default nil)
+      (sb-thread:join-thread grader-thread :default nil))))
