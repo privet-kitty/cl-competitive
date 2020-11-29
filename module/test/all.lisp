@@ -59,6 +59,7 @@
   (:import-from :cp/test/hl-decomposition)
   (:import-from :cp/test/hopcroft-karp)
   (:import-from :cp/test/implicit-treap)
+  (:import-from :cp/test/integer-pack)
   (:import-from :cp/test/interactive)
   (:import-from :cp/test/interval-set)
   (:import-from :cp/test/inversion-number)

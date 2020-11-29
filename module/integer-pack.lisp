@@ -1,22 +1,24 @@
-;; DEFINE-INTEGER-PACK and DEFINE-CONS-PACK are so to say poor man's variants of
-;; DEFSTRUCT. Both "structures" can only have slots of fixed unsigned
-;; bytes. DEFINE-INTEGER-PACK handles the concatenated slots as UNSIGNED-BYTE
-;; and DEFINE-CONS-PACK handles them as (CONS (UNSIGNED-BYTE 62) (UNSIGNED-BYTE
-;; 62)).
-
-;; Example:
-;; The following form defines the type NODE as (UNSIGNED-BYTE 9):
-;; (define-integer-pack node (slot1 3) (slot2 5) (slot3 1))
-;; This macro in addition defines relevant utilities: NODE-SLOT1, NODE-SLOT2,
-;; NODE-SLOT3, setters and getters, PACK-NODE, the constructor, and
-;; WITH-UNPACKING-NODE, the destructuring-bind-style macro.
-;; 
-;; DEFINE-CONS-PACK is almost the same as DEFINE-INTEGER-PACK though it will be
-;; suitable for the total bits in the range [63, 124].
-
 (defpackage :cp/integer-pack
   (:use :cl)
-  (:export #:define-integer-pack #:define-cons-pack))
+  (:export #:define-integer-pack #:define-cons-pack)
+  (:documentation "DEFINE-INTEGER-PACK and DEFINE-CONS-PACK are so to say poor
+man's variants of DEFSTRUCT. Both \"structures\" can only have slots of fixed
+unsigned bytes. DEFINE-INTEGER-PACK handles the concatenated slots as
+UNSIGNED-BYTE and DEFINE-CONS-PACK handles them as (CONS (UNSIGNED-BYTE
+62) (UNSIGNED-BYTE 62)).
+
+Example:
+The following form defines a type NODE as (UNSIGNED-BYTE 9):
+
+\(define-integer-pack node (slot1 3) (slot2 5) (slot3 1))
+
+This macro in addition defines relevant utilities: NODE-SLOT1, NODE-SLOT2,
+NODE-SLOT3, setters and getters, PACK-NODE, a constructor, and
+WITH-UNPACKING-NODE, a destructuring-bind-style macro.
+
+DEFINE-CONS-PACK is almost the same as DEFINE-INTEGER-PACK though it will be
+suitable for the total bits in the range [63, 124].
+"))
 (in-package :cp/integer-pack)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
