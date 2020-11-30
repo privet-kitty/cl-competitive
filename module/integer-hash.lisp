@@ -32,8 +32,7 @@
                               #x94d049bb133111eb)))
   (ldb (byte 62 0) (logxor x (ash x -31))))
 
-;; NOTE: This function doesn't refuse bignum but it returns a periodic value
-;; modulo 2^62.
+;; NOTE: This function accepts bignum but returns a periodic value modulo 2^62.
 (declaim (inline integer-hash))
 (defun integer-hash (x)
   (declare (integer x))
