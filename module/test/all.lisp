@@ -112,7 +112,7 @@
   (:import-from :cp/test/relative-error)
   (:import-from :cp/test/rolling-hash31)
   (:import-from :cp/test/rolling-hash62)
-  (:import-from :cp/test/roooted-tree-hash)
+  (:import-from :cp/test/rooted-tree-hash)
   (:import-from :cp/test/run-length)
   (:import-from :cp/test/run-range)
   (:import-from :cp/test/scc)
