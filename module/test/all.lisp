@@ -130,6 +130,7 @@
   (:import-from :cp/test/symmetric-group)
   (:import-from :cp/test/tree-binary-lifting-edge)
   (:import-from :cp/test/tree-centroid)
+  (:import-from :cp/test/tree-path)
   (:import-from :cp/test/trie)
   (:import-from :cp/test/triemap)
   (:import-from :cp/test/trisect)
