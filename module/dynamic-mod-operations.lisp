@@ -10,7 +10,7 @@
 ;; NOTE: Currently MOD* and MOD+ doesn't apply MOD when the number of
 ;; parameters is one. For simplicity I won't fix it for now.
 
-(defvar *modulus* #.(+ 7 (expt 10 9)))
+(defvar *modulus*)
 (declaim ((unsigned-byte 31) *modulus*))
 
 (defun mod* (&rest args)
