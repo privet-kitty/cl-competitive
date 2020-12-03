@@ -146,7 +146,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-centroid.lisp) centroid decomposition of tree
 - [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
 - [diameter.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/diameter.lisp) diameter of tree
-- [rooted-tree-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rooted-tree-hash.lisp) hashing of rooted tree
+- [tree-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-hash.lisp) hashing of rooted tree
 - [mo-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mo-tree.lisp) Mo's algorithm for paths on tree (vertex query)
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/random-graph.lisp) fast generation of random adjacency matrices
 

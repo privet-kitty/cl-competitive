@@ -1,10 +1,10 @@
-(defpackage :cp/test/rooted-tree-hash
-  (:use :cl :fiveam :cp/rooted-tree-hash)
+(defpackage :cp/test/tree-hash
+  (:use :cl :fiveam :cp/tree-hash)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/rooted-tree-hash)
+(in-package :cp/test/tree-hash)
 (in-suite base-suite)
 
-(test rooted-tree-hash
+(test tree-hash
   (let* ((graph1 #((1 2 3) (0) (0 5) (0 4) (3) (2 6 7) (5) (5)))
          (graph2 #((4) (6) (3) (2 7 4) (3 0) (6) (7 5 1) (3 6)))
          (hashes1 (tree-all-hashes graph1))
