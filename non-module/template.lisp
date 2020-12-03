@@ -44,7 +44,7 @@
 #-swank (main)
 
 ;;;
-;;; Test and benchmark
+;;; Test
 ;;;
 
 #+swank
