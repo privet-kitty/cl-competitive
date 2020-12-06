@@ -4,10 +4,10 @@
 (in-package :cp/compress)
 
 (declaim (inline compress!))
-(defun compress! (vector order)
-  "Does coordinate compression. Destructively modifies VECTOR."
+(defun compress! (sequence order)
+  "Does coordinate compression. Destructively modifies SEQUENCE."
   (declare (inline sort))
   (delete-adjacent-duplicates
-   (sort vector order)
+   (sort sequence order)
    :test (lambda (x y)
            (not (or (funcall order x y) (funcall order y x))))))
