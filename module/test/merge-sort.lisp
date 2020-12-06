@@ -13,6 +13,9 @@
 (test merge-sort/manual
   (declare (notinline merge-sort!))
   (is (equalp #() (merge-sort! (vector) #'<)))
+  (is (equalp #(3 1 2) (merge-sort! (vector 3 1 2) #'> :start 3 :end 3)))
+  (is (equalp #(3 1 2) (merge-sort! (vector 3 1 2) #'> :start 2 :end 3)))
+  (is (equalp #(3 2 1) (merge-sort! (vector 3 1 2) #'> :start 1 :end 3)))
   (is (equalp #(#\a) (merge-sort! (vector #\a) #'< :key #'char-code)))
   (is (equalp #(#\a) (merge-sort! (vector #\a) #'> :key #'char-code)))
   (is (equalp #(#\a #\b) (merge-sort! (vector #\b #\a) #'< :key #'char-code)))

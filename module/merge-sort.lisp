@@ -19,13 +19,13 @@
                  for dest from dest
                  do (setf (aref dest-vec dest)
                           (aref source-vec pos2))
-                 finally (return-from %merge t))
+                 finally (return-from %merge))
         when (= pos2 r)
         do (loop for pos1 from pos1 below mid
                  for dest from dest
                  do (setf (aref dest-vec dest)
                           (aref source-vec pos1))
-                 finally (return-from %merge t))
+                 finally (return-from %merge))
         do (if (funcall order
                         (funcall key (aref source-vec pos1))
                         (funcall key (aref source-vec pos2)))
@@ -34,21 +34,8 @@
                (setf (aref dest-vec dest) (aref source-vec pos2)
                      pos2 (1+ pos2)))))
 
-(declaim (inline %insertion-sort!))
-(defun %insertion-sort! (vector order l r key)
-  (declare (function order key)
-           ((mod #.array-total-size-limit) l r))
-  (loop for end from (+ l 1) below r
-        do (loop for i from end above l
-                 while (funcall order
-                                (funcall key (aref vector i))
-                                (funcall key (aref vector (- i 1))))
-                 do (rotatef (aref vector (- i 1)) (aref vector i)))
-        finally (return vector)))
-
 ;; NOTE: This merge sort is slow on SBCL version earlier than 1.5.0 as the type
-;; propagation of MAKE-ARRAY doesn't work. array-element-type.lisp is required to
-;; enable the optimization.
+;; propagation of MAKE-ARRAY doesn't work.
 
 ;; TODO: Peephole optimization of SBCL is not sufficient to optimize empty KEY
 ;; function. Defining deftransform will work.
@@ -63,15 +50,14 @@ ORDER := strict order"
          ;; TODO: avoid to allocate excessive size
          (buffer (make-array end :element-type (array-element-type vector))))
     (declare ((mod #.array-total-size-limit) start end))
-    (labels ((recur (l r merge-to-vector-p)
-               (declare ((mod #.array-total-size-limit) l r))
-               (if (and (<= (- r l) 32) merge-to-vector-p)
-                   (%insertion-sort! vector order l r key)
-                   (let ((mid (floor (+ l r) 2)))
-                     (recur l mid (not merge-to-vector-p))
-                     (recur mid r (not merge-to-vector-p))
-                     (if merge-to-vector-p
-                         (%merge l mid r buffer vector order key)
-                         (%merge l mid r vector buffer order key))))))
-      (recur start end t)
-      vector)))
+    (loop for width of-type (mod #.array-total-size-limit) = 1 then (* width 2)
+          for vec1 = vector then vec2
+          and vec2 = buffer then vec1
+          while (< width end)
+          do (loop for l from start below end by (* width 2)
+                   for mid = (min end (+ l width))
+                   for r = (min end (+ mid width))
+                   do (%merge l mid r vec1 vec2 order key))
+          finally (unless (eq vec1 vector)
+                    (replace vector buffer :start1 start :end1 end :start2 start :end2 end))
+                  (return vector))))
