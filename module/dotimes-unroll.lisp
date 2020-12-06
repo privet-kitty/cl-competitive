@@ -7,11 +7,11 @@
 ;; FIXME: Currently not enclosed with (BLOCK NIL ...).
 (defmacro dotimes-unroll ((var count size &optional result) &body body)
   "DOTIMES macro with loop-unrolling by SIZE."
+  (check-type var symbol)
+  (check-type size (integer 1))
   (let ((whole (gensym))
         (sup (gensym))
         (outer-index (gensym)))
-    (check-type var symbol)
-    (check-type size (integer 1 #.most-positive-fixnum))
     (if (integerp count)
         ;; We can unroll the loop in a more specific way if COUNT is constant
         (multiple-value-bind (quot rem) (floor count size)
