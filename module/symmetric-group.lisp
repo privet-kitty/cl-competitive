@@ -36,7 +36,7 @@ w.r.t. swapping."
   "Composes two permutations. (Actually the arguments doesn't need to be
 permutations. This is just a composition of two maps.)"
   (let* ((n (length perm1))
-         (result (make-array n :element-type 'fixnum)))
+         (result (make-array n :element-type (array-element-type perm2))))
     (dotimes (i n)
       (setf (aref result i) (aref perm2 (aref perm1 i))))
     result))
