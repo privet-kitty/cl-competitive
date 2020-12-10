@@ -11,8 +11,8 @@ Y] (or [Y, X]) are equal to or smaller than THRESHOLD assuming that the true
 value is in the same interval."
   (and (not (zerop x))
        (not (zerop y))
-       (<= (abs (/ (- x y) y)) threshold)
-       (<= (abs (/ (- x y) x)) threshold)))
+       (<= (abs (- 1 (/ x y))) threshold)
+       (<= (abs (- 1 (/ y x))) threshold)))
 
 (defun error<= (x y threshold)
   "Returns true iff the relative or absolute error between X and Y is equal to
