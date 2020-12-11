@@ -67,7 +67,6 @@
 (defun multichoose (n k)
   (binom (+ n k -1) (+ k -1)))
 
-;; TODO: compiler macro or source-transform
 (declaim (inline multinomial))
 (defun multinomial (&rest ks)
   "Returns the multinomial coefficient K!/k_1!k_2!...k_n! for K = k_1 + k_2 +
@@ -81,6 +80,16 @@ MOST-POSITIVE-FIXNUM. (multinomial) returns 1."
       (setq result
             (mod (* result (aref *fact-inv* k)) +binom-mod+)))
     (mod (* result (aref *fact* sum)) +binom-mod+)))
+
+(define-compiler-macro multinomial (&rest args)
+  (case (length args)
+    ((0 1) (mod 1 +binom-mod+))
+    (otherwise
+     `(mod (* ,(reduce (lambda (x y) `(mod (* ,x ,y) +binom-mod+))
+                       args
+                       :key (lambda (x) `(aref *fact-inv* ,x)))
+              (aref *fact* (+ ,@args)))
+           +binom-mod+))))
 
 (declaim (inline stirling2))
 (defun stirling2 (n k)

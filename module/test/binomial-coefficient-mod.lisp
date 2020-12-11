@@ -19,6 +19,14 @@
   (is (= (mod 6564120420 +binom-mod+)
          (catalan 20))))
 
+(test multinomial
+  (is (= 1 (multinomial)))
+  (is (= 1 (multinomial 0)))
+  (is (= 1 (multinomial 3)))
+  (is (= 1 (multinomial 3 0)))
+  (is (= (binom 8 3) (multinomial 3 5)))
+  (is (= 60 (multinomial 1 2 3))))
+
 (test stirling2
   (let ((mat #2a((1 0 0 0 0 0 0 0)
                  (0 1 0 0 0 0 0 0)
