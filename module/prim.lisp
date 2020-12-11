@@ -8,9 +8,10 @@
   (:export #:find-mst))
 (in-package :cp/prim)
 
+;; vertex . cost
 (define-binary-heap heap
-  :order (lambda (x y) (< (the fixnum (cdr x)) (the fixnum (cdr y))))
-  :element-type list)
+  :order (lambda (x y) (< (cdr x) (cdr y)))
+  :element-type (cons fixnum fixnum))
 
 (defun find-mst (graph)
   (let* ((n (length graph))
@@ -20,13 +21,13 @@
     (declare (fixnum total-cost))
     (heap-push (cons 0 0) pqueue)
     (loop until (heap-empty-p pqueue)
-          for (current . cost) of-type (fixnum . fixnum) = (heap-pop pqueue)
-          when (zerop (aref added current))
-          do (setf (aref added current) 1)
+          for (vertex . cost) = (heap-pop pqueue)
+          when (zerop (aref added vertex))
+          do (setf (aref added vertex) 1)
              (incf total-cost cost)
-             (loop for edge in (aref graph current)
+             (loop for edge in (aref graph vertex)
                    when (zerop (aref added (car edge)))
-                   do (heap-push (print edge) pqueue)))
+                   do (heap-push edge pqueue)))
     total-cost))
 
 ;; Test
