@@ -1,11 +1,8 @@
 (defpackage :cp/merge-sort
   (:use :cl)
-  (:export #:merge-sort!))
+  (:export #:merge-sort!)
+  (:documentation "Provides merge sort by bottom-up implementation."))
 (in-package :cp/merge-sort)
-
-;;;
-;;; Merge sort
-;;;
 
 (declaim (inline %merge))
 (defun %merge (l mid r source-vec dest-vec order key)
@@ -59,5 +56,7 @@ ORDER := strict order"
                    for r = (min end (+ mid width))
                    do (%merge l mid r vec1 vec2 order key))
           finally (unless (eq vec1 vector)
-                    (replace vector buffer :start1 start :end1 end :start2 start :end2 end))
-                  (return vector))))
+                    (replace vector buffer
+                             :start1 start :end1 end
+                             :start2 start :end2 end)))
+    vector))

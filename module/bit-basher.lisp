@@ -1,11 +1,9 @@
 (defpackage :cp/bit-basher
   (:use :cl)
-  (:export #:bit-not! #:bit-fill! #:bit-count #:bit-lshift #:bit-rshift #:bit-shift))
+  (:export #:bit-not! #:bit-fill! #:bit-count #:bit-lshift #:bit-rshift #:bit-shift)
+  (:documentation "Provides several operations on bit vector that are not
+included in the standard."))
 (in-package :cp/bit-basher)
-
-;;;
-;;; Complement to the bitwise operations in ANSI CL
-;;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= sb-vm:n-word-bits 64)))
@@ -125,8 +123,9 @@ is NIL, a new bit-vector of the same length is created. If END is specified,
 this function shifts only the range [0, END) of BIT-VECTOR and copies it to the
 range [0, END+DELTA) of RESULT-VECTOR.
 
-Note that here `left' means the direction from a smaller index to a larger one,
-i.e. (bit-lshift #*1011000 2) |-> #*0010110"
+Note that here `left' means the direction from a smaller index to a larger one
+and is contrary to the `visual' direction: i.e. (bit-lshift #*1011000 2) |->
+#*0010110."
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
@@ -150,8 +149,9 @@ The behaviour is the same as the bit-wise operations in ANSI CL: The result is
 copied to RESULT-VECTOR; if it is T, BIT-VECTOR is destructively modified; if it
 is NIL, a new bit-vector of the same length is created.
 
-Note that here `right' means the direction from a larger index to a smaller one,
-i.e. (bit-rshift #*1011000 2) |-> #*1100000"
+Note that here `right' means the direction from a larger index to a smaller one
+and is contrary to the `visual' direction: i.e. (bit-rshift #*1011000 2) |->
+#*1100000."
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)

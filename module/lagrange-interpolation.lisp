@@ -9,7 +9,7 @@
 (declaim (inline calc-lagrange-base))
 (defun calc-lagrange-base (args values modulus &key (element-type '(unsigned-byte 31)))
   "Returns a vector of coefficients of lagrange base: vector[k] is equal to the
-coefficient of (x-a_1)(x-a_2)...(x-a_n)/(x-a_k). Let f(x) is the polynomial what
+coefficient of (x-a_1)(x-a_2)...(x-a_n)/(x-a_k). Let f(x) be the polynomial what
 we want to know. Then f(ARGS[i]) = VALUES[i] must hold for all i.
 
 MODULUS must be coprime with any integers that appear in computation."

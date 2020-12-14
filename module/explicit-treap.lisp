@@ -46,7 +46,8 @@
   "Is the operator to update ACCUMULATOR based on LAZY value."
   (+ acc lazy))
 
-(defstruct (treap (:constructor %make-treap (key priority value &key left right (accumulator value) lazy))
+(defstruct (treap (:constructor %make-treap
+                      (key priority value &key left right (accumulator value) lazy))
                   (:copier nil)
                   (:conc-name %treap-))
   (key 0 :type fixnum)
@@ -116,7 +117,8 @@
                        (%treap-lazy treap)))
     (setf (%treap-lazy treap) +updater-identity+)))
 
-(declaim (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
+(declaim (ftype (function * (values (or null treap) (or null treap) &optional))
+                treap-split))
 (defun treap-split (treap key &key (order #'<))
   "Destructively splits TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."

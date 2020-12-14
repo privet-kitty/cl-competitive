@@ -113,10 +113,11 @@
           do (%dycon-update dycon (cons u v) appear-time disappear-time))
     dycon))
 
+;; TODO: safeguard against calling DYCON-MAP before DYCON-BUILD
 (defun dycon-map (dycon function)
   "FUCTION takes time as an argument: When FUNCTION is called, NUM-COMPONENTS
-and DISJOINT-SET become those of the time. Be sure to call DYCON-BUILD
-beforehand."
+and DISJOINT-SET take a state immediately after the time. Be sure to call
+DYCON-BUILD beforehand."
   (declare (optimize (speed 3))
            (function function))
   (symbol-macrolet ((comp (dycon-num-components dycon)))

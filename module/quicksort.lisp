@@ -24,7 +24,7 @@ partitioning)"))
   "Destructively sorts VECTOR w.r.t. ORDER.
 
 NOTE: This quicksort is NOT randomized. You need to shuffle an input to avoid
-getting hacked.
+getting hacked. CP/SHUFFLE:SHUFFLE! works for example.
 
 Reference:
 Hannu Erkio, The worst case permutation for median-of-three quicksort"
@@ -61,7 +61,9 @@ Hannu Erkio, The worst case permutation for median-of-three quicksort"
 (defun quicksort-by2! (vector order)
   "Destructively sorts VECTOR by two elements. This function regards
 each (VECTOR[i], VECTOR[i+1]) for even i as an element, and compares only the
-first elements (i.e. VECTOR[i] for even i)."
+first elements (i.e. VECTOR[i] for even i).
+
+This sort was written just for efficiency."
   (declare (vector vector))
   (labels
       ((recur (left right)
