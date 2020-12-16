@@ -123,6 +123,7 @@
   (:import-from :cp/test/shuffle)
   (:import-from :cp/test/sliding-window)
   (:import-from :cp/test/sort-by-index)
+  (:import-from :cp/test/sublist)
   (:import-from :cp/test/subset-sum)
   (:import-from :cp/test/succinct-bit-vector)
   (:import-from :cp/test/suffix-array)
