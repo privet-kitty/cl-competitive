@@ -1,11 +1,12 @@
 (defpackage :cp/integer-expression
   (:use :cl)
-  (:export #:integer-reverse #:palindrome-integer-p #:integer-concat))
+  (:export #:integer-reverse #:integer-reverse* #:palindrome-integer-p #:integer-concat))
 (in-package :cp/integer-expression)
 
 (declaim (inline integer-reverse))
 (defun integer-reverse (x &optional (base 10))
   "Returns the integer displayed in reversed order of X."
+  (declare ((integer 2 #.most-positive-fixnum) base))
   (declare (integer x))
   (let ((sign (signum x))
         (x (abs x))
@@ -19,7 +20,7 @@
 ;; not tested
 (defun integer-reverse* (x l r &optional (base 10))
   (declare ((integer 0 #.most-positive-fixnum) l r)
-           ((integer 1 #.most-positive-fixnum) base)
+           ((integer 2 #.most-positive-fixnum) base)
            (integer x))
   (assert (<= l r))
   (let ((stack 0)
@@ -44,11 +45,13 @@
 (declaim (inline palindrome-integer-p))
 (defun palindrome-integer-p (x &optional (base 10))
   "Returns true iff X is palindromically displayed."
+  (declare ((integer 2 #.most-positive-fixnum) base))
   (= x (integer-reverse x base)))
 
 (declaim (inline integer-concat))
 (defun integer-concat (x y &optional (base 10))
-  (declare ((integer 0 #.most-positive-fixnum) x y))
+  (declare ((integer 0 #.most-positive-fixnum) x y)
+           ((integer 2 #.most-positive-fixnum) base))
   (let ((coef 1))
     (declare ((integer 0 #.most-positive-fixnum) base))
     (loop until (> coef y)
