@@ -1,12 +1,11 @@
-;; UNDER CONSTRUCTION
 (defpackage :cp/multiset
   (:use :cl)
   (:export #:mset #:mset-empty-error #:mset-empty-error-mset
            #:mset-concat #:mset-split #:mset-insert #:mset-delete
            #:mset-push #:mset-pop #:mset-map #:mset-map-run-length
-           #:mset-find #:mset-count #:mset-first #:mset-last
-           #:mset-size #:mset-position-left #:mset-position-right
-           #:mset-bisect-left #:mset-bisect-right #:mset-bisect-left-1 #:mset-bisect-right-1)
+           #:mset-find #:mset-count #:mset-first #:mset-last #:mset-size
+           #:mset-bisect-left #:mset-bisect-right #:mset-bisect-left-1 #:mset-bisect-right-1
+           #:mset-position-left #:mset-position-right #:mset-ref)
   (:documentation "Provides multiset implementation with access by index."))
 (in-package :cp/multiset)
 
@@ -304,6 +303,22 @@ order."
                             (recur (%mset-right mset))))))))
     (recur mset)))
 
+(defun mset-ref (mset index)
+  "Returns the INDEX-th element of MSET."
+  (declare (optimize (speed 3))
+           (mset mset)
+           ((integer 0 #.most-positive-fixnum) index))
+  (assert (< index (%mset-size mset)))
+  (labels ((recur (mset parent-sum)
+             (let ((sum parent-sum))
+               (declare ((integer 0 #.most-positive-fixnum) sum))
+               (cond ((< index (incf sum (mset-size (%mset-left mset))))
+                      (recur (%mset-left mset) parent-sum))
+                     ((< index (incf sum (%mset-count mset)))
+                      (%mset-key mset))
+                     (t (recur (%mset-right mset) sum))))))
+    (recur mset 0)))
+
 ;;;
 ;;; Binary search by key
 ;;;
@@ -364,8 +379,6 @@ smaller than any keys in MSET."
                           mset)))))
     (mset-key (recur mset))))
 
-;; under construction
-
 ;; (declaim (inline mset-unite))
 ;; (defun mset-unite (mset1 mset2 &key (order #'<))
 ;;   "Merges two multisets with keeping the order."
@@ -382,59 +395,3 @@ smaller than any keys in MSET."
 ;;                     (update-size l)
 ;;                     l)))))
 ;;     (recur mset1 mset2)))
-
-;; (defun mset-fold-bisect (mset count &key (order #'<))
-;;   "Returns the smallest existing key that satisfies MSET[<1st key>]+ MSET[<2nd
-;; key>] + ... + MSET[key] >= COUNT (if ORDER is #'<).
-
-;; - This function deals with a **closed** interval. 
-;; - This function returns NIL instead if MSET[<1st key>]+ ... + MSET[<last
-;; key>] < COUNT.
-;; - The prefix sums of MSET (MSET[<1st key>], MSET[<1st key>] + MSET[<2nd
-;; key>], ...) must be monotone w.r.t. ORDER.
-;; - ORDER must be a strict order"
-;;   (labels
-;;       ((recur (mset prev-sum)
-;;          (unless mset
-;;            (return-from recur))
-;;          (let ((sum prev-sum))
-;;            (cond ((not (funcall order
-;;                                 (setq sum (+ sum (mset-size (%mset-left mset))))
-;;                                 count))
-;;                   (if (%mset-left mset)
-;;                       (recur (%mset-left mset) prev-sum)
-;;                       (%mset-key mset)))
-;;                  ((not (funcall order
-;;                                 (setq sum (+ sum (%mset-count mset)))
-;;                                 count))
-;;                   (%mset-key mset))
-;;                  (t (recur (%mset-right mset) sum))))))
-;;     (recur mset 0)))
-
-;; (defun mset-fold-bisect-from-end (mset count &key (order #'<))
-;;   "Returns the largest existing key that satisfies MSET[<key>] + ... +
-;; MSET[<2nd last key>] + MSET[last key] >= COUNT (if ORDER is #'<).
-
-;; - This function deals with a **closed** interval. 
-;; - This function returns NIL instead if MSET[<1st key>]+ ... + MSET[<last
-;; key>] < COUNT.
-;; - The suffix sums of MSET (MSET[<last key>], MSET[<2nd last key>] +
-;; MSET[<last key>], ...) must be monotone w.r.t. ORDER.
-;; - ORDER must be a strict order"
-;;   (labels
-;;       ((recur (mset prev-sum)
-;;          (unless mset
-;;            (return-from recur))
-;;          (let ((sum prev-sum))
-;;            (cond ((not (funcall order
-;;                                 (setq sum (+ (mset-size (%mset-right mset)) sum))
-;;                                 count))
-;;                   (if (%mset-right mset)
-;;                       (recur (%mset-right mset) prev-sum)
-;;                       (%mset-key mset)))
-;;                  ((not (funcall order
-;;                                 (setq sum (+ (%mset-count mset) sum))
-;;                                 count))
-;;                   (%mset-key mset))
-;;                  (t (recur (%mset-left mset) sum))))))
-;;     (recur mset 0)))

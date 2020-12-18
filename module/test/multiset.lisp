@@ -63,7 +63,10 @@
                  (let ((rkey-1 (mset-bisect-right-1 mset key :order #'>)))
                    (if rkey-1
                        (is (= rkey-1 (aref vector (- rpos 1))))
-                       (is (zerop rpos)))))))
+                       (is (zerop rpos)))))
+               (when (> (length vector) 0)
+                 (let ((index (random (length vector))))
+                   (is (= (mset-ref mset index) (aref vector index)))))))
             ;; map
             (4
              (let ((i 0))
