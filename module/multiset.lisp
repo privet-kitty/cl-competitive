@@ -1,237 +1,238 @@
+;; UNDER CONSTRUCTION
 (defpackage :cp/multiset
   (:use :cl)
-  (:export #:multiset #:multiset-empty-error #:multiset-empty-error-multiset
-           #:multiset-concat #:multiset-split #:multiset-insert #:multiset-delete
-           #:multiset-push #:multiset-pop #:multiset-map #:multiset-map-run-length
-           #:multiset-find #:multiset-count #:multiset-first #:multiset-last
-           #:multiset-size)
+  (:export #:mset #:mset-empty-error #:mset-empty-error-mset
+           #:mset-concat #:mset-split #:mset-insert #:mset-delete
+           #:mset-push #:mset-pop #:mset-map #:mset-map-run-length
+           #:mset-find #:mset-count #:mset-first #:mset-last
+           #:mset-size)
   (:documentation "Provides multiset implementation with access by index."))
 (in-package :cp/multiset)
 
-(define-condition multiset-empty-error (error)
-  ((multiset :initarg :multiset :reader multiset-empty-error-multiset))
+(define-condition mset-empty-error (error)
+  ((mset :initarg :mset :reader mset-empty-error-mset))
   (:report
    (lambda (condition stream)
      (format stream "Attempted to draw excessive number of elements from multiset ~W."
-             (multiset-empty-error-multiset condition)))))
+             (mset-empty-error-mset condition)))))
 
-(defstruct (multiset (:constructor %make-multiset
-                         (key priority count &key left right (size count)))
-                     (:copier nil)
-                     (:conc-name %multiset-))
+(defstruct (mset (:constructor %make-mset
+                     (key priority count &key left right (size count)))
+                 (:copier nil)
+                 (:conc-name %mset-))
   key
   (count 0 :type (integer 0 #.most-positive-fixnum))
   (size 0 :type (integer 0 #.most-positive-fixnum))
   (priority 0 :type (mod #.most-positive-fixnum))
-  (left nil :type (or null multiset))
-  (right nil :type (or null multiset)))
+  (left nil :type (or null mset))
+  (right nil :type (or null mset)))
 
-(declaim (inline multiset-key))
-(defun multiset-key (multiset)
-  "Returns the root key of (nullable) MULTISET."
-  (and multiset (%multiset-key multiset)))
+(declaim (inline mset-key))
+(defun mset-key (mset)
+  "Returns the root key of (nullable) MSET."
+  (and mset (%mset-key mset)))
 
-(declaim (inline multiset-size))
-(defun multiset-size (multiset)
-  "Returns the total number of elements in MULTISET."
-  (declare ((or null multiset) multiset))
-  (if (null multiset)
+(declaim (inline mset-size))
+(defun mset-size (mset)
+  "Returns the total number of elements in MSET."
+  (declare ((or null mset) mset))
+  (if (null mset)
       0
-      (%multiset-size multiset)))
+      (%mset-size mset)))
 
 (declaim (inline update-size))
-(defun update-size (multiset)
-  (declare (multiset multiset))
-  (setf (%multiset-size multiset)
-        (if (%multiset-left multiset)
-            (if (%multiset-right multiset)
-                (let ((tmp (+ (%multiset-size (%multiset-left multiset))
-                              (%multiset-count multiset))))
+(defun update-size (mset)
+  (declare (mset mset))
+  (setf (%mset-size mset)
+        (if (%mset-left mset)
+            (if (%mset-right mset)
+                (let ((tmp (+ (%mset-size (%mset-left mset))
+                              (%mset-count mset))))
                   (declare ((integer 0 #.most-positive-fixnum) tmp))
-                  (+ tmp (%multiset-size (%multiset-right multiset))))
-                (+ (%multiset-size (%multiset-left multiset))
-                   (%multiset-count multiset)))
-            (if (%multiset-right multiset)
-                (+ (%multiset-count multiset)
-                   (%multiset-size (%multiset-right multiset)))
-                (%multiset-count multiset)))))
+                  (+ tmp (%mset-size (%mset-right mset))))
+                (+ (%mset-size (%mset-left mset))
+                   (%mset-count mset)))
+            (if (%mset-right mset)
+                (+ (%mset-count mset)
+                   (%mset-size (%mset-right mset)))
+                (%mset-count mset)))))
 
-(declaim (ftype (function * (values (or null multiset) (or null multiset) &optional))
-                multiset-split))
-(defun multiset-split (multiset key &key (order #'<))
-  "Destructively splits MULTISET with reference to KEY and returns two multisets,
+(declaim (ftype (function * (values (or null mset) (or null mset) &optional))
+                mset-split))
+(defun mset-split (mset key &key (order #'<))
+  "Destructively splits MSET with reference to KEY and returns two multisets,
 the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
   (declare (function order)
-           ((or null multiset) multiset))
-  (cond ((null multiset) (values nil nil))
-        ((funcall order (%multiset-key multiset) key)
+           ((or null mset) mset))
+  (cond ((null mset) (values nil nil))
+        ((funcall order (%mset-key mset) key)
          (multiple-value-bind (left right)
-             (multiset-split (%multiset-right multiset) key :order order)
-           (setf (%multiset-right multiset) left)
-           (update-size multiset)
-           (values multiset right)))
+             (mset-split (%mset-right mset) key :order order)
+           (setf (%mset-right mset) left)
+           (update-size mset)
+           (values mset right)))
         (t
          (multiple-value-bind (left right)
-             (multiset-split (%multiset-left multiset) key :order order)
-           (setf (%multiset-left multiset) right)
-           (update-size multiset)
-           (values left multiset)))))
+             (mset-split (%mset-left mset) key :order order)
+           (setf (%mset-left mset) right)
+           (update-size mset)
+           (values left mset)))))
 
-(declaim (ftype (function * (values (or null multiset) &optional))
-                multiset-concat))
-(defun multiset-concat (left right)
+(declaim (ftype (function * (values (or null mset) &optional))
+                mset-concat))
+(defun mset-concat (left right)
   "Destructively concatenates two multisets. Assumes that all keys of LEFT are
 smaller (or larger, depending on the order) than those of RIGHT."
   (declare (optimize (speed 3))
-           ((or null multiset) left right))
+           ((or null mset) left right))
   (cond ((null left) right)
         ((null right) left)
-        ((> (%multiset-priority left) (%multiset-priority right))
-         (setf (%multiset-right left)
-               (multiset-concat (%multiset-right left) right))
+        ((> (%mset-priority left) (%mset-priority right))
+         (setf (%mset-right left)
+               (mset-concat (%mset-right left) right))
          (update-size left)
          left)
         
         (t
-         (setf (%multiset-left right)
-               (multiset-concat left (%multiset-left right)))
+         (setf (%mset-left right)
+               (mset-concat left (%mset-left right)))
          (update-size right)
          right)))
 
-(declaim (inline multiset-insert))
-(defun multiset-insert (multiset key &key (count 1) (order #'<))
-  "Destructively inserts KEY into MULTISET and returns the resultant multiset. You
+(declaim (inline mset-insert))
+(defun mset-insert (mset key &key (count 1) (order #'<))
+  "Destructively inserts KEY into MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned value."
-  (declare ((or null multiset) multiset)
+  (declare ((or null mset) mset)
            (function order)
            ((integer 0 #.most-positive-fixnum) count))
   (when (zerop count)
-    (return-from multiset-insert multiset))
-  (labels ((find-and-update (multiset)
+    (return-from mset-insert mset))
+  (labels ((find-and-update (mset)
              "Updates COUNT slot and returns true if KEY exists."
-             (cond ((null multiset) nil)
-                   ((funcall order key (%multiset-key multiset))
-                    (when (find-and-update (%multiset-left multiset))
-                      (update-size multiset)
+             (cond ((null mset) nil)
+                   ((funcall order key (%mset-key mset))
+                    (when (find-and-update (%mset-left mset))
+                      (update-size mset)
                       t))
-                   ((funcall order (%multiset-key multiset) key)
-                    (when (find-and-update (%multiset-right multiset))
-                      (update-size multiset)
+                   ((funcall order (%mset-key mset) key)
+                    (when (find-and-update (%mset-right mset))
+                      (update-size mset)
                       t))
                    (t
-                    (incf (%multiset-count multiset) count)
-                    (update-size multiset)
+                    (incf (%mset-count mset) count)
+                    (update-size mset)
                     t)))
-           (insert (node multiset)
-             (cond ((null multiset) node)
-                   ((> (%multiset-priority node) (%multiset-priority multiset))
-                    (setf (values (%multiset-left node) (%multiset-right node))
-                          (multiset-split multiset (%multiset-key node) :order order))
+           (insert (node mset)
+             (cond ((null mset) node)
+                   ((> (%mset-priority node) (%mset-priority mset))
+                    (setf (values (%mset-left node) (%mset-right node))
+                          (mset-split mset (%mset-key node) :order order))
                     (update-size node)
                     node)
                    (t
-                    (if (funcall order (%multiset-key node) (%multiset-key multiset))
-                        (setf (%multiset-left multiset)
-                              (insert node (%multiset-left multiset)))
-                        (setf (%multiset-right multiset)
-                              (insert node (%multiset-right multiset))))
-                    (update-size multiset)
-                    multiset))))
-    (if (find-and-update multiset)
-        multiset
-        (insert (%make-multiset key (random most-positive-fixnum) count) multiset))))
+                    (if (funcall order (%mset-key node) (%mset-key mset))
+                        (setf (%mset-left mset)
+                              (insert node (%mset-left mset)))
+                        (setf (%mset-right mset)
+                              (insert node (%mset-right mset))))
+                    (update-size mset)
+                    mset))))
+    (if (find-and-update mset)
+        mset
+        (insert (%make-mset key (random most-positive-fixnum) count) mset))))
 
-(declaim (ftype (function * (values (or null multiset) &optional))
-                multiset-delete))
-(defun multiset-delete (multiset key &key (count 1) (order #'<) (empty-error-p t))
-  "Destructively deletes KEY in MULTISET and returns the resultant multiset. You
+(declaim (ftype (function * (values (or null mset) &optional))
+                mset-delete))
+(defun mset-delete (mset key &key (count 1) (order #'<) (empty-error-p t))
+  "Destructively deletes KEY in MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned multiset.
 
-If EMPTY-ERROR-P is true, this function throws an MULTISET-EMPTY-ERROR when
+If EMPTY-ERROR-P is true, this function throws an MSET-EMPTY-ERROR when
 excessive number of KEYs are attempted to be deleted."
-  (declare ((or null multiset) multiset)
+  (declare ((or null mset) mset)
            (function order)
            ((integer 0 #.most-positive-fixnum) count))
   (let (found)
     (labels
-        ((%error () (error 'multiset-empty-error :multiset multiset))
-         (recur (multiset)
-           (cond ((null multiset) nil)
-                 ((funcall order key (%multiset-key multiset))
-                  (setf (%multiset-left multiset)
-                        (recur (%multiset-left multiset)))
-                  (update-size multiset)
-                  multiset)
-                 ((funcall order (%multiset-key multiset) key)
-                  (setf (%multiset-right multiset)
-                        (recur (%multiset-right multiset)))
-                  (update-size multiset)
-                  multiset)
+        ((%error () (error 'mset-empty-error :mset mset))
+         (recur (mset)
+           (cond ((null mset) nil)
+                 ((funcall order key (%mset-key mset))
+                  (setf (%mset-left mset)
+                        (recur (%mset-left mset)))
+                  (update-size mset)
+                  mset)
+                 ((funcall order (%mset-key mset) key)
+                  (setf (%mset-right mset)
+                        (recur (%mset-right mset)))
+                  (update-size mset)
+                  mset)
                  (t
                   (setq found t)
-                  (let ((current (%multiset-count multiset)))
+                  (let ((current (%mset-count mset)))
                     (cond ((and empty-error-p (< current count))
                            (%error))
                           ((> current count)
-                           (decf (%multiset-count multiset) count)
-                           (update-size multiset)
-                           multiset)
+                           (decf (%mset-count mset) count)
+                           (update-size mset)
+                           mset)
                           (t
-                           (multiset-concat (%multiset-left multiset)
-                                            (%multiset-right multiset)))))))))
-      (prog1 (recur multiset)
+                           (mset-concat (%mset-left mset)
+                                        (%mset-right mset)))))))))
+      (prog1 (recur mset)
         (when (and empty-error-p (not found))
           (%error))))))
 
-(defmacro multiset-push (key multiset order)
-  "Pushes a KEY to MULTISET."
-  `(setf ,multiset (multiset-insert ,multiset ,key :order ,order)))
+(defmacro mset-push (key mset &optional (order '#'<))
+  "Pushes a KEY to MSET."
+  `(setf ,mset (mset-insert ,mset ,key :order ,order)))
 
-(defmacro multiset-pop (key multiset order)
-  "Deletes a KEY from MULTISET."
-  `(setf ,multiset (multiset-delete ,multiset ,key :order ,order)))
+(defmacro mset-pop (key mset &optional (order '#'<))
+  "Deletes a KEY from MSET."
+  `(setf ,mset (mset-delete ,mset ,key :order ,order)))
 
-(declaim (inline multiset-ref))
-(defun multiset-count (multiset key &key (order #'<))
-  "Returns the number of KEYs in MULTISET."
-  (declare ((or null multiset) multiset))
-  (labels ((recur (multiset)
-             (cond ((null multiset) 0)
-                   ((funcall order key (%multiset-key multiset))
-                    (recur (%multiset-left multiset)))
-                   ((funcall order (%multiset-key multiset) key)
-                    (recur (%multiset-right multiset)))
-                   (t (%multiset-count multiset)))))
-    (recur multiset)))
+(declaim (inline mset-ref))
+(defun mset-count (mset key &key (order #'<))
+  "Returns the number of KEYs in MSET."
+  (declare ((or null mset) mset))
+  (labels ((recur (mset)
+             (cond ((null mset) 0)
+                   ((funcall order key (%mset-key mset))
+                    (recur (%mset-left mset)))
+                   ((funcall order (%mset-key mset) key)
+                    (recur (%mset-right mset)))
+                   (t (%mset-count mset)))))
+    (recur mset)))
 
-(declaim (inline multiset-map-run-length))
-(defun multiset-map-run-length (function multiset)
-  "Successively applies FUNCTION to each element of MULTISET in the underlying
+(declaim (inline mset-map-run-length))
+(defun mset-map-run-length (function mset)
+  "Successively applies FUNCTION to each element of MSET in the underlying
 order. FUNCTION must take two arguments: KEY and COUNT:"
-  (labels ((recur (multiset)
-             (when multiset
-               (recur (%multiset-left multiset))
-               (funcall function (%multiset-key multiset) (%multiset-count multiset))
-               (recur (%multiset-right multiset)))))
-    (recur multiset)))
+  (labels ((recur (mset)
+             (when mset
+               (recur (%mset-left mset))
+               (funcall function (%mset-key mset) (%mset-count mset))
+               (recur (%mset-right mset)))))
+    (recur mset)))
 
-(declaim (inline multiset-map))
-(defun multiset-map (function multiset)
-  "Successively applies FUNCTION to each element of MULTISET in the underlying
+(declaim (inline mset-map))
+(defun mset-map (function mset)
+  "Successively applies FUNCTION to each element of MSET in the underlying
 order. This function only passes a key to FUNCTION and calls it as many times as
-the number of the key in MULTISET."
-  (labels ((recur (multiset)
-             (when multiset
-               (recur (%multiset-left multiset))
-               (dotimes (_ (%multiset-count multiset))
-                 (funcall function (%multiset-key multiset)))
-               (recur (%multiset-right multiset)))))
-    (recur multiset)))
+the number of the key in MSET."
+  (labels ((recur (mset)
+             (when mset
+               (recur (%mset-left mset))
+               (dotimes (_ (%mset-count mset))
+                 (funcall function (%mset-key mset)))
+               (recur (%mset-right mset)))))
+    (recur mset)))
 
-(defmethod print-object ((object multiset) stream)
+(defmethod print-object ((object mset) stream)
   (print-unreadable-object (object stream :type t)
     (let ((init t))
-      (multiset-map-run-length
+      (mset-map-run-length
        (lambda (key count)
          (if init
              (setq init nil)
@@ -239,188 +240,188 @@ the number of the key in MULTISET."
          (format stream "<~A . ~A>" key count))
        object))))
 
-(defun multiset-first (multiset)
-  "Returns the leftmost key of MULTISET."
+(defun mset-first (mset)
+  "Returns the leftmost key of MSET."
   (declare (optimize (speed 3))
-           (multiset multiset))
-  (if (%multiset-left multiset)
-      (multiset-first (%multiset-left multiset))
-      (%multiset-key multiset)))
+           (mset mset))
+  (if (%mset-left mset)
+      (mset-first (%mset-left mset))
+      (%mset-key mset)))
 
-(defun multiset-last (multiset)
-  "Returns the rightmost key of MULTISET."
+(defun mset-last (mset)
+  "Returns the rightmost key of MSET."
   (declare (optimize (speed 3))
-           (multiset multiset))
-  (if (%multiset-right multiset)
-      (multiset-last (%multiset-right multiset))
-      (%multiset-key multiset)))
+           (mset mset))
+  (if (%mset-right mset)
+      (mset-last (%mset-right mset))
+      (%mset-key mset)))
 
-(defun multiset-find (multiset key &key (order #'<))
+(defun mset-find (mset key &key (order #'<))
   "Finds and returns KEY if it exists, otherwise returns NIL. Equality is here
 equivalent to 'neither larger nor smaller'."
   (declare (optimize (speed 3))
            (function order)
-           ((or null multiset) multiset))
-  (cond ((null multiset) nil)
-        ((funcall order key (%multiset-key multiset))
-         (multiset-find (%multiset-left multiset) key :order order))
-        ((funcall order (%multiset-key multiset) key)
-         (multiset-find (%multiset-right multiset) key :order order))
+           ((or null mset) mset))
+  (cond ((null mset) nil)
+        ((funcall order key (%mset-key mset))
+         (mset-find (%mset-left mset) key :order order))
+        ((funcall order (%mset-key mset) key)
+         (mset-find (%mset-right mset) key :order order))
         (t key)))
 
 ;; under construction
 
-;; (declaim (inline multiset-unite))
-;; (defun multiset-unite (multiset1 multiset2 &key (order #'<))
-;;   "Merges two multisets with keeping the order."
+;; (declaim (inline mset-unite))
+;; (defun mset-unite (mset1 mset2 &key (order #'<))
+;;   "Merges two msets with keeping the order."
 ;;   (labels
 ;;       ((recur (l r)
 ;;          (cond ((null l) (when r (update-size r)) r)
 ;;                ((null r) (when l (update-size l)) l)
-;;                (t (when (< (%multiset-priority l) (%multiset-priority r))
+;;                (t (when (< (%mset-priority l) (%mset-priority r))
 ;;                     (rotatef l r))
 ;;                   (multiple-value-bind (lchild rchild)
-;;                       (multiset-split r (%multiset-key l) :order order)
-;;                     (setf (%multiset-left l) (recur (%multiset-left l) lchild)
-;;                           (%multiset-right l) (recur (%multiset-right l) rchild))
+;;                       (mset-split r (%mset-key l) :order order)
+;;                     (setf (%mset-left l) (recur (%mset-left l) lchild)
+;;                           (%mset-right l) (recur (%mset-right l) rchild))
 ;;                     (update-size l)
 ;;                     l)))))
-;;     (recur multiset1 multiset2)))
+;;     (recur mset1 mset2)))
 
-;; (defun multiset-fold (multiset &key left right (order #'<))
+;; (defun mset-fold (mset &key left right (order #'<))
 ;;   "Returns the sum (w.r.t. OP) of the half-open interval specified by the keys: [LEFT,
 ;; RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
 ;;   (declare (function order))
-;;   (labels ((recur (multiset l r)
-;;              (unless multiset
+;;   (labels ((recur (mset l r)
+;;              (unless mset
 ;;                (return-from recur 0))
 ;;              (prog1
 ;;                  (if (and (null l) (null r))
-;;                      (%multiset-size multiset)
-;;                      (let ((key (%multiset-key multiset)))
+;;                      (%mset-size mset)
+;;                      (let ((key (%mset-key mset)))
 ;;                        (if (or (null l) (not (funcall order key l))) ; L <= KEY
 ;;                            (if (or (null r) (funcall order key r)) ; KEY < R
-;;                                (+ (+ (recur (%multiset-left multiset) l nil)
-;;                                      (%multiset-count multiset))
-;;                                   (recur (%multiset-right multiset) nil r))
-;;                                (recur (%multiset-left multiset) l r))
-;;                            (recur (%multiset-right multiset) l r))))
-;;                (update-size multiset))))
-;;     (recur multiset left right)))
+;;                                (+ (+ (recur (%mset-left mset) l nil)
+;;                                      (%mset-count mset))
+;;                                   (recur (%mset-right mset) nil r))
+;;                                (recur (%mset-left mset) l r))
+;;                            (recur (%mset-right mset) l r))))
+;;                (update-size mset))))
+;;     (recur mset left right)))
 
 ;;;
 ;;; Binary search by key
 ;;;
 
-;; (declaim (inline multiset-bisect-left))
-;; (defun multiset-bisect-left (multiset key &key (order #'<))
+;; (declaim (inline mset-bisect-left))
+;; (defun mset-bisect-left (mset key &key (order #'<))
 ;;   "Returns the smallest key equal to or larger than KEY. Returns NIL if KEY is
-;; larger than any keys in MULTISET."
-;;   (declare ((or null multiset) multiset)
+;; larger than any keys in MSET."
+;;   (declare ((or null mset) mset)
 ;;            (function order))
-;;   (labels ((recur (multiset)
-;;              (cond ((null multiset) nil)
-;;                    ((funcall order (%multiset-key multiset) key)
-;;                     (recur (%multiset-right multiset)))
-;;                    (t (or (recur (%multiset-left multiset))
-;;                           multiset)))))
-;;     (multiset-key (recur multiset))))
+;;   (labels ((recur (mset)
+;;              (cond ((null mset) nil)
+;;                    ((funcall order (%mset-key mset) key)
+;;                     (recur (%mset-right mset)))
+;;                    (t (or (recur (%mset-left mset))
+;;                           mset)))))
+;;     (mset-key (recur mset))))
 
-;; (declaim (inline multiset-bisect-left))
-;; (defun multiset-bisect-right (multiset key &key (order #'<))
+;; (declaim (inline mset-bisect-left))
+;; (defun mset-bisect-right (mset key &key (order #'<))
 ;;   "Returns the smallest key larger than KEY. Returns NIL if KEY is equal to or
-;; larger than any keys in MULTISET."
-;;   (declare ((or null multiset) multiset)
+;; larger than any keys in MSET."
+;;   (declare ((or null mset) mset)
 ;;            (function order))
-;;   (labels ((recur (multiset)
-;;              (cond ((null multiset) nil)
-;;                    ((funcall order key (%multiset-key multiset))
-;;                     (or (recur (%multiset-left multiset))
-;;                         multiset))
-;;                    (t (recur (%multiset-right multiset))))))
-;;     (multiset-key (recur multiset))))
+;;   (labels ((recur (mset)
+;;              (cond ((null mset) nil)
+;;                    ((funcall order key (%mset-key mset))
+;;                     (or (recur (%mset-left mset))
+;;                         mset))
+;;                    (t (recur (%mset-right mset))))))
+;;     (mset-key (recur mset))))
 
-;; (declaim (inline multiset-bisect-left-1))
-;; (defun multiset-bisect-left-1 (multiset key &key (order #'<))
+;; (declaim (inline mset-bisect-left-1))
+;; (defun mset-bisect-left-1 (mset key &key (order #'<))
 ;;   "Returns the largest key smaller than KEY. Returns NIL if KEY is equal to or
-;; smaller than any keys in MULTISET."
-;;   (declare ((or null multiset) multiset)
+;; smaller than any keys in MSET."
+;;   (declare ((or null mset) mset)
 ;;            (function order))
-;;   (labels ((recur (multiset)
-;;              (cond ((null multiset) nil)
-;;                    ((funcall order (%multiset-key multiset) key)
-;;                     (or (recur (%multiset-right multiset))
-;;                         multiset))
-;;                    (t (recur (%multiset-left multiset))))))
-;;     (multiset-key (recur multiset))))
+;;   (labels ((recur (mset)
+;;              (cond ((null mset) nil)
+;;                    ((funcall order (%mset-key mset) key)
+;;                     (or (recur (%mset-right mset))
+;;                         mset))
+;;                    (t (recur (%mset-left mset))))))
+;;     (mset-key (recur mset))))
 
-;; (declaim (inline multiset-bisect-right-1))
-;; (defun multiset-bisect-right-1 (multiset key &key (order #'<))
+;; (declaim (inline mset-bisect-right-1))
+;; (defun mset-bisect-right-1 (mset key &key (order #'<))
 ;;   "Returns the largest key equal to or smaller than KEY. Returns NIL if KEY is
-;; smaller than any keys in MULTISET."
-;;   (declare ((or null multiset) multiset)
+;; smaller than any keys in MSET."
+;;   (declare ((or null mset) mset)
 ;;            (function order))
-;;   (labels ((recur (multiset)
-;;              (cond ((null multiset) nil)
-;;                    ((funcall order key (%multiset-key multiset))
-;;                     (recur (%multiset-left multiset)))
-;;                    (t (or (recur (%multiset-right multiset))
-;;                           multiset)))))
-;;     (multiset-key (recur multiset))))
+;;   (labels ((recur (mset)
+;;              (cond ((null mset) nil)
+;;                    ((funcall order key (%mset-key mset))
+;;                     (recur (%mset-left mset)))
+;;                    (t (or (recur (%mset-right mset))
+;;                           mset)))))
+;;     (mset-key (recur mset))))
 
 ;; ;; not tested
-;; (defun multiset-fold-bisect (multiset count &key (order #'<))
-;;   "Returns the smallest existing key that satisfies MULTISET[<1st key>]+ MULTISET[<2nd
-;; key>] + ... + MULTISET[key] >= COUNT (if ORDER is #'<).
+;; (defun mset-fold-bisect (mset count &key (order #'<))
+;;   "Returns the smallest existing key that satisfies MSET[<1st key>]+ MSET[<2nd
+;; key>] + ... + MSET[key] >= COUNT (if ORDER is #'<).
 
 ;; - This function deals with a **closed** interval. 
-;; - This function returns NIL instead if MULTISET[<1st key>]+ ... + MULTISET[<last
+;; - This function returns NIL instead if MSET[<1st key>]+ ... + MSET[<last
 ;; key>] < COUNT.
-;; - The prefix sums of MULTISET (MULTISET[<1st key>], MULTISET[<1st key>] + MULTISET[<2nd
+;; - The prefix sums of MSET (MSET[<1st key>], MSET[<1st key>] + MSET[<2nd
 ;; key>], ...) must be monotone w.r.t. ORDER.
 ;; - ORDER must be a strict order"
 ;;   (labels
-;;       ((recur (multiset prev-sum)
-;;          (unless multiset
+;;       ((recur (mset prev-sum)
+;;          (unless mset
 ;;            (return-from recur))
 ;;          (let ((sum prev-sum))
 ;;            (cond ((not (funcall order
-;;                                 (setq sum (+ sum (multiset-size (%multiset-left multiset))))
+;;                                 (setq sum (+ sum (mset-size (%mset-left mset))))
 ;;                                 count))
-;;                   (if (%multiset-left multiset)
-;;                       (recur (%multiset-left multiset) prev-sum)
-;;                       (%multiset-key multiset)))
+;;                   (if (%mset-left mset)
+;;                       (recur (%mset-left mset) prev-sum)
+;;                       (%mset-key mset)))
 ;;                  ((not (funcall order
-;;                                 (setq sum (+ sum (%multiset-count multiset)))
+;;                                 (setq sum (+ sum (%mset-count mset)))
 ;;                                 count))
-;;                   (%multiset-key multiset))
-;;                  (t (recur (%multiset-right multiset) sum))))))
-;;     (recur multiset 0)))
+;;                   (%mset-key mset))
+;;                  (t (recur (%mset-right mset) sum))))))
+;;     (recur mset 0)))
 
-;; (defun multiset-fold-bisect-from-end (multiset count &key (order #'<))
-;;   "Returns the largest existing key that satisfies MULTISET[<key>] + ... +
-;; MULTISET[<2nd last key>] + MULTISET[last key] >= COUNT (if ORDER is #'<).
+;; (defun mset-fold-bisect-from-end (mset count &key (order #'<))
+;;   "Returns the largest existing key that satisfies MSET[<key>] + ... +
+;; MSET[<2nd last key>] + MSET[last key] >= COUNT (if ORDER is #'<).
 
 ;; - This function deals with a **closed** interval. 
-;; - This function returns NIL instead if MULTISET[<1st key>]+ ... + MULTISET[<last
+;; - This function returns NIL instead if MSET[<1st key>]+ ... + MSET[<last
 ;; key>] < COUNT.
-;; - The suffix sums of MULTISET (MULTISET[<last key>], MULTISET[<2nd last key>] +
-;; MULTISET[<last key>], ...) must be monotone w.r.t. ORDER.
+;; - The suffix sums of MSET (MSET[<last key>], MSET[<2nd last key>] +
+;; MSET[<last key>], ...) must be monotone w.r.t. ORDER.
 ;; - ORDER must be a strict order"
 ;;   (labels
-;;       ((recur (multiset prev-sum)
-;;          (unless multiset
+;;       ((recur (mset prev-sum)
+;;          (unless mset
 ;;            (return-from recur))
 ;;          (let ((sum prev-sum))
 ;;            (cond ((not (funcall order
-;;                                 (setq sum (+ (multiset-size (%multiset-right multiset)) sum))
+;;                                 (setq sum (+ (mset-size (%mset-right mset)) sum))
 ;;                                 count))
-;;                   (if (%multiset-right multiset)
-;;                       (recur (%multiset-right multiset) prev-sum)
-;;                       (%multiset-key multiset)))
+;;                   (if (%mset-right mset)
+;;                       (recur (%mset-right mset) prev-sum)
+;;                       (%mset-key mset)))
 ;;                  ((not (funcall order
-;;                                 (setq sum (+ (%multiset-count multiset) sum))
+;;                                 (setq sum (+ (%mset-count mset) sum))
 ;;                                 count))
-;;                   (%multiset-key multiset))
-;;                  (t (recur (%multiset-left multiset) sum))))))
-;;     (recur multiset 0)))
+;;                   (%mset-key mset))
+;;                  (t (recur (%mset-left mset) sum))))))
+;;     (recur mset 0)))
