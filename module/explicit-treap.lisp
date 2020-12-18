@@ -477,7 +477,7 @@ larger than any keys in TREAP."
                           treap)))))
     (treap-key (recur treap))))
 
-(declaim (inline treap-bisect-left))
+(declaim (inline treap-bisect-right))
 (defun treap-bisect-right (treap key &key (order #'<))
   "Returns the smallest key larger than KEY. Returns NIL if KEY is equal to or
 larger than any keys in TREAP."
