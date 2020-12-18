@@ -5,7 +5,7 @@
 
 (defun sublist! (list start &optional end)
   "Returns a contiguous sublist of LIST. This function may destructively modify
-LIST."
+LIST. The consequence is undefined when LIST is not proper."
   (declare (optimize (speed 3))
            (list list)
            ((integer 0 #.most-positive-fixnum) start)
