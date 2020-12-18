@@ -87,6 +87,7 @@
   (:import-from :cp/test/mod-polynomial)
   (:import-from :cp/test/mod-operations)
   (:import-from :cp/test/moebius-table)
+  (:import-from :cp/test/multiset)
   (:import-from :cp/test/next-permutation)
   (:import-from :cp/test/next-table)
   (:import-from :cp/test/ntt)
