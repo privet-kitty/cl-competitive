@@ -1,8 +1,3 @@
-;;;
-;;; Treap with explicit key
-;;; Virtually it works like std::map, std::multiset, or java.util.TreeMap.
-;;;
-
 (defpackage :cp/explicit-treap
   (:use :cl)
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator
@@ -11,15 +6,12 @@
            #:make-treap #:treap-fold #:treap-update #:treap-ref
            #:treap-first #:treap-last #:treap-find
            #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
-           #:treap-fold-bisect #:treap-fold-bisect-from-end))
-(in-package :cp/explicit-treap)
+           #:treap-fold-bisect #:treap-fold-bisect-from-end)
+  (:documentation "Provides treap with explicit key, which virtully works like
+std::map or java.util.TreeMap.
 
-;; Tips to use this structure as a multiset: Just define OP as (defun op (x y)
-;; (+ x y)) and insert each element by
-;;
-;; (treap-ensure-key <treap> <key> 1 :if-exists #'1+)
-;;
-;; instead of TREAP-INSERT.
+NOTE: please see cp/multiset if what you want is a multiset."))
+(in-package :cp/explicit-treap)
 
 ;; TODO & NOTE: insufficient tests
 ;; TODO: introduce abstraction by macro
