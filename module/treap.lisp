@@ -135,12 +135,12 @@ cannot rely on the side effect. Use the returned value."
                     (treap-merge (%treap-left treap) (%treap-right treap))))))
     (recur treap)))
 
-(defmacro treap-push (key treap order)
-  "Pushes KEY to TREAP."
+(defmacro treap-push (key treap &optional (order '#'<))
+  "Pushes a KEY to TREAP."
   `(setf ,treap (treap-insert ,key ,treap :order ,order)))
 
-(defmacro treap-pop (key treap order)
-  "Deletes KEY from TREAP."
+(defmacro treap-pop (key treap &optional (order '#'<))
+  "Deletes a KEY from TREAP."
   `(setf ,treap (treap-delete ,key ,treap :order ,order)))
 
 (defun treap-first (treap)
