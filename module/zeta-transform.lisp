@@ -1,18 +1,17 @@
-;;;
-;;; Zeta/Moebius transforms w.r.t. subsets and supersets
-;;;
-
 (defpackage :cp/zeta-transform
   (:use :cl)
   (:export #:zeta-subtransform! #:zeta-supertransform!
-           #:moebius-subtransform! #:moebius-supertransform!))
+           #:moebius-subtransform! #:moebius-supertransform!)
+  (:documentation "Provides Zeta/Moebius transforms w.r.t. subsets and
+supersets."))
 (in-package :cp/zeta-transform)
 
 ;; TODO: Should we integrate zeta- and moebius- into a function?
 
 (declaim (inline zeta-subtransform!))
 (defun zeta-subtransform! (vector &optional (plus #'+))
-  "Does the fast zeta transform w.r.t. subsets."
+  "Does the fast zeta transform w.r.t. subsets. The length of VECTOR must be a
+power of two."
   (declare (vector vector))
   (let* ((n (length vector))
          ;; cardinality of the underlying set
@@ -30,7 +29,8 @@
 
 (declaim (inline zeta-supertransform!))
 (defun zeta-supertransform! (vector &optional (plus #'+))
-  "Does the fast zeta transform w.r.t. supersets."
+  "Does the fast zeta transform w.r.t. supersets. The length of VECTOR must be a
+power of two."
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))
@@ -47,7 +47,8 @@
 
 (declaim (inline moebius-subtransform!))
 (defun moebius-subtransform! (vector &optional (minus #'-))
-  "Does the inverse of ZETA-SUBTRANSFORM!"
+  "Does the inverse of ZETA-SUBTRANSFORM! The length of VECTOR must be a power
+of two."
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))
@@ -64,7 +65,8 @@
 
 (declaim (inline moebius-supertransform!))
 (defun moebius-supertransform! (vector &optional (minus #'-))
-  "Does the inverse of ZETA-SUPERTRANSFORM!."
+  "Does the inverse of ZETA-SUPERTRANSFORM!. The length of VECTOR must be a
+power of two."
   (declare (vector vector))
   (let* ((n (length vector))
          (card (- (integer-length n) 1)))
