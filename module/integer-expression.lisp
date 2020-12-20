@@ -17,13 +17,15 @@
             (setq res (+ (* base res) rem)
                   x quot)))))
 
-;; not tested
+(declaim (inline integer-reverse*))
 (defun integer-reverse* (x l r &optional (base 10))
   (declare ((integer 0 #.most-positive-fixnum) l r)
            ((integer 2 #.most-positive-fixnum) base)
            (integer x))
   (assert (<= l r))
-  (let ((stack 0)
+  (let ((sign (signum x))
+        (x (abs x))
+        (stack 0)
         (rev 0))
     (dotimes (_ l)
       (multiple-value-bind (quot rem) (floor x base)
@@ -40,7 +42,7 @@
       (multiple-value-bind (quot rem) (floor stack base)
         (setq x (+ (* x base) rem)
               stack quot)))
-    x))
+    (* x sign)))
 
 (declaim (inline palindrome-integer-p))
 (defun palindrome-integer-p (x &optional (base 10))
