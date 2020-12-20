@@ -9,8 +9,8 @@
   "Returns the length of the integer X when displayed with the radix
 BASE. (Returns 0 when X = 0. Ignores the negative sign.)"
   (declare (integer x)
-           ((integer 2 #.most-positive-fixnum) radix))
+           ((integer 2 #.most-positive-fixnum) base))
   (loop for length of-type (integer 0 #.most-positive-fixnum) from 0
-        for y = (abs x) then (floor y radix)
+        for y = (abs x) then (floor y base)
         until (zerop y)
         finally (return length)))
