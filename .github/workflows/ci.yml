@@ -4,12 +4,11 @@ on: [push]
 
 jobs:
   test:
-    name: ${{ matrix.lisp }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.lisp }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        lisp: [sbcl-bin]
-        os: [ubuntu-latest]
+        lisp: [sbcl-bin/2.0.3, sbcl-bin/1.5.5, sbcl-bin/1.3.13, sbcl-bin/1.3.1]
 
     steps:
       - uses: actions/checkout@v1
