@@ -1,5 +1,5 @@
 # Common Lisp code collection for competitive programming
-[![Build Status](https://travis-ci.com/privet-kitty/cl-competitive.svg?token=Tm5zQHEnGe2GCWmpu5C3&branch=master)](https://travis-ci.com/privet-kitty/cl-competitive)
+[![Build Status](https://github.com/privet-kitty/cl-competitive/workflows/CI/badge.svg)](https://github.com/privet-kitty/cl-competitive/actions)
 
 This code collection is maintained mainly for competitive programming, and partly for just understanding algorithms.
 
