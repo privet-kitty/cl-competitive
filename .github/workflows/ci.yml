@@ -1,0 +1,28 @@
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    name: ${{ matrix.lisp }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        lisp: [sbcl-bin]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Roswell
+        env:
+          LISP: ${{ matrix.lisp }}
+        run: |
+          ROSWELL_LATEST_ASDF=1
+          curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+      - name: Install fiveam
+        run: ros install fiveam
+      - name: Run tests
+        run: |
+          ros -s fiveam -e '(ql:quickload :cp/test)
+                            (or (fiveam:run! (quote cp/test/base:base-suite))
+                                (uiop:quit 1))'
