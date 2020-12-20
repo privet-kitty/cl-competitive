@@ -14,7 +14,7 @@
   (is (= 2 (log2-ceil 5/2)))
   (is (= 2 (log2-ceil 4))))
 
-(test log-ceil/manual
+(test log-ceil/hand
   (declare (notinline log-ceil))
   (signals division-by-zero (log-ceil 0 2))
   (is (= 0 (log-ceil 1 2)))

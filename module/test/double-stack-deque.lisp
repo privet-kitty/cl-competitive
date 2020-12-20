@@ -4,7 +4,7 @@
 (in-package :cp/test/double-stack-deque)
 (in-suite base-suite)
 
-(test double-stack-deque/manual
+(test double-stack-deque/hand
   (let ((deque (make-deque '(5 6 7))))
     (is (= 7 (deque-pop-back deque)))
     (deque-push-front 4 deque)

@@ -31,7 +31,7 @@
                        do (dfs child v (cons s path))))))
     (dfs start -1 nil)))
 
-(test tree-binary-lifting-edge/manual
+(test tree-binary-lifting-edge/hand
   (let* ((graph (make-array 8 :element-type 'list :initial-contents '((1 2) (0 3 4) (0 5) (1) (1 6 7) (2) (4) (4))))
          (graph2 (make-array 9 :element-type 'list :initial-contents '((1) (0 2) (1 3) (2 4) (3 5) (4 6) (5 7) (6 8) (7))))
          (table (make-tbl graph :root 0 :weight-key (constantly "")))

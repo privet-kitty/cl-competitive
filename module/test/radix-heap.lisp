@@ -8,7 +8,7 @@
   :order #'<
   :element-type fixnum)
 
-(test radix-heap/manual
+(test radix-heap/hand
   (let ((h (make-radix-heap)))
     (is (rheap-empty-p h))
     (is (= 0 (rheap-count h)))

@@ -14,7 +14,7 @@
 ;;1.5..7.
 ;;0......
 ;; 012345
-(test range-tree-fc/manual
+(test range-tree-fc/hand
   ;; empty case
   (is (null (make-range-tree #())))
   ;; small manual case

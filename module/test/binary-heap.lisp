@@ -8,7 +8,7 @@
   :order #'<
   :element-type (unsigned-byte 32))
 
-(test binary-heap/static-order/manual
+(test binary-heap/static-order/hand
   (let ((h (make-sheap 7)))
     (is (= 0 (sheap-count h)))
     (dolist (x '(6 18 22 15 27 9 11))
@@ -41,7 +41,7 @@
 (define-binary-heap dheap
   :element-type base-char)
 
-(test binary-heap/dynamic-order/manual
+(test binary-heap/dynamic-order/hand
   (let ((h (make-dheap 5 #'char<)))
     (is (= 0 (dheap-count h)))
     (dolist (x '(#\a #\c #\e #\b #\z #\d))

@@ -65,7 +65,7 @@
           do (setf (aref result-vector i) 0))
     result-vector))
 
-(test bit-lshift/manual
+(test bit-lshift/hand
   ;; basic case
   (is (equalp *seq+1* (bit-lshift (copy-seq *seq*) 1)))
   (is (equalp *seq+1* (bit-lshift *seq* 1 (zero-vector *seq*))))
@@ -114,7 +114,7 @@
   (is (equalp #*00000 (bit-lshift *seq* 1000000000000000000 #*00000))))
 
 
-(test bit-rshift/manual
+(test bit-rshift/hand
   ;; corner case
   (is (eq *seq* (bit-rshift *seq* 0 t)))
   (is (equalp *seq* (bit-rshift *seq* 0 t)))
@@ -172,7 +172,7 @@
           (bit-rshift-naive vec2 delta t)
           (assert (equalp vec1 vec2)))))))
 
-(test bitwise-operations/manual
+(test bitwise-operations/hand
   (is (equalp #* (bit-not! #*)))
   (is (equalp #* (bit-fill! #* 0)))
   (is (equalp #* (bit-fill! #* 1)))

@@ -4,7 +4,7 @@
 (in-package :cp/test/2d-sparse-table)
 (in-suite base-suite)
 
-(test 2d-sparse-table/manual
+(test 2d-sparse-table/hand
   (declare (notinline make-2d-sparse-table))
   (is (equal '(1 1 0 0)
              (array-dimensions (make-2d-sparse-table #2a() #'min))))

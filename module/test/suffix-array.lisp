@@ -32,7 +32,7 @@
               (setf (aref s i) (random alphabet-size)))
             (assert (equalp (%sa-naive s) (%sa-is s alphabet-size)))))))))
 
-(test suffix-array/manual
+(test suffix-array/hand
   (is (equalp (vector) (make-suffix-array "" :order #'char<)))
   (is (equalp #(0) (make-suffix-array "3" :key #'char-code)))
   (is (equalp #(15 14 10 6 2 11 7 3 1 0 13 12 9 5 8 4)

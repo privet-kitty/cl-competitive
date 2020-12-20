@@ -60,7 +60,7 @@
                   (declare (ignore result2))
                   (is (equalp maxs1 maxs2))))))))
 
-(test calc-fnn/manual
+(test calc-fnn/hand
   (is (equalp '(#() #()) (multiple-value-list (calc-fnn #()))))
   (is (equalp '(#(0) #(0)) (multiple-value-list (calc-fnn #(#(1 2 3 4 5))))))
   (is (equalp #(0 0) (nth-value 1 (calc-fnn #(#(1 2 3 4 5) #(1 2 3 4 5)))))))

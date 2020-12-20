@@ -32,7 +32,7 @@
   (loop for i from l below r
         do (setf (aref vector i) 0)))
 
-(test interval-set/manual
+(test interval-set/hand
   (let (iset)
     (iset-push 3 5 iset)
     (iset-push 5 6 iset)

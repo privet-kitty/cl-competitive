@@ -11,7 +11,7 @@
   :conc-name uds-)
 
 ;; FIXME: more organized manual test or randomized test
-(test undoable-disjoint-set/manual
+(test undoable-disjoint-set/hand
   (let* ((contents (make-array 5
                                :element-type 'double-float
                                :initial-contents #(5d0 1d0 7d0 3d0 9d0)))

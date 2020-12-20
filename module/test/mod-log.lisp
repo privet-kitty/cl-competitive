@@ -12,7 +12,7 @@
         do (return k)
         finally (return nil)))
 
-(test mod-log/manual
+(test mod-log/hand
   (is (= 8 (mod-log 6 4 44)))
   (is (= 8 (mod-log -38 -40 44)))
   (is (null (mod-log 6 2 44)))

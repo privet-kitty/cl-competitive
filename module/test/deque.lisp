@@ -6,7 +6,7 @@
 
 (define-deque deque :element-type (unsigned-byte 16))
 
-(test deque/manual
+(test deque/hand
   (declare (notinline deque-empty-p deque-ref deque-push-front deque-pop-front deque-push-back deque-pop-back deque-reinitialize))
   (let ((deque (make-deque 4)))
     ;; ()

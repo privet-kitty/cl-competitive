@@ -10,7 +10,7 @@
   (sort (displace vector start end) order :key key)
   vector)
 
-(test merge-sort/manual
+(test merge-sort/hand
   (declare (notinline merge-sort!))
   (is (equalp #() (merge-sort! (vector) #'<)))
   (is (equalp #(3 1 2) (merge-sort! (vector 3 1 2) #'> :start 3 :end 3)))

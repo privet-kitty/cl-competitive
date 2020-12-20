@@ -66,7 +66,7 @@
            (apply #'%equalp (cdr args)))
       t))
 
-(test jonker-volgenant/manual
+(test jonker-volgenant/hand
   (let ((lap (make-lap 3 4 t)))
     (lap-add-edge lap 0 0 5)
     (lap-add-edge lap 0 2 3)

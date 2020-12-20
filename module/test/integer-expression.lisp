@@ -4,7 +4,7 @@
 (in-package :cp/test/integer-expression)
 (in-suite base-suite)
 
-(test integer-reverse*/manual
+(test integer-reverse*/hand
   (is (= 1234560987 (integer-reverse* 1234567890 0 4)))
   (is (= 1234567890 (integer-reverse* 1234567890 0 1)))
   (is (= 1234587690 (integer-reverse* 1234567890 2 5)))

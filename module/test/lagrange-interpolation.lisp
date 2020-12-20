@@ -13,7 +13,7 @@
   ;; mod 1
   (is (equalp #(0 0 0) (calc-lagrange-base #(1 2 3) #(20 22 32) 1))))
 
-(test lagrange-interpolation/manual
+(test lagrange-interpolation/hand
   (declare (notinline lagrange-interpolation))
   (let ((args #(1 2 3))
         (values #(20 22 32)))

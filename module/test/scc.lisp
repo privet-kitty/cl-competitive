@@ -4,7 +4,7 @@
 (in-package :cp/test/scc)
 (in-suite base-suite)
 
-(test scc/manual
+(test scc/hand
   ;; null graph
   (let ((scc (make-scc #())))
     (is (equalp #() (scc-components scc)))

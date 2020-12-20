@@ -5,11 +5,11 @@
 (in-package :cp/test/polynomial-ntt)
 (in-suite base-suite)
 
-(test poly-inverse/manual
+(test poly-inverse/hand
   (signals division-by-zero (poly-inverse #()))
   (signals division-by-zero (poly-inverse #(0 2))))
 
-(test poly-total-prod/manual
+(test poly-total-prod/hand
   (let ((polys #(#(998244343 1) #(998244347 1) #(0 1))))
     (is (equalp #(0 60 998244337 1) (poly-total-prod polys))))
   (is (equalp #(1) (poly-total-prod #())))

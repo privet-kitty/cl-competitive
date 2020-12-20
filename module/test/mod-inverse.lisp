@@ -4,7 +4,7 @@
 (in-package :cp/test/mod-inverse)
 (in-suite base-suite)
 
-(test mod-inverse/manual
+(test mod-inverse/hand
   (loop for x from -10 to 10
         do (is (zerop (mod-inverse x 1)))))
 

@@ -26,7 +26,7 @@
                                (error "Huh?"))
                              w 0 10 0 1))))
 
-(test wavelet-matrix/manual
+(test wavelet-matrix/hand
   ;; Miti_7's example (http://miti-7.hatenablog.com/entry/2018/04/28/152259)
   (let* ((miti7 (vector 5 4 5 5 2 1 5 6 1 3 5 0))
          (w (make-wavelet-matrix 3 miti7))

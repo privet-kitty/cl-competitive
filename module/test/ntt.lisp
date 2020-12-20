@@ -13,7 +13,7 @@
   :inverse-ntt inverse-ntt2
   :convolve convolve2)
 
-(test ntt/manual
+(test ntt/hand
   (is (equalp #() (convolve #() #())))
   (is (equalp #(15) (convolve #(3) #(5))))
   (is (equalp #(998244308 17 2 998244348 1)
