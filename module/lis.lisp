@@ -13,6 +13,12 @@
   "Computes the length of LIS in O(Nlog(N)) time. Returns a LIS as the second
 value when RESTORE is true.
 
+Order:
+<: increasing
+>: decreasing
+<=: non-decreasing
+>=: non-increasing
+
 Example:
 > (calc-lis #(1 0 -5 0 -5 4 4 -4 -1 -2) #'< most-positive-fixnum t)
 => 3
