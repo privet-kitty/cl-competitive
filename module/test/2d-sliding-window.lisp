@@ -1,0 +1,21 @@
+(defpackage :cp/test/2d-sliding-window
+  (:use :cl :fiveam :cp/2d-sliding-window)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/2d-sliding-window)
+(in-suite base-suite)
+
+(test make-2d-window-optimum
+  (declare (notinline make-2d-window-optimum))
+  (let ((mat #2a((3 73 748 834 7)
+                 (3487  7834 78 34 8)
+                 (34 90000 3894 8 2))))
+    (is (equalp #2a((3 3 3 73 7)
+                    (3 3 3 34 7)
+                    (34 34 34 8 2))
+                (make-2d-window-optimum mat 2 3 :order #'<)))
+    (is (equalp #2a((3 73 748 834 834)
+                    (3487 7834 7834 7834 834)
+                    (3487 90000 90000 90000 3894))
+                (make-2d-window-optimum mat 2 3 :order #'>)))
+    (is (equalp mat (make-2d-window-optimum mat 1 1 :order #'>)))
+    (is (equalp mat (make-2d-window-optimum mat 1 1 :order #'<)))))

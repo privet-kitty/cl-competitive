@@ -1,6 +1,7 @@
 (defpackage :cp/test/all
   (:import-from :cp/test/2d-bit)
   (:import-from :cp/test/2d-rolling-hash)
+  (:import-from :cp/test/2d-sliding-window)
   (:import-from :cp/test/2d-sparse-table)
   (:import-from :cp/test/2sat)
   (:import-from :cp/test/abstract-bit)
