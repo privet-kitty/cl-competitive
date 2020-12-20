@@ -5,7 +5,8 @@
 (defpackage :cp/hl-decomposition
   (:use :cl)
   (:export #:hl-decomposition #:make-hl-decomposition #:hl-decomposition-p
-           #:two-vertices-disconnected-error #:hld-map-path #:hld-get-lca))
+           #:two-vertices-disconnected-error #:%hld-preords
+           #:hld-map-path #:hld-map-path-edge #:hld-get-lca))
 (in-package :cp/hl-decomposition)
 
 (defstruct (hl-decomposition (:constructor %make-hl-decomposition
@@ -50,7 +51,7 @@
                  (declare (fixnum size))
                  (dolist (edge (aref original-graph v))
                    (let ((child (funcall key edge)))
-                     (declare ((integer 0 #.array-total-size-limit) child))
+                     (declare ((mod #.array-total-size-limit) child))
                      (if (= child parent)
                          (push-back v child)
                          (progn
@@ -66,7 +67,7 @@
                      (aref preords v) index
                      index (+ index 1))
                (dolist (child (aref graph v))
-                 (declare ((integer 0 #.array-total-size-limit) child))
+                 (declare ((mod #.array-total-size-limit) child))
                  (unless (= child parent)
                    (setf (aref heads child)
                          (if (eql child (car (aref graph v)))
@@ -108,6 +109,31 @@ numbering. Note that they are **closed** intervals."
                    (aref preords v))
           (when (= (aref heads u) (aref heads v))
             (return))
+          (setq v (aref parents (aref heads v)))
+          (when (= -1 v)
+            (error 'two-vertices-disconnected-error
+                   :vertex1 vertex1 :vertex2 vertex2 :hld hld)))))
+
+(declaim (inline hld-map-path-edge))
+(defun hld-map-path-edge (hld vertex1 vertex2 function)
+  "Maps all heavy paths in the path between given vertices w.r.t. edge (which is
+here expressed as a vertex at child side). FUNCTION takes two arguments which
+are both ends of a heavy path represented in pre-order numbering. Note that they
+are **closed** intervals."
+  (let ((u vertex1)
+        (v vertex2)
+        (preords (%hld-preords hld))
+        (heads (%hld-heads hld))
+        (parents (%hld-parents hld)))
+    (loop (when (> (aref preords u) (aref preords v))
+            (rotatef u v))
+          (when (= (aref heads u) (aref heads v))
+            (unless (= u v)
+              (funcall function (+ 1 (aref preords u)) (aref preords v)))
+            (return))
+          (funcall function
+                   (aref preords (aref heads v))
+                   (aref preords v))
           (setq v (aref parents (aref heads v)))
           (when (= -1 v)
             (error 'two-vertices-disconnected-error
