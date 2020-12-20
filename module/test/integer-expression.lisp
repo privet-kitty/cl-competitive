@@ -31,7 +31,7 @@
         (is (= (integer-reverse x base)
                (integer-reverse* x 0 (integer-length* x base) base)))))))
 
-(test integer-reverse
+(test integer-reverse/hand
   (loop for base from 2 to 10
         do (is (zerop (integer-reverse 0))))
   (is (= #x321 (integer-reverse #x1230 16))))
