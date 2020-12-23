@@ -25,8 +25,7 @@
   "Searches the sub-treap of TREAP whose key satisfies (and (not (funcall order
 key (%treap-key sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and
 returns KEY. Returns NIL if KEY is not contained."
-  (declare (function order)
-           ((or null treap) treap))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
                    ((funcall order key (%treap-key treap))
@@ -40,8 +39,7 @@ returns KEY. Returns NIL if KEY is not contained."
 (defun treap-split (key treap &key (order #'<))
   "Destructively splits the TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function order)
-           ((or null treap) treap))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap)
                     (values nil nil))
@@ -63,8 +61,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 cannot rely on the side effect. Use the returned value.
 
 The behavior is undefined when duplicate keys are inserted."
-  (declare ((or null treap) treap)
-           (function order))
+  (declare ((or null treap) treap))
   (labels ((recur (new-node treap)
              (declare (treap new-node))
              (cond ((null treap) new-node)
@@ -121,8 +118,7 @@ smaller (or larger, depending on the order) than those of RIGHT."
 (defun treap-delete (key treap &key (order #'<))
   "Destructively deletes the KEY in TREAP and returns the resultant treap. You
 cannot rely on the side effect. Use the returned value."
-  (declare ((or null treap) treap)
-           (function order))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
                    ((funcall order key (%treap-key treap))
@@ -157,7 +153,8 @@ cannot rely on the side effect. Use the returned value."
       (treap-last (%treap-right treap))
       (%treap-key treap)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) treap-count))
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                treap-count))
 (defun treap-count (treap)
   "Counts the number of elements in TREAP in O(n) time."
   (declare (optimize (speed 3))
@@ -175,57 +172,11 @@ cannot rely on the side effect. Use the returned value."
 (defun treap-bisect-left (treap key &key (order #'<))
   "Returns the smallest key equal to or larger than KEY. Returns NIL if KEY is
 larger than any keys in TREAP."
-  (declare ((or null treap) treap)
-           (function order))
+  (declare ((or null treap) treap))
   (labels ((recur (treap)
-             (unless treap (return-from recur nil))
-             (if (funcall order (%treap-key treap) key)
-                 (recur (%treap-right treap))
-                 (or (recur (%treap-left treap))
-                     treap))))
+             (cond ((null treap) nil)
+                   ((funcall order (%treap-key treap) key)
+                    (recur (%treap-right treap)))
+                   (t (or (recur (%treap-left treap))
+                          treap)))))
     (treap-key (recur treap))))
-
-;; (defun copy-treap (treap)
-;;   "For development. Recursively copies the whole TREAP."
-;;   (declare ((or null treap) treap))
-;;   (if (null treap)
-;;       nil
-;;       (%make-treap (%treap-key treap)
-;;                   (%treap-priority treap)
-;;                   (copy-treap (%treap-left treap))
-;;                   (copy-treap (%treap-right treap)))))
-
-;; Test
-;; (let ((treap1 (%make-treap 50 15))
-;;       (treap2 (%make-treap 100 11)))
-;;   (setf (%treap-left treap1) (%make-treap 30 5))
-;;   (setf (%treap-left (%treap-left treap1)) (%make-treap 20 2))
-;;   (setf (%treap-right (%treap-left treap1)) (%make-treap 40 4))
-;;   (setf (%treap-right treap1) (%make-treap 70 10))
-;;   (setf (%treap-right treap2) (%make-treap 200 3))
-;;   (setf (%treap-left treap2) (%make-treap 99 5))
-;;   ;; copy-treap
-;;   (assert (equalp treap1 (copy-treap treap1)))
-;;   (assert (not (eql treap1 (copy-treap treap1))))
-;;   ;; split and merge
-;;   (let ((treap (treap-merge (copy-treap treap1) (copy-treap treap2))))
-;;     (multiple-value-bind (left right) (treap-split 80 (copy-treap treap))
-;;       (assert (equalp treap (treap-merge left right)))))
-;;   ;; find
-;;   (assert (= 40 (treap-find 40 treap1)))
-;;   (assert (null (treap-find 41 treap1)))
-;;   ;; insert and delete
-;;   (let ((inserted-treap1 (treap-insert 41 (copy-treap treap1))))
-;;     (assert (= 41 (treap-find 41 inserted-treap1)))
-;;     (let ((deleted-treap1 (treap-delete 41 inserted-treap1)))
-;;       (assert (null (treap-find 41 deleted-treap1)))
-;;       (assert (equalp treap1 deleted-treap1))
-;;       (assert (equalp treap1 (treap-delete 41 deleted-treap1))))))
-
-;; (multiple-value-bind (left right) (treap-split 5 (treap-insert 0 (treap-insert 10 (treap-insert 5 nil))))
-;;   (assert (= 0 (%treap-key left)))
-;;   (assert (null (%treap-left left)))
-;;   (assert (null (%treap-right left)))
-;;   (assert (or (typep (%treap-left right) 'treap)
-;;               (typep (%treap-right right) 'treap))))
-
