@@ -15,13 +15,14 @@ jobs:
       - name: Install Roswell
         env:
           LISP: ${{ matrix.lisp }}
+          ROSWELL_LATEST_ASDF: 1
         run: |
-          ROSWELL_LATEST_ASDF=1
           curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
       - name: Install fiveam
         run: ros install fiveam
       - name: Run tests
         run: |
-          ros -s fiveam -e '(ql:quickload :cp/test)
+          ros -s fiveam -e '(sb-ext:disable-debugger)
+                            (ql:quickload :cp/test)
                             (or (fiveam:run! (quote cp/test/base:base-suite))
                                 (uiop:quit 1))'
