@@ -7,7 +7,7 @@
 
 (defpackage :cp/fft-real
   (:use :cl)
-  (:export #:fft-float #:with-fixed-length-fft #:dft! #:inverse-dft! #:convolve!))
+  (:export #:fft-float #:with-fixed-length-fft #:dft! #:inverse-dft! #:convolve! #:convolve))
 (in-package :cp/fft-real)
 
 (deftype fft-float () 'double-float)
@@ -17,6 +17,8 @@
   "Checks if X is a power of 2."
   (zerop (logand x (- x 1))))
 
+(declaim (ftype (function * (values (simple-array fft-float (*)) &optional))
+                %dft!))
 (defun %dft! (f)
   (declare (optimize (speed 3) (safety 0))
            ((simple-array fft-float (*)) f))
@@ -68,6 +70,8 @@
                         (+ (aref f (+ j i)) (- xreal)))
                   (incf (aref f (+ j i)) xreal))))))))))
 
+(declaim (ftype (function * (values (simple-array fft-float (*)) &optional))
+                %inverse-dft!))
 (defun %inverse-dft! (f)
   (declare (optimize (speed 3) (safety 0))
            ((simple-array fft-float (*)) f))
@@ -283,30 +287,73 @@ receive a vector of different size."
             (setf (aref f i) (* (aref f i) factor))))))))
 
 (declaim (inline convolve!))
-(defun convolve! (f1 f2 &optional result-vector)
-  "Returns the convolution of two vectors F1 and F2. A new vector is created when
-RESULT-VECTOR is null. This function destructively modifies F1 and F2. (They can
-be restored by INVERSE-DFT!.)"
-  (declare ((simple-array fft-float (*)) f1 f2)
+(defun convolve! (vector1 vector2 &optional result-vector)
+  "Returns the convolution of two vectors VECTOR1 and VECTOR2. A new vector is
+created when RESULT-VECTOR is null. This function destructively modifies VECTOR1
+and VECTOR2. (They can be restored by INVERSE-DFT!.)"
+  (declare ((simple-array fft-float (*)) vector1 vector2)
            ((or null (simple-array fft-float (*))) result-vector))
-  (let ((n (length f1)))
+  (let ((n (length vector1)))
     (assert (and (power2-p n)
-                 (= n (length f2))))
-    (dft! f1)
-    (dft! f2)
-    (let ((f (or result-vector (make-array n :element-type 'fft-float))))
+                 (= n (length vector2))))
+    (dft! vector1)
+    (dft! vector2)
+    (let ((result (or result-vector (make-array n :element-type 'fft-float))))
       (unless (zerop n)
-        (setf (aref f 0)
-              (* (aref f1 0) (aref f2 0)))
-        (setf (aref f (ash n -1))
-              (* (aref f1 (ash n -1)) (aref f2 (ash n -1)))))
+        (setf (aref result 0)
+              (* (aref vector1 0) (aref vector2 0)))
+        (setf (aref result (ash n -1))
+              (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1)))))
       (loop for i from 1 below (ash n -1)
             for value1 of-type fft-float
-               = (- (* (aref f1 i) (aref f2 i))
-                    (* (aref f1 (- n i)) (aref f2 (- n i))))
+               = (- (* (aref vector1 i) (aref vector2 i))
+                    (* (aref vector1 (- n i)) (aref vector2 (- n i))))
             for value2 of-type fft-float
-               = (+ (* (aref f1 i) (aref f2 (- n i)))
-                    (* (aref f1 (- n i)) (aref f2 i)))
-            do (setf (aref f i) value1)
-               (setf (aref f (- n i)) value2))
-      (inverse-dft! f))))
+               = (+ (* (aref vector1 i) (aref vector2 (- n i)))
+                    (* (aref vector1 (- n i)) (aref vector2 i)))
+            do (setf (aref result i) value1)
+               (setf (aref result (- n i)) value2))
+      (inverse-dft! result))))
+
+;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
+;; isn't guaranteed to preserve a given VECTOR in ANSI CL.
+(declaim (ftype (function * (values (simple-array fft-float (*)) &optional))
+                %adjust-array))
+(defun %adjust-array (vector length)
+  (declare (vector vector))
+  (let ((vector (coerce vector '(simple-array fft-float (*)))))
+    (if (= (length vector) length)
+        (copy-seq vector)
+        (adjust-array vector length :initial-element (coerce 0 'fft-float)))))
+
+(declaim (ftype (function * (values (simple-array fft-float (*)) &optional))
+                convolve))
+(defun convolve (vector1 vector2)
+  (declare (optimize (speed 3))
+           (vector vector1 vector2))
+  (let ((len1 (length vector1))
+        (len2 (length vector2)))
+    (when (or (zerop len1) (zerop len2))
+      (return-from convolve (make-array 0 :element-type 'fft-float)))
+    (let* ((mul-len (max 0 (- (+ len1 len2) 1)))
+           ;; power of two ceiling
+           (n (ash 1 (integer-length (max 0 (- mul-len 1)))))
+           (vector1 (dft! (%adjust-array vector1 n)))
+           (vector2 (dft! (%adjust-array vector2 n)))
+           (result (make-array n :element-type 'fft-float)))
+      (declare ((mod #.array-total-size-limit) mul-len)
+               ((simple-array fft-float (*)) vector1 vector2))
+      (setf (aref result 0)
+            (* (aref vector1 0) (aref vector2 0)))
+      (setf (aref result (ash n -1))
+            (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1))))
+      (loop for i from 1 below (ash n -1)
+            for value1 of-type fft-float
+               = (- (* (aref vector1 i) (aref vector2 i))
+                    (* (aref vector1 (- n i)) (aref vector2 (- n i))))
+            for value2 of-type fft-float
+               = (+ (* (aref vector1 i) (aref vector2 (- n i)))
+                    (* (aref vector1 (- n i)) (aref vector2 i)))
+            do (setf (aref result i) value1)
+               (setf (aref result (- n i)) value2))
+      (adjust-array (inverse-dft! result) mul-len))))
