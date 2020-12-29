@@ -21,7 +21,8 @@
 (declaim ((unsigned-byte 62) *time-since-epoch*))
 (sb-ext:define-load-time-global *time-since-epoch* (%get-time-since-epoch))
 
-(declaim (ftype (function * (values (unsigned-byte 62) &optional)) %splitmix64))
+(declaim (ftype (function * (values (unsigned-byte 62) &optional))
+                %splitmix64))
 (defun %splitmix64 (x)
   (declare (optimize (speed 3))
            ((unsigned-byte 64) x))
