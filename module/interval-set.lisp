@@ -1,7 +1,7 @@
 (defpackage :cp/interval-set
   (:use :cl)
   (:export #:interval-set #:interval-set-p #:iset-map #:iset-find #:iset-find>=
-           #:iset-insert #:iset-push #:iset-push-point #:iset-delete #:iset-pop #:iset-pop-point)
+           #:iset-insert #:iset-push #:iset-push1 #:iset-delete #:iset-pop #:iset-pop1)
   (:documentation "Provides ordered set of half-open intervals."))
 (in-package :cp/interval-set)
 
@@ -156,7 +156,7 @@ order."
   "PUSH-style macro for ISET-INSERT."
   `(setf ,iset (iset-insert ,iset ,lkey ,rkey)))
 
-(defmacro iset-push-point (key iset)
+(defmacro iset-push1 (key iset)
   "Adds an interval [KEY, KEY+1) to ISET."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))
@@ -205,7 +205,7 @@ order."
   "POP-style macro for ISET-INSERT."
   `(setf ,iset (iset-delete ,iset ,lkey ,rkey)))
 
-(defmacro iset-pop-point (key iset)
+(defmacro iset-pop1 (key iset)
   "Deletes an interval [KEY, KEY+1) from ISET (if it exists)."
   (let ((tmp (gensym)))
     `(let ((,tmp ,key))

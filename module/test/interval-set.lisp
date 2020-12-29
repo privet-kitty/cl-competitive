@@ -36,7 +36,7 @@
   (let (iset)
     (iset-push 3 5 iset)
     (iset-push 5 6 iset)
-    (iset-push-point 7 iset)
+    (iset-push1 7 iset)
     (is (equal '(3 6) (multiple-value-list (iset-find>= iset 0))))
     (is (equal '(7 8) (multiple-value-list (iset-find>= iset 6))))
     (is (equal '(nil nil) (multiple-value-list (iset-find>= iset 8))))))
