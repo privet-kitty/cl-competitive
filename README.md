@@ -48,6 +48,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [ref-able-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ref-able-treap.lisp) ordered set with treap; analogue of `std::set` or `java.util.TreeSet`
 - [explicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/explicit-treap.lisp) ordered map with treap; analogue of `std::map` or `java.util.TreeMap`
 - [implicit-treap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/implicit-treap.lisp) treap with implicit key
+- [multiset.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/multiset.lisp) multiset
 - [interval-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/interval-set.lisp) ordered set of half-open intervals
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
 - [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/range-tree.lisp) 2D range tree on arbitrary commutative monoid
