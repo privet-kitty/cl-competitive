@@ -5,7 +5,7 @@
   (:import-from :cp/test/2d-sparse-table)
   (:import-from :cp/test/2sat)
   (:import-from :cp/test/abstract-bit)
-  (:import-from :cp/test/abstract-segtree)
+  (:import-from :cp/test/segment-tree)
   (:import-from :cp/test/adjacent-duplicates)
   (:import-from :cp/test/bezout)
   (:import-from :cp/test/binary-heap)

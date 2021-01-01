@@ -1,9 +1,9 @@
-(defpackage :cp/abstract-segtree
+(defpackage :cp/segment-tree
   (:use :cl)
   (:export #:define-segtree)
   (:documentation "Provides 1-dimensional segment tree on arbitrary
 monoid (bottom-up implementation)."))
-(in-package :cp/abstract-segtree)
+(in-package :cp/segment-tree)
 
 (defmacro define-segtree (name &key (operator '#'+) (identity 0) element-type)
   "OPERATOR := binary operator (comprising a monoid)

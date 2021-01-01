@@ -1,7 +1,7 @@
-(defpackage :cp/test/abstract-segtree
-  (:use :cl :fiveam :cp/abstract-segtree)
+(defpackage :cp/test/segment-tree
+  (:use :cl :fiveam :cp/segment-tree)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/abstract-segtree)
+(in-package :cp/test/segment-tree)
 (in-suite base-suite)
 
 (define-segtree segtree
