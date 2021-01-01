@@ -375,20 +375,3 @@ smaller than any keys in MSET."
                    (t (or (recur (%mset-right mset))
                           mset)))))
     (mset-key (recur mset))))
-
-;; (declaim (inline mset-unite))
-;; (defun mset-unite (mset1 mset2 &key (order #'<))
-;;   "Merges two multisets with keeping the order."
-;;   (labels
-;;       ((recur (l r)
-;;          (cond ((null l) r)
-;;                ((null r) l)
-;;                (t (when (< (%mset-priority l) (%mset-priority r))
-;;                     (rotatef l r))
-;;                   (multiple-value-bind (lchild rchild)
-;;                       (mset-split r (%mset-key l) :order order)
-;;                     (setf (%mset-left l) (recur (%mset-left l) lchild)
-;;                           (%mset-right l) (recur (%mset-right l) rchild))
-;;                     (update-size l)
-;;                     l)))))
-;;     (recur mset1 mset2)))
