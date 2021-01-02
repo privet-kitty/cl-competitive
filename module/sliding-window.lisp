@@ -1,5 +1,5 @@
 ;;;;
-;;;; Sliding window optimum
+;;;; Sliding window minimum/maximum
 ;;;;
 
 (defpackage :cp/sliding-window
