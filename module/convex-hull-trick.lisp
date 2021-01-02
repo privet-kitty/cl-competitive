@@ -73,15 +73,15 @@
 (declaim (inline %removable-p))
 (defun %removable-p (slope1 intercept1 slope2 intercept2 slope3 intercept3)
   "Returns true iff the **second** line is removable."
+  (declare (cht-element-type slope1 intercept1 slope2 intercept2 slope3 intercept3))
   (>= (* (- intercept3 intercept2)
          (- slope2 slope1))
       (* (- intercept2 intercept1)
          (- slope3 slope2))))
 
-;; NOTE: The slopes of lines newly added to CHT must be largest or smallest
-;; ever.
 (defun cht-push (cht slope intercept)
-  "Adds a new line to CHT."
+  "Adds a new line to CHT, the slopes of which must be largest or smallest
+ever."
   (declare (optimize (speed 3))
            (cht-element-type slope intercept))
   (when (= (%cht-length cht) (%cht-max-length cht))
@@ -130,7 +130,6 @@
                    while (and (>= offset 2)
                               (multiple-value-bind (slope-2 intercept-2) (ref (- offset 2))
                                 (multiple-value-bind (slope-1 intercept-1) (ref (- offset 1))
-                                  (declare (cht-element-type slope-2 intercept-2 slope-1 intercept-1))
                                   (%removable-p slope-2 intercept-2
                                                 slope-1 intercept-1
                                                 slope intercept))))
@@ -168,8 +167,8 @@
 
 (declaim (inline cht-increasing-get))
 (defun cht-increasing-get (cht x)
-  "Returns the minimum (maximum) value at X. The time complexity is O(1), though
-X must be larger than the one given at the previous call of this function."
+  "Returns the minimum (maximum) value at X. The time complexity is O(1). X must
+be larger than the one given at the previous call of this function."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((slopes (%cht-slopes cht))
@@ -196,8 +195,8 @@ X must be larger than the one given at the previous call of this function."
 
 (declaim (inline cht-decreasing-get))
 (defun cht-decreasing-get (cht x)
-  "Returns the minimum (maximum) value at X. The time complexity is O(1), though
-X must be smaller than the one given at the previous call of this function."
+  "Returns the minimum (maximum) value at X. The time complexity is O(1). X must
+be smaller than the one given at the previous call of this function."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((slopes (%cht-slopes cht))
