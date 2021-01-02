@@ -1,5 +1,5 @@
 ;;;
-;;; Strongly connected components of directed graph, 2-SAT
+;;; Strongly connected components of directed graph
 ;;;
 
 (defpackage :cp/scc
