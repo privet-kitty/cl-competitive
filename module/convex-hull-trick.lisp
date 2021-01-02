@@ -168,7 +168,7 @@ ever."
 (declaim (inline cht-increasing-get))
 (defun cht-increasing-get (cht x)
   "Returns the minimum (maximum) value at X. The time complexity is O(1). X must
-be larger than the one given at the previous call of this function."
+be equal to or larger than the one given at the previous call of this function."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((slopes (%cht-slopes cht))
@@ -196,7 +196,8 @@ be larger than the one given at the previous call of this function."
 (declaim (inline cht-decreasing-get))
 (defun cht-decreasing-get (cht x)
   "Returns the minimum (maximum) value at X. The time complexity is O(1). X must
-be smaller than the one given at the previous call of this function."
+be equal to or smaller than the one given at the previous call of this
+function."
   (when (zerop (%cht-length cht))
     (error 'cht-empty-error :cht cht))
   (let ((slopes (%cht-slopes cht))
