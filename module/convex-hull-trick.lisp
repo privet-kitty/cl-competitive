@@ -1,12 +1,9 @@
-;;;
-;;; Convex Hull Trick for monotone slopes
-;;;
-
 (defpackage :cp/convex-hull-trick
   (:use :cl)
   (:export #:cht-element-type #:cht-empty-error #:cht-full-error
            #:convex-hull-trick #:make-cht #:cht-p
-           #:cht-push #:cht-get #:cht-increasing-get #:cht-decreasing-get))
+           #:cht-push #:cht-get #:cht-increasing-get #:cht-decreasing-get)
+  (:documentation "Provides convex hull trick for monotone slopes."))
 (in-package :cp/convex-hull-trick)
 
 (deftype cht-element-type () 'fixnum)
@@ -15,14 +12,14 @@
   ((cht :initarg :cht :accessor cht-empty-error-cht))
   (:report (lambda (condition stream)
              (format stream
-                     "Attempted to get a value on an empty CHT ~W"
+                     "Attempted to get a value from an empty CHT ~W"
                      (cht-empty-error-cht condition)))))
 
 (define-condition cht-full-error (error)
   ((cht :initarg :cht :accessor cht-full-error-cht))
   (:report (lambda (condition stream)
              (format stream
-                     "Attempted to push a value on a full CHT ~W"
+                     "Attempted to add a value to a full CHT ~W"
                      (cht-full-error-cht condition)))))
 
 (defstruct (convex-hull-trick
@@ -37,9 +34,9 @@
   (slopes nil :type (simple-array cht-element-type (*)))
   (intercepts nil :type (simple-array cht-element-type (*)))
   (minimum t :type boolean)
-  (start 0 :type (integer 0 #.most-positive-fixnum))
-  (length 0 :type (integer 0 #.most-positive-fixnum))
-  (max-length 0 :type (integer 0 #.most-positive-fixnum)))
+  (start 0 :type (mod #.array-total-size-limit))
+  (length 0 :type (mod #.array-total-size-limit))
+  (max-length 0 :type (mod #.array-total-size-limit)))
 
 ;; four basic operations on deque
 (declaim (inline %cht-pop-back))
@@ -56,7 +53,7 @@
 (declaim (inline %cht-push-back))
 (defun %cht-push-back (cht slope intercept)
   (let ((pos (+ (%cht-start cht) (%cht-length cht))))
-    (declare ((integer 0 #.most-positive-fixnum) pos))
+    (declare ((mod #.array-total-size-limit) pos))
     (when (>= pos (%cht-max-length cht))
       (decf pos (%cht-max-length cht)))
     (setf (aref (%cht-slopes cht) pos) slope
@@ -93,17 +90,23 @@
     (setq slope (- slope)
           intercept (- intercept)))
   (let ((slopes (%cht-slopes cht))
-        (intercepts (%cht-intercepts cht)))
+        (intercepts (%cht-intercepts cht))
+        (max-length (%cht-max-length cht)))
     (labels ((ref (i)
                (let ((pos (+ (%cht-start cht) i)))
-                 (declare ((integer 0 #.most-positive-fixnum) pos))
-                 (when (>= pos (%cht-max-length cht))
-                   (decf pos (%cht-max-length cht)))
+                 (declare ((mod #.array-total-size-limit) pos))
+                 (when (>= pos max-length)
+                   (decf pos max-length))
                  (values (aref slopes pos) (aref intercepts pos)))))
       (cond ((zerop (%cht-length cht))
              (%cht-push-front cht slope intercept))
             ((>= slope (aref slopes (%cht-start cht)))
              ;; push the line to the front if SLOPE is larger than that of the head.
+             (multiple-value-bind (slope+1 intercept+1) (ref 0)
+               (when (= slope slope+1)
+                 (when (>= intercept intercept+1)
+                   (return-from cht-push cht))
+                 (%cht-pop-front cht)))
              (loop for start = (%cht-start cht)
                    while (and (>= (%cht-length cht) 2)
                               (let ((slope+1 (aref slopes start))
@@ -117,7 +120,12 @@
                    finally (%cht-push-front cht slope intercept)))
             (t
              ;; push the line to the end if SLOPE is smaller than that of the tail.
-             ;; TODO: assert it.
+             (multiple-value-bind (slope-1 intercept-1) (ref (- (%cht-length cht) 1))
+               (assert (<= slope slope-1))
+               (when (= slope slope-1)
+                 (when (>= intercept intercept-1)
+                   (return-from cht-push cht))
+                 (%cht-pop-back cht)))
              (loop for offset = (%cht-length cht)
                    while (and (>= offset 2)
                               (multiple-value-bind (slope-2 intercept-2) (ref (- offset 2))
@@ -142,7 +150,7 @@
     (declare ((integer -1 (#.array-total-size-limit)) ng ok))
     (labels ((calc (i)
                (let ((pos (+ (%cht-start cht) i)))
-                 (declare ((integer 0 #.most-positive-fixnum) pos))
+                 (declare ((mod #.array-total-size-limit) pos))
                  (when (>= pos (%cht-max-length cht))
                    (decf pos (%cht-max-length cht)))
                  (+ (* x (aref slopes pos))
