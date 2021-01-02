@@ -92,7 +92,6 @@ smaller (or larger, depending on the order) than those of RIGHT."
                (mset-concat (%mset-right left) right))
          (update-size left)
          left)
-        
         (t
          (setf (%mset-left right)
                (mset-concat left (%mset-left right)))
