@@ -8,6 +8,8 @@
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t))))
   #+sbcl (setq *random-state* (seed-random-state (nth-value 1 (get-time-of-day)))))
+#-swank (eval-when (:compile-toplevel)
+          (setq *break-on-signals* '(and warning (not style-warning))))
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
 (macrolet ((def (b)
@@ -19,10 +21,10 @@
 (defconstant +mod+ 1000000007)
 
 (defmacro dbg (&rest forms)
+  (declare (ignorable forms))
   #+swank (if (= (length forms) 1)
               `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms)))
-  #-swank (declare (ignore forms)))
+              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
 
 (declaim (inline println))
 (defun println (obj &optional (stream *standard-output*))
@@ -66,8 +68,5 @@
 
 #+(and sbcl (not swank))
 (eval-when (:compile-toplevel)
-  (when (or (> sb-c::*compiler-warning-count* 0)
-            sb-c::*undefined-warnings*)
-    (error "count: ~D, undefined warnings: ~A"
-           sb-c::*compiler-warning-count*
-           sb-c::*undefined-warnings*)))
+  (when sb-c::*undefined-warnings*
+    (error "undefined warnings: ~{~A~^ ~}" sb-c::*undefined-warnings*)))
