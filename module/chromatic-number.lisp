@@ -11,19 +11,20 @@ undirected graph."))
 
 ;; Reference: https://codeforces.com/blog/entry/57496
 (defun calc-chromatic-number (mat)
-  "Computes chromatic number of a given undirected graph. Time complexity is O(n2^n).
+  "Computes the chromatic number of a given undirected graph. Time complexity is
+O(n2^n).
 
 MAT := adjacency matrix
 
-- MAT must be symmetric
+- MAT must be symmetric.
 - all the diagonal elements of MAT must be zero.
+- The number of vertices must be equal to or less than 62. (The size that can be
+  handled in a realistic computing time is much smaller than that, of course.)
 "
   (declare (optimize (speed 3))
            ((array * (* *)) mat))
   (let* ((n (array-dimension mat 0))
-         (adjs (make-array n
-                           :element-type '(integer 0 #.most-positive-fixnum)
-                           :initial-element 0))
+         (adjs (make-array n :element-type '(unsigned-byte 62) :initial-element 0))
          (res n))
     (declare ((integer 0 62) n res))
     (assert (= n (array-dimension mat 1)))
@@ -54,9 +55,10 @@ MAT := adjacency matrix
               for sum of-type (unsigned-byte 62) = 0
               while (< k res)
               do (dotimes (i (ash 1 n))
-                   (setf (aref powers i) (mod (* (aref powers i) (aref ind i))
-                                              mod)
-                         sum (+ sum (aref powers i))))
+                   (setf (aref powers i)
+                         (mod (* (aref powers i) (aref ind i))
+                              mod))
+                   (incf sum (aref powers i)))
                  (unless (zerop (mod sum mod))
                    (setq res k)))))
     res))
