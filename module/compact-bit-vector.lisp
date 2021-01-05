@@ -1,11 +1,8 @@
-;;;
-;;; Compact bit vector
-;;;
-
 (defpackage :cp/compact-bit-vector
   (:use :cl)
   (:export #:compact-bit-vector #:make-compact-bit-vector! #:cbv-storage #:cbv-blocks
-           #:cbv-ref #:cbv-count #:cbv-rank #:cbv-select))
+           #:cbv-ref #:cbv-count #:cbv-rank #:cbv-select)
+  (:documentation "Provides compact bit vector"))
 (in-package :cp/compact-bit-vector)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -41,17 +38,18 @@ vector is created."
       (incf sum (logcount (sb-kernel:%vector-raw-bits vector i))))
     (setf (aref blocks block-count) sum)
     (%make-cbv vector blocks)))
- 
+
 (declaim (inline cbv-ref))
 (defun cbv-ref (cbv index)
   (sbit (cbv-storage cbv) index))
  
 ;; NOTE: No error handling.
 (declaim (inline cbv-rank)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) cbv-rank))
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                cbv-rank))
 (defun cbv-rank (cbv end)
   "Counts the number of 1's in the range [0, END)."
-  (declare ((integer 0 #.most-positive-fixnum) end))
+  (declare ((mod #.array-total-size-limit) end))
   (let* ((storage (cbv-storage cbv))
          (blocks (cbv-blocks cbv))
          (bpos (ash end -6))
@@ -63,11 +61,12 @@ vector is created."
                           (sb-kernel:%vector-raw-bits storage bpos)))))))
 
 (declaim (inline cbv-count)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) cbv-count))
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                cbv-count))
 (defun cbv-count (cbv value end)
   "Counts the number of VALUEs in the range [0, END)"
   (declare (bit value)
-           ((integer 0 #.most-positive-fixnum) end))
+           ((mod #.array-total-size-limit) end))
   (let ((count1 (cbv-rank cbv end)))
     (if (= value 1)
         count1
@@ -77,7 +76,7 @@ vector is created."
   "Detects the position of (1-based) ORD-th 1 in CBV. (CBV-SELECT CBV 0) always
 returns 0."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) ord))
+           ((mod #.array-total-size-limit) ord))
   (let* ((storage (cbv-storage cbv))
          (blocks (cbv-blocks cbv))
          (block-size (length blocks)))

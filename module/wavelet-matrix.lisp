@@ -1,13 +1,10 @@
-;;;
-;;; Wavelet matrix
-;;;
-
 (defpackage :cp/wavelet-matrix
   (:use :cl :cp/compact-bit-vector)
   (:export #:wavelet-integer #:wavelet-matrix #:invalid-wavelet-index-error
            #:make-wavelet-matrix #:wavelet-ref #:wavelet-count
            #:wavelet-zeros #:wavelet-data #:wavelet-length #:wavelet-depth
-           #:wavelet-range-count #:wavelet-map-frequency #:wavelet-kth-smallest #:wavelet-kth-largest))
+           #:wavelet-range-count #:wavelet-map-frequency #:wavelet-kth-smallest #:wavelet-kth-largest)
+  (:documentation "Provides wavelet matrix."))
 (in-package :cp/wavelet-matrix)
 
 (deftype wavelet-integer () '(integer 0 #.most-positive-fixnum))
@@ -29,6 +26,7 @@
     :overwrite-fndb-silently t))
 
 ;; TODO: add deftransform for better type derivation
+(declaim (inline make-wavelet-matrix))
 (defun make-wavelet-matrix (bit-depth vector)
   (declare ((integer 1 #.most-positive-fixnum) bit-depth))
   (let* ((len (length vector))
@@ -78,7 +76,7 @@
 (defun wavelet-ref (wmatrix index)
   "Returns the value at INDEX."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index))
+           ((mod #.array-total-size-limit) index))
   (let ((depth (wavelet-depth wmatrix))
         (data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix))
@@ -98,7 +96,7 @@
   "Returns the number of VALUE in [L, R)"
   (declare (optimize (speed 3))
            (wavelet-integer value)
-           ((integer 0 #.most-positive-fixnum) l r))
+           ((mod #.array-total-size-limit) l r))
   (let ((depth (wavelet-depth wmatrix))
         (data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix)))
@@ -116,15 +114,15 @@
   "Returns the (0-based) K-th smallest number of WMATRIX in the range [START,
 END). Returns 2^<bit depth>-1 if K is equal to END - START."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) k start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) k start)
+           ((or null (mod #.array-total-size-limit)) end))
   (let ((depth (wavelet-depth wmatrix))
         (end (or end (wavelet-length wmatrix)))
         (data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix))
         (result 0))
     (declare (wavelet-integer result)
-             ((integer 0 #.most-positive-fixnum) end))
+             ((mod #.array-total-size-limit) end))
     (when (< (- end start) k)
       (error "The range [~D, ~D) contains less than ~D elements" start end k))
     (loop for d from (- depth 1) downto 0
@@ -145,15 +143,15 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
 (defun wavelet-kth-largest (wmatrix k &optional (start 0) end)
   "Returns the (0-based) K-th largest number of WMATRIX in the range [START, END)"
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) k start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) k start)
+           ((or null (mod #.array-total-size-limit)) end))
   (let ((depth (wavelet-depth wmatrix))
         (end (or end (wavelet-length wmatrix)))
         (data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix))
         (result 0))
     (declare (wavelet-integer result)
-             ((integer 0 #.most-positive-fixnum) end))
+             ((mod #.array-total-size-limit) end))
     (when (< (- end start) k)
       (error "The range [~D, ~D) contains less than ~D elements" start end k))
     (loop for d from (- depth 1) downto 0
@@ -173,8 +171,9 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
   "Maps all values within [LO, HI). FUNCTION must take two arguments: value and
 its frequency."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) lo hi start)
-           ((or null (integer 0 #.most-positive-fixnum)) end)
+           (wavelet-integer lo hi)
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end)
            (function function))
   (let ((data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix))
@@ -184,7 +183,8 @@ its frequency."
       (error 'invalid-wavelet-index-error :index (cons start end) :wavelet wmatrix))
     (labels
         ((dfs (depth start end value)
-           (declare ((integer 0 #.most-positive-fixnum) start end value)
+           (declare ((mod #.array-total-size-limit) start end)
+                    (wavelet-integer value)
                     ((integer -1 #.most-positive-fixnum) depth))
            (when (and (< value hi) (< start end))
              (if (= -1 depth)
@@ -210,8 +210,9 @@ its frequency."
 (defun wavelet-range-count (wmatrix lo hi &optional (start 0) end)
   "Returns the number of the values within [LO, HI)."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) lo hi start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           (wavelet-integer lo hi)
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
   (let ((data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix))
         (end (or end (wavelet-length wmatrix))))
@@ -220,7 +221,8 @@ its frequency."
       (error 'invalid-wavelet-index-error :index (cons start end) :wavelet wmatrix))
     (labels
         ((dfs (depth start end value)
-           (declare ((integer 0 #.most-positive-fixnum) start end value)
+           (declare ((mod #.array-total-size-limit) start end)
+                    (wavelet-integer value)
                     ((integer -1 #.most-positive-fixnum) depth)
                     #+sbcl (values (integer 0 #.most-positive-fixnum)))
            (cond ((or (= start end)
