@@ -1,7 +1,7 @@
-(defpackage :cp/test/abstract-bit
-  (:use :cl :fiveam :cp/abstract-bit)
+(defpackage :cp/test/binary-indexed-tree
+  (:use :cl :fiveam :cp/binary-indexed-tree)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/abstract-bit)
+(in-package :cp/test/binary-indexed-tree)
 (in-suite base-suite)
 
 (define-bitree bitree
@@ -10,10 +10,10 @@
   :sum-type fixnum
   :order #'<)
 
-(test abstract-bit
-  (declare (notinline bitree-fold bitree-bisect-left bitree-bisect-right coerce-to-bitree!))
-  (let ((tree (coerce-to-bitree! (vector 10 2 0 0 1 2 2)))
-        (tree2 (coerce-to-bitree! (vector 1 0 0 1))))
+(test binary-indexed-tree
+  (declare (notinline bitree-fold bitree-bisect-left bitree-bisect-right bitree-build!))
+  (let ((tree (bitree-build! (vector 10 2 0 0 1 2 2)))
+        (tree2 (bitree-build! (vector 1 0 0 1))))
     (is (= 0 (bitree-bisect-left tree -1)))
     (is (= 0 (bitree-bisect-left tree 0)))
     (is (= 0 (bitree-bisect-left tree 3)))

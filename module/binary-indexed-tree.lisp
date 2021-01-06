@@ -2,10 +2,10 @@
 ;;; 1-dimensional binary indexed tree on arbitrary commutative monoid
 ;;;
 
-(defpackage :cp/abstract-bit
+(defpackage :cp/binary-indexed-tree
   (:use :cl)
   (:export #:define-bitree))
-(in-package :cp/abstract-bit)
+(in-package :cp/binary-indexed-tree)
 
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'<))
   "OPERATOR := binary operator (comprising a commutative monoid)
@@ -27,7 +27,7 @@ doesn't need to be identical to SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
          (fname-fold (intern (format nil "~A-FOLD" name)))
-         (fname-coerce (intern (format nil "COERCE-TO-~A!" name)))
+         (fname-build (intern (format nil "~A-BUILD!" name)))
          (fname-bisect-left (intern (format nil "~A-BISECT-LEFT" name)))
          (fname-bisect-right (intern (format nil "~A-BISECT-RIGHT" name))))
     `(progn
@@ -53,8 +53,8 @@ DELTA"
              (declare ((integer -1 #.most-positive-fixnum) i))
              (setf res (funcall ,operator res (aref bitree i))))))
 
-       (declaim (inline ,fname-coerce))
-       (defun ,fname-coerce (vector)
+       (declaim (inline ,fname-build))
+       (defun ,fname-build (vector)
          "Destructively constructs BIT from VECTOR. (You doesn't need to call
 this constructor if what you need is a `zero-filled' BIT, because a vector
 filled with the identity element is a valid BIT as it is.)"
