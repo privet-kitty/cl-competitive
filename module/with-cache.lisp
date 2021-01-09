@@ -58,8 +58,8 @@
                                 (getf rest-attribs :initial-element))))
         (let ((cache (gensym "CACHE"))
               (value (gensym))
-	      (present-p (gensym))
-	      (args-lst (gensym))
+              (present-p (gensym))
+              (args-lst (gensym))
               (indices (loop repeat rank collect (gensym))))
           (labels
               ((make-cache-querier (cache-type name args)

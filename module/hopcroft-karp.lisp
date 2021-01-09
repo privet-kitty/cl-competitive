@@ -1,18 +1,10 @@
-;;;
-;;; Maximum bipartite matching (Hopcroft-Karp, O(E sqrt(V)))
-;;;
-
 (defpackage :cp/hopcroft-karp
   (:use :cl)
   (:export #:bipartite-graph #:make-bgraph #:bipartite-graph-p #:coerce-to-bgraph
            #:bgraph-matching1 #:bgraph-matching2 #:bgraph-size1 #:bgraph-size2 #:bgraph-graph1
-           #:bgraph-add-edge! #:bgraph-build-matching! #:bgraph-decompose))
+           #:bgraph-add-edge! #:bgraph-build-matching! #:bgraph-decompose)
+  (:documentation "Provides maximum bipartite matching. (Hopcroft-Karp, O(E sqrt(V)))"))
 (in-package :cp/hopcroft-karp)
-
-;; NOTE: The number of elements in a graph must be less than 2^32-1 as we use
-;; (UNSIGNED-BYTE 32) here for efficiency.
-
-;; NOTE: Pay attention to the stack size!
 
 (defconstant +graph-inf-distance+ #xffffffff)
 
@@ -103,7 +95,9 @@
 (defun bgraph-build-matching! (bgraph)
   "Makes a maximum bipartite matching and returns two vectors: correspondence
 from group 1 to group 2, and correspondence from group 2 to group 1. At an
-unmatched vertex, -1 is stored."
+unmatched vertex, -1 is stored.
+
+NOTE: Pay attention to the stack size!"
   (declare (optimize (speed 3)))
   (let* ((size1 (bgraph-size1 bgraph))
          (size2 (bgraph-size2 bgraph))
