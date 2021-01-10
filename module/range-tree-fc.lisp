@@ -10,7 +10,7 @@
 
 (defpackage :cp/range-tree-fc
   (:use :cl)
-  (:export #:make-range-tree #:rt-count #:rt-query #:rt-map))
+  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-map))
 (in-package :cp/range-tree-fc)
 
 ;; TODO: introduce abelian group
@@ -222,7 +222,7 @@ negative or positive infinity."
             (end (bisect-left y2)))
         (recur range-tree x1 x2 start end)))))
 
-(defun rt-query (range-tree x1 y1 x2 y2)
+(defun rt-fold (range-tree x1 y1 x2 y2)
   "Returns the sum of the values within the rectangle [x1, x2)*[y1, y2). A
 part or all of these coordinates can be NIL; then they are regarded as the
 negative or positive infinity."
@@ -233,7 +233,7 @@ negative or positive infinity."
         y1 (or y1 +neg-inf+)
         y2 (or y2 +pos-inf+))
   (unless range-tree
-    (return-from rt-query 0))
+    (return-from rt-fold 0))
   (let* ((ynode (%xnode-ynode range-tree))
          (xkeys (%ynode-xkeys ynode))
          (ykeys (%ynode-ykeys ynode)))

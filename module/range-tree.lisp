@@ -10,7 +10,7 @@
 
 (defpackage :cp/range-tree
   (:use :cl)
-  (:export #:make-range-tree #:rt-count #:rt-query #:rt-update))
+  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-update))
 (in-package :cp/range-tree)
 
 ;; TODO: map all the points in a given rectangle
@@ -266,7 +266,7 @@ negative or positive infinity."
     (xrecur range-tree x1 x2)))
 
 ;; Below is almost the same as RT-COUNT. Is it better to integrate them?
-(defun rt-query (range-tree x1 y1 x2 y2)
+(defun rt-fold (range-tree x1 y1 x2 y2)
   "Queries the `sum' of the nodes in the rectangle [x1, y1)*[x2, y2). A part or
 all of these coordinates can be NIL; then they are regarded as the negative or
 positive infinity."

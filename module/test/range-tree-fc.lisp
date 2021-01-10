@@ -57,10 +57,10 @@
     (is (= 2 (rt-count rt 4 1 5 5)))
     (is (= 1 (rt-count rt 3 4 4 5)))
 
-    ;; rt-query
-    (is (= (reduce #'+ values) (rt-query rt nil nil nil nil)))
-    (is (= (reduce #'+ values) (rt-query rt 1 1 nil nil)))
-    (is (= 0 (rt-query rt 1 1 nil 1)))
+    ;; rt-fold
+    (is (= (reduce #'+ values) (rt-fold rt nil nil nil nil)))
+    (is (= (reduce #'+ values) (rt-fold rt 1 1 nil nil)))
+    (is (= 0 (rt-fold rt 1 1 nil 1)))
     
     ;; random test
     (finishes
@@ -73,7 +73,7 @@
           (when (> y1 y2) (rotatef y1 y2))
           (assert (= (rt-count rt x1 y1 x2 y2)
                      (2dcumul-get counts x1 y1 x2 y2)))
-          (assert (= (rt-query rt x1 y1 x2 y2)
+          (assert (= (rt-fold rt x1 y1 x2 y2)
                      (2dcumul-get cumuls x1 y1 x2 y2))))))))
 
 (defun random-int (inf sup)
@@ -122,7 +122,7 @@
                                         (or (null x2) (< x x2))
                                         (or (null y1) (<= y1 y))
                                         (or (null y2) (< y y2))))))
-            (assert (= (rt-query rtree x1 y1 x2 y2)
+            (assert (= (rt-fold rtree x1 y1 x2 y2)
                        (loop for (x . y) being each hash-key of table
                              when (and (or (null x1) (<= x1 x))
                                        (or (null x2) (< x x2))
