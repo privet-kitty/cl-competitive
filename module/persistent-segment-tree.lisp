@@ -1,17 +1,15 @@
-;;;
-;;; Persistent segment tree
-;;;
-
 (defpackage :cp/persistent-segment-tree
   (:use :cl)
-  (:export #:psegtree #:make-psegtree #:psegtree-fold #:psegtree-update #:%psegtree-update!))
+  (:export #:psegtree #:make-psegtree #:psegtree-fold #:psegtree-update #:%psegtree-update!)
+  (:documentation "Provides persistent segment tree."))
 (in-package :cp/persistent-segment-tree)
 
 ;; TODO:
 ;; - abstraction
 ;; - test
 ;; - linear-time initialization
-;; - out-of-bound error
+
+(deftype index () '(integer 0 #.(floor most-positive-fixnum 2)))
 
 (declaim (inline %power-of-two-ceiling))
 (defun %power-of-two-ceiling (x)
@@ -30,10 +28,10 @@
   (root nil :type node))
 
 (defun make-psegtree (length)
-  (declare ((integer 0 #.most-positive-fixnum) length))
+  (declare (index length))
   (let ((n (ash 1 (integer-length (- length 1))))) ; power of two ceiling
     (labels ((recur (i)
-               (declare ((integer 0 #.most-positive-fixnum) i))
+               (declare (index i))
                (when (<= i n)
                  (let ((node (make-node)))
                    (setf (node-left node) (recur (ash i 1))
@@ -44,9 +42,10 @@
 (defun psegtree-fold (psegtree left right)
   "Queries the sum of the interval [LEFT, RIGHT)."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) left right))
+           (index left right))
+  (assert (<= left right (%psegtree-length psegtree)))
   (labels ((recur (root l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r)
+             (declare (index l r)
                       (values fixnum &optional))
              (cond ((or (<= right l) (<= r left))
                     0)
@@ -63,10 +62,11 @@
   "Returns a new psegtree updated by PSEGTREE[INDEX] = (FUNCALL UPDATER
 PSEGTREE[INDEX]). This function is non-destructive."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index)
+           (index index)
            (function updater))
+  (assert (< index (%psegtree-length psegtree)))
   (labels ((recur (root l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare (index l r))
              (cond ((or (< index l) (<= r index)))
                    ((= (- r l) 1)
                     (setf (node-value root)
@@ -94,10 +94,11 @@ PSEGTREE[INDEX]).
 NOTE: Almost always you should use PSEGTREE-UPDATE. Pay close attention when you
 use this destructive version."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index)
+           (index index)
            (function updater))
+  (assert (< index (%psegtree-length psegtree)))
   (labels ((recur (root l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare (index l r))
              (cond ((or (< index l) (<= r index)))
                    ((= (- r l) 1)
                     (setf (node-value root)
