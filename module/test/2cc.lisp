@@ -1,7 +1,7 @@
-(defpackage :cp/test/block-cut-tree
-  (:use :cl :fiveam :cp/block-cut-tree)
+(defpackage :cp/test/2cc
+  (:use :cl :fiveam :cp/2cc)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/block-cut-tree)
+(in-package :cp/test/2cc)
 (in-suite base-suite)
 
 (defun set-equal (seq1 seq2)
@@ -16,13 +16,13 @@
          (loop for x being each element of seq2
                always (gethash x table1)))))
 
-(test block-cut-tree
+(test 2cc
   ;; Graph example is from http://yazaten.hatenablog.com/entry/2016/12/05/094725
   (let* ((graph #(() (2 5) (1 3) (2 4 5) (3) (1 3 7 8) (8) (5 8) (5 6 7 9) (8)))
-         (bcc (make-bcc graph))
-         (comps (bcc-components bcc))
-         (sizes (bcc-sizes bcc))
-         (bridges (bcc-bridges bcc)))
+         (2cc (make-2cc graph))
+         (comps (2cc-components 2cc))
+         (sizes (2cc-sizes 2cc))
+         (bridges (2cc-bridges 2cc)))
     (is (set-equal '((3 . 4) (6 . 8) (8 . 9)) bridges))
     (is (= (aref comps 1)
            (aref comps 2)
@@ -37,4 +37,4 @@
     (is (= 1 (aref sizes (aref comps 6))))
     (is (= 1 (aref sizes (aref comps 9)))))
   ;; empty graph
-  (finishes (make-bcc #())))
+  (finishes (make-2cc #())))

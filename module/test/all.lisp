@@ -1,4 +1,5 @@
 (defpackage :cp/test/all
+  (:import-from :cp/test/2cc)
   (:import-from :cp/test/2d-bit)
   (:import-from :cp/test/2d-rolling-hash)
   (:import-from :cp/test/2d-sliding-window)
@@ -13,7 +14,6 @@
   (:import-from :cp/test/bipartite-matching)
   (:import-from :cp/test/bisect)
   (:import-from :cp/test/bit-basher)
-  (:import-from :cp/test/block-cut-tree)
   (:import-from :cp/test/bounded-partition-number)
   (:import-from :cp/test/buffered-read-line)
   (:import-from :cp/test/chinese-remainder)
