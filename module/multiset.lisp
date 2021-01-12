@@ -107,7 +107,7 @@ cannot rely on the side effect. Use the returned value."
   (when (zerop count)
     (return-from mset-insert mset))
   (labels ((recur (new-priority mset found)
-             (declare ((mod #.array-total-size-limit) new-priority))
+             (declare ((mod #.most-positive-fixnum) new-priority))
              (let* ((new-found (or found
                                    (null mset)
                                    (> new-priority (%mset-priority mset))))
