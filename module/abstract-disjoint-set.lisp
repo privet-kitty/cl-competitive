@@ -10,9 +10,11 @@ monoid (union by size & path compression)"))
 
 OP is a binary operator comprising a monoid. It doesn't need to be commutative,
 but a non-commutative operator doesn't make sense in many cases. (Since OP is
-always called with (funcall OP <value of smaller index> <value of larger
+always called with (FUNCALL OP <value of smaller index> <value of larger
 index>), non-commutative operator will make sense when union is always applied
-to adjacent components.)"
+to adjacent components, for example.)
+
+NOTE: Pay attention to the stack size when you disable UNION-BY-SIZE."
   (check-type name symbol)
   (let* ((conc-string (if conc-name
                           (symbol-name conc-name)
