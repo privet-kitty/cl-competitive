@@ -29,7 +29,7 @@
 
 (defun make-psegtree (length)
   (declare (index length))
-  (let ((n (ash 1 (integer-length (- length 1))))) ; power of two ceiling
+  (let ((n (%power-of-two-ceiling length)))
     (labels ((recur (i)
                (declare (index i))
                (when (<= i n)
