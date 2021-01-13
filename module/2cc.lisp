@@ -1,21 +1,17 @@
-;;;
-;;; Two-edge connected components, bridges, and block-cut tree of undirected graph
-;;;
-
 (defpackage :cp/2cc
   (:use :cl)
   (:export #:2cc #:2cc-graph #:2cc-preorders #:2cc-components #:2cc-sizes #:2cc-count
-           #:2cc-bridges #:make-2cc #:make-block-cut-tree))
+           #:2cc-bridges #:make-2cc #:make-bridge-tree)
+  (:documentation "Provides decomposition to two-edge connected components,
+bridge detection, and construction of bridge-block tree."))
 (in-package :cp/2cc)
-
-;; PAY ATTENTION TO THE STACK SIZE! MAKE-2CC does DFS.
 
 (defstruct (2cc (:constructor %make-2cc (graph preorders components sizes count bridges)))
   ;; undirected graph (as a vector of adjacency lists)
   (graph nil :type vector)
-  ;; preorders[i] := the ordinal number of the i-th vertex by pre-order DFS 
+  ;; preorders[i] := pre-order number of vertex i
   (preorders nil :type (simple-array fixnum (*)))
-  ;; components[i] := the two-edge connected component to which the i-th vertex of
+  ;; components[i] := two-edge connected component to which the i-th vertex of
   ;; GRAPH belongs
   (components nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; sizes[k] := size of the k-th two-edge connected component
@@ -30,7 +26,7 @@
   "GRAPH := vector of adjacency lists
 
 - This function doesn't check if GRAPH is really undirected.
-- A multi-edge is regarded as a single edge."
+- Pay attention to the stack size."
   (declare (optimize (speed 3))
            (vector graph))
   (let* ((n (length graph))
@@ -43,7 +39,7 @@
          (in-stack (make-array n :element-type 'bit :initial-element 0))
          roots
          bridges)
-    (declare ((integer 0 #.most-positive-fixnum) preord 2cc-ord))
+    (declare ((mod #.array-total-size-limit) preord 2cc-ord))
     (labels ((dfs (v prev)
                (declare (fixnum v prev))
                (setf (aref preorders v) preord)
@@ -52,32 +48,34 @@
                (push v stack)
                (setf (aref in-stack v) 1)
                (push v roots)
-               (dolist (neighbor (aref graph v))
-                 (cond ((= -1 (aref preorders neighbor))
-                        ;; not yet visited
-                        (dfs neighbor v))
-                       ((and (/= neighbor prev)
-                             (= 1 (sbit in-stack neighbor)))
-                        ;; When a backward edge to a not yet classified vertex
-                        ;; exists, then these vertices comprise a two-edge
-                        ;; connected component.
-                        (loop while (> (aref preorders (car roots))
-                                       (aref preorders neighbor))
-                              do (pop roots)))))
+               (let (prev-visited)
+                 (dolist (neighbor (aref graph v))
+                   (cond ((= -1 (aref preorders neighbor))
+                          ;; not yet visited
+                          (dfs neighbor v))
+                         ((and (/= neighbor v)
+                               (= 1 (sbit in-stack neighbor)))
+                          (if (and (= neighbor prev)
+                                   (not prev-visited))
+                              (setq prev-visited t)
+                              ;; When a backward edge to a not yet classified
+                              ;; vertex exists, then these vertices comprise a
+                              ;; two-edge connected component.
+                              (loop while (> (aref preorders (car roots))
+                                             (aref preorders neighbor))
+                                    do (pop roots)))))))
                ;; add a new component
                (when (= v (the fixnum (car roots)))
                  (unless (= prev -1)
                    (push (if (<= prev v) (cons prev v) (cons v prev))
                          bridges))
                  (let ((size 0)) ; size of the component
-                   (declare ((integer 0 #.most-positive-fixnum) size))
-                   (loop
-                     (let ((node (pop stack)))
-                       (setf (aref components node) 2cc-ord)
-                       (setf (sbit in-stack node) 0)
-                       (incf size)
-                       (when (= node v)
-                         (return))))
+                   (declare ((mod #.array-total-size-limit) size))
+                   (loop for node = (pop stack)
+                         do (setf (aref components node) 2cc-ord)
+                            (setf (sbit in-stack node) 0)
+                            (incf size)
+                         until (= node v))
                    (setf (aref sizes 2cc-ord) size)
                    (incf 2cc-ord)
                    (pop roots)))))
@@ -86,9 +84,9 @@
           (dfs v -1)))
       (%make-2cc graph preorders components sizes 2cc-ord bridges))))
 
-(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-block-cut-tree))
-(defun make-bridge-block-tree (2cc)
-  "Makes a bridge-block tree (or forest, if not connected). Returns the vector of
+(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-bridge-tree))
+(defun make-bridge-tree (2cc)
+  "Makes a bridge-block tree (or forest, if not connected). Returns a vector of
 adjacency lists."
   (declare (optimize (speed 3)))
   (let* ((graph (2cc-graph 2cc))
