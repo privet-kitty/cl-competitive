@@ -84,7 +84,8 @@ bridge detection, and construction of bridge-block tree."))
           (dfs v -1)))
       (%make-2cc graph preorders components sizes 2cc-ord bridges))))
 
-(declaim (ftype (function * (values (simple-array t (*)) &optional)) make-bridge-tree))
+(declaim (ftype (function * (values (simple-array t (*)) &optional))
+                make-bridge-tree))
 (defun make-bridge-tree (2cc)
   "Makes a bridge-block tree (or forest, if not connected). Returns a vector of
 adjacency lists."
@@ -92,10 +93,14 @@ adjacency lists."
   (let* ((graph (2cc-graph 2cc))
          (n (length graph))
          (comp-n (2cc-count 2cc))
+         (sizes (2cc-sizes 2cc))
          (components (2cc-components 2cc))
          (tree (make-array comp-n :element-type t)))
-    (dotimes (i comp-n)
-      (setf (aref tree i) (make-hash-table :test #'eql)))
+    (dotimes (comp comp-n)
+      (setf (aref tree comp)
+            ;; Resorting to EQ is substandard, though I use it here for
+            ;; efficiency.
+            (make-hash-table :size (aref sizes comp) :test #'eq)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))
         (dolist (neighbor (aref graph i))

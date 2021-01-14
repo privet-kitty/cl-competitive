@@ -35,6 +35,7 @@
     (is (= 1 (aref sizes (aref comps 0))))
     (is (= 1 (aref sizes (aref comps 4))))
     (is (= 1 (aref sizes (aref comps 6))))
-    (is (= 1 (aref sizes (aref comps 9)))))
+    (is (= 1 (aref sizes (aref comps 9))))
+    (finishes (= (2cc-count 2cc) (length (make-bridge-tree 2cc)))))
   ;; empty graph
   (finishes (make-2cc #())))

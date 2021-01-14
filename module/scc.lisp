@@ -27,8 +27,8 @@
            (vector graph))
   (let* ((n (length graph))
          (ord 0)
-         (ords (make-array n :element-type 'fixnum :initial-element -1)) ; in-order
-         ;; store the lowest in-order number as the representative element of a
+         (ords (make-array n :element-type 'fixnum :initial-element -1)) ; pre-order
+         ;; store the lowest pre-order number as the representative element of a
          ;; strongly connected component
          (lowlinks (make-array n :element-type 'fixnum))
          (components (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
