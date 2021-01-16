@@ -1,12 +1,12 @@
-;;;;
-;;;; Sliding window minimum/maximum
-;;;;
-
 (defpackage :cp/sliding-window
   (:use :cl)
   (:export #:calc-window-opt #:sliding-window #:make-sliding-window
-           #:swindow-extend #:swindow-shrink #:swindow-get #:swindow-empty-p #:swindow-reinitialize))
+           #:swindow-extend #:swindow-shrink #:swindow-get #:swindow-empty-p #:swindow-reinitialize)
+  (:documentation "Provides sliding window minimum/maximum."))
 (in-package :cp/sliding-window)
+
+;; TODO: split module
+;; TODO: refactor & reconsider design
 
 ;;;
 ;;; For window of fixed width
@@ -15,8 +15,8 @@
 (declaim (inline calc-window-opt))
 (defun calc-window-opt (vector width order)
   "Computes the minima (or maxima) of all the subarray of the given
-width (VECTOR[i, i+WIDTH)) in O(n). Returns a vector, whose i-th element is the
-minimum (or maximum) of the array beginning with the index i.
+width (VECTOR[i, i+WIDTH)) in O(n) time. Returns a vector, whose i-th element is
+the minimum (or maximum) of the array beginning with the index i.
 
 ORDER := strict order (#'< corresponds to slide min. and #'> to slide max.)"
   (declare (vector vector)

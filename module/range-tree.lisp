@@ -150,7 +150,7 @@
         (build 0)))))
 
 (defun %ynode-merge (ynode1 ynode2)
-  "Merges two YNODEs non-destructively in O(n)."
+  "Merges two YNODEs non-destructively in O(n) time."
   (declare (optimize (speed 3) (safety 0)))
   (let* ((length (+ (ynode-count ynode1) (ynode-count ynode2))))
     (declare (fixnum length))

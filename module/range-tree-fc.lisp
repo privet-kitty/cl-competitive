@@ -34,7 +34,7 @@
   (right nil :type (or null xnode)))
 
 (defun %ynode-merge (ynode1 ynode2)
-  "Merges two YNODEs non-destructively in O(n)."
+  "Merges two YNODEs non-destructively in O(n) time."
   (declare (optimize (speed 3)))
   (let* ((xkeys1 (%ynode-xkeys ynode1))
          (ykeys1 (%ynode-ykeys ynode1))
