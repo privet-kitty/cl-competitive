@@ -1,23 +1,17 @@
-;;;
-;;; Implicit treap
-;;; (treap with implicit key)
-;;;
-
-;; TODO: abstraction
-
 (defpackage :cp/implicit-treap
   (:use :cl)
   (:export #:itreap #:itreap-p #:itreap-count #:itreap-accumulator
            #:make-itreap #:invalid-itreap-index-error #:itreap-ref
            #:itreap-split #:itreap-merge #:itreap-insert #:itreap-delete
            #:itreap-push #:itreap-pop #:itreap-map #:do-itreap
-           #:itreap-fold #:itreap-fold-bisect #:itreap-fold-bisect-from-end
+           #:itreap-fold #:itreap-max-right #:itreap-min-left
            #:itreap-update #:itreap-reverse
-           #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort))
-(in-package :cp/implicit-treap)
+           #:itreap-bisect-left #:itreap-bisect-right #:itreap-insort)
+  (:documentation "Provides implicit treap.
 
-;; Note:
-;; - An empty treap is NIL.
+NOTE: an empty treap is NIL.
+TODO: abstraction"))
+(in-package :cp/implicit-treap)
 
 (declaim (inline op))
 (defun op (a b)
@@ -51,7 +45,7 @@ the target interval."
   (accumulator +op-identity+ :type fixnum)
   (lazy +updater-identity+ :type fixnum)
   (reversed nil :type boolean)
-  (priority 0 :type (integer 0 #.most-positive-fixnum))
+  (priority 0 :type (mod #.most-positive-fixnum))
   (count 1 :type (mod #.most-positive-fixnum)) ; size of (sub)treap
   (left nil :type (or null itreap))
   (right nil :type (or null itreap)))
@@ -401,27 +395,26 @@ each time."
          (unless itreap
            (return-from recur +op-identity+))
          (force-down itreap)
-         (prog1
-             (if (and (zerop l) (= r (%itreap-count itreap)))
-                 (itreap-accumulator itreap)
-                 (let ((left-count (itreap-count (%itreap-left itreap))))
-                   (if (<= l left-count)
-                       (if (< left-count r)
-                           ;; LEFT-COUNT is in [L, R)
-                           (op (op (recur (%itreap-left itreap) l (min r left-count))
-                                   (%itreap-value itreap))
-                               (recur (%itreap-right itreap) 0 (- r left-count 1)))
-                           ;; LEFT-COUNT is in [R, END)
-                           (recur (%itreap-left itreap) l (min r left-count)))
-                       ;; LEFT-COUNT is in [0, L)
-                       (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))
-           (force-up itreap))))
+         (force-up itreap)
+         (if (and (zerop l) (= r (%itreap-count itreap)))
+             (itreap-accumulator itreap)
+             (let ((left-count (itreap-count (%itreap-left itreap))))
+               (if (<= l left-count)
+                   (if (< left-count r)
+                       ;; LEFT-COUNT is in [L, R)
+                       (op (op (recur (%itreap-left itreap) l (min r left-count))
+                               (%itreap-value itreap))
+                           (recur (%itreap-right itreap) 0 (- r left-count 1)))
+                       ;; LEFT-COUNT is in [R, END)
+                       (recur (%itreap-left itreap) l (min r left-count)))
+                   ;; LEFT-COUNT is in [0, L)
+                   (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))))
     (recur itreap l r)))
 
-;; FIXME: might be problematic when two priorities collide and START is not
-;; zero. (It will be negligible from the viewpoint of probability, however.)
-(declaim (inline itreap-fold-bisect))
-(defun itreap-fold-bisect (itreap test &optional (start 0))
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                itreap-max-right)
+         (inline itreap-max-right))
+(defun itreap-max-right (itreap test &optional (start 0))
   "Returns the largest index that satisfies (FUNCALL TEST (OP ITREAP[START]
 ITREAP[START+1] ... ITREAP[index-1])).
 
@@ -431,33 +424,50 @@ Note:
 "
   (declare ((integer 0 #.most-positive-fixnum) start))
   (assert (funcall test +op-identity+))
-  (multiple-value-bind (itreap-prefix itreap)
-      (if (zerop start)
-          (values nil itreap)
-          (itreap-split itreap start))
-    (labels
-        ((recur (itreap offset prev-sum)
-           (declare ((integer 0 #.most-positive-fixnum) offset)
-                    #+sbcl (values (integer 0 #.most-positive-fixnum)))
-           (unless itreap
-             (return-from recur offset))
-           (force-down itreap)
-           (let ((sum prev-sum))
-             (prog1
-                 (cond ((not (funcall test (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))))
-                        (recur (%itreap-left itreap) offset prev-sum))
-                       ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
-                        (+ offset (itreap-count (%itreap-left itreap))))
-                       (t
-                        (recur (%itreap-right itreap)
-                               (+ offset (itreap-count (%itreap-left itreap)) 1)
-                               sum)))
-               (force-up itreap)))))
-      (prog1 (+ start (recur itreap 0 +op-identity+))
-        (itreap-merge itreap-prefix itreap)))))
+  (when (< (itreap-count itreap) start)
+    (error 'invalid-itreap-index-error :index start :itreap itreap))
+  (labels
+      ((fold (itreap offset)
+         (declare ((integer 0 #.most-positive-fixnum) offset))
+         (unless itreap
+           (return-from fold +op-identity+))
+         (force-down itreap)
+         (force-up itreap)
+         (let ((lcount (+ offset (itreap-count (%itreap-left itreap)))))
+           (declare ((integer 0 #.most-positive-fixnum) lcount))
+           (if (< lcount start)
+               (fold (%itreap-right itreap) (+ lcount 1))
+               (let ((sum (fold (%itreap-left itreap) offset)))
+                 (cond ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
+                        (return-from itreap-max-right lcount))
+                       ((funcall test (op sum (itreap-accumulator (%itreap-right itreap))))
+                        sum)
+                       (t (search-subtree (%itreap-right itreap) (+ lcount 1) sum)))))))
+       (search-subtree (itreap offset prev-sum)
+         (declare ((integer 0 #.most-positive-fixnum) offset))
+         (unless itreap
+           (return-from itreap-max-right offset))
+         (force-down itreap)
+         (force-up itreap)
+         (let ((sum (op prev-sum (itreap-accumulator (%itreap-left itreap)))))
+           (cond ((not (funcall test sum))
+                  (search-subtree (%itreap-left itreap) offset prev-sum))
+                 ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
+                  (return-from itreap-max-right
+                    (+ offset (itreap-count (%itreap-left itreap)))))
+                 (t
+                  (search-subtree (%itreap-right itreap)
+                                  (+ offset (itreap-count (%itreap-left itreap)) 1)
+                                  sum))))))
+    (if (zerop start)
+        (search-subtree itreap 0 +op-identity+)
+        (progn (fold itreap 0)
+               (itreap-count itreap)))))
 
-(declaim (inline itreap-fold-bisect-from-end))
-(defun itreap-fold-bisect-from-end (itreap test &optional end)
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                itreap-min-left)
+         (inline itreap-min-left))
+(defun itreap-min-left (itreap test &optional end)
   "Returns the smallest index that satisfies (FUNCALL TEST (OP ITREAP[index]
   ITREAP[index+1] ... ITREAP[END-1])).
 
@@ -467,31 +477,50 @@ Note:
 "
   (declare ((or null (integer 0 #.most-positive-fixnum)) end))
   (assert (funcall test +op-identity+))
-  (multiple-value-bind (itreap itreap-suffix)
-      (if end
-          (itreap-split itreap end)
-          (values itreap nil))
+  (let* ((n (itreap-count itreap))
+         (n-end (if end
+                    (- n end)
+                    0)))
+    (declare (fixnum n-end))
+    (when (< n-end 0)
+      (error 'invalid-itreap-index-error :index end :itreap itreap))
     (labels
-        ((recur (itreap offset prev-sum)
-           (declare ((integer 0 #.most-positive-fixnum) offset)
-                    #+sbcl (values (integer 0 #.most-positive-fixnum)))
+        ((fold (itreap offset)
+           (declare ((integer 0 #.most-positive-fixnum) offset))
            (unless itreap
-             (return-from recur offset))
+             (return-from fold +op-identity+))
            (force-down itreap)
-           (let ((sum prev-sum))
-             (prog1
-                 (cond ((not (funcall test (setq sum (op (itreap-accumulator (%itreap-right itreap)) sum))))
-                        (recur (%itreap-right itreap) offset prev-sum))
-                       ((not (funcall test (setq sum (op (%itreap-value itreap) sum))))
-                        (+ offset (itreap-count (%itreap-right itreap))))
-                       (t
-                        (recur (%itreap-left itreap)
-                               (+ offset (itreap-count (%itreap-right itreap)) 1)
-                               sum)))
-               (force-up itreap)))))
-      (prog1 (- (or end (itreap-count itreap))
-                (recur itreap 0 +op-identity+))
-        (itreap-merge itreap itreap-suffix)))))
+           (force-up itreap)
+           (let ((rcount (+ offset (itreap-count (%itreap-right itreap)))))
+             (declare ((integer 0 #.most-positive-fixnum) rcount))
+             (if (< rcount n-end)
+                 (fold (%itreap-left itreap) (+ rcount 1))
+                 (let ((sum (fold (%itreap-right itreap) offset)))
+                   (cond ((not (funcall test (setq sum (op (%itreap-value itreap) sum))))
+                          (return-from itreap-min-left (- n rcount)))
+                         ((funcall test (op (itreap-accumulator (%itreap-left itreap)) sum))
+                          sum)
+                         (t (search-subtree (%itreap-left itreap) (+ rcount 1) sum)))))))
+         (search-subtree (itreap offset prev-sum)
+           (declare ((integer 0 #.most-positive-fixnum) offset))
+           (unless itreap
+             (return-from itreap-min-left (- n offset)))
+           (force-down itreap)
+           (force-up itreap)
+           (let ((sum (op (itreap-accumulator (%itreap-right itreap)) prev-sum)))
+             (cond ((not (funcall test sum))
+                    (search-subtree (%itreap-right itreap) offset prev-sum))
+                   ((not (funcall test (setq sum (op (%itreap-value itreap) sum))))
+                    (return-from itreap-min-left
+                      (- n (+ offset (itreap-count (%itreap-right itreap))))))
+                   (t
+                    (search-subtree (%itreap-left itreap)
+                                    (+ offset (itreap-count (%itreap-right itreap)) 1)
+                                    sum))))))
+      (if (zerop n-end)
+          (search-subtree itreap 0 +op-identity+)
+          (progn (fold itreap 0)
+                 0)))))
 
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)

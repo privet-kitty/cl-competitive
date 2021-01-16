@@ -8,57 +8,6 @@
 (in-package :cp/test/implicit-treap)
 (in-suite base-suite)
 
-;; (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-;;                 itreap-fold-bisect)
-;;          (inline itreap-fold-bisect))
-;; (defun itreap-fold-bisect (itreap test &optional (start 0))
-;;   "Returns the largest index that satisfies (FUNCALL TEST (OP ITREAP[START]
-;; ITREAP[START+1] ... ITREAP[index-1])).
-
-;; Note:
-;; - (FUNCALL TEST +OP-IDENTITY+) must be true.
-;; - TEST must be monotone in the target range.
-;; "
-;;   (declare ((integer 0 #.most-positive-fixnum) start))
-;;   (assert (funcall test +op-identity+))
-;;   (let ((result 0))
-;;     (labels
-;;         ((main-search (itreap offset)
-;;            (unless itreap
-;;              (return-from main-search +op-identity+))
-;;            (force-down itreap)
-;;            (let ((sum +op-identity+)
-;;                  (lcount (+ offset (itreap-count (%itreap-left itreap)))))
-;;              (if (<= start lcount)
-;;                  (progn
-;;                    (setq sum (op sum (main-search (%itreap-left itreap) offset)))
-;;                    (setq sum (op sum (%itreap-value itreap)))
-;;                    (unless (funcall test sum)
-;;                      (setq result lcount))
-;;                    (search-subtree (%itreap-right itreap) (+ lcount 1) sum))
-;;                  (main-search (%itreap-right itreap) (+ lcount 1))))
-;;            (force-up itreap))
-;;          (search-subtree (itreap offset prev-sum)
-;;            (declare ((integer 0 #.most-positive-fixnum) offset))
-;;            (unless itreap
-;;              (setq result offset)
-;;              (return-from search-subtree))
-;;            (force-down itreap)
-;;            (let ((sum prev-sum))
-;;              (cond ((not (funcall test (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))))
-;;                     (search-subtree (%itreap-left itreap) offset prev-sum))
-;;                    ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
-;;                     (setq result (+ offset (itreap-count (%itreap-left itreap)))))
-;;                    (t
-;;                     (search-subtree (%itreap-right itreap)
-;;                                     (+ offset (itreap-count (%itreap-left itreap)) 1)
-;;                                     sum)))
-;;              (force-up itreap))))
-;;       (if (zerop start)
-;;           (search-subtree itreap 0 +op-identity+)
-;;           (main-search itreap 0))
-;;       result)))
-
 (defun copy-itreap (itreap)
   "For development. Recursively copies the whole ITREAPs."
   (if (null itreap)
@@ -197,82 +146,83 @@
           do (itreap-push elm itreap idx))
     itreap))
 
-(test implicit-treap-fold-bisect
-  (declare (notinline itreap-fold-bisect))
-  (let ((list '(5 2 4 2 1 4 2 1 -1)))
-    (is (= 0 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)))))
-    (is (= 0 (itreap-fold-bisect (%make list) (lambda (x) (> x 5)))))
-    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 4)))))
-    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 3)))))
-    (is (= 1 (itreap-fold-bisect (%make list) (lambda (x) (> x 2)))))
-    (is (= 4 (itreap-fold-bisect (%make list) (lambda (x) (> x 1)))))
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 0)))))
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)))))
-    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)))))
+(test implicit-treap-max-right
+  (declare (notinline itreap-max-right))
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (list '(5 2 4 2 1 4 2 1 -1)))
+    (is (= 0 (itreap-max-right (%make list) (lambda (x) (> x 6)))))
+    (is (= 0 (itreap-max-right (%make list) (lambda (x) (> x 5)))))
+    (is (= 1 (itreap-max-right (%make list) (lambda (x) (> x 4)))))
+    (is (= 1 (itreap-max-right (%make list) (lambda (x) (> x 3)))))
+    (is (= 1 (itreap-max-right (%make list) (lambda (x) (> x 2)))))
+    (is (= 4 (itreap-max-right (%make list) (lambda (x) (> x 1)))))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x 0)))))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x -1)))))
+    (is (= 9 (itreap-max-right (%make list) (lambda (x) (> x -2)))))
     
     ;; START arg
-    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)) 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 5)) 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 4)) 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 3)) 3)))
-    (is (= 3 (itreap-fold-bisect (%make list) (lambda (x) (> x 2)) 3)))
-    (is (= 4 (itreap-fold-bisect (%make list) (lambda (x) (> x 1)) 3)))
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 0)) 3)))
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)) 3)))
-    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)) 3)))
+    (is (= 3 (itreap-max-right (%make list) (lambda (x) (> x 6)) 3)))
+    (is (= 3 (itreap-max-right (%make list) (lambda (x) (> x 5)) 3)))
+    (is (= 3 (itreap-max-right (%make list) (lambda (x) (> x 4)) 3)))
+    (is (= 3 (itreap-max-right (%make list) (lambda (x) (> x 3)) 3)))
+    (is (= 3 (itreap-max-right (%make list) (lambda (x) (> x 2)) 3)))
+    (is (= 4 (itreap-max-right (%make list) (lambda (x) (> x 1)) 3)))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x 0)) 3)))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x -1)) 3)))
+    (is (= 9 (itreap-max-right (%make list) (lambda (x) (> x -2)) 3)))
 
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x 6)) 8)))
-    (is (= 8 (itreap-fold-bisect (%make list) (lambda (x) (> x -1)) 8)))
-    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -2)) 8)))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x 6)) 8)))
+    (is (= 8 (itreap-max-right (%make list) (lambda (x) (> x -1)) 8)))
+    (is (= 9 (itreap-max-right (%make list) (lambda (x) (> x -2)) 8)))
 
-    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x -10)) 9)))
-    (is (= 9 (itreap-fold-bisect (%make list) (lambda (x) (> x 10)) 9)))
+    (is (= 9 (itreap-max-right (%make list) (lambda (x) (> x -10)) 9)))
+    (is (= 9 (itreap-max-right (%make list) (lambda (x) (> x 10)) 9)))
 
     (signals invalid-itreap-index-error
-      (itreap-fold-bisect (%make list) (lambda (x) (> x 10)) 10))
+      (itreap-max-right (%make list) (lambda (x) (> x 10)) 10))
 
     ;; null case
-    (is (zerop (itreap-fold-bisect nil (lambda (x) (> x 10)))))))
+    (is (zerop (itreap-max-right nil (lambda (x) (> x 10)))))))
 
-(test implicit-treap-fold-bisect-from-end
-  (declare (notinline itreap-fold-bisect-from-end))
+(test implicit-treap-min-left
+  (declare (notinline itreap-min-left))
   (let ((list '(5 -3 -3 2 -1 4 2 1 3)))
-    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 6)))))
-    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 5)))))
-    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 4)))))
-    (is (= 9 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 3)))))
-    (is (= 8 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)))))
-    (is (= 8 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 1)))))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 0)))))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -1)))))
-    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -2)))))
-    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)))))
-    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)))))
+    (is (= 9 (itreap-min-left (%make list) (lambda (x) (> x 6)))))
+    (is (= 9 (itreap-min-left (%make list) (lambda (x) (> x 5)))))
+    (is (= 9 (itreap-min-left (%make list) (lambda (x) (> x 4)))))
+    (is (= 9 (itreap-min-left (%make list) (lambda (x) (> x 3)))))
+    (is (= 8 (itreap-min-left (%make list) (lambda (x) (> x 2)))))
+    (is (= 8 (itreap-min-left (%make list) (lambda (x) (> x 1)))))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x 0)))))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x -1)))))
+    (is (= 3 (itreap-min-left (%make list) (lambda (x) (> x -2)))))
+    (is (= 3 (itreap-min-left (%make list) (lambda (x) (> x -3)))))
+    (is (= 0 (itreap-min-left (%make list) (lambda (x) (> x -4)))))
     
     ;; END arg
-    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 6)) 6)))
-    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 5)) 6)))
-    (is (= 6 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 4)) 6)))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 3)) 6)))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)) 6)))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 1)) 6)))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 0)) 6)))
-    (is (= 5 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -1)) 6)))
-    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -2)) 6)))
-    (is (= 3 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)) 6)))
-    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)) 6)))
+    (is (= 6 (itreap-min-left (%make list) (lambda (x) (> x 6)) 6)))
+    (is (= 6 (itreap-min-left (%make list) (lambda (x) (> x 5)) 6)))
+    (is (= 6 (itreap-min-left (%make list) (lambda (x) (> x 4)) 6)))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x 3)) 6)))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x 2)) 6)))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x 1)) 6)))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x 0)) 6)))
+    (is (= 5 (itreap-min-left (%make list) (lambda (x) (> x -1)) 6)))
+    (is (= 3 (itreap-min-left (%make list) (lambda (x) (> x -2)) 6)))
+    (is (= 3 (itreap-min-left (%make list) (lambda (x) (> x -3)) 6)))
+    (is (= 0 (itreap-min-left (%make list) (lambda (x) (> x -4)) 6)))
 
-    (is (= 4 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 2)) 4)))
-    (is (= 2 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -3)) 2)))
-    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x -4)) 2)))
+    (is (= 4 (itreap-min-left (%make list) (lambda (x) (> x 2)) 4)))
+    (is (= 2 (itreap-min-left (%make list) (lambda (x) (> x -3)) 2)))
+    (is (= 0 (itreap-min-left (%make list) (lambda (x) (> x -4)) 2)))
 
-    (is (= 0 (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 10)) 0)))
+    (is (= 0 (itreap-min-left (%make list) (lambda (x) (> x 10)) 0)))
 
     (signals invalid-itreap-index-error
-      (itreap-fold-bisect-from-end (%make list) (lambda (x) (> x 10)) 10))
+      (itreap-min-left (%make list) (lambda (x) (> x 10)) 10))
 
     ;; null case
-    (is (zerop (itreap-fold-bisect-from-end nil (lambda (x) (> x 10)))))))
+    (is (zerop (itreap-min-left nil (lambda (x) (> x 10)))))))
 
 (test implicit-treap/sorted
   (declare (notinline itreap-bisect-left itreap-bisect-right))
@@ -287,3 +237,103 @@
 (test implicit-treap/reverse
   (declare (notinline itreap-reverse))
   (is (null (itreap-reverse nil 0 0))))
+
+(test implicit-treap/random
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
+    (dotimes (_ 200)
+      (let* ((len (random 15))
+             (itreap (make-itreap len))
+             (vec (make-array len :element-type 'fixnum))
+             itreap2
+             vec2)
+        (declare ((simple-array fixnum (*)) vec)
+                 ((or null (simple-array fixnum (*))) vec2))
+        (dotimes (i len)
+          (let ((val (random 100)))
+            (setf (aref vec i) val
+                  (itreap-ref itreap i) val)))
+        (dotimes (_ 400)
+          (ecase (random 10)
+            ;; insert
+            (0 (let ((index (random (+ (length vec) 1)))
+                     (val (random 100)))
+                 (itreap-push val itreap index)
+                 (setq vec (concatenate '(simple-array fixnum (*))
+                                        (subseq vec 0 index)
+                                        (vector val)
+                                        (subseq vec index)))))
+            ;; delete
+            (1 (unless (zerop (length vec))
+                 (let ((index (random (length vec))))
+                   (itreap-pop itreap index)
+                   (setq vec (concatenate '(simple-array fixnum (*))
+                                          (subseq vec 0 index)
+                                          (subseq vec (+ index 1)))))))
+            ;; point update
+            (2 (unless (zerop (length vec))
+                 (let ((index (random (length vec)))
+                       (new-val (random 100)))
+                   (setf (aref vec index) new-val
+                         (itreap-ref itreap index) new-val))))
+            ;; range min
+            ((3 4) (let ((l (random (+ 1 (length vec))))
+                         (r (random (+ 1 (length vec)))))
+                     (when (> l r)
+                       (rotatef l r))
+                     (is (= (itreap-fold itreap l r)
+                            (loop with min = most-positive-fixnum
+                                  for i from l below r
+                                  do (setq min (min min (aref vec i)))
+                                  finally (return min))))))
+            ;; range update
+            (5 (let ((l (random (+ 1 (length vec))))
+                     (r (random (+ 1 (length vec))))
+                     (delta (- (random 20) 10)))
+                 (when (> l r)
+                   (rotatef l r))
+                 (itreap-update itreap delta l r)
+                 (loop for i from l below r
+                       do (incf (aref vec i) delta))))
+            ;; max-right
+            (6 (let ((start (random (+ 1 (length vec))))
+                     (threshold (- (random 200) 100)))
+                 (is (= (itreap-max-right itreap (lambda (x) (>= x threshold)) start)
+                        (loop with min = most-positive-fixnum
+                              for i from start below (length vec)
+                              do (setq min (min min (aref vec i)))
+                              while (>= min threshold)
+                              finally (return i))))))
+            ;; min-left
+            (7 (let ((end (random (+ 1 (length vec))))
+                     (threshold (- (random 200) 100)))
+                 (is (= (itreap-min-left itreap (lambda (x) (>= x threshold)) end)
+                        (loop with min = most-positive-fixnum
+                              for i from (- end 1) downto 0 
+                              do (setq min (min min (aref vec i)))
+                              while (>= min threshold)
+                              finally (return (+ i 1)))))))
+            ;; reverse
+            (8 (let ((l (random (+ 1 (length vec))))
+                     (r (random (+ 1 (length vec)))))
+                 (when (> l r)
+                   (rotatef l r))
+                 (setq itreap (itreap-reverse itreap l r))
+                 (setq vec (concatenate '(simple-array fixnum (*))
+                                        (subseq vec 0 l)
+                                        (nreverse (subseq vec l r))
+                                        (subseq vec r)))))
+            ;; merge/split
+            (9 (if itreap2
+                   (setq itreap (itreap-merge itreap2 itreap)
+                         vec (concatenate '(simple-array fixnum (*))
+                                          vec2 vec)
+                         itreap2 nil
+                         vec2 nil)
+                   (let ((index (random (+ 1 (length vec)))))
+                     (multiple-value-bind (itreap-l itreap-r)
+                         (itreap-split itreap index)
+                       (setq itreap itreap-l
+                             itreap2 itreap-r))
+                     (setq vec2 (subseq vec index)
+                           vec (subseq vec 0 index)))))))))))
