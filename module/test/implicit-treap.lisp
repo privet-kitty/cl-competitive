@@ -143,7 +143,7 @@
               (append (subseq list 0 idx)
                       (subseq list (+ idx 1))))))
     (loop for (elm . idx) in nodes
-          do (itreap-push elm itreap idx))
+          do (itreap-push elm idx itreap))
     itreap))
 
 (test implicit-treap-max-right
@@ -258,7 +258,7 @@
             ;; insert
             (0 (let ((index (random (+ (length vec) 1)))
                      (val (random 100)))
-                 (itreap-push val itreap index)
+                 (itreap-push val index itreap)
                  (setq vec (concatenate '(simple-array fixnum (*))
                                         (subseq vec 0 index)
                                         (vector val)

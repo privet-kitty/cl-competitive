@@ -292,7 +292,7 @@ You cannot rely on the side effect. Use the returned value."
                       (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
     (recur itreap index)))
 
-(defmacro itreap-push (obj itreap pos)
+(defmacro itreap-push (obj pos itreap)
   "Pushes OBJ to ITREAP at POS."
   `(setf ,itreap (itreap-insert ,itreap ,pos ,obj)))
 
@@ -353,14 +353,13 @@ each time."
   (labels ((%ref (itreap index)
              (declare ((integer 0 #.most-positive-fixnum) index))
              (force-down itreap)
-             (prog1
-                 (let ((left-count (itreap-count (%itreap-left itreap))))
-                   (cond ((< index left-count)
-                          (%ref (%itreap-left itreap) index))
-                         ((> index left-count)
-                          (%ref (%itreap-right itreap) (- index left-count 1)))
-                         (t (%itreap-value itreap))))
-               (force-up itreap))))
+             (force-up itreap)
+             (let ((left-count (itreap-count (%itreap-left itreap))))
+               (cond ((< index left-count)
+                      (%ref (%itreap-left itreap) index))
+                     ((> index left-count)
+                      (%ref (%itreap-right itreap) (- index left-count 1)))
+                     (t (%itreap-value itreap))))))
     (%ref itreap index)))
 
 (declaim (inline (setf itreap-ref)))
