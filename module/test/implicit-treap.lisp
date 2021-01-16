@@ -8,18 +8,69 @@
 (in-package :cp/test/implicit-treap)
 (in-suite base-suite)
 
+;; (declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+;;                 itreap-fold-bisect)
+;;          (inline itreap-fold-bisect))
+;; (defun itreap-fold-bisect (itreap test &optional (start 0))
+;;   "Returns the largest index that satisfies (FUNCALL TEST (OP ITREAP[START]
+;; ITREAP[START+1] ... ITREAP[index-1])).
+
+;; Note:
+;; - (FUNCALL TEST +OP-IDENTITY+) must be true.
+;; - TEST must be monotone in the target range.
+;; "
+;;   (declare ((integer 0 #.most-positive-fixnum) start))
+;;   (assert (funcall test +op-identity+))
+;;   (let ((result 0))
+;;     (labels
+;;         ((main-search (itreap offset)
+;;            (unless itreap
+;;              (return-from main-search +op-identity+))
+;;            (force-down itreap)
+;;            (let ((sum +op-identity+)
+;;                  (lcount (+ offset (itreap-count (%itreap-left itreap)))))
+;;              (if (<= start lcount)
+;;                  (progn
+;;                    (setq sum (op sum (main-search (%itreap-left itreap) offset)))
+;;                    (setq sum (op sum (%itreap-value itreap)))
+;;                    (unless (funcall test sum)
+;;                      (setq result lcount))
+;;                    (search-subtree (%itreap-right itreap) (+ lcount 1) sum))
+;;                  (main-search (%itreap-right itreap) (+ lcount 1))))
+;;            (force-up itreap))
+;;          (search-subtree (itreap offset prev-sum)
+;;            (declare ((integer 0 #.most-positive-fixnum) offset))
+;;            (unless itreap
+;;              (setq result offset)
+;;              (return-from search-subtree))
+;;            (force-down itreap)
+;;            (let ((sum prev-sum))
+;;              (cond ((not (funcall test (setq sum (op sum (itreap-accumulator (%itreap-left itreap))))))
+;;                     (search-subtree (%itreap-left itreap) offset prev-sum))
+;;                    ((not (funcall test (setq sum (op sum (%itreap-value itreap)))))
+;;                     (setq result (+ offset (itreap-count (%itreap-left itreap)))))
+;;                    (t
+;;                     (search-subtree (%itreap-right itreap)
+;;                                     (+ offset (itreap-count (%itreap-left itreap)) 1)
+;;                                     sum)))
+;;              (force-up itreap))))
+;;       (if (zerop start)
+;;           (search-subtree itreap 0 +op-identity+)
+;;           (main-search itreap 0))
+;;       result)))
+
 (defun copy-itreap (itreap)
   "For development. Recursively copies the whole ITREAPs."
   (if (null itreap)
       nil
       (%make-itreap (%itreap-value itreap)
-                   (%itreap-priority itreap)
-                   :left (copy-itreap (%itreap-left itreap))
-                   :right (copy-itreap (%itreap-right itreap))
-                   :count (%itreap-count itreap)
-                   :accumulator (%itreap-accumulator itreap)
-                   :lazy (%itreap-lazy itreap)
-                   :reversed (%itreap-reversed itreap))))
+                    (%itreap-priority itreap)
+                    :left (copy-itreap (%itreap-left itreap))
+                    :right (copy-itreap (%itreap-right itreap))
+                    :count (%itreap-count itreap)
+                    :accumulator (%itreap-accumulator itreap)
+                    :lazy (%itreap-lazy itreap)
+                    :reversed (%itreap-reversed itreap))))
 
 (defun itreap-sane-p (itreap)
   (labels ((priority* (itreap)
