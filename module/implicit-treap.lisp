@@ -155,18 +155,20 @@ treap."
         (%heapify high-priority-node)))))
 
 (declaim (inline make-itreap))
-(defun make-itreap (size &key initial-contents)
+(defun make-itreap (size &key (initial-element nil supplied-p) initial-contents)
   "Makes a treap of SIZE in O(SIZE) time. Its values are filled with the
-identity element unless INITIAL-CONTENTS are supplied."
+INITIAL-ELEMENT (or identity element) unless INITIAL-CONTENTS are supplied."
   (declare ((or null vector) initial-contents))
   (labels ((build (l r)
              (declare ((integer 0 #.most-positive-fixnum) l r))
              (if (= l r)
                  nil
                  (let* ((mid (ash (+ l r) -1))
-                        (node (%make-itreap (if initial-contents
-                                                (aref initial-contents mid)
-                                                +op-identity+)
+                        (node (%make-itreap (cond (initial-contents
+                                                   (aref initial-contents mid))
+                                                  (supplied-p
+                                                   initial-element)
+                                                  (t +op-identity+))
                                             (random most-positive-fixnum))))
                    (setf (%itreap-left node) (build l mid))
                    (setf (%itreap-right node) (build (+ mid 1) r))
@@ -292,7 +294,7 @@ You cannot rely on the side effect. Use the returned value."
                       (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
     (recur itreap index)))
 
-(defmacro itreap-push (obj pos itreap)
+(defmacro itreap-push (itreap pos obj)
   "Pushes OBJ to ITREAP at POS."
   `(setf ,itreap (itreap-insert ,itreap ,pos ,obj)))
 
@@ -340,7 +342,7 @@ each time."
              (if (null list)
                  itreap
                  (recur (cdr list)
-                        (1+ position)
+                        (+ 1 position)
                         (itreap-insert itreap position (car list))))))
     (recur args 0 nil)))
 
@@ -371,14 +373,13 @@ each time."
   (labels ((%set (itreap index)
              (declare ((integer 0 #.most-positive-fixnum) index))
              (force-down itreap)
-             (prog1
-                 (let ((left-count (itreap-count (%itreap-left itreap))))
-                   (cond ((< index left-count)
-                          (%set (%itreap-left itreap) index))
-                         ((> index left-count)
-                          (%set (%itreap-right itreap) (- index left-count 1)))
-                         (t (setf (%itreap-value itreap) new-value))))
-               (force-up itreap))))
+             (let ((left-count (itreap-count (%itreap-left itreap))))
+               (cond ((< index left-count)
+                      (%set (%itreap-left itreap) index))
+                     ((> index left-count)
+                      (%set (%itreap-right itreap) (- index left-count 1)))
+                     (t (setf (%itreap-value itreap) new-value))))
+             (force-up itreap)))
     (%set itreap index)
     new-value))
 
@@ -476,13 +477,11 @@ Note:
 "
   (declare ((or null (integer 0 #.most-positive-fixnum)) end))
   (assert (funcall test +op-identity+))
+  (when (and end (< (itreap-count itreap) end))
+    (error 'invalid-itreap-index-error :index end :itreap itreap))
   (let* ((n (itreap-count itreap))
-         (n-end (if end
-                    (- n end)
-                    0)))
-    (declare (fixnum n-end))
-    (when (< n-end 0)
-      (error 'invalid-itreap-index-error :index end :itreap itreap))
+         (n-end (- n (or end n))))
+    (declare ((integer 0 #.most-positive-fixnum) n-end))
     (labels
         ((fold (itreap offset)
            (declare ((integer 0 #.most-positive-fixnum) offset))
@@ -579,7 +578,8 @@ You cannot rely on the side effect. Use the returned value."
 ;;;
 
 (declaim (inline itreap-bisect-left)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-left))
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                itreap-bisect-left))
 (defun itreap-bisect-left (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= VALUE, where >= is the complement of ORDER. In other words,
@@ -599,7 +599,8 @@ VALUE. The time complexity is O(log(n))."
         (itreap-count itreap))))
 
 (declaim (inline itreap-bisect-right)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) itreap-bisect-right))
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                itreap-bisect-right))
 (defun itreap-bisect-right (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 VALUE < ITREAP[index], where < is ORDER. In other words, this function
