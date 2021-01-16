@@ -38,6 +38,7 @@ the target interval."
   (declare (ignorable size))
   (+ acc lazy))
 
+(deftype index () '(integer 0 #.(floor most-positive-fixnum 2)))
 (defstruct (itreap (:constructor %make-itreap (value priority &key left right (count 1) (accumulator value) (lazy +updater-identity+) reversed))
                    (:copier nil)
                    (:conc-name %itreap-))
@@ -46,7 +47,7 @@ the target interval."
   (lazy +updater-identity+ :type fixnum)
   (reversed nil :type boolean)
   (priority 0 :type (mod #.most-positive-fixnum))
-  (count 1 :type (mod #.most-positive-fixnum)) ; size of (sub)treap
+  (count 1 :type index) ; size of (sub)treap
   (left nil :type (or null itreap))
   (right nil :type (or null itreap)))
 
@@ -160,7 +161,7 @@ treap."
 INITIAL-ELEMENT (or identity element) unless INITIAL-CONTENTS are supplied."
   (declare ((or null vector) initial-contents))
   (labels ((build (l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare (index l r))
              (if (= l r)
                  nil
                  (let* ((mid (ash (+ l r) -1))
@@ -196,7 +197,7 @@ INITIAL-ELEMENT (or identity element) unless INITIAL-CONTENTS are supplied."
   "Destructively splits ITREAP at INDEX and returns two treaps (in ascending
 order)."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index))
+           (index index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :index index :itreap itreap))
   (labels ((recur (itreap ikey)
@@ -244,12 +245,12 @@ from CL:MERGE and rather close to CL:CONCATENATE."
 You cannot rely on the side effect. Use the returned value."
   (declare (optimize (speed 3))
            ((or null itreap) itreap)
-           ((integer 0 #.most-positive-fixnum) index))
+           (index index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
   (let ((node (%make-itreap obj (random most-positive-fixnum))))
     (labels ((recur (itreap ikey)
-               (declare ((integer 0 #.most-positive-fixnum) ikey))
+               (declare (index ikey))
                (unless itreap (return-from recur node))
                (force-down itreap)
                (if (> (%itreap-priority node) (%itreap-priority itreap))
@@ -273,11 +274,11 @@ You cannot rely on the side effect. Use the returned value."
 
 You cannot rely on the side effect. Use the returned value."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) index))
+           (index index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
   (labels ((recur (itreap ikey)
-             (declare ((integer 0 #.most-positive-fixnum) ikey))
+             (declare (index ikey))
              (force-down itreap)
              (let ((left-count (itreap-count (%itreap-left itreap))))
                (cond ((< ikey left-count)
@@ -338,7 +339,7 @@ each time."
 (defun itreap (&rest args)
   ;; NOTE: This function takes O(nlog(n)) time. Use MAKE-ITREAP for efficiency.
   (labels ((recur (list position itreap)
-             (declare ((integer 0 #.most-positive-fixnum) position))
+             (declare (index position))
              (if (null list)
                  itreap
                  (recur (cdr list)
@@ -349,11 +350,11 @@ each time."
 (declaim (inline itreap-ref))
 (defun itreap-ref (itreap index)
   "Returns the element ITREAP[INDEX]."
-  (declare ((integer 0 #.most-positive-fixnum) index))
+  (declare (index index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
   (labels ((%ref (itreap index)
-             (declare ((integer 0 #.most-positive-fixnum) index))
+             (declare (index index))
              (force-down itreap)
              (force-up itreap)
              (let ((left-count (itreap-count (%itreap-left itreap))))
@@ -367,11 +368,11 @@ each time."
 (declaim (inline (setf itreap-ref)))
 (defun (setf itreap-ref) (new-value itreap index)
   "Sets ITREAP[INDEX] to the given value."
-  (declare ((integer 0 #.most-positive-fixnum) index))
+  (declare (index index))
   (unless (< index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
   (labels ((%set (itreap index)
-             (declare ((integer 0 #.most-positive-fixnum) index))
+             (declare (index index))
              (force-down itreap)
              (let ((left-count (itreap-count (%itreap-left itreap))))
                (cond ((< index left-count)
@@ -386,12 +387,12 @@ each time."
 (declaim (inline itreap-fold))
 (defun itreap-fold (itreap l r)
   "Returns the `sum' (w.r.t. OP) of the range ITREAP[L, R)."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
+  (declare (index l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
   (labels
       ((recur (itreap l r)
-         (declare ((integer 0 #.most-positive-fixnum) l r))
+         (declare (index l r))
          (unless itreap
            (return-from recur +op-identity+))
          (force-down itreap)
@@ -411,8 +412,7 @@ each time."
                    (recur (%itreap-right itreap) (- l left-count 1) (- r left-count 1)))))))
     (recur itreap l r)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                itreap-max-right)
+(declaim (ftype (function * (values index &optional)) itreap-max-right)
          (inline itreap-max-right))
 (defun itreap-max-right (itreap test &optional (start 0))
   "Returns the largest index that satisfies (FUNCALL TEST (OP ITREAP[START]
@@ -422,19 +422,19 @@ Note:
 - (FUNCALL TEST +OP-IDENTITY+) must be true.
 - TEST must be monotone in the target range.
 "
-  (declare ((integer 0 #.most-positive-fixnum) start))
+  (declare (index start))
   (assert (funcall test +op-identity+))
   (when (< (itreap-count itreap) start)
     (error 'invalid-itreap-index-error :index start :itreap itreap))
   (labels
       ((fold (itreap offset)
-         (declare ((integer 0 #.most-positive-fixnum) offset))
+         (declare (index offset))
          (unless itreap
            (return-from fold +op-identity+))
          (force-down itreap)
          (force-up itreap)
          (let ((lcount (+ offset (itreap-count (%itreap-left itreap)))))
-           (declare ((integer 0 #.most-positive-fixnum) lcount))
+           (declare (index lcount))
            (if (< lcount start)
                (fold (%itreap-right itreap) (+ lcount 1))
                (let ((sum (fold (%itreap-left itreap) offset)))
@@ -444,7 +444,7 @@ Note:
                         sum)
                        (t (search-subtree (%itreap-right itreap) (+ lcount 1) sum)))))))
        (search-subtree (itreap offset prev-sum)
-         (declare ((integer 0 #.most-positive-fixnum) offset))
+         (declare (index offset))
          (unless itreap
            (return-from itreap-max-right offset))
          (force-down itreap)
@@ -464,8 +464,7 @@ Note:
         (progn (fold itreap 0)
                (itreap-count itreap)))))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                itreap-min-left)
+(declaim (ftype (function * (values index &optional)) itreap-min-left)
          (inline itreap-min-left))
 (defun itreap-min-left (itreap test &optional end)
   "Returns the smallest index that satisfies (FUNCALL TEST (OP ITREAP[index]
@@ -475,22 +474,22 @@ Note:
 - (FUNCALL TEST +OP-IDENTITY+) must be true.
 - TEST must be monotone in the target range.
 "
-  (declare ((or null (integer 0 #.most-positive-fixnum)) end))
+  (declare ((or null index) end))
   (assert (funcall test +op-identity+))
   (when (and end (< (itreap-count itreap) end))
     (error 'invalid-itreap-index-error :index end :itreap itreap))
   (let* ((n (itreap-count itreap))
          (n-end (- n (or end n))))
-    (declare ((integer 0 #.most-positive-fixnum) n-end))
+    (declare (index n-end))
     (labels
         ((fold (itreap offset)
-           (declare ((integer 0 #.most-positive-fixnum) offset))
+           (declare (index offset))
            (unless itreap
              (return-from fold +op-identity+))
            (force-down itreap)
            (force-up itreap)
            (let ((rcount (+ offset (itreap-count (%itreap-right itreap)))))
-             (declare ((integer 0 #.most-positive-fixnum) rcount))
+             (declare (index rcount))
              (if (< rcount n-end)
                  (fold (%itreap-left itreap) (+ rcount 1))
                  (let ((sum (fold (%itreap-right itreap) offset)))
@@ -500,7 +499,7 @@ Note:
                           sum)
                          (t (search-subtree (%itreap-left itreap) (+ rcount 1) sum)))))))
          (search-subtree (itreap offset prev-sum)
-           (declare ((integer 0 #.most-positive-fixnum) offset))
+           (declare (index offset))
            (unless itreap
              (return-from itreap-min-left (- n offset)))
            (force-down itreap)
@@ -523,12 +522,12 @@ Note:
 (declaim (inline itreap-update))
 (defun itreap-update (itreap operand l r)
   "Updates ITRAP by ITREAP[i] := (OP ITREAP[i] OPERAND) for all i in [l, r)"
-  (declare ((integer 0 #.most-positive-fixnum) l r))
+  (declare (index l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
   (labels
       ((recur (itreap l r)
-         (declare ((integer 0 #.most-positive-fixnum) l r))
+         (declare (index l r))
          (when itreap
            (if (and (zerop l) (= r (%itreap-count itreap)))
                (progn
@@ -561,7 +560,7 @@ Note:
   "Destructively reverses the order of the interval [L, R) in O(log(n)) time.
 
 You cannot rely on the side effect. Use the returned value."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
+  (declare (index l r))
   (unless (<= l r (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index (cons l r)))
   (when (= l r)
@@ -578,8 +577,7 @@ You cannot rely on the side effect. Use the returned value."
 ;;;
 
 (declaim (inline itreap-bisect-left)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                itreap-bisect-left))
+         (ftype (function * (values index &optional)) itreap-bisect-left))
 (defun itreap-bisect-left (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 ITREAP[index] >= VALUE, where >= is the complement of ORDER. In other words,
@@ -587,7 +585,7 @@ this function returns a leftmost index at which value can be inserted with
 keeping the order. Returns the size of ITREAP if ITREAP[length-1] <
 VALUE. The time complexity is O(log(n))."
   (labels ((recur (count itreap)
-             (declare ((integer 0 #.most-positive-fixnum) count))
+             (declare (index count))
              (cond ((null itreap) nil)
                    ((funcall order (funcall key (%itreap-value itreap)) value)
                     (recur count (%itreap-right itreap)))
@@ -599,8 +597,7 @@ VALUE. The time complexity is O(log(n))."
         (itreap-count itreap))))
 
 (declaim (inline itreap-bisect-right)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                itreap-bisect-right))
+         (ftype (function * (values index &optional)) itreap-bisect-right))
 (defun itreap-bisect-right (itreap value order &key (key #'identity))
   "Takes a **sorted** treap and returns the smallest index that satisfies
 VALUE < ITREAP[index], where < is ORDER. In other words, this function
@@ -608,7 +605,7 @@ returns a rightmost index at which VALUE can be inserted with keeping the
 order. Returns the size of ITREAP if ITREAP[length-1] <= VALUE. The time
 complexity is O(log(n))."
   (labels ((recur (count itreap)
-             (declare ((integer 0 #.most-positive-fixnum) count))
+             (declare (index count))
              (cond ((null itreap) nil)
                    ((funcall order value (funcall key (%itreap-value itreap)))
                     (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
