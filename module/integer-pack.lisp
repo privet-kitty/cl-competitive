@@ -53,17 +53,15 @@ suitable for the total bits in the range [63, 124].
        ,@(loop for (slot-name slot-size _) in slots
                collect `(defconstant ,(intern (%concat+name+ "MAX" name slot-name))
                           (- (ash 1 ,slot-size) 1)))
-       ;; setter and getter
+       ;; getter
+       ;; TODO: define setter with define-setf-expander
        ,@(loop for (slot-name slot-size slot-position) in slots
                for accessor-name = (intern (%concat-name name slot-name))
                append `((declaim (inline ,accessor-name
                                          (setf ,accessor-name)))
                         (defun ,accessor-name (,name)
                           (declare (type ,name ,name))
-                          (ldb (byte ,slot-size ,slot-position) ,name))
-                        (defun (setf ,accessor-name) (,new-value ,name)
-                          (declare (type ,name ,name))
-                          (setf (ldb (byte ,slot-size ,slot-position) ,name) ,new-value))))
+                          (ldb (byte ,slot-size ,slot-position) ,name))))
        ;; constructor
        (declaim (inline ,packer-name))
        (defun ,packer-name ,(loop for slot in slots collect (car slot))
