@@ -25,12 +25,11 @@
     vector))
 
 (test quicksort
-  (finishes
+  (let ((*test-dribble* nil))
     (dotimes (i 100)
       (let ((vec (coerce (loop repeat i collect (random 100)) 'vector)))
-        (assert (equalp (sort (copy-seq vec) #'>)
-                        (quicksort! (copy-seq vec) #'>))))))
-  (finishes
+        (is (equalp (sort (copy-seq vec) #'>)
+                    (quicksort! (copy-seq vec) #'>)))))
     (dotimes (i 1000)
       (let ((vec (coerce (loop repeat 10
                                collect (code-char (+ 97 (random 10))))
@@ -39,16 +38,16 @@
             (end (random 11)))
         (when (> start end)
           (rotatef start end))
-        (assert (equalp (quicksort! (copy-seq vec) #'char< :start start :end end)
-                        (sort* (copy-seq vec) #'char< start end)))))))
+        (is (equalp (quicksort! (copy-seq vec) #'char< :start start :end end)
+                    (sort* (copy-seq vec) #'char< start end)))))))
 
 (test quicksort-by2
-  (finishes
+  (let ((*test-dribble* nil))
     (dotimes (i 1000)
       (let ((vec (coerce (loop repeat (random 100)
                                for code = (random 50)
                                for char = (code-char code)
                                append (list char code))
                          'vector)))
-        (assert (equalp (quicksort-by2! (copy-seq vec) #'char<)
-                        (sort-by2 (copy-seq vec) #'char<)))))))
+        (is (equalp (quicksort-by2! (copy-seq vec) #'char<)
+                    (sort-by2 (copy-seq vec) #'char<)))))))

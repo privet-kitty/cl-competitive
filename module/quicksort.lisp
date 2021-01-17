@@ -21,14 +21,16 @@ partitioning)"))
 
 (declaim (inline quicksort!))
 (defun quicksort! (vector order &key (start 0) end)
-  "Destructively sorts VECTOR w.r.t. ORDER.
+  "Destructively sorts VECTOR w.r.t. ORDER. You can rely on the side effect.
 
 NOTE: This quicksort is NOT randomized. You need to shuffle an input to avoid
-getting hacked. CP/SHUFFLE:SHUFFLE! works for example.
+getting hacked. CP/SHUFFLE:SHUFFLE! is available for example.
 
 Reference:
 Hannu Erkio, The worst case permutation for median-of-three quicksort"
-  (declare (vector vector))
+  (declare (vector vector)
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
   (unless end
     (setq end (length vector)))
   (assert (<= 0 start end))
@@ -59,11 +61,11 @@ Hannu Erkio, The worst case permutation for median-of-three quicksort"
 ;; TODO: move to another module
 (declaim (inline quicksort-by2!))
 (defun quicksort-by2! (vector order)
-  "Destructively sorts VECTOR by two elements. This function regards
-each (VECTOR[i], VECTOR[i+1]) for even i as an element, and compares only the
-first elements (i.e. VECTOR[i] for even i).
+  "Destructively sorts VECTOR by two elements. You can rely on the side
+effect. This function regards each (VECTOR[i], VECTOR[i+1]) for even i as an
+element, and compares only the first elements (i.e. VECTOR[i] for even i).
 
-This sort was written just for efficiency."
+This sort was written to efficiently sort certain types of data."
   (declare (vector vector))
   (labels
       ((recur (left right)
