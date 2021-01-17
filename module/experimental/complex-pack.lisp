@@ -15,16 +15,13 @@
 #-double-float-bits
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-c:defknown double-float-bits (double-float)
-      ;; KLUDGE: actually return-type of sb-kernel:double-float-bits is
-      ;; (signed-byte 64)
-      (unsigned-byte 64)
+      (signed-byte 64)
       (sb-c:movable sb-c:foldable sb-c:flushable)
     :overwrite-fndb-silently t)
   (declaim (inline double-float-bits))
   (defun double-float-bits (x)
-    (dpb (sb-kernel::double-float-high-bits x)
-         (byte 32 32)
-         (sb-kernel::double-float-low-bits x))))
+    (logior (ash (sb-kernel:double-float-high-bits x) 32)
+            (sb-kernel:double-float-low-bits x))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %concat-name (&rest args)
@@ -54,7 +51,8 @@
          (real-revslots (reverse real-slots))
          (imag-slots (extract-62bit-slots (nthcdr (length real-slots) slot-descriptions)))
          (imag-revslots (reverse imag-slots))
-         (slots (append real-slots imag-slots)))
+         (slots (append real-slots imag-slots))
+         (slot-names (mapcar #'car slots)))
     (assert (= (+ (length real-slots) (length imag-slots))
                (length slot-descriptions))
             () "Size restriction violated: each cell <= 62 bit, total size <= 124 bit")
@@ -112,15 +110,13 @@
                       (make-double-float (ldb (byte 30 32) ,tmp2)
                                          (ldb (byte 32 0) ,tmp2)))))
          ;; destructuring-bind-style macro
-         (defmacro ,unpacker-macro-name (vars ,name &body body)
-           (check-type vars list)
-           (assert (= (length vars) ,(length slots)))
+         (defmacro ,unpacker-macro-name (,slot-names ,name &body body)
            `(let* ((,',tmp ,,name)
                    (,',tmp1 (double-float-bits (realpart ,',tmp)))
                    (,',tmp2 (double-float-bits (imagpart ,',tmp))))
               (declare (type (unsigned-byte ,,real-width) ,',tmp1)
                        (type (unsigned-byte ,,imag-width) ,',tmp2))
-              (let* ,(loop for var in vars
+              (let* ,(loop for var in (list ,@slot-names)
                            for rest on ',real-slots
                            for (slot-name slot-size _) = (car rest)
                            collect `(,var
@@ -128,7 +124,7 @@
                                                  (ldb (byte ,slot-size 0) ,',tmp1))
                                        ,@(when (cdr rest)
                                            `((setq ,',tmp1 (ash ,',tmp1 ,(- slot-size))))))))
-                (let* ,(loop for var in (nthcdr ,(length real-slots) vars)
+                (let* ,(loop for var in (list ,@(nthcdr (length real-slots) slot-names))
                              for rest on ',imag-slots
                              for (slot-name slot-size _) = (car rest)
                              collect `(,var
