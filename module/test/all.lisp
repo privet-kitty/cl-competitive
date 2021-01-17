@@ -21,6 +21,7 @@
   (:import-from :cp/test/circumcenter)
   (:import-from :cp/test/compact-bit-vector)
   (:import-from :cp/test/complex-geometry)
+  (:import-from :cp/test/complex-pack)
   (:import-from :cp/test/compress)
   (:import-from :cp/test/convex-hull)
   (:import-from :cp/test/convex-hull-trick)

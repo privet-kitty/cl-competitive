@@ -2,13 +2,13 @@
   (when (find-symbol "DOUBLE-FLOAT-BITS" :sb-kernel)
     (pushnew :double-float-bits *features*)))
 
-(defpackage :cp/experimental/complex-pack
+(defpackage :cp/complex-pack
   (:use :cl)
   (:export #:define-complex-pack)
   (:import-from :sb-kernel
                 #:make-double-float
                 #+double-float-bits #:double-float-bits))
-(in-package :cp/experimental/complex-pack)
+(in-package :cp/complex-pack)
 
 ;; TODO: unify define-cons-pack and define-complex-pack
 
