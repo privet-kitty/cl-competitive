@@ -7,6 +7,7 @@
   #+swank (use-package :cp/util :cl-user)
   #-swank (set-dispatch-macro-character
            #\# #\> (lambda (s c p) (declare (ignore c p)) `(values ,(read s nil nil t))))
+  #+sbcl (dolist (f '(:popcnt :sse4)) (pushnew f sb-c:*backend-subfeatures*))
   #+sbcl (setq *random-state* (seed-random-state (nth-value 1 (get-time-of-day)))))
 #-swank (eval-when (:compile-toplevel)
           (setq *break-on-signals* '(and warning (not style-warning))))
