@@ -23,12 +23,11 @@
 
 (test merge-sort/random
   (declare (notinline merge-sort!))
-  (finishes
+  (let ((*test-dribble* nil))
     (dotimes (i 100)
       (let ((vec (coerce (loop repeat i collect (random 100)) 'vector)))
-        (assert (equalp (sort (copy-seq vec) #'>)
-                        (merge-sort! (copy-seq vec) #'>))))))
-  (finishes
+        (is (equalp (sort (copy-seq vec) #'>)
+                    (merge-sort! (copy-seq vec) #'>)))))
     (dotimes (i 1000)
       (let ((vec (coerce (loop repeat 20
                                collect (code-char (+ 97 (random 10))))
@@ -37,6 +36,6 @@
             (end (random 11)))
         (when (> start end)
           (rotatef start end))
-        (assert (equalp (merge-sort! (copy-seq vec) #'<
-                                     :start start :end end :key #'char-code)
-                        (sort* (copy-seq vec) #'< start end #'char-code)))))))
+        (is (equalp (merge-sort! (copy-seq vec) #'<
+                                 :start start :end end :key #'char-code)
+                    (sort* (copy-seq vec) #'< start end #'char-code)))))))
