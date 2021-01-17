@@ -5,7 +5,7 @@
 (in-package :cp/test/queue)
 (in-suite base-suite)
 
-(test queue
+(test queue/hand
   (let ((que (make-queue '(2 3))))
     (is (null (queue-empty-p que)))
     (enqueue-front 1 que)
@@ -21,3 +21,34 @@
     (enqueue-front 1 que)
     (is (null (queue-empty-p que)))
     (is (= 1 (queue-peek que)))))
+
+(test queue/random
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
+    (dotimes (_ 100)
+      (let* ((len (random 5))
+             (proto (loop repeat len collect (random 100)))
+             (que (make-queue proto))
+             (vec (make-array len :fill-pointer len :initial-contents proto)))
+        (dotimes (_ 50)
+          (if (zerop (length vec))
+              (is (queue-empty-p que))
+              (is (= (queue-peek que) (aref vec 0))))
+          (ecase (random 4)
+            ;; enqueue
+            (0 (let ((value (random 100)))
+                 (enqueue value que)
+                 (vector-push-extend value vec)))
+            ;; dequeue
+            ((1 2) (unless (queue-empty-p que)
+                     (is (= (dequeue que) (aref vec 0)))
+                     (loop for i from 1 below (length vec)
+                           do (rotatef (aref vec (- i 1)) (aref vec i)))
+                     (vector-pop vec)))
+            ;; enqueue-front
+            (3 (let ((value (random 100)))
+                 (enqueue-front value que)
+                 (vector-push-extend 0 vec)
+                 (loop for i from (- (length vec) 1) above 0
+                       do (rotatef (aref vec i) (aref vec (- i 1))))
+                 (setf (aref vec 0) value)))))))))

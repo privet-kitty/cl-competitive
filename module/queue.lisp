@@ -1,10 +1,9 @@
-;;;
-;;; Queue with singly linked list
-;;;
-
 (defpackage :cp/queue
   (:use :cl)
-  (:export #:queue #:make-queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front))
+  (:export #:queue #:make-queue #:enqueue #:dequeue #:queue-empty-p #:queue-peek #:enqueue-front)
+  (:documentation "Provides queue with singly linked list. This queue provides
+three constant-time operations: insertion at both ends and deletion at one
+end. If you need deletion at both ends, please use CP/DEQUE."))
 (in-package :cp/queue)
 
 (defstruct (queue (:constructor make-queue
@@ -16,7 +15,7 @@
 
 (declaim (inline enqueue))
 (defun enqueue (obj queue)
-  "Pushes OBJ to the end of QUEUE."
+  "Inserts OBJ to the end of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
     (if list
@@ -38,11 +37,12 @@ is empty."
 
 (declaim (inline queue-peek))
 (defun queue-peek (queue)
+  "Returns the element at the front of QUEUE."
   (car (queue-list queue)))
 
 (declaim (inline enqueue-front))
 (defun enqueue-front (obj queue)
-  "Pushes OBJ to the front of QUEUE."
+  "Inserts OBJ to the front of QUEUE."
   (symbol-macrolet ((list (queue-list queue))
                     (tail (queue-tail queue)))
     (if list
