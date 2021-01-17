@@ -14,39 +14,17 @@
 
 #-double-float-bits
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown double-float-bits (double-float) (signed-byte 64)
-      (sb-c:movable sb-c:foldable sb-c:flushable))
-  ;; Copied from
-  ;; https://github.com/sbcl/sbcl/commit/65dbc2e40b1abc4d1c4fc8c690636ccd1dfebed8
-  (sb-c:define-vop (double-float-bits)
-    (:args (float :scs (sb-vm::double-reg sb-vm::descriptor-reg)
-                  :load-if (not (sb-c:sc-is float sb-vm::double-stack))))
-    (:results (bits :scs (sb-vm::signed-reg)))
-    (:arg-types double-float)
-    (:result-types sb-vm::signed-num)
-    (:translate double-float-bits)
-    (:policy :fast-safe)
-    (:generator 5
-                (sb-c:sc-case float
-                  (sb-vm::double-reg
-                   (sb-assem:inst sb-vm::movq bits float))
-                  (sb-vm::double-stack
-                   (sb-vm::inst
-                    sb-vm::mov
-                    bits
-                    (sb-vm::make-ea :qword
-                                    :base sb-vm::rbp-tn
-                                    :disp (sb-vm::frame-byte-offset (sb-c:tn-offset float)))))
-                  (sb-vm::descriptor-reg
-                   (sb-vm::inst
-                    sb-vm::mov
-                    bits
-                    (sb-vm::make-ea :qword
-                                    :base float
-                                    :disp (- (ash sb-vm:double-float-value-slot sb-vm:word-shift)
-                                             sb-vm:other-pointer-lowtag)))))))
+  (sb-c:defknown double-float-bits (double-float)
+      ;; KLUDGE: actually return-type of sb-kernel:double-float-bits is
+      ;; (signed-byte 64)
+      (unsigned-byte 64)
+      (sb-c:movable sb-c:foldable sb-c:flushable)
+    :overwrite-fndb-silently t)
+  (declaim (inline double-float-bits))
   (defun double-float-bits (x)
-    (double-float-bits x)))
+    (dpb (sb-kernel::double-float-high-bits x)
+         (byte 32 32)
+         (sb-kernel::double-float-low-bits x))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %concat-name (&rest args)
