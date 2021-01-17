@@ -39,6 +39,7 @@ product of DIMENSIONS must be equal to the length of VECTOR."
           (sb-kernel:%array-displaced-from array) nil
           (sb-kernel:%array-displaced-p array) nil)
     (setf (#.(or (find-symbol "%ARRAY-DATA" :sb-kernel)
+                 ;; for SBCL version earlier than 1.3.19 
                  (find-symbol "%ARRAY-DATA-VECTOR" :sb-kernel))
              array)
           vector)
