@@ -7,7 +7,8 @@
   (:export #:define-complex-pack)
   (:import-from :sb-kernel
                 #:make-double-float
-                #+double-float-bits #:double-float-bits))
+                #+double-float-bits #:double-float-bits)
+  (:documentation "See cp/integer-pack for documentation."))
 (in-package :cp/complex-pack)
 
 ;; TODO: unify define-cons-pack and define-complex-pack
@@ -55,9 +56,9 @@
          (slot-names (mapcar #'car slots)))
     (assert (= (+ (length real-slots) (length imag-slots))
                (length slot-descriptions))
-            () "Size restriction violated: each cell <= 62 bit, total size <= 124 bit")
+            () "Size restriction violated: slot size <= 62 bit and total size <= 124 bit")
     (unless (> (length imag-slots) 0)
-      (error "Whole size is too small. Use DEFINE-INTEGER-PACK instead."))
+      (error "Total size is too small. Use DEFINE-INTEGER-PACK instead."))
     (let ((real-width (+ (second (first real-revslots))
                          (third (first real-revslots))))
           (imag-width (+ (second (first imag-revslots))

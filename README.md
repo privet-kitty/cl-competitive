@@ -180,6 +180,6 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [placeholder-syntax.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/placeholder-syntax.lisp) Clojure-style placeholder syntax
 
 ### Weird things
-- [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a bundle of some slots
+- [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a structure of several integer slots
 - [increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
 - [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/compile-time-increase-space.lisp) analogue of increase-space at compile time
