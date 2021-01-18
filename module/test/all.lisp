@@ -97,6 +97,8 @@
   (:import-from :cp/test/order-statistic)
   (:import-from :cp/test/pairing-heap)
   (:import-from :cp/test/parallel-sequence)
+  (:import-from :cp/test/parse-bignum)
+  (:import-from :cp/test/parse-fixnum)
   (:import-from :cp/test/partition-number)
   (:import-from :cp/test/persistent-disjoint-set)
   (:import-from :cp/test/persistent-vector)

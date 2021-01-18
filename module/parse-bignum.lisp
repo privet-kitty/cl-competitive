@@ -3,11 +3,11 @@
   (:export #:parse-bignum))
 (in-package :cp/parse-bignum)
 
-(defun parse-bignum (simple-base-string &key (start 0) end)
+(defun parse-bignum (simple-string &key (start 0) end)
   "Is a variant of SBCL(x64)'s PARSE-INTEGER. Can also parse fixnum but is
 optimized to big integer."
   (declare (optimize (speed 3)))
-  (sb-c::with-array-data ((string simple-base-string :offset-var offset)
+  (sb-c::with-array-data ((string simple-string :offset-var offset)
                           (start start)
                           (end end)
                           :check-fill-pointer t)
