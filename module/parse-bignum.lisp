@@ -1,4 +1,3 @@
-;; OBSOLETE
 (defpackage :cp/parse-bignum
   (:use :cl)
   (:export #:parse-bignum))
@@ -7,6 +6,7 @@
 (defun parse-bignum (simple-base-string &key (start 0) end)
   "Is a variant of SBCL(x64)'s PARSE-INTEGER. Can also parse fixnum but is
 optimized to big integer."
+  (declare (optimize (speed 3)))
   (sb-c::with-array-data ((string simple-base-string :offset-var offset)
                           (start start)
                           (end end)
@@ -15,7 +15,8 @@ optimized to big integer."
                      ((= i end)
                       (return-from parse-bignum (values nil end)))
                    (declare (fixnum i))
-                   (unless (char= #\Space (schar string i)) (return i))))
+                   (unless (char= #\Space (schar string i))
+                     (return i))))
           (minusp nil)
           (result 0)
           (mid-result 0)
@@ -38,7 +39,8 @@ optimized to big integer."
         (let* ((char (schar string index))
                (weight (- (char-code char) 48)))
           (if (<= 0 weight 9)
-              (setq mid-result (+ weight (* 10 (the (integer 0 #.(expt 10 17)) mid-result))))
+              (setq mid-result
+                    (+ weight (* 10 (the (integer 0 #.(expt 10 17)) mid-result))))
               (return nil)))
         (incf index)
         (incf index-mod18))
