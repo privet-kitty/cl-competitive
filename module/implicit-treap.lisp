@@ -307,33 +307,44 @@ You cannot rely on the side effect. Use the returned value."
          (setf ,itreap (itreap-delete ,itreap ,p))))))
 
 (declaim (inline itreap-map))
-(defun itreap-map (function itreap)
-  "Successively applies FUNCTION to ITREAP[0], ..., ITREAP[SIZE-1]."
-  (declare (function function))
-  (labels ((recur (node)
-             (when node
-               (force-down node)
-               (recur (%itreap-left node))
-               (funcall function (%itreap-value node))
-               (recur (%itreap-right node))
-               (force-up node))))
-    (recur itreap)))
+(defun itreap-map (itreap function &optional (start 0) end)
+  "Successively applies FUNCTION to ITREAP[START], ..., ITREAP[END-1]."
+  (declare (function function)
+           (index start)
+           ((or null index) end))
+  (unless end
+    (setq end (itreap-count itreap)))
+  (unless (<= start end (itreap-count itreap))
+    (error 'invalid-itreap-index-error :itreap itreap :index (cons start end)))
+  (labels ((recur (itreap l r)
+             (declare (index l r))
+             (when (< l r)
+               (force-down itreap)
+               (force-up itreap)
+               (let ((lcount (itreap-count (%itreap-left itreap))))
+                 (when (< l lcount)
+                   (recur (%itreap-left itreap) l (min r lcount)))
+                 (when (and (<= l lcount) (< lcount r))
+                   (funcall function (%itreap-value itreap)))
+                 (when (< (+ lcount 1) r)
+                   (recur (%itreap-right itreap) (max 0 (- l lcount 1)) (- r lcount 1)))))))
+    (recur itreap start end)))
 
 (defmethod print-object ((object itreap) stream)
   (print-unreadable-object (object stream :type t)
     (let ((init t))
-      (itreap-map (lambda (x)
+      (itreap-map object
+                  (lambda (x)
                     (if init
                         (setq init nil)
                         (write-char #\  stream))
-                   (write x :stream stream))
-                 object))))
+                    (write x :stream stream))))))
 
 (defmacro do-itreap ((var itreap &optional result) &body body)
   "Successively binds ITREAP[0], ..., ITREAP[SIZE-1] to VAR and executes BODY
 each time."
   `(block nil
-     (itreap-map (lambda (,var) ,@body) ,itreap)
+     (itreap-map ,itreap (lambda (,var) ,@body))
      ,result))
 
 (defun itreap (&rest args)

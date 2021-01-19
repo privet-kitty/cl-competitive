@@ -67,6 +67,17 @@
             else
             do (is (= 3 (itreap-fold itreap l r)))))))
 
+(test implicit-treap/map
+  (let* ((vec #(1 2 3 4 5 6))
+         (itreap (make-itreap 6 :initial-contents vec)))
+    (dotimes (l (+ 1 (length vec)))
+      (loop for r from l to (length vec)
+            for subvec = (make-array 0 :fill-pointer 0)
+            do (itreap-map itreap
+                           (lambda (x) (vector-push-extend x subvec))
+                           l r)
+               (is (equalp subvec (subseq vec l r)))))))
+
 (test implicit-treap/invalid-itreap-index-error
   (let ((itreap (itreap 3 5 2 4 1)))
     (signals invalid-itreap-index-error (itreap-ref itreap 5))
