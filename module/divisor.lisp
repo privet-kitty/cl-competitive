@@ -9,7 +9,7 @@
   "Enumerates all the divisors of X in O(sqrt(X)) time. Note that the resultant
 vector is NOT sorted."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) x))
+           ((integer 1 #.most-positive-fixnum) x))
   (let* ((sqrt (isqrt x))
          ;; FIXME: Currently I set the initial size to x^1/4, but it's not based
          ;; on a proper reason.
@@ -23,6 +23,19 @@ vector is NOT sorted."
                  (unless (= i quot)
                    (vector-push-extend quot result)))))
     result))
+
+(declaim (inline map-divisors))
+(defun map-divisors (x function)
+  "Applies FUNCTION to all the divisors of X. Note that the order of divisors
+are not necessarily ascending."
+  (declare ((integer 1) x))
+  (let ((sqrt (isqrt x)))
+    (loop for i from 1 to sqrt
+          do (multiple-value-bind (quot rem) (floor x i)
+               (when (zerop rem)
+                 (funcall function i)
+                 (unless (= i quot)
+                   (funcall function quot)))))))
 
 (defun enum-ascending-divisors (n)
   "Returns an ascending list of all the divisors of N."
@@ -55,7 +68,8 @@ vector is NOT sorted."
 (defun make-divisors-table (sup)
   "Returns a vector of length SUP whose each cell, vector[X], is the ascending
 list of every divisor of X. Note that vector[0] = NIL."
-  (declare ((integer 0 #.most-positive-fixnum) sup)
+  (declare (optimize (speed 3))
+           ((integer 0 #.most-positive-fixnum) sup)
            #+sbcl (sb-ext:muffle-conditions style-warning))
   (let ((result (make-array sup :element-type 'list))
         (tails (make-array sup :element-type 'list))) ; stores the last cons cell
