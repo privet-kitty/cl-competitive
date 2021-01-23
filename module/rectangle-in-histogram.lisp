@@ -16,26 +16,20 @@ rectangle."
         (max-area 0)
         (l 0)
         (r 0)) 
-    (dotimes (i width)
-      (let ((h (aref heights i)))
-        (if (or (null stack) (<= (caar stack) h))
-            (push (cons h i) stack)
-            (loop with new-i = i
-                  while stack
-                  for (prev-h . prev-i) = (car stack)
-                  for area = (* prev-h (- i prev-i))
-                  while (> prev-h h)
-                  when (> area max-area)
-                  do (setq max-area area
-                           l prev-i
-                           r i)
-                     (setq new-i prev-i)
-                     (pop stack)
-                  finally (push (cons h new-i) stack)))))
-    (loop for (h . i) in stack
-          for area = (* h (- width i))
-          when (> area max-area)
-          do (setq max-area area
-                   l i
-                   r width))
+    (dotimes (i (+ 1 width))
+      (let ((h (if (= i width)
+                   most-negative-fixnum ; negative infinity
+                   (aref heights i))))
+        (loop with new-i = i
+              while stack
+              for (prev-h . prev-i) = (car stack)
+              for area = (* prev-h (- i prev-i))
+              while (> prev-h h)
+              when (> area max-area)
+              do (setq max-area area
+                       l prev-i
+                       r i)
+              do (setq new-i prev-i)
+                 (pop stack)
+              finally (push (cons h new-i) stack))))
     (values max-area l r)))
