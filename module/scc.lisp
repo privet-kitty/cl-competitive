@@ -1,14 +1,15 @@
-;;;
-;;; Strongly connected components of directed graph
-;;;
-
 (defpackage :cp/scc
   (:use :cl)
   (:export #:scc #:scc-graph #:scc-components #:scc-sizes #:scc-count
-           #:scc-p #:make-scc #:make-condensed-graph))
+           #:scc-p #:make-scc #:make-condensed-graph)
+  (:documentation "Provides strongly connected components of directed
+graph. (Tarjan's algorithm)
+
+Reference:
+http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
 (in-package :cp/scc)
 
-(defstruct (scc (:constructor %make-scc (graph components sizes count))
+(defstruct (scc (:constructor %make-scc (graph components sizes count key))
                 (:copier nil)
                 (:predicate nil))
   (graph nil :type vector)
@@ -17,14 +18,13 @@
   ;; sizes[k] := size of the k-th strongly connected component
   (sizes nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; the total number of strongly connected components
-  (count 0 :type (integer 0 #.most-positive-fixnum)))
+  (count 0 :type (mod #.array-total-size-limit))
+  (key nil :type function))
 
-;; Tarjan's algorithm
-;; Reference: http://www.prefield.com/algorithm/graph/strongly_connected_components.html
-;; (Kosaraju's algorithm is put in the test file)
-(defun make-scc (graph)
+(defun make-scc (graph &key (key #'identity))
   (declare (optimize (speed 3))
-           (vector graph))
+           (vector graph)
+           (function key))
   (let* ((n (length graph))
          (ord 0)
          (ords (make-array n :element-type 'fixnum :initial-element -1)) ; pre-order
@@ -38,7 +38,7 @@
          (stack (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (end 0) ; stack pointer
          (in-stack (make-array n :element-type 'bit :initial-element 0)))
-    (declare ((integer 0 #.most-positive-fixnum) ord end comp-index))
+    (declare ((mod #.array-total-size-limit) ord end comp-index))
     (labels ((%push (v)
                (setf (aref stack end) v
                      (aref in-stack v) 1)
@@ -54,15 +54,16 @@
                (incf ord)
                (%push v)
                (dolist (next (aref graph v))
-                 (cond ((= -1 (aref ords next))
-                        (visit next)
-                        (setf (aref lowlinks v)
-                              (min (aref lowlinks v) (aref lowlinks next))))
-                       ((= 1 (aref in-stack next))
-                        (setf (aref lowlinks v)
-                              (min (aref lowlinks v) (aref ords next))))))
+                 (let ((next (funcall key next)))
+                   (cond ((= -1 (aref ords next))
+                          (visit next)
+                          (setf (aref lowlinks v)
+                                (min (aref lowlinks v) (aref lowlinks next))))
+                         ((= 1 (aref in-stack next))
+                          (setf (aref lowlinks v)
+                                (min (aref lowlinks v) (aref ords next)))))))
                (when (= (aref lowlinks v) (aref ords v))
-                 (loop for size of-type (integer 0 #.most-positive-fixnum) from 1
+                 (loop for size of-type (mod #.array-total-size-limit) from 1
                        for w = (%pop)
                        do (setf (aref components w) comp-index)
                        until (= v w)
@@ -78,7 +79,7 @@
               (- comp-index (aref components v) 1)))
       (dotimes (i (ash comp-index -1))
         (rotatef (aref sizes i) (aref sizes (- comp-index i 1))))
-      (%make-scc graph components (adjust-array sizes comp-index) comp-index))))
+      (%make-scc graph components (adjust-array sizes comp-index) comp-index key))))
 
 ;; FIXME: Constant factor of this implementation is too large. Can we avoid
 ;; hash-table?
@@ -91,16 +92,17 @@
          (n (length graph))
          (comp-n (scc-count scc))
          (components (scc-components scc))
+         (key (scc-key scc))
          (condensed (make-array comp-n :element-type t)))
     (dotimes (i comp-n)
       ;; Resorting to EQ is substandard, though I use it here for efficiency.
       (setf (aref condensed i) (make-hash-table :test #'eq)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))
-        (dolist (neighbor (aref graph i))
-          (let ((neighbor-comp (aref components neighbor)))
-            (unless (= i-comp neighbor-comp)
-              (setf (gethash neighbor-comp (aref condensed i-comp)) t))))))
+        (dolist (next (aref graph i))
+          (let ((next-comp (aref components (funcall key next))))
+            (unless (= i-comp next-comp)
+              (setf (gethash next-comp (aref condensed i-comp)) t))))))
     (dotimes (i comp-n)
       (setf (aref condensed i)
             (loop for x being each hash-key of (aref condensed i)
