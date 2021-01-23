@@ -100,7 +100,7 @@ REVGRAPH := NIL | reversed graph of GRAPH"
             when (zerop (aref visited v))
             do (reversed-dfs v ord)
                (incf ord))
-      (cp/scc::%make-scc graph components (adjust-array sizes ord) ord))))
+      (cp/scc::%make-scc graph components (adjust-array sizes ord) ord #'identity))))
 
 ;; We believe two SCC's are identical if the sorted SIZES are identical.
 (defun scc= (scc1 scc2)
@@ -117,16 +117,14 @@ REVGRAPH := NIL | reversed graph of GRAPH"
         (return-from sorted-p nil))))
   t)
 
-(defparameter *state* (sb-ext:seed-random-state 0))
-
 (test scc/random
-  (finishes
+  (let ((*random-state* (sb-ext:seed-random-state 0)))
     (dotimes (_ 2000)
-      (let* ((graph (make-random-graph 20 (random 0.50 *state*) t))
+      (let* ((graph (make-random-graph 20 (random 0.5) t))
              (scc1 (make-scc graph))
              (scc2 (make-scc-kosaraju graph))
              (cgraph1 (make-condensed-graph scc1))
              (cgraph2 (make-condensed-graph scc2)))
-        (assert (scc= scc1 scc2))
-        (assert (sorted-p cgraph1))
-        (assert (sorted-p cgraph2))))))
+        (is (scc= scc1 scc2))
+        (is (sorted-p cgraph1))
+        (is (sorted-p cgraph2))))))
