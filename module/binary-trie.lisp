@@ -27,6 +27,7 @@ operations (bTRIE-INSERT/DELETE)."))
 (declaim (inline btrie-insert!))
 (defun btrie-insert! (btrie x)
   "Destructively inserts an X to BTRIE. You can rely on the side effect."
+  (declare (unsigned-byte x))
   (let ((btrie btrie))
     (loop for pos from (- +btrie-max-depth+ 1) downto 0
           do (incf (btrie-count btrie))
@@ -44,6 +45,7 @@ operations (bTRIE-INSERT/DELETE)."))
 (declaim (inline btrie-insert))
 (defun btrie-insert (btrie x)
   "Is a persistent version of BTRIE-INSERT! by path-copying."
+  (declare (unsigned-byte x))
   (labels ((recur (btrie pos)
              (declare ((integer -1 (#.+btrie-max-depth+)) pos))
              (let ((btrie (if btrie
@@ -83,6 +85,7 @@ consequence is undefined when BTRIE doesn't contain X."
 (defun btrie-delete (btrie x)
   "Is a persistent version of BTRIE-DELETE! by path-copying. The consequence is
 undefined when BTRIE doesn't contain X."
+  (declare (unsigned-byte x))
   (labels ((recur (btrie pos)
              (declare ((integer -1 (#.+btrie-max-depth+)) pos))
              (when (> (btrie-count btrie) 1)
