@@ -6,7 +6,7 @@
 (declaim (inline get-binary-lca))
 (defun get-binary-lca (x y)
   "Returns the LCA of two vertices X, Y, which are 1-based binary encoding of
-binary tree."
+(infinite) perfect binary tree."
   (declare ((integer 1) x y))
   (let* ((large (max x y))
          (small (min x y))
