@@ -3,6 +3,8 @@
   (:export #:make-pfactors-table))
 (in-package :cp/pfactors-table)
 
+(declaim (ftype (function * (values (simple-array list (*)) &optional))
+                make-pfactors-table))
 (defun make-pfactors-table (sup)
   (declare (optimize (speed 3))
            ((mod #.array-total-size-limit) sup))
