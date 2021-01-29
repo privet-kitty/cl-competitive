@@ -38,28 +38,29 @@
                           (t nil))))))
 
 (test %calc-generator
-  (finishes
+  (let ((*test-dribble* nil))
     (loop for modulus from 2 to 3000
           for generator = (%calc-generator modulus)
           when (sb-int:positive-primep modulus)
-          do (assert (generator-p generator modulus))))
+          do (is (generator-p generator modulus))))
   (is (= 3 (%calc-generator 998244353))))
 
 (test ntt/random
-  (let ((state (sb-ext:seed-random-state 0)))
-    (finishes
-      (dotimes (_ 1000)
-        (let* ((len1 (random 10 state))
-               (len2 (random 10 state))
+  (let ((*test-dribble* nil)
+        (state (sb-ext:seed-random-state 0)))
+    (dolist (max-len '(10 128))
+      (dotimes (_ 500)
+        (let* ((len1 (random max-len state))
+               (len2 (random max-len state))
                (poly1 (make-random-polynomial len1 state +ntt-mod+))
                (poly2 (make-random-polynomial len2 state +ntt-mod+)))
-          (assert (equalp (poly-mult poly1 poly2 +ntt-mod+)
-                          (convolve poly1 poly2))))))
-    (finishes
-      (dotimes (_ 1000)
-        (let* ((len1 (random 10 state))
-               (len2 (random 10 state))
+          (is (equalp (poly-mult poly1 poly2 +ntt-mod+)
+                      (convolve poly1 poly2))))))
+    (dolist (max-len '(10 128))
+      (dotimes (_ 500)
+        (let* ((len1 (random max-len state))
+               (len2 (random max-len state))
                (poly1 (make-random-polynomial len1 state +ntt-mod2+))
                (poly2 (make-random-polynomial len2 state +ntt-mod2+)))
-          (assert (equalp (poly-mult poly1 poly2 +ntt-mod2+)
-                          (convolve2 poly1 poly2))))))))
+          (is (equalp (poly-mult poly1 poly2 +ntt-mod2+)
+                      (convolve2 poly1 poly2))))))))

@@ -206,16 +206,32 @@
        (defun ,convolve (vector1 vector2)
          (declare (optimize (speed 3))
                   (vector vector1 vector2))
-         (let ((len1 (length vector1))
-               (len2 (length vector2)))
+         (let* ((len1 (length vector1))
+                (len2 (length vector2))
+                (mul-len (max 0 (- (+ len1 len2) 1)))
+                (vector1 (coerce vector1 'ntt-vector))
+                (vector2 (coerce vector2 'ntt-vector)))
+           (declare (ntt-vector vector1 vector2)
+                    ((mod #.array-total-size-limit) mul-len))
            (when (or (zerop len1) (zerop len2))
              (return-from ,convolve (make-array 0 :element-type 'ntt-int)))
-           (let* ((mul-len (max 0 (- (+ len1 len2) 1)))
-                  ;; power of two ceiling
+           ;; naive convolution
+           (when (<= (min len1 len2) 64)
+             (let ((res (make-array mul-len :element-type 'ntt-int :initial-element 0)))
+               (declare (optimize (speed 3) (safety 0)))
+               (dotimes (d mul-len)
+                 ;; 0 <= i <= deg1, 0 <= j <= deg2
+                 (loop with coef of-type ntt-int = 0
+                       for i from (max 0 (- d (- len2 1))) to (min d (- len1 1))
+                       for j = (- d i)
+                       do (setq coef (mod (+ coef (* (aref vector1 i) (aref vector2 j)))
+                                          ,modulus))
+                       finally (setf (aref res d) coef)))
+               (return-from ,convolve res)))
+           (let* (;; power of two ceiling
                   (required-len (ash 1 (integer-length (max 0 (- mul-len 1)))))
                   (vector1 (,ntt (%adjust-array vector1 required-len)))
                   (vector2 (,ntt (%adjust-array vector2 required-len))))
-             (declare ((mod #.array-total-size-limit) mul-len))
              (dotimes (i required-len)
                (setf (aref vector1 i)
                      (mod (* (aref vector1 i) (aref vector2 i)) ,modulus)))
@@ -225,3 +241,4 @@
 
 #+(or)
 (define-ntt +ntt-mod+)
+
