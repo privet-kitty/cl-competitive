@@ -80,6 +80,7 @@
   (declare (notinline poly-differentiate!))
   (is (equalp #(4 10 6 4) (poly-differentiate! #(3 4 5 2 1) +mod+)))
   (is (equalp #(4 10 6 10003) (poly-differentiate! #(-3 4 5 2 -1) +mod+)))
+  (is (equalp #(4 0 0 10003) (poly-differentiate! #(-3 4 0 0 -1) +mod+)))
   (is (equalp #() (poly-differentiate! #() +mod+)))
   (is (equalp #() (poly-differentiate! #(3) +mod+))))
 
