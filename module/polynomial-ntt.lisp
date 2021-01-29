@@ -128,6 +128,7 @@
 
 (declaim (ftype (function * (values ntt-vector &optional)) multipoint-eval))
 (defun multipoint-eval (poly points)
+  "The length of POINTS must be a power of two."
   (declare (optimize (speed 3))
            (vector poly points)
            #+sbcl (sb-ext:muffle-conditions style-warning))
