@@ -116,8 +116,7 @@
           (give-up-ir1-transform)
           (let ((m (floor (ash 1 62) mod)))
             `(let* ((q (*-high62 number ,m))
-                    (x (- number (* q ,mod))))
-               (declare ((signed-byte 32) x))
+                    (x (sb-ext:truly-the (signed-byte 32) (- number (* q ,mod)))))
                (if (< x ,mod) x (- x ,mod)))))))
 
   (defun bench ()
