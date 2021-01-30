@@ -145,12 +145,12 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
                       treap))))
       (recur treap))))
 
-(defmacro treap-push (key treap order)
-  "Pushes KEY to TREAP."
+(defmacro treap-push (key treap &optional (order '#'<))
+  "Pushes a KEY to TREAP."
   `(setf ,treap (treap-insert ,key ,treap :order ,order)))
 
-(defmacro treap-pop (key treap order)
-  "Deletes KEY from TREAP."
+(defmacro treap-pop (key treap &optional (order '#'<))
+  "Deletes a KEY from TREAP."
   `(setf ,treap (treap-delete ,key ,treap :order ,order)))
 
 ;; NOTE: It takes O(nlog(n)).
