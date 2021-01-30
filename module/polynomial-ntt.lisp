@@ -1,7 +1,7 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
-           #:multipoint-eval #:poly-total-prod))
+           #:multipoint-eval #:poly-total-prod #:chirp-z))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
@@ -161,3 +161,41 @@
               (%eval (poly-mod poly (aref table (+ (* 2 pos) 1))) l mid (+ (* 2 pos) 1))
               (%eval (poly-mod poly (aref table (+ (* 2 pos) 2))) mid r (+ (* 2 pos) 2))))))
     res))
+
+;; not tested
+(declaim (ftype (function * (values ntt-vector &optional)) chirp-z))
+(defun chirp-z (poly base length)
+  "Does multipoint evaluation of POLY with powers of BASE: P(base^0), P(base^1), ...,
+P(base^(length-1)). BASE must be coprime with modulus. Time complexity is
+O((N+MOD)log(N+MOD)).
+
+Reference:
+https://codeforces.com/blog/entry/83532"
+  (declare (optimize (speed 3))
+           (vector poly)
+           (ntt-int base length))
+  (when (zerop (length poly))
+    (return-from chirp-z (make-array length :element-type 'ntt-int :initial-element 0)))
+  (let* ((poly (coerce poly 'ntt-vector))
+         (binv (%mod-inverse base))
+         (n (length poly))
+         (m (max length n))
+         (n+m (+ n m))
+         (cs (make-array n :element-type 'ntt-int :initial-element 0))
+         (ds (make-array n+m :element-type 'ntt-int :initial-element 0)))
+    (declare (ntt-int n m n+m))
+    (dotimes (i n)
+      (setf (aref cs i) (mod (* (aref poly (- n 1 i))
+                                (%mod-power binv (ash (* (- n 1 i) (- n 2 i)) -1)))
+                             +ntt-mod+)))
+    (dotimes (i n+m)
+      (setf (aref ds i) (%mod-power base (ash (* i (- i 1)) -1))))
+    (let ((result (subseq (poly-multiply cs ds)
+                          (- n 1)
+                          (+ (- n 1) length))))
+      (dotimes (i length)
+        (setf (aref result i)
+              (mod (* (aref result i)
+                      (%mod-power binv (ash (* i (- i 1)) -1)))
+                   +ntt-mod+)))
+      result)))
