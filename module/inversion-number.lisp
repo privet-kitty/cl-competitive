@@ -1,15 +1,13 @@
-;;;
-;;; Count the number of inversions in a vector by merge sort
-;;;
-
 (defpackage :cp/inversion-number
   (:use :cl)
-  (:export #:count-inversions!))
+  (:export #:count-inversions!)
+  (:documentation "Provides a counting function of inversions in a
+sequence. Time complexity is O(nlog(n))."))
 (in-package :cp/inversion-number)
 
 (declaim (inline %merge-count))
 (defun %merge-count (l mid r source-vec dest-vec predicate key)
-  (declare ((integer 0 #.array-total-size-limit) l mid r))
+  (declare ((mod #.array-total-size-limit) l mid r))
   (loop with count of-type (integer 0 #.most-positive-fixnum) = 0
         with i = l
         with j = mid
@@ -39,13 +37,13 @@
   (let ((fixnum+ '(integer 0 #.most-positive-fixnum)))
     `(the ,fixnum+
           ,(reduce (lambda (f1 f2)`(,(car form)
-                                   (the ,fixnum+ ,f1)
-                                   (the ,fixnum+ ,f2)))
-	           (cdr form)))))
+                                    (the ,fixnum+ ,f1)
+                                    (the ,fixnum+ ,f2)))
+                   (cdr form)))))
 
 (declaim (inline %calc-by-insertion-sort!))
 (defun %calc-by-insertion-sort! (vec predicate l r key)
-  (declare ((integer 0 #.array-total-size-limit) l r))
+  (declare ((mod #.array-total-size-limit) l r))
   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
         for end from (+ l 1) below r
         do (loop for i from end above l
@@ -56,32 +54,33 @@
                     (incf inv-count))
         finally (return inv-count)))
 
-;; NOTE: This function is slow on SBCL version earlier than 1.5.0 as
-;; constant-folding of ARRAY-ELEMENT-TYPE doesn't work. Use
-;; array-element-type.lisp if necessary.
 (declaim (inline count-inversions!))
 (defun count-inversions! (vector predicate &key (start 0) end (key #'identity))
-  "Calculates the number of the inversions of VECTOR w.r.t. the strict order
-PREDICATE. This function sorts VECTOR as a side effect."
+  "Computes the number of inversions of VECTOR w.r.t. PREDICATE.
+
+- PREDICATE must be a strict order.
+- This function sorts VECTOR as a side effect.
+- This function is slow on SBCL version earlier than 1.5.0 as constant-folding
+of ARRAY-ELEMENT-TYPE doesn't work. Use array-element-type.lisp if necessary."
   (declare (vector vector))
   (let ((end (or end (length vector))))
-    (declare ((integer 0 #.array-total-size-limit) start end))
+    (declare ((mod #.array-total-size-limit) start end))
     (assert (<= start end))
     (let ((buffer (make-array end :element-type (array-element-type vector))))
       (labels
           ((recur (l r merge-to-vec1-p)
-             (declare (optimize (safety 0))
-                      ((integer 0 #.array-total-size-limit) l r))
+             (declare ((mod #.array-total-size-limit) l r))
              (cond ((= l r) 0)
                    ((= (+ l 1) r)
                     (unless merge-to-vec1-p
                       (setf (aref buffer l) (aref vector l)))
                     0)
-                   ;; It is faster to use insertion sort. I don't adopt it
-                   ;; by default, however, because that makes it hard to
+                   ;; It tends to be faster to combinedly use insertion sort
+                   ;; especially when comparison function is fast. I don't adopt
+                   ;; it by default, however, because that makes it hard to
                    ;; change the code to fit some special settings.
                    ;; ((and (<= (- r l) 24) merge-to-vec1-p)
-                   ;;  (%calc-by-insertion-sort! vector predicate l r))
+                   ;;  (%calc-by-insertion-sort! vector predicate l r key))
                    (t
                     (let ((mid (floor (+ l r) 2)))
                       (with-fixnum+
