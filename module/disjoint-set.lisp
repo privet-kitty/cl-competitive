@@ -5,7 +5,7 @@
 (defpackage :cp/disjoint-set
   (:use :cl)
   (:export #:disjoint-set #:make-disjoint-set #:ds-data
-           #:ds-root #:ds-unite! #:ds-connected-p #:ds-size))
+           #:ds-root #:ds-unite! #:ds-connected-p #:ds-size #:ds-clear))
 (in-package :cp/disjoint-set)
 
 (defstruct (disjoint-set
@@ -53,3 +53,9 @@ connected for the first time."
   "Returns the size of the connected component to which X belongs."
   (- (aref (ds-data disjoint-set)
            (ds-root disjoint-set x))))
+
+(declaim (inline ds-clear))
+(defun ds-clear (disjoint-set)
+  "Deletes all connections."
+  (fill (ds-data disjoint-set) -1)
+  disjoint-set)
