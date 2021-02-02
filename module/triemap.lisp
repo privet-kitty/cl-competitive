@@ -1,11 +1,9 @@
-;;;
-;;; TrieMap (map structure by Trie)
-;;;
-
 (defpackage :cp/triemap
   (:use :cl)
-  (:export #:triemap-char-encode #:+triemap-alphabet-size+ #:make-triemap #:%make-triemap-node
-           #:triemap-add! #:triemap-query #:triemap-get #:triemap-query-longest))
+  (:export #:triemap-char-encode #:+triemap-alphabet-size+ #:+null-triemap+
+           #:make-triemap #:%make-triemap
+           #:triemap-insert! #:triemap-query #:triemap-get #:triemap-query-longest)
+  (:documentation "Provides map structure by trie."))
 (in-package :cp/triemap)
 
 ;; ASCII code:
@@ -17,95 +15,96 @@
   (- (char-code x) #.(char-code #\a)))
 
 (defconstant +triemap-alphabet-size+ 26)
+(defconstant +null-triemap+ 0)
 
 ;; TODO: enable it to set VALUE to NIL by distinguishing null and unbound.
-(declaim (inline %make-triemap-node))
-(defstruct (triemap-node (:constructor %make-triemap-node
-                          (&optional value
-                           &aux (children (make-array #.+triemap-alphabet-size+
-                                                      :element-type t
-                                                      :initial-element 0))))
-                         (:copier nil)
-                         (:predicate nil))
+(declaim (inline %make-triemap))
+(defstruct (triemap (:constructor %make-triemap
+                        (&optional value
+                         &aux (children (make-array +triemap-alphabet-size+
+                                                    :element-type t
+                                                    :initial-element +null-triemap+))))
+                    (:copier nil)
+                    (:predicate nil))
   (value nil)
   (children nil :type (simple-array t (#.+triemap-alphabet-size+))))
 
 (declaim (inline make-triemap))
-(defun make-triemap () (%make-triemap-node))
+(defun make-triemap () (%make-triemap))
 
-(declaim (inline triemap-add!))
-(defun triemap-add! (triemap-node string &optional (value t))
-  "Adds STRING to the TRIEMAP-NODE and assigns VALUE to it. Note that null value
-means the string doesn't exist in the triemap: that is, (triemap-add!
-<triemap-node> <string> nil) virtually works as a deletion of <string>."
+(declaim (inline triemap-insert!))
+(defun triemap-insert! (triemap string &optional (value t))
+  "Inserts STRING to the TRIEMAP and assigns VALUE to it. Note that null value
+means the string doesn't exist in the triemap: that is, (triemap-insert!
+<triemap> <string> nil) virtually works as a deletion of <string>."
   (declare (vector string))
   (let ((end (length string)))
     (labels ((recur (node position)
                (if (= position end)
-                   (unless (triemap-node-value node)
-                     (setf (triemap-node-value node) value))
-                   (let ((children (triemap-node-children node))
+                   (unless (triemap-value node)
+                     (setf (triemap-value node) value))
+                   (let ((children (triemap-children node))
                          (char (triemap-char-encode (aref string position))))
-                     (when (eql 0 (aref children char))
-                       (setf (aref children char) (%make-triemap-node)))
+                     (when (eql +null-triemap+ (aref children char))
+                       (setf (aref children char) (%make-triemap)))
                      (recur (aref children char) (+ 1 position))))))
-      (recur triemap-node 0)
-      triemap-node)))
+      (recur triemap 0)
+      triemap)))
 
 (declaim (inline triemap-query))
-(defun triemap-query (triemap-node string function &key (start 0) end)
-  "Calls FUNCTION for each prefix of STRING existing in TRIEMAP-NODE. FUNCTION
+(defun triemap-query (triemap string function &key (start 0) end)
+  "Calls FUNCTION for each prefix of STRING existing in TRIEMAP. FUNCTION
 takes two arguments: the end position and the assigned value."
   (declare (vector string)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end)
+           ((mod #.most-positive-fixnum) start)
+           ((or null (mod #.most-positive-fixnum)) end)
            (function function))
   (let ((end (or end (length string))))
     (labels ((recur (node position)
-               (when (triemap-node-value node)
-                 (funcall function position (triemap-node-value node)))
+               (when (triemap-value node)
+                 (funcall function position (triemap-value node)))
                (unless (= position end)
-                 (let ((children (triemap-node-children node))
+                 (let ((children (triemap-children node))
                        (char (triemap-char-encode (aref string position))))
-                   (unless (eql 0 (aref children char))
+                   (unless (eql +null-triemap+ (aref children char))
                      (recur (aref children char) (+ 1 position)))))))
-      (recur triemap-node start))))
+      (recur triemap start))))
 
-(defun triemap-get (triemap-node string &key (start 0) end)
-  "Finds STRING in TRIEMAP-NODE and returns the assigned value if it exists,
+(defun triemap-get (triemap string &key (start 0) end)
+  "Finds STRING in TRIEMAP and returns the assigned value if it exists,
 otherwise NIL."
   (declare (vector string)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.most-positive-fixnum) start)
+           ((or null (mod #.most-positive-fixnum)) end))
   (let ((end (or end (length string))))
     (labels ((recur (node position)
                (if (= position end)
-                   (triemap-node-value node)
-                   (let ((children (triemap-node-children node))
+                   (triemap-value node)
+                   (let ((children (triemap-children node))
                          (char (triemap-char-encode (aref string position))))
-                     (unless (eql 0 (aref children char))
+                     (unless (eql +null-triemap+ (aref children char))
                        (recur (aref children char) (+ 1 position)))))))
-      (recur triemap-node start))))
+      (recur triemap start))))
 
-(defun triemap-query-longest (triemap-node string &key (start 0) end)
-  "Returns the end position and the value of the longest word in TRIEMAP-NODE which
+(defun triemap-query-longest (triemap string &key (start 0) end)
+  "Returns the end position and the value of the longest word in TRIEMAP which
 coincides with a prefix of STRING. Returns NIL when no such words exist."
   (declare (vector string)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.most-positive-fixnum) start)
+           ((or null (mod #.most-positive-fixnum)) end))
   (let ((end (or end (length string)))
         result-position
         result-value)
-    (declare ((or null (integer 0 #.most-positive-fixnum)) result-position))
+    (declare ((or null (mod #.most-positive-fixnum)) result-position))
     (labels ((recur (node position)
-               (when (triemap-node-value node)
+               (when (triemap-value node)
                  (setq result-position position
-                       result-value (triemap-node-value node)))
+                       result-value (triemap-value node)))
                (unless (= position end)
-                 (let ((children (triemap-node-children node))
+                 (let ((children (triemap-children node))
                        (char (triemap-char-encode (aref string position))))
-                   (unless (eql 0 (aref children char))
+                   (unless (eql +null-triemap+ (aref children char))
                      (recur (aref children char) (+ 1 position)))))))
-      (recur triemap-node start)
+      (recur triemap start)
       (values result-position result-value))))
 
