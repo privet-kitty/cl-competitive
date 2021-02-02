@@ -8,7 +8,8 @@
 
 (define-ntt +ntt-mod+
   :convolve poly-multiply
-  :mod-inverse %mod-inverse)
+  :mod-inverse %mod-inverse
+  :mod-power %mod-power)
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 (defun poly-inverse (poly &optional result-length)
