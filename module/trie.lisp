@@ -1,11 +1,8 @@
-;;;
-;;; Multiset structure by Trie
-;;;
-
 (defpackage :cp/trie
   (:use :cl)
-  (:export #:trie-char-encode #:trie-node #:make-trie #:%make-trie-node
-           #:+trie-alphabet-size+ #:trie-size #:trie-children #:trie-add! #:trie-get))
+  (:export #:trie-char-encode #:trie-node #:make-trie #:+null-trie+ #:+trie-alphabet-size+
+           #:trie-size #:trie-children #:trie-insert! #:trie-get)
+  (:documentation "Provides multiset structure with trie."))
 (in-package :cp/trie)
 
 ;; ASCII code:
@@ -14,61 +11,62 @@
 ;; #\0: 48
 (declaim (inline trie-char-encode))
 (defun trie-char-encode (x)
-  (- (char-code x) #.(char-code #\a)))
+  (- (char-code x) #.(char-code #\`)))
 
-(defconstant +trie-alphabet-size+ 26)
+(defconstant +trie-alphabet-size+ 27)
+(defconstant +null-trie+ 0)
 
-(declaim (inline %make-trie-node))
-(defstruct (trie-node (:constructor %make-trie-node
-                          (&aux (children (make-array #.+trie-alphabet-size+
-                                                      :element-type t
-                                                      :initial-element 0))))
-                      (:copier nil)
-                      (:predicate nil))
-  (size 0 :type (integer 0 #.most-positive-fixnum))
+(declaim (inline %make-trie))
+(defstruct (trie (:constructor %make-trie
+                     (&aux (children (make-array +trie-alphabet-size+
+                                                 :element-type t
+                                                 :initial-element +null-trie+))))
+                 (:copier nil)
+                 (:predicate nil))
+  (size 0 :type (mod #.most-positive-fixnum))
   (children nil :type (simple-array t (#.+trie-alphabet-size+))))
 
 (declaim (inline make-trie))
-(defun make-trie () (%make-trie-node))
+(defun make-trie () (%make-trie))
 
-(declaim (inline trie-add!))
-(defun trie-add! (trie-node string)
-  "Adds STRING to the trie."
+(declaim (inline trie-insert!))
+(defun trie-insert! (trie string)
+  "Inserts STRING to TRIE."
   (declare (vector string))
   (let ((end (length string)))
     (labels ((recur (node position)
-               (incf (trie-node-size node))
+               (incf (trie-size node))
                (unless (= position end)
-                 (let ((children (trie-node-children node))
+                 (let ((children (trie-children node))
                        (char (trie-char-encode (aref string position))))
-                   (when (eql 0 (aref children char))
-                     (setf (aref children char) (%make-trie-node)))
+                   (when (eql +null-trie+ (aref children char))
+                     (setf (aref children char) (%make-trie)))
                    (recur (aref children char) (+ 1 position))))))
-      (recur trie-node 0)
-      trie-node)))
+      (recur trie 0)
+      trie)))
 
 (declaim (inline trie-get))
-(defun trie-get (trie-node string &key (start 0) end (target :whole))
-  "Returns the number of strings which are registered in TRIE-NODE and
+(defun trie-get (trie string &key (start 0) end (target :whole))
+  "Returns the number of STRINGs which are registered in TRIE and
 
 1. whose prefix coincide with STRING, if TARGET is :PREFIX;
 2. which coincide with STRING, if TARGET is :WHOLE."
   (declare (vector string)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end)
+           ((mod #.most-positive-fixnum) start)
+           ((or null (mod #.most-positive-fixnum)) end)
            ((member :prefix :whole) target))
   (let ((end (or end (length string))))
     (labels ((recur (node position)
                (if (= position end)
-                   (let ((size (trie-node-size node)))
+                   (let ((size (trie-size node)))
                      (when (eq target :whole)
-                       (loop for child across (trie-node-children node)
-                             unless (eql 0 child)
-                             do (decf size (trie-node-size child))))
+                       (loop for child across (trie-children node)
+                             unless (eql +null-trie+ child)
+                             do (decf size (trie-size child))))
                      size)
-                   (let ((children (trie-node-children node))
+                   (let ((children (trie-children node))
                          (char (trie-char-encode (aref string position))))
-                     (if (eql 0 (aref children char))
+                     (if (eql +null-trie+ (aref children char))
                          0
                          (recur (aref children char) (+ 1 position)))))))
-      (recur trie-node start))))
+      (recur trie start))))
