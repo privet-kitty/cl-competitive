@@ -5,11 +5,15 @@
 (in-suite base-suite)
 
 (test floor-sum
-  (finishes
-    (dotimes (n 20)
-      (dotimes (slope 20)
-        (dotimes (intercept 20)
-          (loop for denom from 1 below 20
-                do (assert (= (floor-sum n slope intercept denom)
-                              (loop for x from 0 below n
-                                    sum (floor (+ (* slope x) intercept) denom))))))))))
+  (let ((*test-dribble* nil)
+        (cum (make-array 20 :element-type '(unsigned-byte 31) :initial-element 0)))
+    (dotimes (slope 20)
+      (dotimes (intercept 20)
+        (loop for denom from 1 below 20
+              do (dotimes (i (- (length cum) 1))
+                   (setf (aref cum (+ i 1))
+                         (+ (floor (+ (* slope i) intercept) denom)
+                            (aref cum i))))
+                 (dotimes (i (length cum))
+                   (is (= (floor-sum i slope intercept denom)
+                          (aref cum i)))))))))

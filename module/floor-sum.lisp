@@ -1,9 +1,14 @@
 (defpackage :cp/floor-sum
   (:use :cl)
-  (:export #:floor-sum))
+  (:export #:floor-sum)
+  (:documentation
+   "Reference:
+https://github.com/atcoder/ac-library/blob/master/atcoder/math.hpp"))
 (in-package :cp/floor-sum)
 
 (defun floor-sum (n slope intercept denom)
+  "Returns the sum of floor((slope * i + intercept)/denom) for i = 0, 1, ...,
+N-1."
   (declare ((integer 0) slope intercept n)
            ((integer 1) denom))
   (let ((res 0))
