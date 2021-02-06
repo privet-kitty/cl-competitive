@@ -11,15 +11,21 @@
   (is (equalp (make-divisors-table 0) #())))
 
 (test enum-ascending-divisors
-  (finishes
+  (let ((*test-dribble* nil))
     (loop for x from 1 to 1000
-          do (assert (equalp (loop for y from 1 to x
-                                   when (zerop (mod x y))
-                                   collect y)
-                             (enum-ascending-divisors x))))))
+          do (is (equalp (loop for y from 1 to x
+                               when (zerop (mod x y))
+                               collect y)
+                         (enum-ascending-divisors x))))))
 
-(test enum-divisors
-  (finishes
+(test divisor
+  (let ((*test-dribble* nil))
     (loop for x from 1 to 1000
-          do (assert (set-equal (enum-ascending-divisors x)
-                                (enum-divisors x))))))
+          for set1 = (enum-ascending-divisors x)
+          for set2 = (enum-divisors x)
+          for set3 = nil
+          do (map-divisors x
+                           (lambda (d) (push d set3)))
+          do (is (set-equal set1 set2))
+             (is (set-equal set2 set3))
+             (is (= (length set1) (length set2) (length set3))))))
