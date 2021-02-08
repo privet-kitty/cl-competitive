@@ -137,6 +137,7 @@
   (:import-from :cp/test/swag)
   (:import-from :cp/test/symmetric-group)
   (:import-from :cp/test/tree-binary-lifting-edge)
+  (:import-from :cp/test/tree-binary-lifting-vertex)
   (:import-from :cp/test/tree-centroid)
   (:import-from :cp/test/tree-hash)
   (:import-from :cp/test/tree-path)
