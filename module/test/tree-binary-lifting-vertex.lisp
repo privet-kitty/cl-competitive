@@ -1,10 +1,10 @@
 (defpackage :cp/test/tree-binary-lifting-vertex
-  (:use :cl :fiveam :cp/tree-binary-lifting-vertex :cp/random-tree)
+  (:use :cl :fiveam :cp/tree-binary-lifting :cp/random-tree)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/tree-binary-lifting-vertex)
 (in-suite base-suite)
 
-(define-tree-binary-lifting-vertex tbl
+(define-tree-binary-lifting tbl :vertex
   :op (lambda (s1 s2) (concatenate 'simple-base-string s1 s2))
   :identity #.(coerce "" 'simple-base-string)
   :element-type string)
