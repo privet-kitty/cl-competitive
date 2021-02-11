@@ -11,6 +11,7 @@
   (:import-from :cp/test/binary-heap)
   (:import-from :cp/test/binary-indexed-tree)
   (:import-from :cp/test/binomial-coefficient-mod)
+  (:import-from :cp/test/binomial-coefficient-quadratic)
   (:import-from :cp/test/bipartite-matching)
   (:import-from :cp/test/bisect)
   (:import-from :cp/test/bit-basher)
