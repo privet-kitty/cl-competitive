@@ -19,6 +19,13 @@
   (is (= (mod 6564120420 +binom-mod+)
          (catalan 20))))
 
+(test multichoose
+  (is (= 6 (multichoose 3 2)))
+  (is (= 1 (multichoose 1 1)))
+  (is (= 1 (multichoose 1 0)))
+  (is (= 0 (multichoose 0 1)))
+  (is (= 0 (multichoose 0 0))))
+
 (test multinomial
   (is (= 1 (multinomial)))
   (is (= 1 (multinomial 0)))
@@ -35,8 +42,8 @@
                  (0 1 7 6 1 0 0 0)
                  (0 1 15 25 10 1 0 0)
                  (0 1 31 90 65 15 1 0))))
-    (finishes (dotimes (n 7)
-                (dotimes (k 8)
-                  (assert (= (aref mat n k) (stirling2 n k))))))
+    (dotimes (n 7)
+      (dotimes (k 8)
+        (is (= (aref mat n k) (stirling2 n k)))))
     (is (= (stirling2 15 6)
            (mod 420693273 +binom-mod+)))))

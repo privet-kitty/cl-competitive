@@ -1,13 +1,14 @@
-;;;
-;;; Binomial coefficient with mod
-;;; build: O(n)
-;;; query: O(1)
-;;;
-
 (defpackage :cp/binomial-coefficient-mod
   (:use :cl)
   (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:multichoose
-           #:+binom-mod+ #:*fact* #:*fact-inv* #:*inv*))
+           #:+binom-mod+ #:*fact* #:*fact-inv* #:*inv*)
+  (:documentation
+   "Provides tables of factorials, inverses, inverses ot factorials etc.
+modulo prime.
+
+build: O(n)
+query: O(1)
+"))
 (in-package :cp/binomial-coefficient-mod)
 
 ;; TODO: non-global handling
@@ -17,6 +18,7 @@
                              (symbol-value 'cl-user::+mod+)
                              #.(+ (expt 10 9) 7)))
 
+(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 (sb-ext:define-load-time-global *fact*
   (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of factorials")
@@ -26,7 +28,6 @@
 (sb-ext:define-load-time-global *inv*
   (make-array +binom-size+ :element-type '(unsigned-byte 31))
   "table of inverses of non-negative integers")
-(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 
 (defun initialize-binom ()
   (declare (optimize (speed 3) (safety 0)))
@@ -49,7 +50,7 @@
 
 (declaim (inline binom))
 (defun binom (n k)
-  "Returns nCk."
+  "Returns nCk, the number of k-combinations of n things without repetition."
   (if (or (< n k) (< n 0) (< k 0))
       0
       (mod (* (aref *fact* n)
@@ -58,14 +59,15 @@
 
 (declaim (inline perm))
 (defun perm (n k)
-  "Returns nPk."
+  "Returns nPk, the number of k-permutations of n things without repetition."
   (if (or (< n k) (< n 0) (< k 0))
       0
       (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +binom-mod+)))
 
 (declaim (inline multichoose))
 (defun multichoose (n k)
-  (binom (+ n k -1) (+ k -1)))
+  "Returns the number of k-combinations of n things with repetition."
+  (binom (+ n k -1) k))
 
 (declaim (inline multinomial))
 (defun multinomial (&rest ks)
