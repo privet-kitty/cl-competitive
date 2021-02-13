@@ -1,13 +1,13 @@
-(defpackage :cp/tree-binary-lifting
+(defpackage :cp/binary-lifting
   (:use :cl)
-  (:export #:two-vertices-disconnected-error #:define-tree-binary-lifting)
+  (:export #:two-vertices-disconnected-error #:define-binary-lifting)
   (:documentation
    "Provides LCA and path queries on a static tree or forest with
 weighted edge or vertex.
 
 build: O(nlog(n))
 query: O(log(n))"))
-(in-package :cp/tree-binary-lifting)
+(in-package :cp/binary-lifting)
 
 ;; PAY ATTENTION TO THE STACK SIZE! THE CONSTRUCTOR DOES DFS.
 
@@ -25,7 +25,7 @@ query: O(log(n))"))
              (two-vertices-disconnected-error-struct c)))))
 
 ;; TODO: binary search (four kinds?)
-(defmacro define-tree-binary-lifting
+(defmacro define-binary-lifting
     (name type &key op identity element-type)
   "Defines a structure to deal with LCA and path query on a tree or forest with
 weighted edge or vertex.
@@ -215,7 +215,7 @@ ROOT; GRAPH must be tree in the latter case."
                    (- (aref depths vertex2) (aref depths lca)))))))))
 
 #+(or)
-(define-tree-binary-lifting lca :edge
+(define-binary-lifting lca :edge
   :op #'max
   :identity most-negative-fixnum
   :element-type fixnum)

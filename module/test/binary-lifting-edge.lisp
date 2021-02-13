@@ -1,10 +1,10 @@
-(defpackage :cp/test/tree-binary-lifting-edge
-  (:use :cl :fiveam :cp/tree-binary-lifting :cp/random-tree)
+(defpackage :cp/test/binary-lifting-edge
+  (:use :cl :fiveam :cp/binary-lifting :cp/random-tree)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/tree-binary-lifting-edge)
+(in-package :cp/test/binary-lifting-edge)
 (in-suite base-suite)
 
-(define-tree-binary-lifting tbl :edge
+(define-binary-lifting tbl :edge
   :op (lambda (s1 s2) (concatenate 'simple-base-string s1 s2))
   :identity #.(coerce "" 'simple-base-string)
   :element-type string)
@@ -26,7 +26,7 @@
                        do (dfs next v (cons s path))))))
     (dfs start -1 nil)))
 
-(test tree-binary-lifting-edge/hand
+(test binary-lifting-edge/hand
   (let* ((graph (make-array 8 :element-type 'list :initial-contents '((1 2) (0 3 4) (0 5) (1) (1 6 7) (2) (4) (4))))
          (chars (make-array 8 :element-type 'string :initial-element ""))
          (graph2 (make-array 9 :element-type 'list :initial-contents '((1) (0 2) (1 3) (2 4) (3 5) (4 6) (5 7) (6 8) (7))))
@@ -52,7 +52,7 @@
     (signals two-vertices-disconnected-error (tbl-get-lca table 0 1))
     (signals two-vertices-disconnected-error (tbl-distance table 1 2))))
 
-(test tree-binary-lifting-edge/random
+(test binary-lifting-edge/random
   (let ((state (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dotimes (_ 100)
