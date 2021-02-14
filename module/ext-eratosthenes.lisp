@@ -35,7 +35,8 @@ prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.)"
                    do (setf (aref table composite) p)))
     table))
 
-(declaim (inline factorize))
+(declaim (inline factorize)
+         (ftype (function * (values list &optional)) factorize))
 (defun factorize (x minfactor-table)
   "Returns the associative list of prime factors of X, which is composed
 of (<prime> . <exponent>). E.g. (factorize 100 <minfactor-table>) => '((2
