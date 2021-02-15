@@ -1,14 +1,10 @@
-;;;
-;;; Select i-th order statistic in expected linear time
-;;;
-
-(defpackage :cp/order-statistic
+(defpackage :cp/quickselect
   (:use :cl)
-  (:export #:select-ith!))
-(in-package :cp/order-statistic)
-
-;; REVIEW: Is the expected time complexity of SELECT-ITH! with (randomized)
-;; Hoare partition really O(n)?
+  (:export #:quickselect!)
+  (:documentation
+   "Provides selection algorithm, an algorithm for finding k-th smallest (or
+largest) number in a vector. Time complexity is expected O(Nlog(N))."))
+(in-package :cp/quickselect)
 
 (declaim (inline %hoare-partition!))
 (defun %hoare-partition! (vector l r pivot-idx order)
@@ -35,8 +31,8 @@ R]."
         (return j))
       (rotatef (aref vector i) (aref vector j)))))
 
-;; FIXME: When we use Lomuto partition scheme for SELECT-ITH!, it takes O(n^2)
-;; time for a vector containing only the same elements like #(1 1 1 1 1).
+;; FIXME: When we use Lomuto partition scheme for QUICKSELECT!, it takes O(n^2)
+;; time for a vector consisting of a single value like #(1 1 1 1 1).
 (defun %lomuto-partition! (vector l r pivot-idx order)
   (rotatef (aref vector r) (aref vector pivot-idx))
   (let ((pivot (aref vector r))
@@ -48,8 +44,8 @@ R]."
     (rotatef (aref vector base) (aref vector r))
     base))
 
-(declaim (inline select-ith!))
-(defun select-ith! (vector order i &optional (start 0) end)
+(declaim (inline quickselect!))
+(defun quickselect! (vector order i &optional (start 0) end)
   "Returns the (0-based) i-th smallest element of VECTOR (if order is #'<, for
 example). Destructively modifies VECTOR.
 

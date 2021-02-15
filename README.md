@@ -78,7 +78,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mex.lisp) minimum excludant on non-negative integers
 - [swag.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/swag.lisp) sliding window aggregation
 - [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sliding-window.lisp) sliding window minimum (or maximum)
-- [order-statistic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/order-statistic.lisp) expected O(n) algorithm for k-th order statistic of sequence
+- [quickselect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quickselect.lisp) expected O(n) algorithm for k-th order statistic of sequence
 - [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
 - [manhattan-fnn.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/manhattan-fnn.lisp) farthest neighbor points in d-dimensional L1 space
