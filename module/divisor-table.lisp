@@ -9,7 +9,8 @@
                 %make-divisors-table))
 (defun %make-divisors-list-table (max)
   "Returns a vector of length MAX+1 whose each cell, vector[X], is a list
-containing all the divisors of X in ascending order. Note that vector[0] = NIL."
+containing all the divisors of X in ascending order. Time and space complexity
+is O(Nlog(N)). Note that vector[0] = NIL."
   (declare (optimize (speed 3))
            (uint max)
            #+sbcl (sb-ext:muffle-conditions style-warning))
@@ -31,7 +32,8 @@ containing all the divisors of X in ascending order. Note that vector[0] = NIL."
                 %make-divisors-vector-table))
 (defun %make-divisors-vector-table (max)
   "Returns a vector of length MAX+1 whose each cell, vector[X], is a vector
-containing all the divisors of X in ascending order. Note that vector[0] = #()."
+containing all the divisors of X in ascending order. Time and space complexity
+is O(Nlog(N)). Note that vector[0] = #()."
   (declare (optimize (speed 3))
            (uint max))
   (let ((counter (make-array (+ max 1) :element-type 'uint :initial-element 1))
@@ -57,8 +59,8 @@ containing all the divisors of X in ascending order. Note that vector[0] = #()."
                 make-divisors-table))
 (defun make-divisors-table (max sequence-type)
   "Returns a vector of length MAX+1 whose each cell, vector[X], is a vector or
-list containing all the divisors of X in ascending order. Note that vector[0] is
-an empty sequence."
+list containing all the divisors of X in ascending order. Time complexity is
+O(Nlog(N)). Note that vector[0] is an empty sequence."
   (declare ((member list vector) sequence-type))
   (ecase sequence-type
     (list (%make-divisors-list-table max))
