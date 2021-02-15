@@ -37,6 +37,7 @@
   (:import-from :cp/test/disjoint-set)
   (:import-from :cp/test/disjoint-sparse-table)
   (:import-from :cp/test/divisor)
+  (:import-from :cp/test/divisor-table)
   (:import-from :cp/test/dotimes-unroll)
   (:import-from :cp/test/double-stack-deque)
   (:import-from :cp/test/dynamic-mod-operations)

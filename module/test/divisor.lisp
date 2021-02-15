@@ -4,12 +4,6 @@
 (in-package :cp/test/divisor)
 (in-suite base-suite)
 
-(test make-divisors-table
-  (is (equalp (make-divisors-table 13)
-              #(() (1) (1 2) (1 3) (1 2 4) (1 5) (1 2 3 6) (1 7) (1 2 4 8) (1 3 9)
-                (1 2 5 10) (1 11) (1 2 3 4 6 12))))
-  (is (equalp (make-divisors-table 0) #())))
-
 (test enum-ascending-divisors
   (let ((*test-dribble* nil))
     (loop for x from 1 to 1000

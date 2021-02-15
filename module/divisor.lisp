@@ -1,6 +1,6 @@
 (defpackage :cp/divisor
   (:use :cl)
-  (:export #:enum-divisors #:enum-ascending-divisors #:make-divisors-table #:map-divisors))
+  (:export #:enum-divisors #:enum-ascending-divisors #:map-divisors))
 (in-package :cp/divisor)
 
 (declaim (ftype (function * (values (vector (integer 0 #.most-positive-fixnum)) &optional))
@@ -63,25 +63,3 @@ are not necessarily ascending."
           (%enum 2 result (list n))
           result))))
 
-(declaim (ftype (function * (values (simple-array list (*)) &optional))
-                make-divisors-table))
-(defun make-divisors-table (sup)
-  "Returns a vector of length SUP whose each cell, vector[X], is the ascending
-list of every divisor of X. Note that vector[0] = NIL."
-  (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) sup)
-           #+sbcl (sb-ext:muffle-conditions style-warning))
-  (let ((result (make-array sup :element-type 'list))
-        (tails (make-array sup :element-type 'list))) ; stores the last cons cell
-    (declare (optimize (speed 3) (safety 0)))
-    (loop for i from 1 below sup
-          for cell = (list 1)
-          do (setf (aref result i) cell
-                   (aref tails i) cell))
-    (when (>= sup 1)
-      (setf (aref result 0) nil))
-    (loop for divisor from 2 below sup
-          do (loop for number from divisor below sup by divisor
-                   do (setf (cdr (aref tails number)) (list divisor)
-                            (aref tails number) (cdr (aref tails number)))))
-    result))
