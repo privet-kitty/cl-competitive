@@ -82,6 +82,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
 - [manhattan-fnn.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/manhattan-fnn.lisp) farthest neighbor points in d-dimensional L1 space
+- [round-robin.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/round-robin.lisp) scheduling algorithm for a round robin tournament (circle method)
 - [date.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/date.lisp) some utilities about date
 
 
@@ -101,7 +102,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [lagrange-interpolation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lagrange-interpolation.lisp) Lagrange interpolation
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eratosthenes.lisp) enumeration of primes; prime factorization
 - [ext-eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ext-eratosthenes.lisp) faster prime factorization than naive trial division
-- [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors
+- [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors of a given number
+- [divisor-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor-table.lisp) enumeration of divisors of first n natural numbers
 - [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/primality.lisp) primality test (Miller-Rabin)
 - [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/enum-quotients.lisp) enumeration of truncated quotients
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/gemm.lisp) matrix multiplication over semiring

@@ -140,6 +140,7 @@
   (:import-from :cp/test/symmetric-group)
   (:import-from :cp/test/binary-lifting-edge)
   (:import-from :cp/test/binary-lifting-vertex)
+  (:import-from :cp/test/round-robin)
   (:import-from :cp/test/tree-centroid)
   (:import-from :cp/test/tree-hash)
   (:import-from :cp/test/tree-path)
