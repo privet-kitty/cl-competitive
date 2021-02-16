@@ -26,7 +26,7 @@
   )
 
 (defun make-array-on-vector (vector dimensions)
-  "Returns a multi-dimensional array that uses VECTOR as its storage. The
+  "Returns a multi-dimensional array that uses VECTOR as its storage. The total
 product of DIMENSIONS must be equal to the length of VECTOR."
   (declare (optimize (speed 3))
            ((simple-array * (*)) vector)
