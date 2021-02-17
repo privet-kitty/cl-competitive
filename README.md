@@ -101,7 +101,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-operations.lisp) addition/multiplication with static modulus
 - [lagrange-interpolation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lagrange-interpolation.lisp) Lagrange interpolation
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eratosthenes.lisp) enumeration of primes; prime factorization
-- [ext-eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ext-eratosthenes.lisp) faster prime factorization than naive trial division
+- [linear-sieve.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/linear-sieve.lisp) linear sieve; fast prime factorization
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors of a given number
 - [divisor-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor-table.lisp) enumeration of divisors of first n natural numbers
 - [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/primality.lisp) primality test (Miller-Rabin)

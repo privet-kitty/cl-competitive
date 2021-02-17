@@ -44,7 +44,7 @@
   (:import-from :cp/test/eratosthenes)
   (:import-from :cp/test/euler-tour)
   (:import-from :cp/test/explicit-treap)
-  (:import-from :cp/test/ext-eratosthenes)
+  (:import-from :cp/test/linear-sieve)
   (:import-from :cp/test/ext-gcd)
   (:import-from :cp/test/f2)
   (:import-from :cp/test/farey)
