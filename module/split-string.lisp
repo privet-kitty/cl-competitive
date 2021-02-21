@@ -44,4 +44,3 @@
               (push (subseq string (1+ start) end) list)
               (incf words)
               (setf end start))))))
-

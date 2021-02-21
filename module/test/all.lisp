@@ -17,7 +17,7 @@
   (:import-from :cp/test/bit-basher)
   (:import-from :cp/test/bounded-partition-number)
   (:import-from :cp/test/buffered-read-line)
-  (:import-from :cp/test/chinese-remainder)
+  (:import-from :cp/test/crt)
   (:import-from :cp/test/chordal-graph)
   (:import-from :cp/test/circumcenter)
   (:import-from :cp/test/compact-bit-vector)
