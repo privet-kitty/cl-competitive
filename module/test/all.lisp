@@ -76,6 +76,7 @@
   (:import-from :cp/test/lca)
   (:import-from :cp/test/lis)
   (:import-from :cp/test/log-ceil)
+  (:import-from :cp/test/log-prefix-p)
   (:import-from :cp/test/logreverse)
   (:import-from :cp/test/make-array-on-vector)
   (:import-from :cp/test/manhattan-fnn)
