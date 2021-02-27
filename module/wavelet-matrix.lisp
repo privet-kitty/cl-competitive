@@ -8,27 +8,28 @@
 (in-package :cp/wavelet-matrix)
 
 (deftype wavelet-integer () '(integer 0 #.most-positive-fixnum))
+(defconstant +max-depth+ (integer-length most-positive-fixnum))
 
 (defstruct (wavelet-matrix (:constructor %make-wavelet-matrix
                                (length data zeros
-                                &aux (depth (array-dimension data 0))))
+                                &aux (depth (length data))))
                            (:copier nil)
                            (:conc-name wavelet-))
-  (depth 0 :type (integer 1 #.most-positive-fixnum))
-  (length 0 :type (integer 0 #.most-positive-fixnum))
+  (depth 0 :type (integer 1 #.+max-depth+))
+  (length 0 :type (mod #.array-total-size-limit))
   (data nil :type (simple-array compact-bit-vector (*)))
   (zeros nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
 
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-c:defknown make-wavelet-matrix ((integer 1 #.most-positive-fixnum) vector)
+  (sb-c:defknown make-wavelet-matrix ((integer 1 #.+max-depth+) vector)
       wavelet-matrix (sb-c:flushable)
     :overwrite-fndb-silently t))
 
 ;; TODO: add deftransform for better type derivation
 (declaim (inline make-wavelet-matrix))
 (defun make-wavelet-matrix (bit-depth vector)
-  (declare ((integer 1 #.most-positive-fixnum) bit-depth))
+  (declare ((integer 1 #.+max-depth+) bit-depth))
   (let* ((len (length vector))
          (fitted-len (* sb-vm:n-word-bits (ceiling len sb-vm:n-word-bits)))
          (data (locally (declare #+sbcl (sb-ext:muffle-conditions style-warning))
@@ -38,12 +39,12 @@
          (lefts (make-array len :element-type (array-element-type vector)))
          (rights (make-array len :element-type (array-element-type vector)))
          (bits (make-array fitted-len :element-type 'bit)))
-    (declare ((integer 0 #.most-positive-fixnum) len fitted-len)
+    (declare ((mod #.array-total-size-limit) len fitted-len)
              (vector tmp))
     (loop for d from (- bit-depth 1) downto 0
           do (let ((lpos 0)
                    (rpos 0))
-               (declare ((integer 0 #.most-positive-fixnum) lpos rpos))
+               (declare ((mod #.array-total-size-limit) lpos rpos))
                (dotimes (i len)
                  (let ((bit (logand 1 (ash (aref tmp i) (- d)))))
                    (if (zerop bit)
@@ -92,27 +93,27 @@
                             (* bit (aref zeros d)))))
     res))
 
-(defun wavelet-count (wmatrix value l r)
-  "Returns the number of VALUE in [L, R)"
+(defun wavelet-count (wmatrix value start end)
+  "Returns the number of VALUE in a subarray bounded by [START, END)."
   (declare (optimize (speed 3))
            (wavelet-integer value)
-           ((mod #.array-total-size-limit) l r))
+           ((mod #.array-total-size-limit) start end))
   (let ((depth (wavelet-depth wmatrix))
         (data (wavelet-data wmatrix))
         (zeros (wavelet-zeros wmatrix)))
-    (unless (<= l r (wavelet-length wmatrix))
-      (error 'invalid-wavelet-index-error :index (cons l r) :wavelet wmatrix))
+    (unless (<= start end (wavelet-length wmatrix))
+      (error 'invalid-wavelet-index-error :index (cons start end) :wavelet wmatrix))
     (loop for d from (- depth 1) downto 0
           for bit = (logand 1 (ash value (- d)))
-          do (setq l (+ (cbv-count (aref data d) bit l)
-                        (* bit (aref zeros d)))
-                   r (+ (cbv-count (aref data d) bit r)
-                        (* bit (aref zeros d)))))
-    (- r l)))
+          do (setq start (+ (cbv-count (aref data d) bit start)
+                            (* bit (aref zeros d)))
+                   end (+ (cbv-count (aref data d) bit end)
+                          (* bit (aref zeros d)))))
+    (- end start)))
 
 (defun wavelet-kth-smallest (wmatrix k &optional (start 0) end)
-  "Returns the (0-based) K-th smallest number of WMATRIX in the range [START,
-END). Returns 2^<bit depth>-1 if K is equal to END - START."
+  "Returns the (0-based) K-th smallest number of WMATRIX in a subarray bounded
+by [START, END). Returns 2^<bit depth>-1 if K is equal to END - START."
   (declare (optimize (speed 3))
            ((mod #.array-total-size-limit) k start)
            ((or null (mod #.array-total-size-limit)) end))
@@ -128,7 +129,7 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
     (loop for d from (- depth 1) downto 0
           for lcount = (cbv-rank (aref data d) start)
           for rcount = (cbv-rank (aref data d) end)
-          for zero-count of-type (integer 0 #.most-positive-fixnum)
+          for zero-count of-type (mod #.array-total-size-limit)
              = (- (- end start) (- rcount lcount))
           do (if (<= zero-count k)
                  (setq start (+ lcount (aref zeros d))
@@ -141,7 +142,8 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
 
 ;; TODO: maybe better to integrate kth-smallest and kth-largest
 (defun wavelet-kth-largest (wmatrix k &optional (start 0) end)
-  "Returns the (0-based) K-th largest number of WMATRIX in the range [START, END)"
+  "Returns the (0-based) K-th largest number of WMATRIX in a subarray bounded by
+[START, END)."
   (declare (optimize (speed 3))
            ((mod #.array-total-size-limit) k start)
            ((or null (mod #.array-total-size-limit)) end))
@@ -157,7 +159,7 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
     (loop for d from (- depth 1) downto 0
           for lcount = (cbv-rank (aref data d) start)
           for rcount = (cbv-rank (aref data d) end)
-          for one-count of-type (integer 0 #.most-positive-fixnum) = (- rcount lcount)
+          for one-count of-type (mod #.array-total-size-limit) = (- rcount lcount)
           do (if (> one-count k)
                  (setq start (+ lcount (aref zeros d))
                        end (+ rcount (aref zeros d))
@@ -168,8 +170,8 @@ END). Returns 2^<bit depth>-1 if K is equal to END - START."
     result))
 
 (defun wavelet-map-frequency (function wmatrix lo hi &optional (start 0) end)
-  "Maps all values within [LO, HI). FUNCTION must take two arguments: value and
-its frequency."
+  "Maps all values within [LO, HI). FUNCTION takes two arguments: value and its
+frequency."
   (declare (optimize (speed 3))
            (wavelet-integer lo hi)
            ((mod #.array-total-size-limit) start)
@@ -185,7 +187,7 @@ its frequency."
         ((dfs (depth start end value)
            (declare ((mod #.array-total-size-limit) start end)
                     (wavelet-integer value)
-                    ((integer -1 #.most-positive-fixnum) depth))
+                    ((integer -1 #.+max-depth+) depth))
            (when (and (< value hi) (< start end))
              (if (= -1 depth)
                  (when (<= lo value)
@@ -223,8 +225,8 @@ its frequency."
         ((dfs (depth start end value)
            (declare ((mod #.array-total-size-limit) start end)
                     (wavelet-integer value)
-                    ((integer -1 #.most-positive-fixnum) depth)
-                    #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                    ((integer -1 #.+max-depth+) depth)
+                    #+sbcl (values wavelet-integer &optional))
            (cond ((or (= start end)
                       (<= hi value))
                   0)
