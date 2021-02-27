@@ -51,8 +51,8 @@ example). Destructively modifies VECTOR.
 
 ORDER := strict order"
   (declare (vector vector)
-           ((mod #.array-total-size-limit) i start))
-  (assert (< i (length vector)))
+           ((mod #.array-total-size-limit) i start)
+           ((or null (mod #.array-total-size-limit)) end))
   (labels ((recur (l r i)
              (declare ((mod #.array-total-size-limit) l r i))
              (when (= l r)
@@ -67,4 +67,6 @@ ORDER := strict order"
                       (recur l (- mid 1) i))
                      (t
                       (recur (+ mid 1) r (- i delta 1)))))))
-    (recur start (or end (- (length vector) 1)) i)))
+    (let ((end (or end (length vector))))
+      (assert (< i (- end start)))
+      (recur start (- end 1) i))))
