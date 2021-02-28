@@ -9,7 +9,7 @@
 returns two vectors: CYCLE and LENGTH. Time and space complexity is O(N).
 
 CYCLE[v] := the first vertex f(f(...f(v)...)) contained in a cycle.
-LENGTH[v] := the length of the cycle that contains V if V is in a cycle, and the
+LENGTH[v] := the length of the cycle that contains V if V is on a cycle, and the
 distance to CYCLE[v] otherwise."
   (declare (vector f))
   (let* ((n (length f))
@@ -28,6 +28,7 @@ distance to CYCLE[v] otherwise."
                 ;; seen in this iteration
                 (let ((cycle-length (- dist (aref tmp v)))
                       (path-length (aref tmp v)))
+                  (declare ((mod #.array-total-size-limit) cycle-length path-length))
                   ;; fill cycle
                   (loop repeat cycle-length
                         do (setf (aref lengths v) cycle-length
@@ -45,6 +46,7 @@ distance to CYCLE[v] otherwise."
                                       (if (= v (aref cycle v))
                                           0
                                           (aref lengths v)))))
+                  (declare ((mod #.array-total-size-limit) path-length))
                   ;; fill path
                   (loop with i = init
                         repeat dist
