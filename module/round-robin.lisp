@@ -1,6 +1,6 @@
 (defpackage :cp/round-robin
   (:use :cl)
-  (:export #:round-robin-map)
+  (:export #:map-round-robin)
   (:documentation
    "Provides scheduling algorithm (aka circle method) for a round robin tournament.
 
@@ -8,7 +8,7 @@ Reference:
 https://en.wikipedia.org/wiki/Round-robin_tournament"))
 (in-package :cp/round-robin)
 
-(defun round-robin-map (n function)
+(defun map-round-robin (n function)
   "Maps each list of N-1 matches of a round-robin tournement by N players.
 
 - N must be even.

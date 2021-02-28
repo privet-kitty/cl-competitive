@@ -6,13 +6,13 @@
 
 (test round-robin
   (let ((*test-dribble* nil))
-    (finishes (round-robin-map 0 (lambda (&rest _)
+    (finishes (map-round-robin 0 (lambda (&rest _)
                                    (declare (ignore _))
                                    (error "Huh?"))))
     (loop for n to 20 by 2
           for round = 0
           for marked = (make-array (list n n) :element-type 'bit :initial-element 0)
-          do (round-robin-map
+          do (map-round-robin
               n
               (lambda (vector round*)
                 (is (= round round*))
