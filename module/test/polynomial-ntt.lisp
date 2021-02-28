@@ -23,7 +23,7 @@
       (adjust-array res end))))
 
 (test polynomial-ntt/random
-  (finishes
+  (let ((*test-dribble* nil))
     (dotimes (_ 1000)
       (let* ((len1 (random 10))
              (len2 (random 10))
@@ -32,18 +32,18 @@
         ;; inverse
         (when (find-if #'plusp poly1)
           (let ((res (poly-multiply poly1 (poly-inverse poly1))))
-            (assert (= 1 (aref res 0)))
+            (is (= 1 (aref res 0)))
             (loop for i from 1 below len1
-                  do (assert (zerop (aref res i))))))
+                  do (is (zerop (aref res i))))))
         ;; floor and mod
         (block continue
           (handler-bind ((division-by-zero (lambda (c) (declare (ignorable c))
                                              (return-from continue))))
             (let* ((p (poly-floor poly1 poly2))
                    (q (poly-sub poly1 (poly-multiply poly2 p))))
-              (assert (equalp q (poly-mod poly1 poly2))))))
+              (is (equalp q (poly-mod poly1 poly2))))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))
                (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
                (res2 (multipoint-eval poly1 points)))
-          (assert (equalp res1 res2)))))))
+          (is (equalp res1 res2)))))))
