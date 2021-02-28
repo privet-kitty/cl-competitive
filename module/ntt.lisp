@@ -77,8 +77,8 @@
   (declare (optimize (speed 3))
            (vector vector))
   (let ((len (length vector)))
-    (assert (zerop (logand len (- len 1)))) ;; power of two
-    (check-type len ntt-int)))
+    (assert (and (zerop (logand len (- len 1))) ; power of two
+                 (typep len 'ntt-int)))))
 
 (defmacro define-ntt (modulus &key ntt inverse-ntt convolve mod-inverse mod-power
                               &environment env)
