@@ -25,12 +25,12 @@
     res))
 
 (test power/random
-  (let ((state (sb-ext:seed-random-state 0)))
-    (finishes
-      (dotimes (_ 500)
-        (let ((mat (make-array '(3 3) :element-type '(unsigned-byte 31) :initial-element 0)))
-          (dotimes (i 3)
-            (dotimes (j 3)
-              (setf (aref mat i j) (random +mod+ state))))
-          (let ((exp (random 50 state)))
-            (assert (equalp (power1 mat exp) (power2 mat exp)))))))))
+  (let ((*test-dribble* nil)
+        (state (sb-ext:seed-random-state 0)))
+    (dotimes (_ 500)
+      (let ((mat (make-array '(3 3) :element-type '(unsigned-byte 31) :initial-element 0)))
+        (dotimes (i 3)
+          (dotimes (j 3)
+            (setf (aref mat i j) (random +mod+ state))))
+        (let ((exp (random 50 state)))
+          (is (equalp (power1 mat exp) (power2 mat exp))))))))
