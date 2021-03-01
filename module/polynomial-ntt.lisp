@@ -11,6 +11,39 @@
   :mod-inverse %mod-inverse
   :mod-power %mod-power)
 
+;; (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
+;; (defun poly-inverse (poly &optional result-length)
+;;   (declare (optimize (speed 3))
+;;            (vector poly)
+;;            ((or null fixnum) result-length))
+;;   (let* ((poly (coerce poly 'ntt-vector))
+;;          (n (length poly)))
+;;     (declare (ntt-vector poly))
+;;     (when (or (zerop n)
+;;               (zerop (aref poly 0)))
+;;       (error 'division-by-zero
+;;              :operation #'poly-inverse
+;;              :operands (list poly)))
+;;     (let ((res (make-array 1
+;;                            :element-type 'ntt-int
+;;                            :initial-element (%mod-inverse (aref poly 0))))
+;;           (result-length (or result-length n)))
+;;       (declare (ntt-vector res))
+;;       (loop for i of-type ntt-int = 1 then (ash i 1)
+;;             while (< i result-length)
+;;             for decr = (poly-multiply (poly-multiply res res)
+;;                                       (subseq poly 0 (min (length poly) (* 2 i))))
+;;             for decr-len = (length decr)
+;;             do (setq res (adjust-array res (* 2 i) :initial-element 0))
+;;                (dotimes (j (* 2 i))
+;;                  (setf (aref res j)
+;;                        (mod (the ntt-int
+;;                                  (+ (mod (* 2 (aref res j)) +ntt-mod+)
+;;                                     (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
+;;                             +ntt-mod+))))
+;;       (adjust-array res result-length))))
+
+;; Reference: https://opt-cp.com/fps-fast-algorithms/
 (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 (defun poly-inverse (poly &optional result-length)
   (declare (optimize (speed 3))
@@ -24,23 +57,35 @@
       (error 'division-by-zero
              :operation #'poly-inverse
              :operands (list poly)))
-    (let ((res (make-array 1
-                           :element-type 'ntt-int
-                           :initial-element (%mod-inverse (aref poly 0))))
-          (result-length (or result-length n)))
+    (let* ((result-length (or result-length n))
+           (res (make-array 1
+                            :element-type 'ntt-int
+                            :initial-element (%mod-inverse (aref poly 0)))))
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
             while (< i result-length)
-            for decr = (poly-multiply (poly-multiply res res)
-                                      (subseq poly 0 (min (length poly) (* 2 i))))
-            for decr-len = (length decr)
-            do (setq res (adjust-array res (* 2 i) :initial-element 0))
+            for f of-type ntt-vector = (subseq poly 0 (min n (* 2 i)))
+            for g of-type ntt-vector = (copy-seq res)
+            do (setq f (adjust-array f (* 2 i) :initial-element 0)
+                     g (adjust-array g (* 2 i) :initial-element 0))
+               (ntt! f)
+               (ntt! g)
                (dotimes (j (* 2 i))
-                 (setf (aref res j)
-                       (mod (the ntt-int
-                                 (+ (mod (* 2 (aref res j)) +ntt-mod+)
-                                    (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
-                            +ntt-mod+))))
+                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
+               (inverse-ntt! f)
+               (setq f (subseq f i (* 2 i)))
+               (setq f (adjust-array f (* 2 i) :initial-element 0))
+               (ntt! f)
+               (dotimes (j (* 2 i))
+                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
+               (inverse-ntt! f)
+               (let ((inv-len (%mod-inverse (* 2 i))))
+                 (setq inv-len (mod (* inv-len (- +ntt-mod+ inv-len))
+                                    +ntt-mod+))
+                 (dotimes (j i)
+                   (setf (aref f j) (mod (* inv-len (aref f j)) +ntt-mod+)))
+                 (setq res (adjust-array res (* 2 i)))
+                 (replace res f :start1 i)))
       (adjust-array res result-length))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-floor))

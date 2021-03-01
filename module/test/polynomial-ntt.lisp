@@ -25,8 +25,8 @@
 (test polynomial-ntt/random
   (let ((*test-dribble* nil))
     (dotimes (_ 1000)
-      (let* ((len1 (random 10))
-             (len2 (random 10))
+      (let* ((len1 (random 20))
+             (len2 (random 20))
              (poly1 (make-random-polynomial len1))
              (poly2 (make-random-polynomial len2)))
         ;; inverse
