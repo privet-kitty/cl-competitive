@@ -1,10 +1,9 @@
-;;;
-;;; 1-dimensional binary indexed tree on arbitrary commutative monoid
-;;;
-
 (defpackage :cp/binary-indexed-tree
   (:use :cl)
-  (:export #:define-bitree))
+  (:export #:define-bitree)
+  (:documentation
+   "Provides 1-dimensional binary indexed tree for an arbitrary commutative
+monoid."))
 (in-package :cp/binary-indexed-tree)
 
 (defmacro define-bitree (name &key (operator '#'+) (identity 0) sum-type (order '#'<))
@@ -33,25 +32,24 @@ doesn't need to be identical to SUM-TYPE.)"
     `(progn
        (declaim (inline ,fname-update))
        (defun ,fname-update (bitree index delta)
-         "Destructively increments the vector: vector[INDEX] = vector[INDEX] +
-DELTA"
+         "Destructively increments BITREE at INDEX: BITREE[INDEX] += DELTA."
          (let ((len (length bitree)))
            (do ((i index (logior i (+ i 1))))
                ((>= i len) bitree)
-             (declare ((integer 0 #.most-positive-fixnum) i))
+             (declare ((mod #.array-total-size-limit) i))
              (setf (aref bitree i)
                    (funcall ,operator (aref bitree i) delta)))))
 
        (declaim (inline ,fname-fold))
        (defun ,fname-fold (bitree end)
          "Returns the sum of the prefix: vector[0] + ... + vector[END-1]."
-         (declare ((integer 0 #.most-positive-fixnum) end))
+         (declare ((mod #.array-total-size-limit) end))
          (let ((res ,identity))
            ,@(when sum-type `((declare (type ,sum-type res))))
            (do ((i (- end 1) (- (logand i (+ i 1)) 1)))
                ((< i 0) res)
-             (declare ((integer -1 #.most-positive-fixnum) i))
-             (setf res (funcall ,operator res (aref bitree i))))))
+             (declare ((integer -1 (#.array-total-size-limit)) i))
+             (setq res (funcall ,operator res (aref bitree i))))))
 
        (declaim (inline ,fname-build))
        (defun ,fname-build (vector)
@@ -69,9 +67,9 @@ filled with the identity element is a valid BIT as it is.)"
        ,@(when order
            `((declaim (inline ,fname-bisect-left))
              (defun ,fname-bisect-left (bitree value)
-               "Returns the smallest index that satisfies VECTOR[0]+ ... +
-VECTOR[index] >= VALUE. Returns the length of VECTOR if VECTOR[0]+
-... +VECTOR[length-1] < VALUE. Note that this function deals with a **closed**
+               "Returns the smallest index that satisfies BITREE[0]+ ... +
+BITREE[index] >= VALUE. Returns the length of BITREE if BITREE[0]+
+... +BITREE[length-1] < VALUE. Note that this function deals with a **closed**
 interval."
                (declare (vector bitree))
                (if (not (funcall ,order ,identity value))
@@ -79,13 +77,13 @@ interval."
                    (let ((len (length bitree))
                          (index+1 0)
                          (cumul ,identity))
-                     (declare ((integer 0 #.most-positive-fixnum) index+1)
+                     (declare ((mod #.array-total-size-limit) index+1)
                               ,@(when sum-type
                                   `((type ,sum-type cumul))))
                      (do ((delta (ash 1 (- (integer-length len) 1))
                                  (ash delta -1)))
                          ((zerop delta) index+1)
-                       (declare ((integer 0 #.most-positive-fixnum) delta))
+                       (declare ((mod #.array-total-size-limit) delta))
                        (let ((next-index (+ index+1 delta -1)))
                          (when (< next-index len)
                            (let ((next-cumul (funcall ,operator cumul (aref bitree next-index))))
@@ -96,9 +94,9 @@ interval."
                                (incf index+1 delta)))))))))
              (declaim (inline ,fname-bisect-right))
              (defun ,fname-bisect-right (bitree value)
-               "Returns the smallest index that satisfies VECTOR[0]+ ... +
-VECTOR[index] > VALUE. Returns the length of VECTOR if VECTOR[0]+
-... +VECTOR[length-1] <= VALUE. Note that this function deals with a **closed**
+               "Returns the smallest index that satisfies BITREE[0]+ ... +
+BITREE[index] > VALUE. Returns the length of BITREE if BITREE[0]+
+... +BITREE[length-1] <= VALUE. Note that this function deals with a **closed**
 interval."
                (declare (vector bitree))
                (if (funcall ,order value ,identity)
@@ -106,13 +104,13 @@ interval."
                    (let ((len (length bitree))
                          (index+1 0)
                          (cumul ,identity))
-                     (declare ((integer 0 #.most-positive-fixnum) index+1)
+                     (declare ((mod #.array-total-size-limit) index+1)
                               ,@(when sum-type
                                   `((type ,sum-type cumul))))
                      (do ((delta (ash 1 (- (integer-length len) 1))
                                  (ash delta -1)))
                          ((zerop delta) index+1)
-                       (declare ((integer 0 #.most-positive-fixnum) delta))
+                       (declare ((mod #.array-total-size-limit) delta))
                        (let ((next-index (+ index+1 delta -1)))
                          (when (< next-index len)
                            (let ((next-cumul (funcall ,operator cumul (aref bitree next-index))))
