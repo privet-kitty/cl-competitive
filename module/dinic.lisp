@@ -1,10 +1,7 @@
-;;;
-;;; Max flow (Dinic's algorithm)
-;;;
-
 (defpackage :cp/dinic
   (:use :cl :cp/max-flow)
-  (:export #:max-flow!))
+  (:export #:max-flow!)
+  (:documentation "Provides Dinic's algorithm. Time complexity: O(EV^2)."))
 (in-package :cp/dinic)
 
 (defconstant +graph-inf-distance+ #xffffffff)
@@ -13,12 +10,12 @@
   "Does BFS and sets DIST-TABLE to the distance between SRC and each vertex of
 GRAPH, where an edge of zero capacity is regarded as disconnected."
   (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) src)
+           ((mod #.array-total-size-limit) src)
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table queue))
   (let* ((q-front 0)
          (q-end 0))
-    (declare ((integer 0 #.most-positive-fixnum) q-front q-end))
+    (declare ((mod #.array-total-size-limit) q-front q-end))
     (labels ((enqueue (obj)
                (setf (aref queue q-end) obj)
                (incf q-end))
@@ -40,16 +37,18 @@ GRAPH, where an edge of zero capacity is regarded as disconnected."
                      (enqueue neighbor)))))))
   dist-table)
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) %find-path))
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                %find-path))
 (defun %find-path (src dest tmp-graph dist-table)
   "Finds an augmenting path, sends the maximum flow through it, and returns the
 amount of the flow."
   (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) src dest)
+           ((mod #.array-total-size-limit) src dest)
            ((simple-array list (*)) tmp-graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table))
   (labels ((dfs (v flow)
-             (declare ((integer 0 #.most-positive-fixnum) v flow))
+             (declare ((mod #.array-total-size-limit) v)
+                      ((integer 0 #.most-positive-fixnum) flow))
              (when (= v dest)
                (return-from dfs flow))
              (loop
@@ -67,13 +66,14 @@ amount of the flow."
                (pop (aref tmp-graph v)))))
     (dfs src most-positive-fixnum)))
 
-(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
+(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional))
+                max-flow!))
 (defun max-flow! (graph src dest)
   "Destructively sends the maximum flow from SRC to DEST and returns the amount
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
   (declare #+sbcl (sb-ext:muffle-conditions style-warning)
-           ((integer 0 #.most-positive-fixnum) src dest)
+           ((mod #.array-total-size-limit) src dest)
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
          (dist-table (make-array n :element-type '(unsigned-byte 32)))

@@ -1,15 +1,14 @@
-;;;
-;;; Maximum flow (shortest augmenting path algorithm, O(EV^2))
-;;;
-;;; Reference:
-;;; Ahuja, Magnanti, Orlin. Network flows
-;;;
-
-;; NOTE: Not tested. Use cp/dinic instead
-
 (defpackage :cp/shortest-augmenting-path
   (:use :cl :cp/max-flow)
-  (:export #:max-flow!))
+  (:export #:max-flow!)
+  (:documentation
+   "Provides shortest augmenting path algorithm for maximum flow problem. Time
+complexity is O(EV^2).
+
+Reference:
+Ahuja, Magnanti, Orlin. Network flows
+
+NOTE: Not tested. Please use cp/dinic instead."))
 (in-package :cp/shortest-augmenting-path)
 
 (defconstant +graph-inf-distance+ #xffffffff)
@@ -20,10 +19,11 @@
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
          (que (make-array n :element-type '(unsigned-byte 32)))
-         (dists (make-array n :element-type '(unsigned-byte 32) :initial-element +graph-inf-distance+))
+         (dists (make-array n :element-type '(unsigned-byte 32)
+                              :initial-element +graph-inf-distance+))
          (front 0)
          (end 0))
-    (declare ((integer 0 #.most-positive-fixnum) front end))
+    (declare ((mod #.array-total-size-limit) front end))
     (labels ((enqueue (x)
                (setf (aref que end) x)
                (incf end))

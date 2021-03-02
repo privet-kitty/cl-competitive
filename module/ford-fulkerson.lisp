@@ -1,18 +1,16 @@
-;;;
-;;; Ford-Fulkerson
-;;; (better to use Dinic's algorithm. I leave it just for my reference.)
-;;;
-
 (defpackage :cp/ford-fulkerson
   (:use :cl :cp/max-flow)
-  (:export #:max-flow!))
+  (:export #:max-flow!)
+  (:documentation
+   "Provides Ford-Fulkerson algorithm for maximum flow problem."))
 (in-package :cp/ford-fulkerson)
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) %find-flow))
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                %find-flow))
 (defun %find-flow (graph src dest checked)
   "DFS"
   (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) src dest)
+           ((mod #.array-total-size-limit) src dest)
            (simple-bit-vector checked)
            ((simple-array list (*)) graph))
   (fill checked 0)
@@ -32,10 +30,11 @@
                          (return flow))))))))
     (dfs src most-positive-fixnum)))
 
-(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional)) max-flow!))
+(declaim (ftype (function * (values (mod #.most-positive-fixnum) &optional))
+                max-flow!))
 (defun max-flow! (graph src dest)
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) src dest)
+           ((mod #.array-total-size-limit) src dest)
            ((simple-array list (*)) graph))
   (let ((checked (make-array (length graph) :element-type 'bit :initial-element 0))
         (result 0))

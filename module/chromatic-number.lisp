@@ -1,8 +1,8 @@
 (defpackage :cp/chromatic-number
   (:use :cl :cp/tzcount)
   (:export #:calc-chromatic-number)
-  (:documentation "Provides O(n2^n) computation of chromatic number of
-undirected graph."))
+  (:documentation "Provides computation of chromatic number of undirected
+graph. Time compexity: O(N2^N)."))
 (in-package :cp/chromatic-number)
 
 (defparameter *moduli* '(2147483647 2147483489 2147483477))
