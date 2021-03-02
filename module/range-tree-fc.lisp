@@ -1,16 +1,14 @@
-;;;
-;;; 2D range tree with fractional cascading
-;;;
-;;; build: O(nlog(n))
-;;; query: O(log(n))
-;;;
-;;; Reference:
-;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
-;;;
-
 (defpackage :cp/range-tree-fc
   (:use :cl)
-  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-map))
+  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-map)
+  (:documentation
+   "Provides 2D range tree with fractional cascading.
+
+build: O(nlog(n))
+query: O(log(n))
+
+Reference:
+Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition"))
 (in-package :cp/range-tree-fc)
 
 ;; TODO: introduce abelian group
@@ -152,6 +150,23 @@ coordinates are allowed.) E.g. (-1, 3), (-1, 4), (-1, 7) (0, 1) (0, 3) (2,
 (defun xleaf-p (xnode)
   (and (null (%xnode-left xnode)) (null (%xnode-right xnode))))
 
+(defun %bisect-left (y xkeys ykeys)
+  (declare (optimize (speed 3))
+           (fixnum y)
+           ((simple-array fixnum (*)) xkeys ykeys))
+  (let ((left 0)
+        (ok (length xkeys)))
+    (declare ((integer 0 #.most-positive-fixnum) left ok))
+    (loop
+      (let ((mid (ash (+ left ok) -1)))
+        (if (= mid left)
+            (if (< (aref ykeys left) y)
+                (return ok)
+                (return left))
+            (if (< (aref ykeys mid) y)
+                (setq left mid)
+                (setq ok mid)))))))
+
 (defun rt-count (range-tree x1 y1 x2 y2)
   "Returns the number of the nodes within the rectangle [x1, x2)*[y1, y2). A
 part or all of these coordinates can be NIL; then they are regarded as the
@@ -167,26 +182,13 @@ negative or positive infinity."
   (let* ((ynode (%xnode-ynode range-tree))
          (xkeys (%ynode-xkeys ynode))
          (ykeys (%ynode-ykeys ynode)))
-    (labels ((bisect-left (y)
-               (declare (fixnum y))
-               (let ((left 0)
-                     (ok (length xkeys)))
-                 (declare ((integer 0 #.most-positive-fixnum) left ok))
-                 (loop
-                   (let ((mid (ash (+ left ok) -1)))
-                     (if (= mid left)
-                         (if (< (aref ykeys left) y)
-                             (return ok)
-                             (return left))
-                         (if (< (aref ykeys mid) y)
-                             (setq left mid)
-                             (setq ok mid)))))))
-             (recur (xnode x1 x2 start end)
+    (labels ((recur (xnode x1 x2 start end)
                (declare ((or null xnode) xnode)
+                        ((mod #.array-total-size-limit) start end)
                         (fixnum x1 x2)
                         ;; KLUDGE: declaring ftype is not sufficient for the
                         ;; optimization on SBCL 1.1.14.
-                        #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                        #+sbcl (values (integer 0 #.most-positive-fixnum) &optional))
                (cond ((null xnode) 0)
                      ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
                       (- end start))
@@ -218,8 +220,8 @@ negative or positive infinity."
                                    x1 x2
                                    (aref rpointers start)
                                    (aref rpointers end))))))))
-      (let ((start (bisect-left y1))
-            (end (bisect-left y2)))
+      (let ((start (%bisect-left y1 xkeys ykeys))
+            (end (%bisect-left y2 xkeys ykeys)))
         (recur range-tree x1 x2 start end)))))
 
 (defun rt-fold (range-tree x1 y1 x2 y2)
@@ -237,26 +239,13 @@ negative or positive infinity."
   (let* ((ynode (%xnode-ynode range-tree))
          (xkeys (%ynode-xkeys ynode))
          (ykeys (%ynode-ykeys ynode)))
-    (labels ((bisect-left (y)
-               (declare (fixnum y))
-               (let ((left 0)
-                     (ok (length xkeys)))
-                 (declare ((integer 0 #.most-positive-fixnum) left ok))
-                 (loop
-                   (let ((mid (ash (+ left ok) -1)))
-                     (if (= mid left)
-                         (if (< (aref ykeys left) y)
-                             (return ok)
-                             (return left))
-                         (if (< (aref ykeys mid) y)
-                             (setq left mid)
-                             (setq ok mid)))))))
-             (recur (xnode x1 x2 start end)
+    (labels ((recur (xnode x1 x2 start end)
                (declare ((or null xnode) xnode)
+                        ((mod #.array-total-size-limit) start end)
                         (fixnum x1 x2)
                         ;; KLUDGE: declaring ftype is not sufficient for the
                         ;; optimization on SBCL 1.1.14.
-                        #+sbcl (values fixnum))
+                        #+sbcl (values fixnum &optional))
                (if (null xnode)
                    0
                    (let* ((xkey (%xnode-xkey xnode))
@@ -289,8 +278,8 @@ negative or positive infinity."
                                     x1 x2
                                     (aref rpointers start)
                                     (aref rpointers end))))))))
-      (let ((start (bisect-left y1))
-            (end (bisect-left y2)))
+      (let ((start (%bisect-left y1 xkeys ykeys))
+            (end (%bisect-left y2 xkeys ykeys)))
         (recur range-tree x1 x2 start end)))))
 
 ;; not tested
@@ -307,22 +296,9 @@ negative or positive infinity."
     (let* ((ynode (%xnode-ynode range-tree))
            (xkeys (%ynode-xkeys ynode))
            (ykeys (%ynode-ykeys ynode)))
-      (labels ((bisect-left (y)
-                 (declare (fixnum y))
-                 (let ((left 0)
-                       (ok (length xkeys)))
-                   (declare ((integer 0 #.most-positive-fixnum) left ok))
-                   (loop
-                     (let ((mid (ash (+ left ok) -1)))
-                       (if (= mid left)
-                           (if (< (aref ykeys left) y)
-                               (return ok)
-                               (return left))
-                           (if (< (aref ykeys mid) y)
-                               (setq left mid)
-                               (setq ok mid)))))))
-               (recur (xnode x1 x2 start end)
+      (labels ((recur (xnode x1 x2 start end)
                  (declare ((or null xnode) xnode)
+                          ((mod #.array-total-size-limit) start end)
                           (fixnum x1 x2))
                  (cond ((null xnode))
                        ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
@@ -368,6 +344,6 @@ negative or positive infinity."
                                      x1 x2
                                      (aref rpointers start)
                                      (aref rpointers end))))))))
-        (let ((start (bisect-left y1))
-              (end (bisect-left y2)))
+        (let ((start (%bisect-left y1 xkeys ykeys))
+              (end (%bisect-left y2 xkeys ykeys)))
           (recur range-tree x1 x2 start end))))))

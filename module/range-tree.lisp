@@ -1,16 +1,14 @@
-;;;
-;;; 2D range tree on an arbitrary commutative monoid
-;;;
-;;; build: O(nlog(n))
-;;; query: O(log^2(n))
-;;;
-;;; Reference:
-;;; https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf
-;;;
-
 (defpackage :cp/range-tree
   (:use :cl)
-  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-update))
+  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-update)
+  (:documentation
+   "Provides 2D range tree over an arbitrary commutative monoid.
+
+build: O(nlog(n))
+query: O(log^2(n))
+
+Reference:
+https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf"))
 (in-package :cp/range-tree)
 
 ;; TODO: map all the points in a given rectangle
@@ -33,7 +31,8 @@
   ynode
   left right)
 
-(defstruct (ynode (:constructor make-ynode (xkey ykey left right &key (count 1) value accumulator))
+(defstruct (ynode (:constructor make-ynode
+                      (xkey ykey left right &key (count 1) value accumulator))
                   (:conc-name %ynode-)
                   (:copier nil))
   (xkey 0 :type fixnum)
@@ -319,7 +318,8 @@ positive infinity."
 
 (defun rt-update (range-tree x y delta)
   "Increments the point (X, Y) by DELTA. (X, Y) must be contained in RANGE-TREE."
-  (declare (fixnum x y delta))
+  (declare (optimize (speed 3))
+           (fixnum x y delta))
   (labels ((xrecur (xnode)
              (declare ((or null xnode) xnode))
              (when xnode
