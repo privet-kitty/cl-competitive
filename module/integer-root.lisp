@@ -2,46 +2,41 @@
   (:use :cl)
   (:export #:iroot)
   (:documentation
-   "Provides computation of the floor of the nth root of an integer. Currently
-only deals with positive fixnum.
-
-NOTE: This package depends on SBCL x86-64."))
+   "Provides computation of the floor of the nth root of an integer."))
 (in-package :cp/integer-root)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (assert (= most-positive-fixnum (ldb (byte 62 0) -1))))
+;; This value is set for SBCL x86-64
+(defconstant +bit-width+ 62)
+(deftype uint () '(unsigned-byte #.+bit-width+))
 
-(defconstant +threshold+ 63 "Nth root of positive fixnum (i.e. less than 2^62)
-is always 1 when N is 63 or greater.")
-
-(declaim ((simple-array (unsigned-byte 62) (*)) *supremums*))
-(sb-ext:define-load-time-global *supremums*
-  (make-array +threshold+ :element-type '(unsigned-byte 62)))
+(declaim ((simple-array uint (*)) *supremums*))
+(defparameter *supremums*
+  (make-array (+ 1 +bit-width+) :element-type 'uint))
 
 (defun initialize ()
-  (loop for exp from 2 below +threshold+
-        do (let ((ok 0)
-                 (ng 1))
-             (loop while (<= (expt ng exp) most-positive-fixnum)
-                   do (setq ng (ash ng 1)))
-             (loop until (= (- ng ok) 1)
-                   for mid = (ash (+ ng ok) -1)
-                   when (<= (expt mid exp) most-positive-fixnum)
-                   do (setq ok mid)
-                   else
-                   do (setq ng mid))
-             (setf (aref *supremums* exp) ng))))
+  (let ((most-uint (ldb (byte +bit-width+ 0) -1)))
+    (loop for exp from 2 to +bit-width+
+          do (let ((ok 0)
+                   (ng 1))
+               (loop while (<= (expt ng exp) most-uint)
+                     do (setq ng (ash ng 1)))
+               (loop until (= (- ng ok) 1)
+                     for mid = (ash (+ ng ok) -1)
+                     when (<= (expt mid exp) most-uint)
+                     do (setq ok mid)
+                     else
+                     do (setq ng mid))
+               (setf (aref *supremums* exp) ng)))))
 
 (initialize)
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                %power))
+(declaim (inline %power)
+         (ftype (function * (values uint &optional)) %power))
 (defun %power (base exp)
   "Is equivalent to CL:EXPT for this purpose."
-  (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) base exp))
+  (declare (uint base exp))
   (let ((res 1))
-    (declare ((integer 0 #.most-positive-fixnum) res))
+    (declare (uint res))
     (loop when (oddp exp)
           do (setq res (* res base))
           do (setq exp (ash exp -1))
@@ -49,26 +44,28 @@ is always 1 when N is 63 or greater.")
           do (setq base (* base base)))
     res))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
-                iroot))
+(declaim (ftype (function * (values uint &optional)) iroot))
 (defun iroot (x index)
   "Returns the greatest integer less than or equal to the non-negative INDEX-th
 root of X."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) x)
+           (uint x)
            ((integer 1) index))
-  (cond ((zerop x) 0)
-        ((>= index +threshold+) 1)
-        ((>= index 3)
-         (let ((ok 0)
-               (ng (aref *supremums* index)))
-           (declare ((integer 0 #.most-positive-fixnum) ok ng))
-           (loop until (= (- ng ok) 1)
-                 for mid = (ash (+ ng ok) -1)
-                 when (<= (%power mid index) x)
-                 do (setq ok mid)
-                 else
-                 do (setq ng mid))
-           ok))
-        ((= index 2) (isqrt x))
-        (t x)))
+  (locally (declare (optimize (safety 0)))
+    (cond ((zerop x) 0)
+          ((> index +bit-width+) 1)
+          ((>= index 3)
+           (let ((ok 0)
+                 (ng (aref *supremums* index)))
+             (declare (uint ok ng))
+             (loop until (= (the uint (- ng ok)) 1)
+                   for mid = (ldb (byte +bit-width+ 0)
+                                  (+ (ash ng -1) (ash ok -1)
+                                     (ash (+ (logand ng 1) (logand ok 1)) -1)))
+                   when (<= (%power mid index) x)
+                   do (setq ok mid)
+                   else
+                   do (setq ng mid))
+             ok))
+          ((= index 2) (isqrt x))
+          (t x))))
