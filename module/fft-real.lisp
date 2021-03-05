@@ -294,6 +294,8 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
   (let ((n (length vector1)))
     (assert (and (power2-p n)
                  (= n (length vector2))))
+    ;; TODO: if (EQ VECTOR1 VECTOR2) holds, the number of FFTs can be reduced.
+    ;; TODO: naive convolution for short vectors
     (dft! vector1)
     (dft! vector2)
     (let ((result (or result-vector (make-array n :element-type 'fft-float))))

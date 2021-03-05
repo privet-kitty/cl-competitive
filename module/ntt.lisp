@@ -206,6 +206,8 @@
        (defun ,convolve (vector1 vector2)
          (declare (optimize (speed 3))
                   (vector vector1 vector2))
+         ;; TODO: if (EQ VECTOR1 VECTOR2) holds, the number of FFTs can be
+         ;; reduced.
          (let* ((len1 (length vector1))
                 (len2 (length vector2))
                 (mul-len (max 0 (- (+ len1 len2) 1)))
