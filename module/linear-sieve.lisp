@@ -32,7 +32,7 @@ Pierre Dusart. Estimates of some functions over primes without R.H."
                                     &optional))
                 make-minfactor-table))
 (defun make-minfactor-table (sup)
-  "Returns a vector of length SUP, whose (0-based) i-th value is the minimal
+  "Returns a vector of length SUP, whose (0-based) i-th value is the smallest
 prime factor of i. (Corner case: 0th value is 0 and 1st value is 1.) This
 function returns an ascending vector of primes (less than SUP) as the second
 value."
