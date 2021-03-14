@@ -30,20 +30,30 @@ pathname: run MAIN using the text file as input.
                    (let ((symbol (find-symbol "MAIN" :cl-user)))
                      (if (and symbol (fboundp symbol))
                          (symbol-function symbol)
-                         (error "Don't know which function to run")))))
-         (*standard-output* (or out (make-string-output-stream)))
-         (res (etypecase input
-                (null
-                 (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
-                   (funcall main)))
-                (string
-                 (with-input-from-string (*standard-input* (delete #\Return input))
-                   (funcall main)))
-                (symbol (5am:run! input))
-                (pathname
-                 (with-open-file (*standard-input* input)
-                   (funcall main))))))
-    (if out res (get-output-stream-string *standard-output*))))
+                         (error "Don't know which function to run"))))))
+    (labels ((proc ()
+               (etypecase input
+                 (null
+                  (with-input-from-string (*standard-input* (delete #\Return (get-clipbrd)))
+                    (funcall main)))
+                 (string
+                  (with-input-from-string (*standard-input* (delete #\Return input))
+                    (funcall main)))
+                 (symbol (5am:run! input))
+                 (pathname
+                  (with-open-file (*standard-input* input)
+                    (funcall main))))))
+      (etypecase out
+        ((or string pathname)
+         (uiop:with-output-file (*standard-output* out :if-exists :supersede)
+           (proc)))
+        (null
+         (let ((*standard-output* (make-string-output-stream)))
+           (proc)
+           (get-output-stream-string *standard-output*)))
+        (stream
+         (let ((*standard-output* out))
+           (proc)))))))
 
 (defun submit (&key url pathname (test t))
   "Submits PATHNAME to URL. If TEST is true, this function verifies the code
