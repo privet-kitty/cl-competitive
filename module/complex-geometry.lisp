@@ -1,11 +1,8 @@
-;;;
-;;; Utilities for 2D geometry (using complex number)
-;;;
-
 (defpackage :cp/complex-geometry
   (:use :cl)
   (:export #:intersect-p #:calc-internal-angle #:calc-angle #:on-line-segment-p
-           #:cross* #:dot* #:inside-convex-polygon-p))
+           #:cross* #:dot* #:inside-convex-polygon-p)
+  (:documentation "Provides utilities for 2D geometry using complex number."))
 (in-package :cp/complex-geometry)
 
 ;; not tested
@@ -50,7 +47,7 @@ the one from Q1 to Q2."
 vector C2. The range is [0, 2PI)."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
-(declaim (inline cross-product))
+(declaim (inline cross*))
 (defun cross* (p1 p2)
   (- (* (realpart p1) (imagpart p2))
      (* (imagpart p1) (realpart p2))))
@@ -63,7 +60,7 @@ vector C2. The range is [0, 2PI)."
 (declaim (inline on-line-segment-p))
 (defun on-line-segment-p (point end1 end2 &optional (eps 0))
   "Returns T iff POINT is on the line segment between END1 and END2."
-  (and (<= (abs (cross-product (- point end1) (- end2 end1))) eps)
+  (and (<= (abs (cross* (- point end1) (- end2 end1))) eps)
        (or (<= (realpart end1) (realpart point) (realpart end2))
            (<= (realpart end2) (realpart point) (realpart end1)))
        (or (<= (imagpart end1) (imagpart point) (imagpart end2))
@@ -80,22 +77,16 @@ the polygon must be ordered clockwise or anticlockwise in VECTOR."
            (vector vector))
   (let (prev-side
         (n (length vector)))
-    (labels ((get-side (a b)
-               (let ((x (- (* (realpart a) (imagpart b))
-                           (* (imagpart a) (realpart b)))))
-                 (cond ((< x 0) -1)
-                       ((> x 0) 1)
-                       (t 0)))))
-      (dotimes (i n)
-        (let* ((a (aref vector i))
-               (b (aref vector (if (= i (- n 1)) 0 (+ i 1))))
-               (a-to-b (- b a))
-               (a-to-point (- point a))
-               (current-side (get-side a-to-b a-to-point)))
-          (cond ((zerop current-side)
-                 (return-from inside-convex-polygon-p nil))
-                ((null prev-side)
-                 (setq prev-side current-side))
-                ((/= prev-side current-side)
-                 (return-from inside-convex-polygon-p nil)))))
-      t)))
+    (dotimes (i n)
+      (let* ((a (aref vector i))
+             (b (aref vector (if (= i (- n 1)) 0 (+ i 1))))
+             (a-to-b (- b a))
+             (a-to-point (- point a))
+             (current-side (signum (cross* a-to-b a-to-point))))
+        (cond ((zerop current-side)
+               (return-from inside-convex-polygon-p nil))
+              ((null prev-side)
+               (setq prev-side current-side))
+              ((/= prev-side current-side)
+               (return-from inside-convex-polygon-p nil)))))
+    t))
