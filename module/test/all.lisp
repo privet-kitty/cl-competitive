@@ -63,6 +63,7 @@
   (:import-from :cp/test/geometric-sequence)
   (:import-from :cp/test/geometry)
   (:import-from :cp/test/gray-code)
+  (:import-from :cp/test/hackenbush)
   (:import-from :cp/test/hl-decomposition)
   (:import-from :cp/test/hopcroft-karp)
   (:import-from :cp/test/implicit-treap)
