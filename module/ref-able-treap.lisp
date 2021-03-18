@@ -12,7 +12,8 @@
 
 (defpackage :cp/ref-able-treap
   (:use :cl)
-  (:export #:treap #:treap-count #:treap-find #:treap-position #:treap-bisect-left
+  (:export #:treap #:treap-count #:treap-find #:treap-position
+           #:treap-bisect-left #:treap-bisect-right
            #:treap-split #:treap-insert #:treap-push #:treap-pop #:make-treap
            #:treap-delete #:treap-merge #:treap-map #:invalid-treap-index-error
            #:treap-ref #:treap-first #:treap-last #:treap-unite #:treap-reverse))
@@ -94,6 +95,32 @@ TREAP[size-1] < VALUE."
                           (if idx
                               (values idx key)
                               (values left-count (%treap-key treap)))))))))
+    (declare (ftype (function * (values t t &optional)) recur))
+    (multiple-value-bind (idx key)
+        (recur (treap-count treap) treap)
+      (if idx
+          (values idx key)
+          (values (treap-count treap) value)))))
+
+(declaim (inline treap-bisect-right)
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional))
+                treap-bisect-right))
+(defun treap-bisect-right (value treap &key (order #'<))
+  "Returns two values: the smallest index and the corresponding key that
+satisfies TREAP[index] > VALUE. Returns the size of TREAP and VALUE instead if
+TREAP[size-1] <= VALUE."
+  (labels ((recur (count treap)
+             (declare ((integer 0 #.most-positive-fixnum) count))
+             (cond ((null treap) (values nil nil))
+                   ((funcall order value (%treap-key treap))
+                    (let ((left-count (- count (treap-count (%treap-right treap)) 1)))
+                      (multiple-value-bind (idx key)
+                          (recur left-count (%treap-left treap))
+                        (if idx
+                            (values idx key)
+                            (values left-count (%treap-key treap))))))
+                   (t
+                    (recur count (%treap-right treap))))))
     (declare (ftype (function * (values t t &optional)) recur))
     (multiple-value-bind (idx key)
         (recur (treap-count treap) treap)

@@ -139,7 +139,7 @@
               (treap-list (treap-reverse (treap #'> 10 5 4 3 3 2 1))))))
 
 (test treap-bisect
-  (declare (notinline treap-position treap-find treap-bisect-left))
+  (declare (notinline treap-position treap-find treap-bisect-left treap-bisect-right))
   (let ((treap (treap #'< 1 2 3 5 6 10)))
     (is (= 0 (treap-position 1 treap)))
     (is (= 1 (treap-position 2 treap)))
@@ -170,4 +170,15 @@
     (is (= 4 (treap-bisect-left 6 treap)))
     (is (= 5 (treap-bisect-left 7 treap)))
     (is (= 5 (treap-bisect-left 10 treap)))
-    (is (= 6 (treap-bisect-left 11 treap)))))
+    (is (= 6 (treap-bisect-left 11 treap)))
+
+    (is (= 0 (treap-bisect-right 0 treap)))
+    (is (= 1 (treap-bisect-right 1 treap)))
+    (is (= 2 (treap-bisect-right 2 treap)))
+    (is (= 3 (treap-bisect-right 3 treap)))
+    (is (= 3 (treap-bisect-right 4 treap)))
+    (is (= 4 (treap-bisect-right 5 treap)))
+    (is (= 5 (treap-bisect-right 6 treap)))
+    (is (= 5 (treap-bisect-right 7 treap)))
+    (is (= 5 (treap-bisect-right 9 treap)))
+    (is (= 6 (treap-bisect-right 10 treap)))))
