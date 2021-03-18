@@ -78,14 +78,17 @@ The behavior is undefined when duplicate keys are inserted."
                     treap))))
     (recur (%make-treap key (random most-positive-fixnum)) treap)))
 
+(declaim (inline treap-map))
 (defun treap-map (function treap)
   "Successively applies FUNCTION to each key of TREAP in the given
 order. FUNCTION must take one argument."
   (declare (function function))
-  (when treap
-    (treap-map function (%treap-left treap))
-    (funcall function (%treap-key treap))
-    (treap-map function (%treap-right treap))))
+  (labels ((recur (treap)
+             (when treap
+               (recur (%treap-left treap))
+               (funcall function (%treap-key treap))
+               (recur (%treap-right treap)))))
+    (recur treap)))
 
 (defmethod print-object ((object treap) stream)
   (print-unreadable-object (object stream :type t)
