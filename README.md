@@ -83,6 +83,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
 - [manhattan-fnn.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/manhattan-fnn.lisp) farthest neighbor points in d-dimensional L1 space
 - [round-robin.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/round-robin.lisp) scheduling algorithm for a round robin tournament (circle method)
+- [hackenbush.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/hackenbush.lisp) game value of Hackenbush
 - [date.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/date.lisp) some utilities about date
 
 
