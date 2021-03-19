@@ -93,6 +93,8 @@
                             (* bit (aref zeros d)))))
     res))
 
+(declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
+                wavelet-count))
 (defun wavelet-count (wmatrix value start end)
   "Returns the number of VALUE in a subarray bounded by [START, END)."
   (declare (optimize (speed 3))
@@ -209,6 +211,8 @@ frequency."
                             next-value))))))))
       (dfs (- (wavelet-depth wmatrix) 1) start end 0))))
 
+(declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
+                wavelet-range-cont))
 (defun wavelet-range-count (wmatrix lo hi &optional (start 0) end)
   "Returns the number of the values within [LO, HI)."
   (declare (optimize (speed 3))
