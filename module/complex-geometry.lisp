@@ -49,6 +49,7 @@ vector C2. The range is [0, 2PI)."
 
 (declaim (inline cross*))
 (defun cross* (p1 p2)
+  "Returns the `cross' product (a.k.a. perp-dot product) of two 2D vectors."
   (- (* (realpart p1) (imagpart p2))
      (* (imagpart p1) (realpart p2))))
 
