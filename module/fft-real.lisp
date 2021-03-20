@@ -300,9 +300,9 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
     (dft! vector2)
     (let ((result (or result-vector (make-array n :element-type 'fft-float))))
       (unless (zerop n)
-        (setf (aref result 0)
+        (incf (aref result 0)
               (* (aref vector1 0) (aref vector2 0)))
-        (setf (aref result (ash n -1))
+        (incf (aref result (ash n -1))
               (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1)))))
       (loop for i from 1 below (ash n -1)
             for value1 of-type fft-float =
@@ -345,9 +345,9 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
            (result (make-array n :element-type 'fft-float)))
       (declare ((mod #.array-total-size-limit) mul-len)
                ((simple-array fft-float (*)) vector1 vector2))
-      (setf (aref result 0)
+      (incf (aref result 0)
             (* (aref vector1 0) (aref vector2 0)))
-      (setf (aref result (ash n -1))
+      (incf (aref result (ash n -1))
             (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1))))
       (loop for i from 1 below (ash n -1)
             for value1 of-type fft-float =

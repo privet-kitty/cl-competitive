@@ -14,6 +14,8 @@
   (every #'identity (map 'list (lambda (x y) (nearly= 1d-8 x y)) arr1 arr2)))
 
 (test fft-real
+  (is (fft-array= #(1) (convolve (to-fft-array #(1)) (to-fft-array #(1)))))
+  (is (fft-array= #(1) (convolve! (to-fft-array #(1)) (to-fft-array #(1)))))
   (is (fft-array=
        (convolve! (to-fft-array #(1 2 3 4 0 0 0 0))
                   (to-fft-array #(-1 -1 -1 -1 0 0 0 0)))
