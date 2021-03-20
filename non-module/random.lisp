@@ -1,4 +1,4 @@
-;; Just for an experiment. Please use RANDOM.
+;; Just for an experiment. Please use CL:RANDOM.
 
 (defconstant +divisor+ (expt 2 31))
 
@@ -11,27 +11,27 @@
     (setq x (logand (+ (* 1103515245 x) 12345) #.(- (expt 2 31) 1)))))
 
 (defconstant +mask32+ #xffffffff)
-(let ((x 2463534242))
-  (declare ((unsigned-byte 32) x))
-  (defun seed-xor32 (initial-number)
-    (setq x initial-number))
-  (defun random-xor32 ()
-    (declare (optimize (speed 3) (safety 0)))
-    (setq x (logxor x (logand +mask32+ (ash x 13))))
+(declaim ((unsigned-byte 32) *xor32*))
+(sb-ext:define-load-time-global *xor32* 2463534242)
+
+(defun random-xor32 ()
+  (declare (optimize (speed 3) (safety 0)))
+  (let ((x *xor32*))
+    (declare ((unsigned-byte 32) x))
+    (setq x (ldb (byte 32 0) (logxor x (ash x 13))))
     (setq x (logxor x (ash x -17)))
-    (setq x (logxor x (logand +mask32+ (ash x 5))))))
+    (setq *xor32* (ldb (byte 32 0) (logxor x (ash x 5))))))
 
 (defun bench (num)
   (declare (optimize (speed 3) (safety 0))
-           ((integer 0 #.most-positive-fixnum) num))
-  (check-type num (integer 1 #.most-positive-fixnum))
+           ((integer 1 (#.most-positive-fixnum)) num))
   (let ((sum 0)
         (x 2463534242))
     (declare ((integer 0 #.most-positive-fixnum) sum)
              ((unsigned-byte 32) x))
     (dotimes (i num)
-      (setq x (logxor x (logand +mask32+ (ash x 13))))
+      (setq x (ldb (byte 32 0) (logxor x (ash x 13))))
       (setq x (logxor x (ash x -17)))
-      (setq x (logxor x (logand +mask32+ (ash x 5))))
+      (setq x (ldb (byte 32 0) (logxor x (ash x 5))))
       (incf sum (logand 1 x)))
     sum))
