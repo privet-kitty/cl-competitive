@@ -1,7 +1,7 @@
 (defpackage :cp/convex-hull-trick
   (:use :cl)
   (:export #:cht-element-type #:cht-empty-error #:cht-full-error
-           #:convex-hull-trick #:make-cht #:cht-p
+           #:convex-hull-trick #:make-cht #:cht-p #:cht-clear
            #:cht-push #:cht-get #:cht-increasing-get #:cht-decreasing-get)
   (:documentation "Provides convex hull trick for monotone slopes."))
 (in-package :cp/convex-hull-trick)
@@ -37,6 +37,12 @@
   (start 0 :type (mod #.array-total-size-limit))
   (length 0 :type (mod #.array-total-size-limit))
   (max-length 0 :type (mod #.array-total-size-limit)))
+
+(declaim (inline cht-clear))
+(defun cht-clear (cht)
+  (setf (%cht-start cht) 0
+        (%cht-length cht) 0)
+  cht)
 
 ;; four basic operations on deque
 (declaim (inline %cht-pop-back))
