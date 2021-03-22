@@ -96,7 +96,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [bezout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bezout.lisp) Bezout equation
 - [mod-linear-algebra.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-linear-algebra.lisp) modular linear algebra
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation on arbitrary monoid
-- [binom-mod-prime.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-prime.lisp) binomial coefficient with fixed modulus; linear-time construction of tables of inverses, factorials, and inverses of factorials
+- [binom-mod-prime.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-prime.lisp) binomial coefficient modulo prime; linear-time construction of tables of inverses, factorials, and inverses of factorials
+- [binom-mod-small.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-small.lisp) binomial coefficient modulo small number
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bounded-partition-number.lisp) partition number with upper-bound
 - [dynamic-mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dynamic-mod-operations.lisp) addition/multiplication with dynamic modulus
