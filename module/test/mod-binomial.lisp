@@ -1,5 +1,5 @@
 (defpackage :cp/test/mod-binomial
-  (:use :cl :fiveam :cp/mod-binomial :cp/binomial-coefficient-mod)
+  (:use :cl :fiveam :cp/mod-binomial :cp/binom-mod-prime)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/mod-binomial)
 (in-suite base-suite)

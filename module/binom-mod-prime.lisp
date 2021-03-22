@@ -1,4 +1,4 @@
-(defpackage :cp/binomial-coefficient-mod
+(defpackage :cp/binom-mod-prime
   (:use :cl)
   (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:multichoose
            #:+binom-mod+ #:*fact* #:*fact-inv* #:*inv*)
@@ -9,7 +9,7 @@ modulo prime.
 build: O(n)
 query: O(1)
 "))
-(in-package :cp/binomial-coefficient-mod)
+(in-package :cp/binom-mod-prime)
 
 ;; TODO: non-global handling
 
