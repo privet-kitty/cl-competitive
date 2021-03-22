@@ -1,7 +1,7 @@
-(defpackage :cp/binomial-coefficient-quadratic
+(defpackage :cp/binom-quadratic
   (:use :cl)
   (:export #:make-binom-table))
-(in-package :cp/binomial-coefficient-quadratic)
+(in-package :cp/binom-quadratic)
 
 (declaim (inline make-binom-table))
 (defun make-binom-table (size element-type op)

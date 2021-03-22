@@ -1,7 +1,7 @@
-(defpackage :cp/test/binomial-coefficient-mod
-  (:use :cl :fiveam :cp/binomial-coefficient-mod)
+(defpackage :cp/test/binom-mod-prime
+  (:use :cl :fiveam :cp/binom-mod-prime)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/binomial-coefficient-mod)
+(in-package :cp/test/binom-mod-prime)
 (in-suite base-suite)
 
 (test binom

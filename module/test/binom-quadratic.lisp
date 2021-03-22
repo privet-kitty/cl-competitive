@@ -1,7 +1,7 @@
-(defpackage :cp/test/binomial-coefficient-quadratic
-  (:use :cl :fiveam :cp/binomial-coefficient-quadratic)
+(defpackage :cp/test/binom-quadratic
+  (:use :cl :fiveam :cp/binom-quadratic)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/binomial-coefficient-quadratic)
+(in-package :cp/test/binom-quadratic)
 (in-suite base-suite)
 
 (test make-binom-table
