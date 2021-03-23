@@ -1,10 +1,7 @@
-;;;
-;;; Sliding window aggregation over semigroup
-;;;
-
 (defpackage :cp/swag
   (:use :cl)
-  (:export #:swag-empty-error #:make-swag #:swag #:swag-push #:swag-pop #:swag-fold))
+  (:export #:swag-empty-error #:make-swag #:swag #:swag-push #:swag-pop #:swag-fold)
+  (:documentation "Provides sliding window aggregation over a semigroup."))
 (in-package :cp/swag)
 
 (define-condition swag-empty-error (error)
