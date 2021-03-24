@@ -54,4 +54,3 @@ semiring. Returns IDENTITY when an empty SWAG is folded."
       (if (%swag-front swag)
           (cdar (%swag-front swag))
           identity)))
-
