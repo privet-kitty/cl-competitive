@@ -212,7 +212,7 @@ frequency."
       (dfs (- (wavelet-depth wmatrix) 1) start end 0))))
 
 (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
-                wavelet-range-cont))
+                wavelet-range-count))
 (defun wavelet-range-count (wmatrix lo hi &optional (start 0) end)
   "Returns the number of the values within [LO, HI)."
   (declare (optimize (speed 3))
