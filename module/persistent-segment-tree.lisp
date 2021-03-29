@@ -24,7 +24,7 @@
 (defstruct (psegtree (:constructor %make-psegtree)
                      (:conc-name %psegtree-)
                      (:predicate nil))
-  (length 0 :type (integer 0 #.most-positive-fixnum))
+  (length 0 :type index)
   (root nil :type node))
 
 (defun make-psegtree (length)
