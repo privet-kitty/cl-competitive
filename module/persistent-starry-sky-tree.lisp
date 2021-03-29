@@ -1,12 +1,15 @@
 (defpackage :cp/persistent-starry-sky-tree
   (:use :cl)
-  (:export #:make-psstree #:psstree-fold #:psstree-update-range))
+  (:export #:make-psstree #:psstree-fold #:psstree-update-range)
+  (:documentation "Provides persistent Starry Sky tree, which is a name given in
+the Japanese community to a certain type of restricted lazy segment tree."))
 (in-package :cp/persistent-starry-sky-tree)
 
 ;; TODO:
 ;; - test
-;; - docs
+;; - linear-time initialization
 
+;; supposed to be min or max
 (defconstant +op-identity+ 0)
 (defun op (x y)
   (declare (fixnum x y))
@@ -51,6 +54,7 @@
       (%make-psstree :length length :root (recur 1)))))
 
 (defun psstree-fold (psstree left right)
+  "Folds the given interval [LEFT, RIGHT)."
   (declare (optimize (speed 3))
            (index left right))
   (assert (<= left right (%psstree-length psstree)))
@@ -70,6 +74,8 @@
            (%power-of-two-ceiling (%psstree-length psstree)))))
 
 (defun psstree-update-range (psstree left right operand)
+  "Returns a new PSSTREE updated by PSSTREE[i] := (UPDATER-OP PSSTREE[i]
+OPERAND). This function is non-destructive."
   (declare (optimize (speed 3))
            (index left right)
            (fixnum operand))

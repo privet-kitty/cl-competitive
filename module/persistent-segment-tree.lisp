@@ -40,7 +40,7 @@
       (%make-psegtree :length length :root (recur 1)))))
 
 (defun psegtree-fold (psegtree left right)
-  "Queries the sum of the interval [LEFT, RIGHT)."
+  "Returns the sum of the interval [LEFT, RIGHT)."
   (declare (optimize (speed 3))
            (index left right))
   (assert (<= left right (%psegtree-length psegtree)))
