@@ -39,6 +39,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/pairing-heap.lisp) meldable heap (pairing heap)
 - [radix-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/radix-heap.lisp) radix heap
 - [segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/segment-tree.lisp) segment tree on arbitrary monoid
+- [persistent-segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-segment-tree.lisp) persistent segment tree
+- [persistent-starry-sky-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-starry-sky-tree.lisp) persistent starry sky tree
 - [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-indexed-tree.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
 - [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-bit.lisp) 2D binary indexed tree
 - [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-set.lisp) disjoint set by Union-Find algorithm
