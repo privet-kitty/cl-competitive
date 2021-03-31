@@ -1,8 +1,13 @@
 (defpackage :cp/complex-geometry
   (:use :cl)
   (:export #:intersect-p #:calc-internal-angle #:calc-angle #:on-line-segment-p
-           #:cross* #:dot* #:inside-convex-polygon-p)
-  (:documentation "Provides utilities for 2D geometry using complex number."))
+           #:cross* #:dot* #:inside-convex-polygon-p #:in-circle
+           #:barycentric)
+  (:documentation "Provides utilities for 2D geometry using complex number.
+
+Reference:
+Christer Ericson. Real-Time Collision Detection. (I checked only a translation
+to Japanese)"))
 (in-package :cp/complex-geometry)
 
 ;; not tested
@@ -40,11 +45,12 @@ the one from Q1 to Q2."
                                  (* (imagpart c1) (imagpart c2)))
                               (* (abs c1) (abs c2)))))))
 
-;; The range of CL:PHASE is (-PI, PI]
 (declaim (inline calc-angle))
 (defun calc-angle (c1 c2)
   "Returns the anticlockwise angle (in the sense of amplitude) from vector C1 to
-vector C2. The range is [0, 2PI)."
+vector C2. The range is [0, 2PI).
+
+NOTE: it is similar to CL:PHASE, the range of which is (-PI, PI]."
   (mod (- (phase c2) (phase c1)) #.(* 2 PI)))
 
 (declaim (inline cross*))
@@ -91,3 +97,47 @@ the polygon must be ordered clockwise or anticlockwise in VECTOR."
               ((/= prev-side current-side)
                (return-from inside-convex-polygon-p nil)))))
     t))
+
+(declaim (inline in-circle))
+(defun in-circle (a b c point)
+  "Returns the `degree' to which POINT is inside the circle given by three
+points A, B, and C.
+
+result > 0: inside the circle;
+result < 0: outside the circle;
+result = 0: on the circumference, or collinear."
+  (declare (number a b c point))
+  (let* ((m11 (- (realpart a) (realpart point)))
+         (m12 (- (imagpart a) (imagpart point)))
+         (m13 (+ (expt m11 2) (expt m12 2)))
+         (m21 (- (realpart b) (realpart point)))
+         (m22 (- (imagpart b) (imagpart point)))
+         (m23 (+ (expt m21 2) (expt m22 2)))
+         (m31 (- (realpart c) (realpart point)))
+         (m32 (- (imagpart c) (imagpart point)))
+         (m33 (+ (expt m31 2) (expt m32 2)))
+         (det (- (+ (* m11 m22 m33)
+                    (* m12 m23 m31)
+                    (* m13 m21 m32))
+                 (+ (* m13 m22 m31)
+                    (* m12 m21 m33)
+                    (* m11 m23 m32))))
+         (cross (cross* (- b a) (- c a))))
+    (* cross det)))
+
+(declaim (inline barycentric))
+(defun barycentric (a b c point)
+  "Returns the barycentric coordinates of POINT w.r.t. A, B, and C."
+  (declare (number a b c point))
+  (let* ((v0 (- b a))
+         (v1 (- c a))
+         (v2 (- point a))
+         (d00 (dot* v0 v0))
+         (d01 (dot* v0 v1))
+         (d11 (dot* v1 v1))
+         (d20 (dot* v2 v0))
+         (d21 (dot* v2 v1))
+         (denom (- (* d00 d11) (* d01 d01)))
+         (coord-b (/ (- (* d11 d20) (* d01 d21)) denom))
+         (coord-c (/ (- (* d00 d21) (* d01 d20)) denom)))
+    (values (- 1 coord-b coord-c) coord-b coord-c)))
