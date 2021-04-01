@@ -1,10 +1,7 @@
-;;;
-;;; Bucket sort and counting sort
-;;;
-
 (defpackage :cp/binsort
   (:use :cl)
-  (:export #:map-binsorted #:do-binsorted #:binsort!))
+  (:export #:map-binsorted #:do-binsorted #:binsort!)
+  (:documentation "Provides bucket sort and counting sort."))
 (in-package :cp/binsort)
 
 (declaim (inline map-binsorted))
