@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:intersect-p #:calc-internal-angle #:calc-angle #:on-line-segment-p
            #:cross* #:dot* #:inside-convex-polygon-p #:in-circle
-           #:barycentric)
+           #:barycentric #:convex-quad-p)
   (:documentation "Provides utilities for 2D geometry using complex number.
 
 Reference:
@@ -141,3 +141,15 @@ result = 0: on the circumference, or collinear."
          (coord-b (/ (- (* d11 d20) (* d01 d21)) denom))
          (coord-c (/ (- (* d00 d21) (* d01 d20)) denom)))
     (values (- 1 coord-b coord-c) coord-b coord-c)))
+
+(declaim (inline convex-quad-p))
+(defun convex-quad-p (a b c d)
+  "Returns true iff the quadrilateral ABCD (which can be clockwise or
+counterclowise) is convex."
+  (declare (number a b c d))
+  (and (let ((bda (cross* (- d b) (- a b)))
+             (bdc (cross* (- d b) (- c b))))
+         (< (dot* bda bdc) 0))
+       (let ((acd (cross* (- c a) (- d a)))
+             (acb (cross* (- c a) (- b a))))
+         (< (dot* acd acb) 0))))
