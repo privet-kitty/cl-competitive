@@ -38,7 +38,9 @@ Note that DAY and MONTH are 1-based."
 
 (declaim (inline date-to-jdn))
 (defun date-to-jdn (day month year)
-  "Converts a Gregorian calendar date to Julian day number."
+  "Converts a Gregorian calendar date to Julian day number.
+
+INFO: day of the week is Monday iff JDN = 0 mod 7."
   (declare ((integer 1 31) day)
            ((integer 1 12) month)
            (fixnum year))

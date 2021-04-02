@@ -1,13 +1,12 @@
-;;;
-;;; Welzl's algorithm for smallest circle problem (not optimized)
-;;;
-;;; Reference:
-;;; Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
-;;;
-
 (defpackage :cp/welzl
   (:use :cl :cp/circumcenter :cp/shuffle)
-  (:export #:calc-smallest-circle))
+  (:export #:calc-smallest-circle)
+  (:documentation
+   "Welzl's algorithm for smallest circle problem. (not optimized)
+
+Reference:
+Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Edition
+"))
 (in-package :cp/welzl)
 
 (declaim (inline %mini-disc-with-2-points))
@@ -15,7 +14,7 @@
   "Returns the smallest circle that contains points, q1 and q2 (contains q1 and
 q2 on the circumference)."
   (declare (vector points)
-           ((integer 0 #.most-positive-fixnum) end))
+           ((mod #.array-total-size-limit) end))
   (let* ((center (* 1/2 (+ q1 q2)))
          (radius (abs (coerce (- q1 center) '(complex double-float)))))
     (dotimes (i end)
@@ -29,7 +28,7 @@ q2 on the circumference)."
 (declaim (inline %mini-disc-with-point))
 (defun %mini-disc-with-point (points end q eps)
   (declare (vector points)
-           ((integer 0 #.most-positive-fixnum) end))
+           ((mod #.array-total-size-limit) end))
   (shuffle! points 0 end)
   (let* ((center (* 1/2 (+ (aref points 0) q)))
          (radius (abs (coerce (- q center) '(complex double-float)))))
