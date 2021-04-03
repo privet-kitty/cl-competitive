@@ -5,6 +5,7 @@
 (in-suite base-suite)
 
 (test next-permutation
+  (declare (notinline next-permutation!))
   (signals no-permutation-error (next-permutation! #()))
   (signals no-permutation-error (next-permutation! #(#\a) :order #'char<))
   (is (equalp #(#\b #\a) (next-permutation! #(#\a #\b) :order #'char<)))
@@ -19,4 +20,11 @@
       (do-permutations! (perm s)
         (push (copy-seq perm) perms2))
       (setq perms2 (sort perms2 #'string<)))
-    (is (equalp perms1 perms2))))
+    (is (equalp perms1 perms2)))
+  (let ((vector (vector 1 1 2 2)))
+    (is (equalp #(1 2 1 2) (next-permutation! vector)))
+    (is (equalp #(1 2 2 1) (next-permutation! vector)))
+    (is (equalp #(2 1 1 2) (next-permutation! vector)))
+    (is (equalp #(2 1 2 1) (next-permutation! vector)))
+    (is (equalp #(2 2 1 1) (next-permutation! vector)))
+    (signals no-permutation-error (next-permutation! vector))))

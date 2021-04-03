@@ -1,46 +1,43 @@
-;;;
-;;; Next permutation (O(n))
-;;; Reference:
-;;; https://www.geeksforgeeks.org/find-the-next-lexicographically-greater-word-than-a-given-word/
-;;;
-
 (defpackage :cp/next-permutation
   (:use :cl)
-  (:export #:no-permutation-error #:next-permutation!))
-(in-package :cp/next-permutation)
+  (:export #:no-permutation-error #:next-permutation!)
+  (:documentation "Provides linear time computation of the next permutation.
 
-;; NOTE: Here the underlying set is 0-based: {0, 1, 2, ..., N-1}
+Reference:
+https://www.geeksforgeeks.org/find-the-next-lexicographically-greater-word-than-a-given-word/"))
+(in-package :cp/next-permutation)
 
 (define-condition no-permutation-error (error)
   ((permutation :initarg :permutation :reader no-permutation-error-permutation))
   (:report
    (lambda (condition stream)
-     (format stream "~W is an extreme permutation"
+     (format stream "~W is lexicographically maximum."
              (no-permutation-error-permutation condition)))))
 
-(defun next-permutation! (perm &key (order #'<))
-  "Destructively changes PERM to the next permutation w.r.t. ORDER. ORDER must
-be a strict total order on PERM."
-  (declare (vector perm))
-  (let* ((n (length perm))
+(declaim (inline next-permutation!))
+(defun next-permutation! (vector &key (order #'<))
+  "Destructively changes VECTOR to the lexicographically next permutation
+w.r.t. ORDER. ORDER must be a strict order. VECTOR may contain identical
+elements."
+  (declare (vector vector))
+  (let* ((n (length vector))
          (left (- n 2)))
     (declare (fixnum left))
     (loop (when (< left 0)
             (error 'no-permutation-error))
-          (when (funcall order (aref perm left) (aref perm (+ left 1)))
+          (when (funcall order (aref vector left) (aref vector (+ left 1)))
             (return))
           (decf left))
     (labels ((bisect (ok ng)
-               (declare ((integer 0 #.most-positive-fixnum) ok ng))
+               (declare ((mod #.array-total-size-limit) ok ng))
                (if (<= (- ng ok) 1)
                    ok
                    (let ((mid (ash (+ ok ng) -1)))
-                     (if (funcall order (aref perm left) (aref perm mid))
+                     (if (funcall order (aref vector left) (aref vector mid))
                          (bisect mid ng)
                          (bisect ok mid))))))
-      (rotatef (aref perm left)
-               (aref perm (bisect left n)))
+      (rotatef (aref vector left) (aref vector (bisect left n)))
       (loop for i from 1 below (ceiling (- n left) 2)
-            do (rotatef (aref perm (+ left i))
-                        (aref perm (- n i))))
-      perm)))
+            do (rotatef (aref vector (+ left i))
+                        (aref vector (- n i))))
+      vector)))
