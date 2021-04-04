@@ -170,7 +170,7 @@ KEY := FUNCTION returning FIXNUM"
          (ftype (function * (values (unsigned-byte 62) &optional)) rhash-query))
 (defun rhash-query (rhash l r)
   "Returns the hash value of the interval [L, R)."
-  (declare ((integer 0 #.most-positive-fixnum) l r))
+  (declare ((mod #.array-total-size-limit) l r))
   (assert (<= l r))
   (let ((cumul1 (rhash-cumul1 rhash))
         (powers1 (rhash-powers1 rhash))
@@ -193,23 +193,24 @@ HASH-VALUE1 := hash value of the first sequence
 HASH-VALUE2 := hash value of the second sequence
 LENGTH2 := length of the second sequence."
   (declare ((unsigned-byte 62) hash-value1 hash-value2)
-           ((integer 0 #.most-positive-fixnum) length2))
+           ((mod #.array-total-size-limit) length2))
   (let* ((hash1-lower (ldb (byte 31 0) hash-value1))
          (hash1-upper (ldb (byte 31 31) hash-value1))
          (hash2-lower (ldb (byte 31 0) hash-value2))
          (hash2-upper (ldb (byte 31 31) hash-value2))
          (res-lower (%mod (+ hash2-lower
-                            (* hash1-lower
-                               (aref (rhash-powers1 rhash) length2)))
-                         +rhash-mod1+))
+                             (* hash1-lower
+                                (aref (rhash-powers1 rhash) length2)))
+                          +rhash-mod1+))
          (res-upper (%mod (+ hash2-upper
-                            (* hash1-upper
-                               (aref (rhash-powers2 rhash) length2)))
-                         +rhash-mod2+)))
+                             (* hash1-upper
+                                (aref (rhash-powers2 rhash) length2)))
+                          +rhash-mod2+)))
     (declare ((unsigned-byte 31) res-lower res-upper))
     (dpb res-upper (byte 31 31) res-lower)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) rhash-get-lcp))
+(declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
+                rhash-get-lcp))
 (defun rhash-get-lcp (rhash1 start1 rhash2 start2)
   "Returns the length of the longest common prefix of two suffixes which begin
 at START1 and START2."
@@ -221,7 +222,7 @@ at START1 and START2."
                          (- (length (rhash-cumul1 rhash2)) start2 1))))
     (declare (optimize (safety 0)))
     (labels ((bisect (ok ng)
-               (declare ((integer 0 #.most-positive-fixnum) ok ng))
+               (declare ((mod #.array-total-size-limit) ok ng))
                (if (<= (- ng ok) 1)
                    ok
                    (let ((mid (ash (+ ng ok) -1)))
@@ -233,11 +234,11 @@ at START1 and START2."
 
 (defun map-prefix-hash (vector function &key (start 0) end)
   "Applies FUNCTION to the hash value of each prefix of VECTOR (in ascending
-order, including null prefix)."
+order, including empty prefix)."
   (declare (vector vector)
            (function function)
-           ((integer 0 #.most-positive-fixnum) start)
-           ((or null (integer 0 #.most-positive-fixnum)) end))
+           ((mod #.array-total-size-limit) start)
+           ((or null (mod #.array-total-size-limit)) end))
   (let* ((end (or end (length vector)))
          (lower 0)
          (upper 0))
