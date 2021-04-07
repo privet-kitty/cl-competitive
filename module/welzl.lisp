@@ -41,6 +41,8 @@ q2 on the circumference)."
 
 (declaim (inline calc-smallest-circle))
 (defun calc-smallest-circle (points eps)
+  "NOTE: Consequence is undefined when POINTS contains identical or too close
+two points."
   (declare (vector points))
   (assert (>= (length points) 1))
   (when (= 1 (length points))
