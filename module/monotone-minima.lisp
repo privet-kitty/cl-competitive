@@ -8,7 +8,7 @@
 (declaim (inline monotone-minima))
 (defun monotone-minima (function x1 y1 x2 y2 &key (order #'<))
   "Takes a monotone two-variable function and returns a vector such that for all
-x in [x1, x2) f(x, y) takes a minimum at y = vector[x - X1]. If order is #'>,
+x in [x1, x2) f(x, y) takes a minimum at y = vector[x - x1]. If order is #'>,
 this function finds maxima instead."
   (declare (fixnum x1 y1 x2 y2))
   (let ((result (make-array (- x2 x1) :element-type '(integer 0 #.most-positive-fixnum)))
