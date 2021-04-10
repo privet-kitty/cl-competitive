@@ -66,6 +66,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [cumulative-sum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/cumulative-sum.lisp) n-dimensional cumulative sum
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
 - [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) maximum (minimum) of unimodal function
+- [monotone-minima.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/monotone-minima.lisp) divide-and-conquer algotighm for monotone matrix
 - [quicksort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quicksort.lisp) quicksort
 - [merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/merge-sort.lisp) merge sort
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binsort.lisp) bin sort; counting sort
