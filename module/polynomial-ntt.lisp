@@ -293,6 +293,8 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
             do (setq num (odd u))
             do (setq denom (even (poly-multiply denom denom-))
                      index (ash index -1))
-            finally (return (mod (* (aref num 0)
+            finally (return (mod (* (if (zerop (length num))
+                                        0
+                                        (aref num 0))
                                     (%mod-inverse (aref denom 0)))
                                  +ntt-mod+))))))

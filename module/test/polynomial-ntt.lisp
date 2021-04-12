@@ -47,3 +47,18 @@
                (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
                (res2 (multipoint-eval poly1 points)))
           (is (equalp res1 res2)))))))
+
+(test bostan-mori
+  ;; fibonacci
+  (is (equal (cons 0 (loop for a0 = 0 then a1
+                           and a1 = 1 then (+ a0 a1)
+                           repeat 100
+                           collect (mod a1 +ntt-mod+)))
+             (loop for i to 100
+                   collect (bostan-mori i
+                                        #(0 1)
+                                        (vector 1 (- +ntt-mod+ 1) (- +ntt-mod+ 1))))))
+  ;; constant
+  (is (equal (cons 2 (loop repeat 100 collect 0))
+             (loop for i to 100
+                   collect (bostan-mori i #(4) #(2))))))
