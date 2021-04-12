@@ -61,4 +61,11 @@
   ;; constant
   (is (equal (cons 2 (loop repeat 100 collect 0))
              (loop for i to 100
-                   collect (bostan-mori i #(4) #(2))))))
+                   collect (bostan-mori i #(4) #(2)))))
+  (is (equal (loop repeat 101 collect 0)
+             (loop for i to 100
+                   collect (bostan-mori i #() #(2)))))
+  ;; division-by-zero
+  (signals division-by-zero (bostan-mori 10 #(2) #()))
+  (signals division-by-zero (bostan-mori 10 #(2) #(0)))
+  (signals division-by-zero (bostan-mori 10 #() #())))

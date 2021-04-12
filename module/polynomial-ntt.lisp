@@ -252,7 +252,7 @@ https://codeforces.com/blog/entry/83532"
 
 (declaim (ftype (function * (values ntt-int &optional)) bostan-mori))
 (defun bostan-mori (index num denom)
-  "Returns [x^index]num(x)/denom(x). Time compexity is 
+  "Returns [x^index](num(x)/denom(x)).
 
 Reference:
 https://arxiv.org/abs/2008.08822
@@ -281,9 +281,11 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
                res)))
     (let ((num (coerce num 'ntt-vector))
           (denom (coerce denom 'ntt-vector)))
-      (assert (and (>= (length denom) 1)
-                   (>= (length num) 1)
-                   (not (zerop (aref denom 0)))))
+      (when (or (zerop (length denom))
+                (zerop (aref denom 0)))
+        (error 'division-by-zero
+               :operands (list num denom)
+               :operation 'bostan-mori))
       (loop while (> index 0)
             for denom- = (negate denom)
             for u = (poly-multiply num denom-)
