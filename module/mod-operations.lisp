@@ -4,7 +4,8 @@
   (:documentation "Provides modular arithmetic."))
 (in-package :cp/mod-operations)
 
-(defvar *modulus* 0)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *modulus* 0))
 (declaim ((unsigned-byte 31) *modulus*)
          (sb-ext:always-bound *modulus*))
 
