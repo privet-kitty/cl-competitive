@@ -1,7 +1,7 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
-           #:multipoint-eval #:poly-total-prod #:chirp-z))
+           #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
@@ -249,3 +249,50 @@ https://codeforces.com/blog/entry/83532"
                       (%mod-power binv (ash (* i (- i 1)) -1)))
                    +ntt-mod+)))
       result)))
+
+(declaim (ftype (function * (values ntt-int &optional)) bostan-mori))
+(defun bostan-mori (index num denom)
+  "Returns [x^index]num(x)/denom(x). Time compexity is 
+
+Reference:
+https://arxiv.org/abs/2008.08822
+https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
+  (declare (optimize (speed 3))
+           (unsigned-byte index)
+           (vector num denom))
+  (labels ((even (p)
+             (let ((res (make-array (ceiling (length p) 2) :element-type 'ntt-int)))
+               (dotimes (i (length res))
+                 (setf (aref res i)
+                       (aref p (* 2 i))))
+               res))
+           (odd (p)
+             (let ((res (make-array (floor (length p) 2) :element-type 'ntt-int)))
+               (dotimes (i (length res))
+                 (setf (aref res i) (aref p (+ 1 (* 2 i)))))
+               res))
+           (negate (p)
+             (let ((res (copy-seq p)))
+               (loop for i from 1 below (length res) by 2
+                     do (setf (aref res i)
+                              (if (zerop (aref res i))
+                                  0
+                                  (- +ntt-mod+ (aref res i)))))
+               res)))
+    (let ((num (coerce num 'ntt-vector))
+          (denom (coerce denom 'ntt-vector)))
+      (assert (and (>= (length denom) 1)
+                   (>= (length num) 1)
+                   (not (zerop (aref denom 0)))))
+      (loop while (> index 0)
+            for denom- = (negate denom)
+            for u = (poly-multiply num denom-)
+            when (evenp index)
+            do (setq num (even u))
+            else
+            do (setq num (odd u))
+            do (setq denom (even (poly-multiply denom denom-))
+                     index (ash index -1))
+            finally (return (mod (* (aref num 0)
+                                    (%mod-inverse (aref denom 0)))
+                                 +ntt-mod+))))))
