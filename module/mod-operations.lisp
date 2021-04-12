@@ -1,11 +1,12 @@
-;;;
-;;; Arithmetic operations with static modulus
-;;;
-
 (defpackage :cp/mod-operations
   (:use :cl)
-  (:export #:define-mod-operations))
+  (:export #:define-mod-operations #:*modulus*)
+  (:documentation "Provides modular arithmetic."))
 (in-package :cp/mod-operations)
+
+(defvar *modulus* 0)
+(declaim ((unsigned-byte 31) *modulus*)
+         (sb-ext:always-bound *modulus*))
 
 (defmacro define-mod-operations
     (divisor &optional (package #+sbcl (sb-int:sane-package) #-sbcl *package*))
@@ -19,7 +20,7 @@
        (defun ,mod* (&rest args)
          (cond ((cdr args) (reduce (lambda (x y) (mod (* x y) ,divisor)) args))
                (args (mod (car args) ,divisor))
-               (t 1)))
+               (t (mod 1 ,divisor))))
        (defun ,mod+ (&rest args)
          (cond ((cdr args) (reduce (lambda (x y) (mod (+ x y) ,divisor)) args))
                (args (mod (car args) ,divisor))
@@ -34,7 +35,7 @@
          (locally (declare (sb-ext:muffle-conditions warning))
            (sb-c:define-source-transform ,mod* (&rest args)
              (case (length args)
-               (0 1)
+               (0 `(mod 1 ,',divisor))
                (1 `(mod ,(car args) ,',divisor))
                (otherwise (reduce (lambda (x y) `(mod (* ,x ,y) ,',divisor)) args))))
            (sb-c:define-source-transform ,mod+ (&rest args)

@@ -103,8 +103,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [binom-mod-small.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-small.lisp) binomial coefficient modulo small number
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bounded-partition-number.lisp) partition number with upper-bound
-- [dynamic-mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dynamic-mod-operations.lisp) addition/multiplication with dynamic modulus
-- [mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-operations.lisp) addition/multiplication with static modulus
+- [mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-operations.lisp) modular arithmetic
 - [lagrange-interpolation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lagrange-interpolation.lisp) Lagrange interpolation
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eratosthenes.lisp) enumeration of primes; prime factorization
 - [linear-sieve.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/linear-sieve.lisp) linear sieve; fast prime factorization
