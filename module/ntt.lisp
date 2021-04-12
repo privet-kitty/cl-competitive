@@ -1,13 +1,12 @@
-;;;
-;;; Fast Number Theoretic Transform
-;;; Reference:
-;;; https://github.com/ei1333/library/blob/master/math/fft/number-theoretic-transform-friendly-mod-int.cpp
-;;; https://github.com/atcoder/ac-library/tree/master/atcoder
-;;;
-
 (defpackage :cp/ntt
   (:use :cl)
-  (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector #:+ntt-mod+))
+  (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector #:+ntt-mod+)
+  (:documentation
+   "Provides fast number theoretic transform.
+
+Reference:
+https://github.com/ei1333/library/blob/master/math/fft/number-theoretic-transform-friendly-mod-int.cpp
+https://github.com/atcoder/ac-library/tree/master/atcoder"))
 (in-package :cp/ntt)
 
 (deftype ntt-int () '(unsigned-byte 31))
