@@ -5,7 +5,10 @@
 (in-suite base-suite)
 
 (test mod-binomial
-  (finishes
+  (let ((*test-dribble* nil))
     (loop for n from -20 to 20
           do (loop for k from -20 to 20
-                   do (assert (= (mod-binomial n k +binom-mod+) (binom n k)))))))
+                   do (is (= (mod-binomial n k +binom-mod+)
+                             (binom n k)))
+                      (is (= (mod-multichoose n k +binom-mod+)
+                             (multichoose n k)))))))
