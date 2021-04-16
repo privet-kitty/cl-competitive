@@ -62,15 +62,19 @@ https://github.com/atcoder/ac-library/tree/master/atcoder"))
                     (when (= 1 (%mod-power g (floor (- modulus 1) (aref divs i)) modulus))
                       (return)))))))))
 
-;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
-;; isn't guaranteed to preserve a given VECTOR in ANSI CL.
 (declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
 (defun %adjust-array (vector length)
-  (declare (vector vector))
+  "This function always copies VECTOR. (ANSI CL doesn't state whether
+CL:ADJUST-ARRAY should copy the array or not.)"
+  (declare (optimize (speed 3))
+           (vector vector)
+           ((mod #.array-dimension-limit) length))
   (let ((vector (coerce vector 'ntt-vector)))
     (if (= (length vector) length)
         (copy-seq vector)
-        (adjust-array vector length :initial-element 0))))
+        (let ((res (make-array length :element-type 'ntt-int :initial-element 0)))
+          (replace res vector)
+          res))))
 
 (defun check-ntt-vector (vector)
   (declare (optimize (speed 3))
