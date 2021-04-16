@@ -13,4 +13,6 @@
                   (0 1 15 25 10 1 0 0)
                   (0 1 31 90 65 15 1 0)
                   (0 1 63 301 350 140 21 1))
-              (make-stirling2-table 8 8 1000000007))))
+              (make-stirling2-table 8 8 1000000007)))
+  (is (equalp #2A() (make-stirling2-table 0 0 1000000007)))
+  (is (equalp #2A((0 0 0) (0 0 0)) (make-stirling2-table 2 3 1))))
