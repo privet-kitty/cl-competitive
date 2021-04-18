@@ -1,19 +1,20 @@
-;;;
-;;; Lowest common ancestor of tree (or forest) by binary lifting
-;;; build: O(nlog(n))
-;;; query: O(log(n))
-;;;
-
 (defpackage :cp/lca
   (:use :cl)
   (:export #:lca-table #:lca-table-p
            #:make-lca-table #:lca-max-level #:lca-depths #:lca-parents
-           #:two-vertices-disconnected-error #:lca-get-lca #:lca-distance))
+           #:two-vertices-disconnected-error #:lca-get-lca #:lca-distance
+           #:lca-ascend #:lca-jump)
+  (:documentation
+   "Provides lowest common ancestor of tree (or forest) by binary lifting.
+
+build: O(nlog(n))
+query: O(log(n))"))
 (in-package :cp/lca)
 
 ;; PAY ATTENTION TO THE STACK SIZE! THE CONSTRUCTOR DOES DFS.
 
-(deftype lca-vertex-number () '(signed-byte 32))
+(deftype lca-int () '(signed-byte 32))
+(deftype lca-uint () '(and lca-int (integer 0)))
 
 (defstruct (lca-table
             (:constructor %make-lca-table
@@ -22,15 +23,15 @@
                  ;; requires 1 + log_2{size-1}
                  (max-level (+ 1 (integer-length (- size 2))))
                  (depths (make-array size
-                                     :element-type 'lca-vertex-number
+                                     :element-type 'lca-int
                                      :initial-element -1))
                  (parents (make-array (list size max-level)
-                                      :element-type 'lca-vertex-number))))
+                                      :element-type 'lca-int))))
             (:conc-name lca-)
             (:copier nil))
   (max-level nil :type (integer 0 #.most-positive-fixnum))
-  (depths nil :type (simple-array lca-vertex-number (*)))
-  (parents nil :type (simple-array lca-vertex-number (* *))))
+  (depths nil :type (simple-array lca-int (*)))
+  (parents nil :type (simple-array lca-int (* *))))
 
 (defun make-lca-table (graph &key root (key #'identity))
   "GRAPH := vector of adjacency lists
@@ -49,12 +50,12 @@ ROOT; GRAPH must be tree in the latter case."
          (parents (lca-parents lca-table))
          (max-level (lca-max-level lca-table)))
     (labels ((dfs (v parent depth)
-               (declare (lca-vertex-number v parent))
+               (declare (lca-int v parent))
                (setf (aref depths v) depth
                      (aref parents v 0) parent)
                (dolist (edge (aref graph v))
                  (let ((dest (funcall key edge)))
-                   (declare (lca-vertex-number dest))
+                   (declare (lca-uint dest))
                    (unless (= dest parent)
                      (dfs dest v (+ 1 depth)))))))
       (if root
@@ -86,19 +87,19 @@ ROOT; GRAPH must be tree in the latter case."
 (defun lca-get-lca (lca-table vertex1 vertex2)
   "Returns the lowest common ancestor of the vertices VERTEX1 and VERTEX2."
   (declare (optimize (speed 3))
-           ((and lca-vertex-number (integer 0)) vertex1 vertex2))
+           (lca-uint vertex1 vertex2))
   (let* ((u vertex1)
          (v vertex2)
          (depths (lca-depths lca-table))
          (parents (lca-parents lca-table))
          (max-level (lca-max-level lca-table)))
-    (declare (lca-vertex-number u v))
+    (declare (lca-int u v))
     ;; Ensures depth[u] <= depth[v]
     (when (> (aref depths u) (aref depths v))
       (rotatef u v))
     (dotimes (k max-level)
       (when (logbitp k (- (aref depths v) (aref depths u)))
-        (setf v (aref parents v k))))
+        (setq v (aref parents v k))))
     (if (= u v)
         u
         (loop for k from (- max-level 1) downto 0
@@ -112,11 +113,56 @@ ROOT; GRAPH must be tree in the latter case."
                                  :vertex2 vertex2)
                           (return (aref parents u 0)))))))
 
-(declaim (inline lca-distance))
+(declaim (ftype (function * (values lca-uint &optional)) lca-distance))
 (defun lca-distance (lca-table vertex1 vertex2)
   "Returns the distance between two vertices."
-  (declare (optimize (speed 3)))
+  (declare (optimize (speed 3))
+           (lca-uint vertex1 vertex2))
   (let ((depths (lca-depths lca-table))
         (lca (lca-get-lca lca-table vertex1 vertex2)))
     (+ (- (aref depths vertex1) (aref depths lca))
        (- (aref depths vertex2) (aref depths lca)))))
+
+;; not tested
+(declaim (ftype (function * (values lca-uint &optional)) lca-ascend))
+(defun lca-ascend (lca-table vertex delta)
+  "Returns the DELTA-th ancestor of VERTEX. (0-th ancestor is VERTEX itself.)"
+  (declare (optimize (speed 3))
+           (lca-uint vertex)
+           (integer delta))
+  (let ((depths (lca-depths lca-table))
+        (parents (lca-parents lca-table))
+        (max-level (lca-max-level lca-table)))
+    (unless (<= 0 delta (aref depths vertex))
+      (error "~D-th ancestor of vertex ~D doesn't exist, whose depth is ~D"
+             delta vertex (aref depths vertex)))
+    (dotimes (k max-level)
+      (when (logbitp k delta)
+        (setq vertex (aref parents vertex k))))
+    vertex))
+
+;; not tested
+(declaim (ftype (function * (values lca-uint &optional)) lca-jump))
+(defun lca-jump (lca-table start end delta)
+  "Returns the vertex which is on the path between START and END and is located
+at distance DELTA from START."
+  (declare (lca-uint start end delta))
+  (let ((lca (lca-get-lca lca-table start end))
+        (depths (lca-depths lca-table)))
+    (cond ((= lca end)
+           (lca-ascend lca-table start delta))
+          ((= lca start)
+           (lca-ascend lca-table
+                       end
+                       (- (aref depths end)
+                          (aref depths lca)
+                          delta)))
+          ((>= (- (aref depths start) (aref depths lca))
+               delta)
+           (lca-ascend lca-table start delta))
+          (t
+           (lca-ascend lca-table
+                       end
+                       (- (+ (aref depths end) (aref depths start))
+                          (* 2 (aref depths lca))
+                          delta))))))
