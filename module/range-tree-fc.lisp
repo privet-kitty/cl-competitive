@@ -184,7 +184,7 @@ negative or positive infinity."
          (ykeys (%ynode-ykeys ynode)))
     (labels ((recur (xnode x1 x2 start end)
                (declare ((or null xnode) xnode)
-                        ((mod #.array-total-size-limit) start end)
+                        ((mod #.array-dimension-limit) start end)
                         (fixnum x1 x2)
                         ;; KLUDGE: declaring ftype is not sufficient for the
                         ;; optimization on SBCL 1.1.14.
@@ -241,7 +241,7 @@ negative or positive infinity."
          (ykeys (%ynode-ykeys ynode)))
     (labels ((recur (xnode x1 x2 start end)
                (declare ((or null xnode) xnode)
-                        ((mod #.array-total-size-limit) start end)
+                        ((mod #.array-dimension-limit) start end)
                         (fixnum x1 x2)
                         ;; KLUDGE: declaring ftype is not sufficient for the
                         ;; optimization on SBCL 1.1.14.
@@ -298,7 +298,7 @@ negative or positive infinity."
            (ykeys (%ynode-ykeys ynode)))
       (labels ((recur (xnode x1 x2 start end)
                  (declare ((or null xnode) xnode)
-                          ((mod #.array-total-size-limit) start end)
+                          ((mod #.array-dimension-limit) start end)
                           (fixnum x1 x2))
                  (cond ((null xnode))
                        ((and (= x1 +neg-inf+) (= x2 +pos-inf+))

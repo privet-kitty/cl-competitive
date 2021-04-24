@@ -66,7 +66,7 @@ IDENTITY := identity element of the monoid"
                    (:conc-name ,conc-name)
                    (:copier nil)
                    (:predicate nil))
-         (max-level nil :type (mod #.array-total-size-limit))
+         (max-level nil :type (mod #.array-dimension-limit))
          (depths nil :type (simple-array vertex-integer (*)))
          (parents nil :type (simple-array vertex-integer (* *)))
          (table-out nil :type (simple-array ,element-type (* *)))
@@ -127,7 +127,7 @@ ROOT; GRAPH must be tree in the latter case."
                                       (aref table-in v k)))))))
              ,name)))
 
-       (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional)) ,lca-get-lca))
+       (declaim (ftype (function * (values (mod #.array-dimension-limit) &optional)) ,lca-get-lca))
        (defun ,lca-get-lca (,name vertex1 vertex2)
          "Returns the lowest common ancestor of the vertices VERTEX1 and VERTEX2."
          (declare (optimize (speed 3))
@@ -203,15 +203,15 @@ ROOT; GRAPH must be tree in the latter case."
            (funcall ,op res1 res2)))
 
        (declaim (inline ,lca-distance)
-                (ftype (function * (values (mod #.array-total-size-limit) &optional))
+                (ftype (function * (values (mod #.array-dimension-limit) &optional))
                        ,lca-distance))
        (defun ,lca-distance (,name vertex1 vertex2)
          "Returns the distance between two vertices."
          (let* ((depths (,%lca-depths ,name))
                 (lca (,lca-get-lca ,name vertex1 vertex2)))
-           (+ (the (mod #.array-total-size-limit)
+           (+ (the (mod #.array-dimension-limit)
                    (- (aref depths vertex1) (aref depths lca)))
-              (the (mod #.array-total-size-limit)
+              (the (mod #.array-dimension-limit)
                    (- (aref depths vertex2) (aref depths lca)))))))))
 
 #+(or)

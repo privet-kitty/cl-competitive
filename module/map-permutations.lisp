@@ -13,11 +13,11 @@
   "Destructively permutes VECTOR[START] ... VECTOR[END-1] and applies FUNCTION
 to VECTOR each time. VECTOR comes back to the original order in the end."
   (declare (vector vector)
-           ((mod #.array-total-size-limit) start)
-           ((or null (mod #.array-total-size-limit)) end))
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end))
   (let ((end (or end (length vector))))
     (labels ((recur (start)
-               (declare ((mod #.array-total-size-limit) start))
+               (declare ((mod #.array-dimension-limit) start))
                (if (> start end)
                    (funcall function vector)
                    (loop initially (recur (+ 1 start))
@@ -35,7 +35,7 @@ to VECTOR each time. VECTOR comes back to the original order in the end."
 vector passed to FUNCTION is allocated only once and will be recycled. The
 consequence is undefined when any of these two vectors are modified in FUNCION."
   (declare (vector vector)
-           ((mod #.array-total-size-limit) length))
+           ((mod #.array-dimension-limit) length))
   (assert (<= length (length vector)))
   (let* ((n (length vector))
          (result (make-array length :element-type (array-element-type vector))))

@@ -6,7 +6,7 @@
 
 (declaim (inline %merge))
 (defun %merge (l mid r source-vec dest-vec order key)
-  (declare ((mod #.array-total-size-limit) l mid r)
+  (declare ((mod #.array-dimension-limit) l mid r)
            (function order key))
   (loop with pos1 = l
         with pos2 = mid
@@ -46,8 +46,8 @@ ORDER := strict order"
   (let* ((end (or end (length vector)))
          ;; TODO: avoid to allocate excessive size
          (buffer (make-array end :element-type (array-element-type vector))))
-    (declare ((mod #.array-total-size-limit) start end))
-    (loop for width of-type (mod #.array-total-size-limit) = 1 then (* width 2)
+    (declare ((mod #.array-dimension-limit) start end))
+    (loop for width of-type (mod #.array-dimension-limit) = 1 then (* width 2)
           for vec1 = vector then vec2
           and vec2 = buffer then vec1
           while (< width end)

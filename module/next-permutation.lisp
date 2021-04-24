@@ -29,7 +29,7 @@ elements."
             (return))
           (decf left))
     (labels ((bisect (ok ng)
-               (declare ((mod #.array-total-size-limit) ok ng))
+               (declare ((mod #.array-dimension-limit) ok ng))
                (if (<= (- ng ok) 1)
                    ok
                    (let ((mid (ash (+ ok ng) -1)))

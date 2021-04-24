@@ -21,13 +21,13 @@ Example:
 -> NIL
 "
   (declare (vector sub-vector1 main-vector2)
-           ((mod #.array-total-size-limit) start1 start2)
-           ((or null (mod #.array-total-size-limit)) end1 end2))
+           ((mod #.array-dimension-limit) start1 start2)
+           ((or null (mod #.array-dimension-limit)) end1 end2))
   (let ((end1 (or end1 (length sub-vector1)))
         (end2 (or end2 (length main-vector2))))
     (if from-end
         (let ((i2 (- end2 1)))
-          (declare ((integer -1 (#.array-total-size-limit)) i2))
+          (declare ((integer -1 (#.array-dimension-limit)) i2))
           (loop for i1 from (- end1 1) downto start1
                 do (loop while (and (>= i2 start2)
                                     (not (funcall test
@@ -39,7 +39,7 @@ Example:
                 collect i2
                 do (decf i2)))
         (let ((i2 start2))
-          (declare ((integer 0 (#.array-total-size-limit)) i2))
+          (declare ((integer 0 (#.array-dimension-limit)) i2))
           (loop for i1 from start1 below end1
                 do (loop while (and (< i2 end2)
                                     (not (funcall test

@@ -86,7 +86,7 @@
           (when (= (aref ends root1) (length (aref history root1)))
             (setf (aref history root1)
                   (adjust-array (aref history root1)
-                                (the (mod #.array-total-size-limit)
+                                (the (mod #.array-dimension-limit)
                                      (* 2 (aref ends root1))))))
           (setf (aref (aref history root1) (aref ends root1)) time)
           (setf (aref (aref history root1) (+ 1 (aref ends root1)))

@@ -7,7 +7,7 @@ sequence. Time complexity is O(nlog(n))."))
 
 (declaim (inline %merge-count))
 (defun %merge-count (l mid r source-vec dest-vec predicate key)
-  (declare ((mod #.array-total-size-limit) l mid r))
+  (declare ((mod #.array-dimension-limit) l mid r))
   (loop with count of-type (integer 0 #.most-positive-fixnum) = 0
         with i = l
         with j = mid
@@ -43,7 +43,7 @@ sequence. Time complexity is O(nlog(n))."))
 
 (declaim (inline %calc-by-insertion-sort!))
 (defun %calc-by-insertion-sort! (vec predicate l r key)
-  (declare ((mod #.array-total-size-limit) l r))
+  (declare ((mod #.array-dimension-limit) l r))
   (loop with inv-count of-type (integer 0 #.most-positive-fixnum) = 0
         for end from (+ l 1) below r
         do (loop for i from end above l
@@ -64,12 +64,12 @@ sequence. Time complexity is O(nlog(n))."))
 of ARRAY-ELEMENT-TYPE doesn't work. Use array-element-type.lisp if necessary."
   (declare (vector vector))
   (let ((end (or end (length vector))))
-    (declare ((mod #.array-total-size-limit) start end))
+    (declare ((mod #.array-dimension-limit) start end))
     (assert (<= start end))
     (let ((buffer (make-array end :element-type (array-element-type vector))))
       (labels
           ((recur (l r merge-to-vec1-p)
-             (declare ((mod #.array-total-size-limit) l r))
+             (declare ((mod #.array-dimension-limit) l r))
              (cond ((= l r) 0)
                    ((= (+ l 1) r)
                     (unless merge-to-vec1-p

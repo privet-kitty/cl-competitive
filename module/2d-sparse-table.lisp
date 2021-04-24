@@ -13,7 +13,7 @@
 (declaim (inline make-2d-sparse-table))
 (defun make-2d-sparse-table (matrix binop)
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((mod #.array-total-size-limit) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (let* ((logm (max 0 (- (integer-length (- m 1)) 1)))
            (logn (max 0 (- (integer-length (- n 1)) 1)))
            (table (make-array (list (+ logm 1) (+ logn 1) m n)

@@ -18,7 +18,7 @@ http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
   ;; sizes[k] := size of the k-th strongly connected component
   (sizes nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; the total number of strongly connected components
-  (count 0 :type (mod #.array-total-size-limit))
+  (count 0 :type (mod #.array-dimension-limit))
   (key nil :type function))
 
 (defun make-scc (graph &key (key #'identity))
@@ -38,7 +38,7 @@ http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
          (stack (make-array n :element-type '(integer 0 #.most-positive-fixnum)))
          (end 0) ; stack pointer
          (in-stack (make-array n :element-type 'bit :initial-element 0)))
-    (declare ((mod #.array-total-size-limit) ord end comp-index))
+    (declare ((mod #.array-dimension-limit) ord end comp-index))
     (labels ((%push (v)
                (setf (aref stack end) v
                      (aref in-stack v) 1)
@@ -63,7 +63,7 @@ http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
                           (setf (aref lowlinks v)
                                 (min (aref lowlinks v) (aref ords next)))))))
                (when (= (aref lowlinks v) (aref ords v))
-                 (loop for size of-type (mod #.array-total-size-limit) from 1
+                 (loop for size of-type (mod #.array-dimension-limit) from 1
                        for w = (%pop)
                        do (setf (aref components w) comp-index)
                        until (= v w)

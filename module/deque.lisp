@@ -11,7 +11,7 @@
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
 
-(deftype index () '(integer 0 #.(floor array-total-size-limit 2)))
+(deftype index () '(integer 0 #.(floor array-dimension-limit 2)))
 
 (define-condition deque-empty-error (error)
   ((queue :initarg :queue :reader deque-empty-error-queue))

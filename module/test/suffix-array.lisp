@@ -14,7 +14,7 @@
     (dotimes (i n)
       (setf (aref sa i) i))
     (sort sa (lambda (l r)
-               (declare ((mod #.array-total-size-limit) l r))
+               (declare ((mod #.array-dimension-limit) l r))
                (and (/= l r)
                     (loop for i from l below n
                           for j from r below n

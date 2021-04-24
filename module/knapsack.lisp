@@ -21,7 +21,7 @@ VALUES [WEIGHTS] := increasing sequence of sum of values [weights]"
          (current-w most-negative-fixnum)
          (current-v most-negative-fixnum))
     (declare ((simple-array fixnum (*)) new-vs new-ws)
-             ((integer 0 #.array-total-size-limit) pos1 pos2 end)
+             ((integer 0 #.array-dimension-limit) pos1 pos2 end)
              (fixnum current-w current-v))
     (loop (when (= pos1 len)
             (loop for pos from pos2 below len

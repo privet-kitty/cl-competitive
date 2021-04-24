@@ -21,14 +21,14 @@ distance to CYCLE[v] otherwise."
     (dotimes (init n)
       (let ((v init)
             (dist 0))
-        (declare ((mod #.array-total-size-limit) v dist))
+        (declare ((mod #.array-dimension-limit) v dist))
         (loop
           (unless (= (aref tmp v) -1)
             (if (zerop (aref lengths v))
                 ;; seen in this iteration
                 (let ((cycle-length (- dist (aref tmp v)))
                       (path-length (aref tmp v)))
-                  (declare ((mod #.array-total-size-limit) cycle-length path-length))
+                  (declare ((mod #.array-dimension-limit) cycle-length path-length))
                   ;; fill cycle
                   (loop repeat cycle-length
                         do (setf (aref lengths v) cycle-length
@@ -46,7 +46,7 @@ distance to CYCLE[v] otherwise."
                                       (if (= v (aref cycle v))
                                           0
                                           (aref lengths v)))))
-                  (declare ((mod #.array-total-size-limit) path-length))
+                  (declare ((mod #.array-dimension-limit) path-length))
                   ;; fill path
                   (loop with i = init
                         repeat dist

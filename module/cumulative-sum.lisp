@@ -104,11 +104,11 @@ given (n-dimensional) rectangle by the value; after the array is finalized with
        (declaim (inline ,builder))
        (defun ,builder (array)
          (destructuring-bind ,dims+1 (array-dimensions array)
-           (declare ((mod #.array-total-size-limit) ,@dims+1))
+           (declare ((mod #.array-dimension-limit) ,@dims+1))
            (let ,(loop for dim in dims
                        for dim+1 in dims+1
                        collect `(,dim (- ,dim+1 1)))
-             (declare ((mod #.array-total-size-limit) ,@dims))
+             (declare ((mod #.array-dimension-limit) ,@dims))
              ,@(loop for offset below rank
                      collect (%make-builder-form 'array vars dims dims+1 offset inc-macro))))))))
 

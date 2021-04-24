@@ -29,7 +29,7 @@ DIST[i] stores the distance between i and FNN[i]."
          (values (make-array n :element-type 'fixnum :initial-element 0))
          (maxs (make-array n :element-type 'fixnum :initial-element +neg-inf+))
          (result (make-array n :element-type 'fixnum)))
-    (declare ((mod #.array-total-size-limit) dim n))
+    (declare ((mod #.array-dimension-limit) dim n))
     (labels ((calc (i)
                (let ((point (aref points i))
                      (value 0))
@@ -52,7 +52,7 @@ DIST[i] stores the distance between i and FNN[i]."
                        (setf (aref maxs i) dist
                              (aref result i) argmin))))))
              (dfs (pos)
-               (declare ((mod #.array-total-size-limit) pos))
+               (declare ((mod #.array-dimension-limit) pos))
                (if (= pos dim)
                    (main)
                    (progn

@@ -21,7 +21,7 @@ Example:
          (current-value negative-infinity)
          (res (make-array (* 2 n) :element-type t))
          (end 0))
-    (declare ((mod #.array-total-size-limit) pos1 pos2 end))
+    (declare ((mod #.array-dimension-limit) pos1 pos2 end))
     (loop (when (= pos1 n)
             (loop for pos from pos2 below n
                   for value2 = (funcall op new-value (aref vector pos))

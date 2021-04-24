@@ -12,7 +12,7 @@ SEQUENCE in the order of the (non-negative) integers that (FUNCALL KEY
 <element>) returns. Any of these integers must not exceed RANGE-MAX. If FROM-END
 is true, the descending order is adopted instead. This function is
 non-destructive."
-  (declare ((mod #.array-total-size-limit) range-max))
+  (declare ((mod #.array-dimension-limit) range-max))
   (if key
       (let ((buckets (make-array (1+ range-max) :element-type 'list :initial-element nil))
             (existing-min most-positive-fixnum)
@@ -57,7 +57,7 @@ non-destructive."
 ;; not tested
 (declaim (inline binsort!))
 (defun binsort! (sequence range-max &key from-end key)
-  (declare ((mod #.array-total-size-limit) range-max))
+  (declare ((mod #.array-dimension-limit) range-max))
   (if key
       (let ((buckets (make-array (1+ range-max) :element-type 'list :initial-element nil)))
         (sequence:dosequence (e sequence)

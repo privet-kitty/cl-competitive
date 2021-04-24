@@ -17,13 +17,13 @@ and the number of the round.
 - Consequence is undefined when the vector passed FUNCTION is modified.
 - Time complexity is O(N^2)."
   (declare (optimize (speed 3))
-           ((mod #.array-total-size-limit) n))
+           ((mod #.array-dimension-limit) n))
   (assert (evenp n))
   (let ((res (make-array n :element-type 'fixnum)))
     (dotimes (round (- n 1))
-      (declare ((mod #.array-total-size-limit) round))
+      (declare ((mod #.array-dimension-limit) round))
       (labels ((calc (x)
-                 (declare ((mod #.array-total-size-limit) x))
+                 (declare ((mod #.array-dimension-limit) x))
                  (if (zerop x)
                      0
                      (+ 1 (mod (+ x -1 round) (- n 1))))))

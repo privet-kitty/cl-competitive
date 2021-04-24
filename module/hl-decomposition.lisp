@@ -34,7 +34,7 @@
          (preords (make-array n :element-type 'fixnum))
          (index 0)
          (roots (if (listp roots) roots (list roots))))
-    (declare ((integer 0 #.array-total-size-limit) index))
+    (declare ((integer 0 #.array-dimension-limit) index))
     (labels ((push-back (v child)
                (if (aref tails v)
                    (setf (cdr (aref tails v)) (list child)
@@ -51,7 +51,7 @@
                  (declare (fixnum size))
                  (dolist (edge (aref original-graph v))
                    (let ((child (funcall key edge)))
-                     (declare ((mod #.array-total-size-limit) child))
+                     (declare ((mod #.array-dimension-limit) child))
                      (if (= child parent)
                          (push-back v child)
                          (progn
@@ -67,7 +67,7 @@
                      (aref preords v) index
                      index (+ index 1))
                (dolist (child (aref graph v))
-                 (declare ((mod #.array-total-size-limit) child))
+                 (declare ((mod #.array-dimension-limit) child))
                  (unless (= child parent)
                    (setf (aref heads child)
                          (if (eql child (car (aref graph v)))

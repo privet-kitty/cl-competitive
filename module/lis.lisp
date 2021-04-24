@@ -29,9 +29,9 @@ Example:
                          :element-type (array-element-type vector)
                          :initial-element infinity))
          (end 0))
-    (declare ((integer 0 #.array-total-size-limit) end))
+    (declare ((integer 0 #.array-dimension-limit) end))
     (labels ((bisect (ng ok value)
-               (declare ((integer -1 #.array-total-size-limit) ng ok))
+               (declare ((integer -1 #.array-dimension-limit) ng ok))
                (if (<= (- ok ng) 1)
                    ok
                    (let ((mid (ash (+ ng ok) -1)))

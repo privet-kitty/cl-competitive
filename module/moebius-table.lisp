@@ -11,7 +11,7 @@
   "Returns a table of Moebius function. In addition returns a table of primes as
 the second value. Time complexity is O(nloglog(n))."
   (declare (optimize (speed 3))
-           ((integer 3 (#.array-total-size-limit)) sup))
+           ((integer 3 (#.array-dimension-limit)) sup))
   (let ((table (make-array sup :element-type 'bit :initial-element 0))
         (result (make-array sup :element-type '(signed-byte 8) :initial-element 1))
         (sup/64 (ceiling sup 64)))
@@ -29,7 +29,7 @@ the second value. Time complexity is O(nloglog(n))."
     (loop for p from 3 below sup by 2
           when (= 1 (sbit table p))
           do (let ((sq (* p p)))
-               (declare ((mod #.array-total-size-limit) sq))
+               (declare ((mod #.array-dimension-limit) sq))
                (loop for composite from sq below sup by p
                      do (setf (sbit table composite) 0))
                (loop for i from p below sup by p

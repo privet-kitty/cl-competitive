@@ -39,7 +39,7 @@ triangle. This function destructively modifies the array."
 
 (defun make-random-graph (size rate &optional directed)
   "Returns a adjacency-list representation of an random generated graph."
-  (declare ((mod #.array-total-size-limit) size)
+  (declare ((mod #.array-dimension-limit) size)
            ((real 0 1) rate))
   (let ((rate (float rate 1d0))
         (graph (make-array size :element-type 'list :initial-element nil)))

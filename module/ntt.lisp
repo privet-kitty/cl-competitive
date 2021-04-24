@@ -204,7 +204,7 @@ CL:ADJUST-ARRAY should copy the array or not.)"
                 (vector1 (coerce vector1 'ntt-vector))
                 (vector2 (coerce vector2 'ntt-vector)))
            (declare (ntt-vector vector1 vector2)
-                    ((mod #.array-total-size-limit) mul-len))
+                    ((mod #.array-dimension-limit) mul-len))
            (when (or (zerop len1) (zerop len2))
              (return-from ,convolve (make-array 0 :element-type 'ntt-int)))
            ;; naive convolution

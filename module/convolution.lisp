@@ -10,11 +10,11 @@
   (let* ((deg1 (- (length u) 1))
          (deg2 (- (length v) 1))
          (len (max 0 (+ deg1 deg2 1))))
-    (declare ((integer -1 (#.array-total-size-limit)) deg1 deg2 len))
+    (declare ((integer -1 (#.array-dimension-limit)) deg1 deg2 len))
     (when (or (= -1 deg1) (= -1 deg2))
       (return-from convolve (make-array 0 :element-type (array-element-type u))))
     (let ((res (make-array len :element-type (array-element-type u) :initial-element identity+)))
-      (declare ((integer -1 (#.array-total-size-limit)) len))
+      (declare ((integer -1 (#.array-dimension-limit)) len))
       (dotimes (d len res)
         ;; 0 <= i <= deg1, 0 <= j <= deg2
         (loop with coef = identity+

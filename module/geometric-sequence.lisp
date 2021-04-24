@@ -8,7 +8,7 @@
   "Returns a vector of the given length: VECTOR[x] := SCALE * (RATE^x) mod
 MODULUS."
   (declare (fixnum rate scale)
-           ((mod #.array-total-size-limit) length)
+           ((mod #.array-dimension-limit) length)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((result (make-array length :element-type element-type)))
     (unless (zerop length)

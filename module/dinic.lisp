@@ -10,12 +10,12 @@
   "Does BFS and sets DIST-TABLE to the distance between SRC and each vertex of
 GRAPH, where an edge of zero capacity is regarded as disconnected."
   (declare (optimize (speed 3) (safety 0))
-           ((mod #.array-total-size-limit) src)
+           ((mod #.array-dimension-limit) src)
            ((simple-array list (*)) graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table queue))
   (let* ((q-front 0)
          (q-end 0))
-    (declare ((mod #.array-total-size-limit) q-front q-end))
+    (declare ((mod #.array-dimension-limit) q-front q-end))
     (labels ((enqueue (obj)
                (setf (aref queue q-end) obj)
                (incf q-end))
@@ -43,11 +43,11 @@ GRAPH, where an edge of zero capacity is regarded as disconnected."
   "Finds an augmenting path, sends the maximum flow through it, and returns the
 amount of the flow."
   (declare (optimize (speed 3) (safety 0))
-           ((mod #.array-total-size-limit) src dest)
+           ((mod #.array-dimension-limit) src dest)
            ((simple-array list (*)) tmp-graph)
            ((simple-array (unsigned-byte 32) (*)) dist-table))
   (labels ((dfs (v flow)
-             (declare ((mod #.array-total-size-limit) v)
+             (declare ((mod #.array-dimension-limit) v)
                       ((integer 0 #.most-positive-fixnum) flow))
              (when (= v dest)
                (return-from dfs flow))
@@ -73,7 +73,7 @@ amount of the flow."
 of the flow. This function signals MAX-FLOW-OVERFLOW error when an infinite
 flow (to be precise, >= MOST-POSITIVE-FIXNUM) is possible."
   (declare #+sbcl (sb-ext:muffle-conditions style-warning)
-           ((mod #.array-total-size-limit) src dest)
+           ((mod #.array-dimension-limit) src dest)
            ((simple-array list (*)) graph))
   (let* ((n (length graph))
          (dist-table (make-array n :element-type '(unsigned-byte 32)))

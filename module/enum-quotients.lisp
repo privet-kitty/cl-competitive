@@ -27,7 +27,7 @@ be given; then A[i]A[j] <= N iff j < M-i."
         (result (make-array (%calc-length n)
                             :element-type '(integer 0 #.most-positive-fixnum)))
         (end 0))
-    (declare ((mod #.array-total-size-limit) end))
+    (declare ((mod #.array-dimension-limit) end))
     (loop (setf (aref result end) k)
           (incf end)
           (when (> k n)

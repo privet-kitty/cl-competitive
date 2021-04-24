@@ -45,11 +45,11 @@ NOTE: Pay attention to the stack size when you disable UNION-BY-SIZE."
          (values nil :type (simple-array ,element-type (*))))
 
        (declaim (inline ,rooter)
-                (ftype (function * (values (mod #.array-total-size-limit) &optional))
+                (ftype (function * (values (mod #.array-dimension-limit) &optional))
                        ,rooter))
        (defun ,rooter (,name x)
          "Returns the root of X."
-         (declare ((mod #.array-total-size-limit) x))
+         (declare ((mod #.array-dimension-limit) x))
          (let ((data (,data-accessor ,name)))
            (labels ((recur (x)
                       (if (< (aref data x) 0)

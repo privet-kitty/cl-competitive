@@ -78,7 +78,7 @@ respect to ORDER.
     (etypecase target
       (vector
        (let ((end (or end (length target))))
-         (frob aref (declare ((integer -1 (#.array-total-size-limit)) ng ok)))))
+         (frob aref (declare ((integer -1 (#.array-dimension-limit)) ng ok)))))
       (function
        (assert end () "Requires END argument if TARGET is a function.")
        (frob funcall)))))

@@ -213,8 +213,8 @@ SIZE2 := the number of `right' vertices
 MAZIMIZE := true [false] if maximization [minimization] problem"
   (matrix nil :type (simple-array fixnum (* *)))
   (maximize nil :type boolean)
-  (size1 0 :type (mod #.array-total-size-limit))
-  (size2 0 :type (mod #.array-total-size-limit))
+  (size1 0 :type (mod #.array-dimension-limit))
+  (size2 0 :type (mod #.array-dimension-limit))
   (matching1 nil :type (or null (simple-array fixnum (*))))
   (matching2 nil :type (or null (simple-array fixnum (*)))))
 
@@ -233,7 +233,7 @@ MAZIMIZE := true [false] if maximization [minimization] problem"
   "Computes a minimum (or maximum) weight matching of the specified
 size. Returns two vectors that expresses an optimal matching: group 1 -> group
 2, group 2 -> group 1"
-  (declare ((mod #.array-total-size-limit) size))
+  (declare ((mod #.array-dimension-limit) size))
   (assert (<= size (min (%lap-size1 lap) (%lap-size2 lap))))
   (let* ((size1 (%lap-size1 lap))
          (size2 (%lap-size2 lap))

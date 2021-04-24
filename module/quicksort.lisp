@@ -29,8 +29,8 @@ getting hacked. CP/SHUFFLE:SHUFFLE! is available for example.
 Reference:
 Hannu Erkio, The worst case permutation for median-of-three quicksort"
   (declare (vector vector)
-           ((mod #.array-total-size-limit) start)
-           ((or null (mod #.array-total-size-limit)) end))
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end))
   (unless end
     (setq end (length vector)))
   (assert (<= 0 start end))
@@ -43,7 +43,7 @@ Hannu Erkio, The worst case permutation for median-of-three quicksort"
                                    (aref vector (ash (+ l r) -1))
                                    (aref vector r)
                                    order)))
-             (declare ((mod #.array-total-size-limit) l r))
+             (declare ((mod #.array-dimension-limit) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
                          do (incf l))
                    (loop while (funcall order pivot (aref vector r))
@@ -76,7 +76,7 @@ This sort was written to efficiently sort certain types of data."
                                    (aref vector (ash (ash (+ l r) -2) 1))
                                    (aref vector r)
                                    order)))
-             (declare ((mod #.array-total-size-limit) l r))
+             (declare ((mod #.array-dimension-limit) l r))
              (loop (loop while (funcall order (aref vector l) pivot)
                          do (incf l 2))
                    (loop while (funcall order pivot (aref vector r))

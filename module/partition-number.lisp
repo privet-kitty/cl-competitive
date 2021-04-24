@@ -17,7 +17,7 @@ P(n, k) = P(n, n) (k > n)
     (sup-n sup-k modulus &key (element-type '(unsigned-byte 31)))
   "Builds a 2D table using the recurrence relation P(n, k) = P(n, k-1) + P(n-k,
 k)."
-  (declare ((mod #.array-total-size-limit) sup-n sup-k)
+  (declare ((mod #.array-dimension-limit) sup-n sup-k)
            ((integer 1 #.most-positive-fixnum) modulus))
   (let ((res (make-array (list sup-n sup-k) :element-type element-type)))
     (dotimes (k sup-k)
@@ -37,7 +37,7 @@ k)."
 (declaim (ftype (function * (values (simple-array (unsigned-byte 31) (*)) &optional))
                 make-partition-number-sequence))
 (defun make-partition-number-sequence (sup-n modulus)
-  (declare ((mod #.array-total-size-limit) sup-n)
+  (declare ((mod #.array-dimension-limit) sup-n)
            ((unsigned-byte 31) modulus))
   (let ((res (make-array sup-n :element-type '(unsigned-byte 31) :initial-element 0)))
     (setf (aref res 0) 1)

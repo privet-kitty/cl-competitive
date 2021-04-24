@@ -13,7 +13,7 @@ elements smaller than VECTOR[PIVOT-IDX] are moved to the front of i and those
 larger behind i. Note that this function deals with the **closed** interval [L,
 R]."
   (declare (vector vector)
-           ((mod #.array-total-size-limit) l r))
+           ((mod #.array-dimension-limit) l r))
   (rotatef (aref vector pivot-idx)
            (aref vector l))
   (let ((pivot (aref vector l))
@@ -51,16 +51,16 @@ example). Destructively modifies VECTOR.
 
 ORDER := strict order"
   (declare (vector vector)
-           ((mod #.array-total-size-limit) i start)
-           ((or null (mod #.array-total-size-limit)) end))
+           ((mod #.array-dimension-limit) i start)
+           ((or null (mod #.array-dimension-limit)) end))
   (labels ((recur (l r i)
-             (declare ((mod #.array-total-size-limit) l r i))
+             (declare ((mod #.array-dimension-limit) l r i))
              (when (= l r)
                (return-from recur (aref vector r)))
              (let* ((pivot-idx (+ l (random (+ 1 (- r l)))))
                     (mid (%hoare-partition! vector l r pivot-idx order))
                     (delta (- mid l)))
-               (declare ((mod #.array-total-size-limit) pivot-idx))
+               (declare ((mod #.array-dimension-limit) pivot-idx))
                (cond ((= i delta)
                       (return-from recur (aref vector mid)))
                      ((< i delta)

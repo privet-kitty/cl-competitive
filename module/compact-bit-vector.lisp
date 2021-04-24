@@ -49,7 +49,7 @@ vector is created."
                 cbv-rank))
 (defun cbv-rank (cbv end)
   "Counts the number of 1's in the range [0, END)."
-  (declare ((mod #.array-total-size-limit) end))
+  (declare ((mod #.array-dimension-limit) end))
   (let* ((storage (cbv-storage cbv))
          (blocks (cbv-blocks cbv))
          (bpos (ash end -6))
@@ -66,7 +66,7 @@ vector is created."
 (defun cbv-count (cbv value end)
   "Counts the number of VALUEs in the range [0, END)"
   (declare (bit value)
-           ((mod #.array-total-size-limit) end))
+           ((mod #.array-dimension-limit) end))
   (let ((count1 (cbv-rank cbv end)))
     (if (= value 1)
         count1
@@ -76,7 +76,7 @@ vector is created."
   "Detects the position of (1-based) ORD-th 1 in CBV. (CBV-SELECT CBV 0) always
 returns 0."
   (declare (optimize (speed 3))
-           ((mod #.array-total-size-limit) ord))
+           ((mod #.array-dimension-limit) ord))
   (let* ((storage (cbv-storage cbv))
          (blocks (cbv-blocks cbv))
          (block-size (length blocks)))

@@ -14,7 +14,7 @@ Mark de Berg et al., Computational Geometry: Algorithms and Applications, 3rd Ed
   "Returns the smallest circle that contains points, q1 and q2 (contains q1 and
 q2 on the circumference)."
   (declare (vector points)
-           ((mod #.array-total-size-limit) end))
+           ((mod #.array-dimension-limit) end))
   (let* ((center (* 1/2 (+ q1 q2)))
          (radius (abs (coerce (- q1 center) '(complex double-float)))))
     (dotimes (i end)
@@ -28,7 +28,7 @@ q2 on the circumference)."
 (declaim (inline %mini-disc-with-point))
 (defun %mini-disc-with-point (points end q eps)
   (declare (vector points)
-           ((mod #.array-total-size-limit) end))
+           ((mod #.array-dimension-limit) end))
   (shuffle! points 0 end)
   (let* ((center (* 1/2 (+ (aref points 0) q)))
          (radius (abs (coerce (- q center) '(complex double-float)))))

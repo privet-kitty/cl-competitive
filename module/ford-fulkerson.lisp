@@ -10,7 +10,7 @@
 (defun %find-flow (graph src dest checked)
   "DFS"
   (declare (optimize (speed 3) (safety 0))
-           ((mod #.array-total-size-limit) src dest)
+           ((mod #.array-dimension-limit) src dest)
            (simple-bit-vector checked)
            ((simple-array list (*)) graph))
   (fill checked 0)
@@ -34,7 +34,7 @@
                 max-flow!))
 (defun max-flow! (graph src dest)
   (declare (optimize (speed 3))
-           ((mod #.array-total-size-limit) src dest)
+           ((mod #.array-dimension-limit) src dest)
            ((simple-array list (*)) graph))
   (let ((checked (make-array (length graph) :element-type 'bit :initial-element 0))
         (result 0))

@@ -7,7 +7,7 @@
                 make-pfactors-table))
 (defun make-pfactors-table (sup)
   (declare (optimize (speed 3))
-           ((mod #.array-total-size-limit) sup))
+           ((mod #.array-dimension-limit) sup))
   (let ((result (make-array sup :element-type 'list :initial-element nil))
         (dp (make-array sup :element-type '(integer 0 #.most-positive-fixnum))))
     (dotimes (i sup)

@@ -11,7 +11,7 @@
          (collen (- y2 y1))
          (res (make-array rowlen :element-type 'fixnum))
          (cols (make-array (+ (* 2 rowlen) collen) :element-type 'fixnum)))
-    (declare ((mod #.array-total-size-limit) rowlen collen))
+    (declare ((mod #.array-dimension-limit) rowlen collen))
     (dotimes (i collen)
       (setf (aref cols i) (+ y1 i)))
     (labels
@@ -21,7 +21,7 @@
              (return-from recur (make-array 0 :element-type 'fixnum)))
            (let ((rend (ceiling (the fixnum (- x2 xinit)) step))
                  (new-end cend))
-             (declare ((mod #.array-total-size-limit) rend new-end))
+             (declare ((mod #.array-dimension-limit) rend new-end))
              (loop
                with x of-type fixnum = (- xinit step)
                for pos from cstart below cend
@@ -39,7 +39,7 @@
                     (incf x step)))
              (recur (+ xinit step) cend new-end (* 2 step))
              (let ((pos cend))
-               (declare ((mod #.array-total-size-limit) pos))
+               (declare ((mod #.array-dimension-limit) pos))
                (loop for x of-type fixnum from xinit below x2 by (* 2 step)
                      for end = (if (< (+ x step) x2)
                                    (aref res (- (the fixnum (+ x step)) x1))

@@ -45,7 +45,7 @@
             (:predicate nil))
          (data nil :type (simple-array fixnum (*)))
          (stack nil :type (simple-array t (*)))
-         (end 0 :type (mod #.array-total-size-limit))
+         (end 0 :type (mod #.array-dimension-limit))
          ,@(when operator
              `((contents nil :type (simple-array ,element-type (*))))))
 
@@ -74,7 +74,7 @@
                  (when (= (,end-accessor ,name) (length (,stack-accessor ,name)))
                    (setf (,stack-accessor ,name)
                          (adjust-array (,stack-accessor ,name)
-                                       (the (mod #.array-total-size-limit) (* (,end-accessor ,name) 2)))))
+                                       (the (mod #.array-dimension-limit) (* (,end-accessor ,name) 2)))))
                  (let ((stack (,stack-accessor ,name))
                        (end (,end-accessor ,name)))
                    (setf (aref stack end) root
@@ -99,7 +99,7 @@ for the first time."
            (when (= (,end-accessor ,name) (length (,stack-accessor ,name)))
              (setf (,stack-accessor ,name)
                    (adjust-array (,stack-accessor ,name)
-                                 (the (mod #.array-total-size-limit) (* (,end-accessor ,name) 2)))))
+                                 (the (mod #.array-dimension-limit) (* (,end-accessor ,name) 2)))))
            (let ((stack (,stack-accessor ,name))
                  (end (,end-accessor ,name)))
              (setf (aref stack end) root1

@@ -12,7 +12,7 @@
 (in-package :cp/bipartite-matching)
 
 (declaim (ftype (function * (values (simple-array fixnum (*))
-                                    (mod #.array-total-size-limit)
+                                    (mod #.array-dimension-limit)
                                     &optional))
                 find-matching))
 (defun find-matching (graph)

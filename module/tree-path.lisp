@@ -8,9 +8,9 @@
   "Returns the path between given two vertices."
   (declare (optimize (speed 3))
            (vector graph)
-           ((mod #.array-total-size-limit) start end))
+           ((mod #.array-dimension-limit) start end))
   (labels ((dfs (v parent path)
-             (declare ((integer -1 (#.array-total-size-limit)) v parent))
+             (declare ((integer -1 (#.array-dimension-limit)) v parent))
              (when (= v end)
                (return-from tree-render-path (nreverse path)))
              (dolist (child (aref graph v))

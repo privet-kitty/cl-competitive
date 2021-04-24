@@ -19,7 +19,7 @@
 (declaim (inline ds-root))
 (defun ds-root (disjoint-set x)
   "Returns the root of X."
-  (declare ((mod #.array-total-size-limit) x))
+  (declare ((mod #.array-dimension-limit) x))
   (let ((data (ds-data disjoint-set)))
     (labels ((recur (x)
                (if (< (aref data x) 0)

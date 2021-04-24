@@ -9,7 +9,7 @@
            ((integer 0 #.most-positive-fixnum) base))
   (let* ((indexer (make-hash-table :test test))
          (end 0))
-    (declare ((mod #.array-total-size-limit) end))
+    (declare ((mod #.array-dimension-limit) end))
     (labels ((index (s)
                (loop for c across s
                      unless (gethash c indexer)

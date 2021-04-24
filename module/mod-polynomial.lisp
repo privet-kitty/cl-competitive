@@ -32,11 +32,11 @@ created."
   (let* ((deg1 (- (length p1) 1))
          (deg2 (- (length p2) 1))
          (len (max 0 (+ deg1 deg2 1))))
-    (declare ((integer -1 (#.array-total-size-limit)) deg1 deg2 len))
+    (declare ((integer -1 (#.array-dimension-limit)) deg1 deg2 len))
     (when (or (= -1 deg1) (= -1 deg2))
       (return-from poly-mult (make-array 0 :element-type (array-element-type p1))))
     (let ((res (or result-vector (make-array len :element-type (array-element-type p1)))))
-      (declare ((integer -1 (#.array-total-size-limit)) len))
+      (declare ((integer -1 (#.array-dimension-limit)) len))
       (dotimes (d len res)
         ;; 0 <= i <= deg1, 0 <= j <= deg2
         (loop with coef of-type (integer 0 #.most-positive-fixnum) = 0
@@ -113,7 +113,7 @@ Note that MODULUS and P2[deg(P2)] must be coprime."
          (quot (or quotient
                    (make-array (max 0 (+ 1 (- m n))) :element-type (array-element-type p1))))
          (inv (mod-inverse (aref p2 n) modulus)))
-    (declare ((integer -1 (#.array-total-size-limit)) m n))
+    (declare ((integer -1 (#.array-dimension-limit)) m n))
     (loop for k from (- m n) downto 0
           do (setf (aref quot k) (mod (* (aref p1 (+ n k)) inv) modulus))
              (loop for j from (+ n k -1) downto k
@@ -136,7 +136,7 @@ O((deg(P)-deg(DIVISOR))deg(DIVISOR))."
                        :operation #'poly-mod!
                        :operands (list p divisor))))
          (inv (mod-inverse (aref divisor n) modulus)))
-    (declare ((integer -1 (#.array-total-size-limit)) m n))
+    (declare ((integer -1 (#.array-dimension-limit)) m n))
     (loop for pivot-deg from m downto n
           for factor of-type (integer 0 #.most-positive-fixnum)
              = (mod (* (aref p pivot-deg) inv) modulus)

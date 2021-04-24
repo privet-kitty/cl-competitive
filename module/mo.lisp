@@ -31,7 +31,7 @@ BUCKET-WIDTH would be better set to N/sqrt(Q) where N is the width of the
 universe and Q is the number of queries."
   (declare (optimize (speed 3))
            ((simple-array mo-integer (*)) lefts rights)
-           ((mod #.array-total-size-limit) bucket-width)
+           ((mod #.array-dimension-limit) bucket-width)
            (inline sort))
   (let* ((q (length lefts))
          (order (make-array q :element-type '(integer 0 #.most-positive-fixnum))))
@@ -70,7 +70,7 @@ added/removed right now, and both ends of the next range: [<left>, <right>)"
          (right (aref (%mo-rights mo) ord))
          (posl (%mo-posl mo))
          (posr (%mo-posr mo)))
-    (declare ((mod #.array-total-size-limit) posl posr))
+    (declare ((mod #.array-dimension-limit) posl posr))
     (loop while (< left posl)
           do (decf posl)
              (funcall extend-l posl posl posr))
