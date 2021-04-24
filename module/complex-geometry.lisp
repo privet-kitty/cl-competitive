@@ -40,6 +40,9 @@ the one from Q1 to Q2."
           (and (eq o3 :collinear) (on-segment-p q1 p1 q2))
           (and (eq o4 :collinear) (on-segment-p q1 p2 q2))))))
 
+(declaim (inline calc-internal-angle)
+         (ftype (function * (values double-float &optional))
+                calc-internal-angle))
 (defun calc-internal-angle (c1 c2)
   (acos (max -1d0 (min 1d0 (/ (+ (* (realpart c1) (realpart c2))
                                  (* (imagpart c1) (imagpart c2)))

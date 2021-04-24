@@ -5,6 +5,8 @@
 monoid (bottom-up implementation)."))
 (in-package :cp/segment-tree)
 
+(deftype index () '(mod #.(floor array-dimension-limit 2)))
+
 (defmacro define-segtree (name &key (operator '#'+) (identity 0) element-type)
   "OPERATOR := binary operator (comprising a monoid)
 IDENTITY := object (identity element of the monoid)
@@ -30,11 +32,11 @@ This macro defines five functions:
        (defstruct (,name (:constructor ,fname-%make
                              (vector &aux (n (ash (+ 1 (length vector)) -1))))
                          (:conc-name ,conc-name))
-         (n nil :type (integer 0 #.(floor array-total-size-limit 2)))
+         (n nil :type index)
          (vector nil :type (simple-array ,element-type (*))))
        (declaim (inline ,fname-make))
        (defun ,fname-make (size &key (initial-element ,identity) initial-contents)
-         (declare ((mod #.array-total-size-limit) size)
+         (declare (index size)
                   ((or null sequence) initial-contents))
          (let ((res (make-array (max 0 (- (* 2 size) 1))
                                 :element-type ',element-type
@@ -50,17 +52,17 @@ This macro defines five functions:
        (declaim (inline ,fname-ref))
        (defun ,fname-ref (,name index)
          "Returns the element at INDEX."
-         (declare ((integer 0 #.most-positive-fixnum) index))
+         (declare (index index))
          (aref (,fname-vector ,name)
                (+ index (,fname-n ,name) -1)))
 
        (declaim (inline (setf ,fname-ref)))
        (defun (setf ,fname-ref) (new-value ,name index)
-         (declare ((mod #.array-total-size-limit) index)
+         (declare (index index)
                   (,element-type new-value))
          (let* ((vector (,fname-vector ,name))
                 (i (+ index (- (,fname-n ,name) 1))))
-           (declare ((mod #.array-total-size-limit) i))
+           (declare (index i))
            (setf (aref vector i) new-value)
            (loop while (> i 0)
                  do (setq i (ash (- i 1) -1))
@@ -74,13 +76,13 @@ This macro defines five functions:
                 (inline ,fname-fold))
        (defun ,fname-fold (,name left right)
          "Folds the given half-open range [LEFT, RIGHT)."
-         (declare ((mod #.array-total-size-limit) left right))
+         (declare (index left right))
          (let* ((vector (,fname-vector ,name))
                 (l (max 0 (+ left (,fname-n ,name) -1)))
                 (r (max 0 (+ right (,fname-n ,name) -1)))
                 (lvalue ,identity)
                 (rvalue ,identity))
-           (declare ((mod #.array-total-size-limit) l r)
+           (declare (index l r)
                     (,element-type lvalue rvalue))
            (loop while (< l r)
                  when (evenp l)
@@ -93,17 +95,16 @@ This macro defines five functions:
                           r (ash (- r 1) -1)))
            (funcall ,operator lvalue rvalue)))
 
-       (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
-                       ,fname-max-right)
+       (declaim (ftype (function * (values index &optional)) ,fname-max-right)
                 (inline ,fname-max-right))
        (defun ,fname-max-right (,name test &optional (start 0))
          "Returns the rightmost index i that satisfies (FUNCALL TEST <fold of
-range [START, i)>). TEST must be monotone.
+range [START, i)>).
 
 Note:
 - (FUNCALL TEST <identity>) must be true.
 - TEST must be monotone in the target range."
-         (declare ((mod #.array-total-size-limit) start))
+         (declare (index start))
          (assert (funcall test ,identity))
          (assert (<= start (,fname-n ,name)))
          (let* ((n (,fname-n ,name))
@@ -113,10 +114,10 @@ Note:
                 (r size)
                 (value ,identity)
                 (total-shift 0))
-           (declare ((mod #.array-total-size-limit) l r total-shift)
+           (declare (index l r total-shift)
                     (,element-type value))
            (labels ((recur (index)
-                      (declare ((mod #.array-total-size-limit) index))
+                      (declare (index index))
                       (loop while (< index (- n 1))
                             for new-value of-type ,element-type =
                                (funcall ,operator
@@ -148,8 +149,7 @@ Note:
                         (setq value new-value)))
              n)))
 
-       (declaim (ftype (function * (values (mod #.array-total-size-limit) &optional))
-                       ,fname-min-left)
+       (declaim (ftype (function * (values index &optional)) ,fname-min-left)
                 (inline ,fname-min-left))
        (defun ,fname-min-left (,name test &optional end)
          "Returns the largest index i that satisfies (FUNCALL TEST <fold of range [i,
@@ -158,7 +158,7 @@ END)>).
 Note:
 - (FUNCALL TEST <identity>) must be true.
 - TEST must be monotone in the target range."
-         (declare ((or null (mod #.array-total-size-limit)) end))
+         (declare ((or null index) end))
          (assert (funcall test ,identity))
          (assert (or (null end) (<= end (,fname-n ,name))))
          (let* ((n (,fname-n ,name))
@@ -167,10 +167,10 @@ Note:
                 (r (max 0 (+ (or end n) (- n 1))))
                 (value ,identity)
                 (total-shift 0))
-           (declare ((mod #.array-total-size-limit) l r total-shift)
+           (declare (index l r total-shift)
                     (,element-type value))
            (labels ((recur (index)
-                      (declare ((mod #.array-total-size-limit) index))
+                      (declare (index index))
                       (loop while (< index (- n 1))
                             for new-value of-type ,element-type =
                                (funcall ,operator
