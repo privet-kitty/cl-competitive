@@ -1,10 +1,7 @@
-;;;
-;;; Binary heap
-;;;
-
 (defpackage :cp/binary-heap
   (:use :cl)
-  (:export #:define-binary-heap #:heap-empty-error #:heap-empty-error-heap))
+  (:export #:define-binary-heap #:heap-empty-error #:heap-empty-error-heap)
+  (:documentation "Provides binary heap."))
 (in-package :cp/binary-heap)
 
 (define-condition heap-empty-error (error)
@@ -54,7 +51,7 @@ slightly slower than a static order, as it cannot be inlined."
 
        (declaim #+sbcl (sb-ext:maybe-inline ,fname-push))
        (defun ,fname-push (obj heap)
-         "Adds OBJ to HEAP."
+         "Inserts OBJ to HEAP."
          (declare (optimize (speed 3))
                   (type ,name heap))
          (symbol-macrolet ((position (,acc-position heap)))

@@ -75,8 +75,9 @@ IDENTITY := identity element of the monoid"
        (defun ,constructor (graph weights &key root (vertex-key #'identity))
          "GRAPH := vector of adjacency lists
 ROOT := null | non-negative fixnum
-WEIGHTS[v] := weight assigned to vertex v (if type of query is :VERTEX, the
-weight is considered to be assigned to the edge between v and its parent.)
+WEIGHTS[v] := weight assigned to vertex v if type of query is :VERTEX. If type
+of query is :edge, the weight is considered to be assigned to the edge between v
+and its parent.
 
 If ROOT is null, this function traverses each connected component from the
 vertex with the lowest index. Otherwise this function traverses GRAPH only from
@@ -84,7 +85,7 @@ ROOT; GRAPH must be tree in the latter case."
          (declare (optimize (speed 3))
                   (vector graph)
                   (function vertex-key)
-                  ((or null (integer 0 #.most-positive-fixnum)) root))
+                  ((or null (mod #.array-dimension-limit)) root))
          (let* ((size (length graph))
                 (,name (,%constructor size))
                 (depths (,%lca-depths ,name))
@@ -127,7 +128,8 @@ ROOT; GRAPH must be tree in the latter case."
                                       (aref table-in v k)))))))
              ,name)))
 
-       (declaim (ftype (function * (values (mod #.array-dimension-limit) &optional)) ,lca-get-lca))
+       (declaim (ftype (function * (values (mod #.array-dimension-limit) &optional))
+                       ,lca-get-lca))
        (defun ,lca-get-lca (,name vertex1 vertex2)
          "Returns the lowest common ancestor of the vertices VERTEX1 and VERTEX2."
          (declare (optimize (speed 3))
