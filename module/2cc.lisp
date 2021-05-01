@@ -82,7 +82,7 @@ bridge detection, and construction of bridge-block tree."))
       (dotimes (v n)
         (when (= -1 (aref preorders v))
           (dfs v -1)))
-      (%make-2cc graph preorders components sizes 2cc-ord bridges))))
+      (%make-2cc graph preorders components (subseq sizes 0 2cc-ord) 2cc-ord bridges))))
 
 (declaim (ftype (function * (values (simple-array t (*)) &optional))
                 make-bridge-tree))

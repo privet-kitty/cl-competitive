@@ -123,7 +123,6 @@ ROOT; GRAPH must be tree in the latter case."
     (+ (- (aref depths vertex1) (aref depths lca))
        (- (aref depths vertex2) (aref depths lca)))))
 
-;; not tested
 (declaim (ftype (function * (values lca-uint &optional)) lca-ascend))
 (defun lca-ascend (lca-table vertex delta)
   "Returns the DELTA-th ancestor of VERTEX. (0-th ancestor is VERTEX itself.)"
@@ -141,7 +140,6 @@ ROOT; GRAPH must be tree in the latter case."
         (setq vertex (aref parents vertex k))))
     vertex))
 
-;; not tested
 (declaim (ftype (function * (values lca-uint &optional)) lca-jump))
 (defun lca-jump (lca-table start end delta)
   "Returns the vertex which is on the path between START and END and is located
