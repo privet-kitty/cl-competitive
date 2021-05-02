@@ -65,6 +65,9 @@ order."
                                     &optional))
                 %iset-split))
 (defun %iset-split (iset lkey)
+  "Splits ISET by LKEY. Returns two interval-sets: LEFT and RIGHT. LEFT contains
+all the intervals whose left end smaller than LKEY, and RIGHT contains all the
+intervals whose left end is equal to or greater than LKEY."
   (declare (optimize (speed 3))
            (fixnum lkey))
   (labels ((recur (node)
@@ -114,7 +117,7 @@ order."
       (%iset-rkey iset)))
 
 (defun iset-insert (iset lkey rkey)
-  "Adds an interval [LKEY, RKEY) to ISET."
+  "Inserts an interval [LKEY, RKEY) to ISET."
   (declare (optimize (speed 3))
            (fixnum lkey rkey))
   (assert (<= lkey rkey))
