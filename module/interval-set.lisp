@@ -149,11 +149,11 @@ intervals whose left end is equal to or greater than LKEY."
         iset
         (multiple-value-bind (left tmp) (lsplit iset)
           (multiple-value-bind (mid right) (rsplit tmp)
-            (let ((base (%iset-concat left right)))
-              (let ((new-lkey (if mid (min (%iset-leftmost-key mid) lkey) lkey))
-                    (new-rkey (if mid (max (%iset-rightmost-key mid) rkey) rkey)))
-                (declare (fixnum new-lkey new-rkey))
-                (%iset-insert base new-lkey new-rkey))))))))
+            (let* ((base (%iset-concat left right))
+                   (new-lkey (if mid (min (%iset-leftmost-key mid) lkey) lkey))
+                   (new-rkey (if mid (max (%iset-rightmost-key mid) rkey) rkey)))
+              (declare (fixnum new-lkey new-rkey))
+              (%iset-insert base new-lkey new-rkey)))))))
 
 (defmacro iset-push (lkey rkey iset)
   "PUSH-style macro for ISET-INSERT."
