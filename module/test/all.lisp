@@ -74,6 +74,7 @@
   (:import-from :cp/test/integer-pack)
   (:import-from :cp/test/integer-root)
   (:import-from :cp/test/interactive)
+  (:import-from :cp/test/interval-map)
   (:import-from :cp/test/interval-set)
   (:import-from :cp/test/inversion-number)
   (:import-from :cp/test/jonker-volgenant)

@@ -1,6 +1,7 @@
 (defpackage :cp/interval-map
   (:use :cl)
-  (:export #:imap-get #:imap-insert #:imap-concat #:imap-split #:imap-map #:make-imap))
+  (:export #:interval-map #:imap-get #:imap-insert #:imap-concat #:imap-split #:imap-map
+           #:make-imap))
 (in-package :cp/interval-map)
 
 ;; NOTE: not tested
