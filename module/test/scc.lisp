@@ -118,7 +118,8 @@ REVGRAPH := NIL | reversed graph of GRAPH"
   t)
 
 (test scc/random
-  (let ((*random-state* (sb-ext:seed-random-state 0)))
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
     (dotimes (_ 2000)
       (let* ((graph (make-random-graph 20 (random 0.5) t))
              (scc1 (make-scc graph))
