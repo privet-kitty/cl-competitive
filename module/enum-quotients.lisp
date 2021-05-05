@@ -24,15 +24,27 @@ be given; then A[i]A[j] <= N iff j < M-i."
   (declare (optimize (speed 3))
            ((integer 1 #.most-positive-fixnum) n))
   (let ((k 1)
-        (result (make-array (%calc-length n)
+        (result (make-array (- (%calc-length n) 1)
                             :element-type '(integer 0 #.most-positive-fixnum)))
         (end 0))
     (declare ((mod #.array-dimension-limit) end))
-    (loop (setf (aref result end) k)
-          (incf end)
-          (when (> k n)
+    (loop (when (> k n)
             (return result))
+          (setf (aref result end) k)
+          (incf end)
           (setq k (+ 1 (floor n (floor n k)))))))
+
+;; (defun enum-quotients2 (n)
+;;   (let ((sqrt (isqrt n))
+;;         (res (make-array 0 :element-type 'fixnum :fill-pointer 0)))
+;;     (loop for i from 1 below sqrt
+;;           do (vector-push-extend i res))
+;;     (vector-push-extend sqrt res)
+;;     (unless (= sqrt (floor n sqrt))
+;;       (vector-push-extend (+ 1 (floor n (+ sqrt 1))) res))
+;;     (loop for i from (- sqrt 1) downto 1
+;;           do (vector-push-extend (+ 1 (floor n (+ i 1))) res))
+;;     res))
 
 (declaim (inline map-quotients))
 (defun map-quotients (function n)
@@ -42,4 +54,3 @@ be given; then A[i]A[j] <= N iff j < M-i."
           (when (> k n)
             (return))
           (setq k (+ 1 (floor n (floor n k)))))))
-
