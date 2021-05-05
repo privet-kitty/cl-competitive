@@ -20,6 +20,7 @@
   (:import-from :cp/test/bit-basher)
   (:import-from :cp/test/bounded-partition-number)
   (:import-from :cp/test/buffered-read-line)
+  (:import-from :cp/test/ceil-quotients)
   (:import-from :cp/test/crt)
   (:import-from :cp/test/chordal-graph)
   (:import-from :cp/test/circumcenter)
