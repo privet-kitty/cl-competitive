@@ -7,7 +7,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *modulus* 0))
 (declaim ((unsigned-byte 31) *modulus*)
-         (sb-ext:always-bound *modulus*))
+         #+sbcl (sb-ext:always-bound *modulus*))
 
 (defmacro define-mod-operations
     (divisor &optional (package #+sbcl (sb-int:sane-package) #-sbcl *package*))
