@@ -1,6 +1,6 @@
 (defpackage :cp/bezout
   (:use :cl :cp/ext-gcd)
-  (:export #:solve-bezout #:%calc-min-factor #:%calc-max-factor))
+  (:export #:solve-bezout #:count-bezout #:%calc-min-factor #:%calc-max-factor))
 (in-package :cp/bezout)
 
 (declaim (inline %calc-min-factor))
@@ -29,18 +29,18 @@ smaller than MAX.
 NIL when there is no x that satisfies the given condition."
   (declare (fixnum a b c)
            ((or null fixnum) min max))
-  (let ((gcd-ab (gcd a b)))
-    (if (zerop (mod c gcd-ab))
+  (let ((gcd (gcd a b)))
+    (if (zerop (mod c gcd))
         (multiple-value-bind (init-x init-y) (ext-gcd a b)
-          (let* ((factor (floor c gcd-ab))
+          (let* ((factor (floor c gcd))
                  ;; m*x0 + n*y0 = d
                  (x0 (* init-x factor))
                  (y0 (* init-y factor)))
             (if (and (null min) (null max))
                 (values x0 y0)
                 (let (;; general solution: x = x0 + kΔx, y = y0 - kΔy
-                      (deltax (floor b gcd-ab))
-                      (deltay (floor a gcd-ab)))
+                      (deltax (floor b gcd))
+                      (deltay (floor a gcd)))
                   (if min
                       (let* ((k-min (%calc-min-factor (- x0 min) deltax))
                              (x (+ x0 (* k-min deltax)))
@@ -55,3 +55,37 @@ NIL when there is no x that satisfies the given condition."
                             (values x y)
                             (values nil nil))))))))
         (values nil nil))))
+
+(defun count-bezout (a b c max &optional (include-zero nil))
+  "Returns the number of positive (or non-negative, if INCLUDE-ZERO is true)
+integers x less than or equal to MAX such that there is a y satisfying
+a*x+b*y=c."
+  (declare (fixnum a b c)
+           ((integer 0 #.most-positive-fixnum) max))
+  (if (zerop b)
+      (if (zerop a)
+          (if (zerop c)
+              (+ max (if include-zero 1 0))
+              0)
+          (multiple-value-bind (x rem) (floor c a)
+            (if (zerop rem)
+                (if (<= (if include-zero 0 1) x max)
+                    1
+                    0)
+                0)))
+      (let ((gcd (gcd a b)))
+        (declare (fixnum gcd))
+        (if (zerop (mod c gcd))
+            (let* ((init-x (ext-gcd a b))
+                   (factor (floor c gcd))
+                   (x0 (* init-x factor))
+                   (delta (floor b gcd))
+                   (k-min (%calc-min-factor x0 delta))
+                   (rem (+ x0 (* k-min delta)))
+                   (mod (abs delta)))
+              (+ (floor (+ max (mod (- mod rem) mod))
+                        mod)
+                 (if (and include-zero (zerop rem))
+                     1
+                     0)))
+            0))))
