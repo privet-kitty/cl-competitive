@@ -45,7 +45,6 @@ suitable for the total bits in the range [63, 124].
                       do (incf position slot-size)
                       finally (setq total-size position)))
          (revslots (reverse slots))
-         (new-value (gensym "NEW-VALUE"))
          (tmp (gensym)))
     `(progn
        (deftype ,name () '(unsigned-byte ,total-size))
