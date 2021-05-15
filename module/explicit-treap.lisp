@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator
            #:treap-split #:treap-insert #:treap-merge #:treap-delete
-           #:treap-ensure-key #:treap-unite #:treap-map #:do-treap
+           #:%treap-ensure-key #:treap-unite #:treap-map #:do-treap
            #:make-treap #:treap-fold #:treap-update #:treap-ref
            #:treap-first #:treap-last #:treap-find
            #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
@@ -160,38 +160,6 @@ The behavior is undefined when duplicate keys are inserted."
                    treap))))
     (recur (%make-treap key (random most-positive-fixnum) value) treap)))
 
-(declaim (inline treap-ensure-key))
-(defun treap-ensure-key (treap key value &key (order #'<) if-exists)
-  "IF-EXISTS := nil | function
-
-Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
-false. If IF-EXISTS is function and TREAP already contains KEY, TREAP-ENSURE-KEY
-updates the value by the function instead of overwriting it with VALUE. You
-cannot rely on the side effect. Use the returned value."
-  (declare (function order)
-           ((or null treap) treap))
-  (labels ((find-and-update (treap)
-             ;; Updates the value slot and returns T if KEY exists
-             (unless treap (return-from find-and-update nil))
-             (force-down treap)
-             (cond ((funcall order key (%treap-key treap))
-                    (when (find-and-update (%treap-left treap))
-                      (force-up treap)
-                      t))
-                   ((funcall order (%treap-key treap) key)
-                    (when (find-and-update (%treap-right treap))
-                      (force-up treap)
-                      t))
-                   (t (setf (%treap-value treap)
-                            (if if-exists
-                                (funcall if-exists (%treap-value treap))
-                                value))
-                      (force-up treap)
-                      t))))
-    (if (find-and-update treap)
-        treap
-        (treap-insert treap key value :order order))))
-
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
 smaller (or larger, depending on the order) than those of RIGHT.
@@ -204,17 +172,17 @@ CL:CONCATENATE."
         ((null right) (when left (force-down left) (force-up left)) left)
         (t (force-down left)
            (force-down right)
-         (if (> (%treap-priority left) (%treap-priority right))
-             (progn
-               (setf (%treap-right left)
-                     (treap-merge (%treap-right left) right))
-               (force-up left)
-               left)
-             (progn
-               (setf (%treap-left right)
-                     (treap-merge left (%treap-left right)))
-               (force-up right)
-               right)))))
+           (if (> (%treap-priority left) (%treap-priority right))
+               (progn
+                 (setf (%treap-right left)
+                       (treap-merge (%treap-right left) right))
+                 (force-up left)
+                 left)
+               (progn
+                 (setf (%treap-left right)
+                       (treap-merge left (%treap-left right)))
+                 (force-up right)
+                 right)))))
 
 (defun treap-delete (treap key &key (order #'<))
   "Destructively deletes KEY in TREAP and returns the resultant treap. Returns
@@ -223,7 +191,8 @@ the returned value.
 
 \(Note that this function deletes only a node even if duplicate keys are
 contained.)"
-  (declare ((or null treap) treap)
+  (declare (optimize (speed 3))
+           ((or null treap) treap)
            (function order))
   (when treap
     (force-down treap)
@@ -388,35 +357,78 @@ infinity."
     (recur treap left right)
     treap))
 
+(declaim (inline %treap-ensure-key))
+(defun %treap-ensure-key (treap key value &key (order #'<) if-exists)
+  "IF-EXISTS := nil | function
+
+Ensures that TREAP contains KEY and assigns VALUE to it if IF-EXISTS is
+false. If IF-EXISTS is function and TREAP already contains KEY,
+%TREAP-ENSURE-KEY updates the value by the function instead of overwriting it
+with VALUE. You cannot rely on the side effect. Use the returned value.
+
+NOTE: Except for efficiency reasons, it is better to use TREAP-REF."
+  (declare (function order)
+           ((or null treap) treap))
+  (labels ((find-and-update (treap)
+             ;; Updates the value slot and returns T if KEY exists
+             (unless treap (return-from find-and-update nil))
+             (force-down treap)
+             (cond ((funcall order key (%treap-key treap))
+                    (when (find-and-update (%treap-left treap))
+                      (force-up treap)
+                      t))
+                   ((funcall order (%treap-key treap) key)
+                    (when (find-and-update (%treap-right treap))
+                      (force-up treap)
+                      t))
+                   (t (setf (%treap-value treap)
+                            (if if-exists
+                                (funcall if-exists (%treap-value treap))
+                                value))
+                      (force-up treap)
+                      t))))
+    (if (find-and-update treap)
+        treap
+        (treap-insert treap key value :order order))))
+
 (declaim (inline treap-ref))
-(defun treap-ref (treap key &key (order #'<))
+(defun treap-ref (treap key &key (order #'<) default)
   "Returns the value that is assigned to KEY if it exists. Otherwise returns
-NIL."
+DEFAULT."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
-             (when treap
-               (force-down treap)
-               (prog1 (cond ((funcall order key (%treap-key treap))
-                             (recur (%treap-left treap)))
-                            ((funcall order (%treap-key treap) key)
-                             (recur (%treap-right treap)))
-                            (t (%treap-value treap)))
-                 (force-up treap)))))
+             (if treap
+                 (prog1 (cond ((funcall order key (%treap-key treap))
+                               (recur (%treap-left treap)))
+                              ((funcall order (%treap-key treap) key)
+                               (recur (%treap-right treap)))
+                              (t (%treap-value treap)))
+                   (force-up treap))
+                 default)))
     (recur treap)))
 
-(declaim (inline (setf treap-ref)))
-(defun (setf treap-ref) (new-value treap key &key (order #'<))
-  (declare ((or null treap) treap))
-  (labels ((recur (treap)
-             (when treap
-               (force-down treap)
-               (prog1 (cond ((funcall order key (%treap-key treap))
-                             (recur (%treap-left treap)))
-                            ((funcall order (%treap-key treap) key)
-                             (recur (%treap-right treap)))
-                            (t (setf (%treap-value treap) new-value)))
-                 (force-up treap)))))
-    (recur treap)))
+(define-setf-expander treap-ref (treap key &key (order '#'<) default &environment env)
+  (multiple-value-bind (tmps vals stores store-form access-form)
+      (get-setf-expansion treap env)
+    (when (cdr stores)
+      (error "SETF TREAP-REF too hairy."))
+    (let ((key-tmp (gensym "KEY"))
+          (order-tmp (gensym "ORDER"))
+          (default-tmp (gensym "DEFAULT"))
+          (store (gensym "NEW")))
+      (values (list* key-tmp order-tmp default-tmp tmps)
+              (list* key order default vals)
+              (list store)
+              `(let ((,(car stores)
+                       (%treap-ensure-key ,access-form ,key-tmp ,store :order ,order-tmp)))
+                 ;; KLUDGE: I add this line because SBCL claims that defalt-tmp
+                 ;; is never used in the process of macro expansion.
+                 ,default-tmp 
+                 ,store-form
+                 ,store)
+              `(treap-ref ,access-form ,key-tmp
+                          :order ,order-tmp
+                          :default ,default-tmp)))))
 
 (defun treap-first (treap)
   "Returns the leftmost key of TREAP."
@@ -439,7 +451,7 @@ NIL."
 ;;;
 
 ;; NOTE: These functions intentionally don't return the assigned value. That is
-;; for efficiency, because thereby they don't need to execute lazy propagation.
+;; for efficiency, i.e., thereby they don't need to execute lazy propagation.
 
 (defun treap-find (treap key &key (order #'<))
   "Finds the key that satisfies (AND (NOT (FUNCALL ORDER KEY (%TREAP-KEY
@@ -512,6 +524,7 @@ smaller than any keys in TREAP."
     (treap-key (recur treap))))
 
 ;; not tested
+(declaim (inline treap-fold-bisect))
 (defun treap-fold-bisect (treap value &key (order #'<))
   "Returns the smallest existing key that satisfies TREAP[<1st key>]+ TREAP[<2nd
 key>] + ... + TREAP[key] >= VALUE (if ORDER is #'<).
@@ -543,6 +556,7 @@ key>], ...) must be monotone w.r.t. ORDER.
              (force-up treap)))))
     (recur treap +op-identity+)))
 
+(declaim (inline treap-fold-bisect-from-end))
 (defun treap-fold-bisect-from-end (treap value &key (order #'<))
   "Returns the largest existing key that satisfies TREAP[<key>] + ... +
 TREAP[<2nd last key>] + TREAP[last key] >= VALUE (if ORDER is #'<).

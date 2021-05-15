@@ -49,6 +49,23 @@
       (is (treap-sane-p (make-treap 1 (to-func #(1)))))
       (is (treap-sane-p nil)))))
 
+(test explicit-treap/hand
+  (let (treap)
+    (setq treap (treap-insert treap 3 6 :order #'>))
+    (setq treap (treap-insert treap 1 0 :order #'>))
+    (is (= 0 (treap-ref treap 1 :order #'>)))
+    (is (null (treap-ref treap 10 :order #'>)))
+    (is (= 3 (treap-ref treap 10 :order #'> :default 3)))
+    (setq treap (%treap-ensure-key treap 1 2 :order #'>))
+    (setq treap (%treap-ensure-key treap 2 4 :order #'>))
+    (is (= 2 (treap-ref treap 1 :order #'>)))
+    (is (= 4 (treap-ref treap 2 :order #'>)))
+    (is (= 6 (treap-ref treap 3 :order #'>)))
+    (setf (treap-ref treap 4 :order #'>) 8)
+    (is (= 8 (treap-ref treap 4 :order #'>)))
+    (incf (treap-ref treap 0 :order #'> :default 100) 100)
+    (is (= 200 (treap-ref treap 0 :order #'>)))))
+
 (test explicit-treap-bisection
   (declare (notinline treap-bisect-left treap-bisect-right treap-bisect-left-1 treap-bisect-right-1))
   (let ((treap (treap #'> '(50 . 3) '(20 . 1) '(40 . 4))))
