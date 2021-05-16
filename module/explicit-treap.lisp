@@ -467,6 +467,10 @@ KEY if it exists, otherwise returns NIL."
          (treap-find (%treap-right treap) key :order order))
         (t key)))
 
+;; Cheat sheet
+;; next key: treap-bisect-right
+;; previous key: treap-bisect-left-1
+
 (declaim (inline treap-bisect-left))
 (defun treap-bisect-left (treap key &key (order #'<))
   "Returns the smallest key equal to or larger than KEY. Returns NIL if KEY is
