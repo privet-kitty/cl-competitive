@@ -1,6 +1,6 @@
 (defpackage :cp/range-tree
   (:use :cl)
-  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-update)
+  (:export #:make-range-tree #:rt-count #:rt-fold #:rt-update #:rt-set)
   (:documentation
    "Provides 2D range tree over an arbitrary commutative monoid.
 
@@ -13,6 +13,8 @@ https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf"))
 
 ;; TODO: map all the points in a given rectangle
 ;; TODO: k-dimensional range tree
+
+(deftype index () '(mod #.(floor most-positive-fixnum 2)))
 
 (declaim (inline op))
 (defun op (a b)
@@ -39,7 +41,7 @@ https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf"))
   (ykey 0 :type fixnum)
   left
   right
-  (count 1 :type (integer 0 #.most-positive-fixnum))
+  (count 1 :type index)
   (value +op-identity+ :type fixnum)
   (accumulator +op-identity+ :type fixnum))
 
@@ -124,7 +126,7 @@ https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf"))
 (declaim (inline %path-to-ynode!))
 (defun %path-to-ynode! (ypath length)
   "Destructively transforms a path to a balanced binary tree."
-  (declare ((integer 0 #.most-positive-fixnum) length))
+  (declare (index length))
   (let* ((max-depth (- (integer-length length) 1)))
     (macrolet ((%pop ()
                  `(let ((rest (%ynode-right ypath))
@@ -133,7 +135,7 @@ https://www.cse.wustl.edu/~taoju/cse546/lectures/Lecture21_rangequery_2d.pdf"))
                           ypath rest)
                     first)))
       (labels ((build (depth)
-                 (declare ((integer 0 #.most-positive-fixnum) depth))
+                 (declare (index depth))
                  (when ypath
                    (if (= depth max-depth)
                        (%pop)
@@ -185,7 +187,7 @@ POINTS[i]), otherwise to the value +OP-IDENTITY+."
   (when (zerop (length points))
     (return-from make-range-tree nil))
   (labels ((build (l r)
-             (declare ((integer 0 #.most-positive-fixnum) l r))
+             (declare (index l r))
              (if (= (- r l) 1)
                  (let* ((point (aref points l))
                         (x (funcall xkey point))
@@ -228,7 +230,7 @@ negative or positive infinity."
                       (fixnum x1 x2)
                       ;; KLUDGE: declaring ftype is not sufficient for the
                       ;; optimization on SBCL 1.1.14.
-                      #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                      #+sbcl (values index &optional))
              (cond ((null xnode) 0)
                    ((and (= x1 +neg-inf+) (= x2 +pos-inf+))
                     (yrecur (%xnode-ynode xnode) y1 y2))
@@ -248,7 +250,7 @@ negative or positive infinity."
            (yrecur (ynode y1 y2)
              (declare ((or null ynode) ynode)
                       (fixnum y1 y2)
-                      #+sbcl (values (integer 0 #.most-positive-fixnum)))
+                      #+sbcl (values index &optional))
              (cond ((null ynode) 0)
                    ((and (= y1 +neg-inf+) (= y2 +pos-inf+))
                     (%ynode-count ynode))
@@ -261,7 +263,7 @@ negative or positive infinity."
                                  (yrecur (%ynode-right ynode) +neg-inf+ y2))
                               (yrecur (%ynode-left ynode) y1 y2))
                           (yrecur (%ynode-right ynode) y1 y2)))))))
-    ;; (declare (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) xrecur yrecur))
+    ;; (declare (ftype (function * (values index &optional)) xrecur yrecur))
     (xrecur range-tree x1 x2)))
 
 ;; Below is almost the same as RT-COUNT. Is it better to integrate them?
@@ -313,7 +315,7 @@ positive infinity."
                                   (yrecur (%ynode-right ynode) +neg-inf+ y2))
                               (yrecur (%ynode-left ynode) y1 y2))
                           (yrecur (%ynode-right ynode) y1 y2)))))))
-    ;; (declare (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) xrecur yrecur))
+    ;; (declare (ftype (function * (values index &optional)) xrecur yrecur))
     (xrecur range-tree x1 x2)))
 
 (defun rt-update (range-tree x y delta)
@@ -337,6 +339,33 @@ positive infinity."
                      (ykey (%ynode-ykey ynode)))
                  (cond ((and (= x xkey) (= y ykey))
                         (incf (%ynode-value ynode) delta))
+                       ((or (> y ykey)
+                            (and (= y ykey) (>= x xkey)))
+                        (yrecur (%ynode-right ynode)))
+                       (t (yrecur (%ynode-left ynode)))))
+               (ynode-update-accumulator ynode))))
+    (xrecur range-tree)))
+
+(defun rt-set (range-tree x y value)
+  (declare (optimize (speed 3))
+           (fixnum x y value))
+  (labels ((xrecur (xnode)
+             (declare ((or null xnode) xnode))
+             (when xnode
+               (yrecur (%xnode-ynode xnode))
+               (let ((xkey (%xnode-xkey xnode))
+                     (ykey (%xnode-ykey xnode)))
+                 (if (or (> x xkey)
+                         (and (= x xkey) (>= y ykey)))
+                     (xrecur (%xnode-right xnode))
+                     (xrecur (%xnode-left xnode))))))
+           (yrecur (ynode)
+             (declare ((or null ynode) ynode))
+             (when ynode
+               (let ((xkey (%ynode-xkey ynode))
+                     (ykey (%ynode-ykey ynode)))
+                 (cond ((and (= x xkey) (= y ykey))
+                        (setf (%ynode-value ynode) value))
                        ((or (> y ykey)
                             (and (= y ykey) (>= x xkey)))
                         (yrecur (%ynode-right ynode)))
