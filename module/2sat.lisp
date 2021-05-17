@@ -1,13 +1,17 @@
-;;;
-;;; 2-SAT
-;;;
-
-;; NOTE: use LOGNOT for negation
-
 (defpackage :cp/2sat
   (:use :cl :cp/scc)
   (:export #:2sat #:make-2sat #:2sat-p
-           #:add-implication #:add-disjunction #:2sat-solve))
+           #:add-implication #:add-disjunction #:2sat-solve)
+  (:documentation
+   "Provides 2-SAT solver.
+
+Usage note:
+Use LOGNOT for negation.
+
+Example:
+P implies Q: (add-implication p q)
+(not P) implies Q: (add-implication (lognot p) q)
+P or Q: (add-disjunction p q)"))
 (in-package :cp/2sat)
 
 (defstruct (2sat (:constructor make-2sat
@@ -15,7 +19,7 @@
                       &aux
                       (graph (make-array (* 2 size) :element-type 'list :initial-element nil))))
                  (:copier nil))
-  (size 0 :type (integer 0 #.most-positive-fixnum))
+  (size 0 :type (mod #.array-dimension-limit))
   (graph nil :type (simple-array list (*)))
   (scc nil :type (or null scc)))
 
@@ -32,10 +36,7 @@
     2sat))
 
 (defun add-implication (2sat p q)
-  "Adds `P implies Q' to 2SAT.
-
-Example:
-\(add-implication 2sat (lognot p) q) ; (not P) implies Q"
+  "Adds `P implies Q' to 2SAT."
   (declare (fixnum p q))
   (%add-implication 2sat p q)
   (%add-implication 2sat (lognot q) (lognot p))

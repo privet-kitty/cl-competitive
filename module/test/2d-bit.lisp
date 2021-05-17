@@ -10,8 +10,8 @@
   :sum-type fixnum)
 
 (test 2d-bit
-  (declare (notinline coerce-to-bitree! bitree-fold bitree-update!))
-  (let ((tree (coerce-to-bitree! (make-array '(2 3) :initial-contents '((1 2 3) (4 5 6)))))
+  (declare (notinline bitree-build! bitree-fold bitree-update!))
+  (let ((tree (bitree-build! (make-array '(2 3) :initial-contents '((1 2 3) (4 5 6)))))
         (tree2 (make-array '(2 3) :initial-element 0)))
     (is (= 1 (bitree-fold tree 1 1)))
     (is (= 3 (bitree-fold tree 1 2)))

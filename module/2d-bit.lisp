@@ -1,11 +1,8 @@
 (defpackage :cp/2d-bit
   (:use :cl)
-  (:export #:define-2d-bitree))
+  (:export #:define-2d-bitree)
+  (:documentation "Provides 2-dimensional binary indexed tree."))
 (in-package :cp/2d-bit)
-
-;;;
-;;; 2-dimensional binary indexed tree
-;;;
 
 ;; TODO: binary search
 (defmacro define-2d-bitree (name &key (operator '#'+) (identity 0) sum-type)
@@ -14,14 +11,14 @@ IDENTITY := object (identity element of the monoid)
 SUM-TYPE := nil | type specifier
 
 Defines no structure; 2D BIT is just a 2-dimensional array. This macro defines
-three functions: <NAME>-UPDATE!, <NAME>-FOLD and COERCE-TO-<NAME>!.
+three functions: <NAME>-UPDATE!, <NAME>-FOLD and <NAME>-BUILD!.
 
 SUM-TYPE is used only for type declarations: each sum is declared to be this
 type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
          (fname-fold (intern (format nil "~A-FOLD" name)))
-         (fname-coerce (intern (format nil "COERCE-TO-~A!" name))))
+         (fname-build (intern (format nil "~A-BUILD!" name))))
     `(progn
        (declaim (inline ,fname-update))
        (defun ,fname-update (bitree index1 index2 delta)
@@ -55,8 +52,8 @@ type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
                (setf res (funcall ,operator res (aref bitree i j)))))
            res))
 
-       (declaim (inline ,fname-coerce))
-       (defun ,fname-coerce (array)
+       (declaim (inline ,fname-build))
+       (defun ,fname-build (array)
          "Destructively constructs 2D BIT from 2D array."
          (let ((length1 (array-dimension array 0))
                (length2 (array-dimension array 1)))
