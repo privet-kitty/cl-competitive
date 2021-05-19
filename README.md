@@ -31,7 +31,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ## Contents
 
-### General data structures
+### Unclassified data structures
 - [queue.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/queue.lisp) queue with singly-linked list
 - [deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/deque.lisp) double-ended queue with ring buffer
 - [double-stack-deque.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/double-stack-deque.lisp) double-ended queue with two stacks
@@ -62,7 +62,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [persistent-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-vector.lisp) persistent vector
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dice.lisp) six-sided dice
 
-### General algorithms
+### Unclassified algorithms
 - [cumulative-sum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/cumulative-sum.lisp) n-dimensional cumulative sum
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
 - [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) maximum (minimum) of unimodal function
@@ -157,6 +157,10 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [tree-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-hash.lisp) hashing of rooted tree
 - [mo-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mo-tree.lisp) Mo's algorithm for paths on tree (vertex query)
 - [random-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/random-graph.lisp) fast generation of random adjacency matrices
+
+### Optimization
+
+- [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase simplex method (dual-primal)
 
 ### Euclidean geometry
 - [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
