@@ -1,7 +1,8 @@
 (defpackage :cp/two-phase-simplex
   (:use :cl)
   (:export #:dual-primal!)
-  (:documentation "Provides two phase simplex method. (dual-primal)
+  (:documentation "Provides two-phase simplex method (dual-primal) using
+Dantzig's pivot rule.
 
 Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
@@ -179,8 +180,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 Optimal case:
 - optimal objective value
-- solutions for primal problem
-- solutions for dual problem: min. by s.t. (A^t)y >= c and y >= 0
+- optimal solutions to the primal problem
+- optimal solutions to the dual problem: min. by s.t. (A^t)y >= c, y >= 0
 - current dictionary
 
 Unbounded case:
@@ -193,7 +194,8 @@ Infeasible case:
            ((simple-array double-float (*)) b c))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
-    ;; Phase I: solve modified problem with objective = -x1-x2- ... -xn
+    ;; Phase I: apply dual to the modified problem with objective = -x1-x2-
+    ;; ... -xn
     (let* ((c* (make-array n :element-type 'double-float :initial-element -1d0))
            (dict (%iota (+ n m)))
            (result1 (%dual-simplex! a b c* dict)))
@@ -219,7 +221,7 @@ Infeasible case:
                     (dotimes (j n)
                       (decf (aref c j) (* coef (aref a row j))))
                     (incf obj (* coef (aref b row)))))))
-          ;; Phase II: solve original problem
+          ;; Phase II: apply primal to the original problem
           (multiple-value-bind (result2 primal dual) (%primal-simplex! a b c dict)
             (if (eql result2 :unbounded)
                 (values result2 nil nil nil)
