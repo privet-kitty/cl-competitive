@@ -17,8 +17,15 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 ;; dict: col(0), col(1), ...., col(n-1), row(0), row(1), ..., row(m-1)
 ;;      |---------- non-basic ---------| |---------- basic ----------|
 
+(declaim (ftype (function * (values double-float &optional)) %pivot))
 (defun %pivot (row col a b c arow acol dict)
+  (declare (optimize (speed 3))
+           ((mod #.array-dimension-limit) row col)
+           ((simple-array double-float (* *)) a)
+           ((simple-array double-float (*)) b c arow acol)
+           ((simple-array fixnum (*)) dict))
   (destructuring-bind (m n) (array-dimensions a)
+    (declare ((mod #.array-dimension-limit) m n))
     (rotatef (aref dict col) (aref dict (+ n row)))
     (let* ((apivot (aref a row col))
            (/apivot (/ apivot)))
@@ -41,6 +48,9 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
           (* ccol brow /apivot))))))
 
 (defun %restore (b c dict)
+  (declare (optimize (speed 3))
+           ((simple-array double-float (*)) b c)
+           ((simple-array fixnum (*)) dict))
   (let* ((m (length b))
          (n (length c))
          (res-primal (make-array n :element-type 'double-float :initial-element 0d0))
@@ -55,6 +65,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
           (setf (aref res-dual (- index n)) (- (aref c j))))))
     (values res-primal res-dual)))
 
+(declaim (ftype (function * (values (simple-array fixnum (*)) &optional))
+                %iota))
 (defun %iota (n)
   (let ((res (make-array n :element-type 'fixnum :initial-element 0)))
     (dotimes (i n)
@@ -62,19 +74,18 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
     res))
 
 (defun %primal-simplex! (a b c &optional dict)
-  "Maximizes cx subject to Ax <= b and x >= 0. Assumes b >= 0. Returns three
-values:
-
-Optimal:
-- optimal objective value
-- solutions for primal problem
-- solutions for dual problem: min. by s.t. (A^t)y >= c and y >= 0"
+  "Assumes b >= 0."
+  (declare (optimize (speed 3))
+           ((simple-array double-float (* *)) a)
+           ((simple-array double-float (*)) b c)
+           ((or null (simple-array fixnum (*))) dict))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
     (let ((acol (make-array m :element-type 'double-float))
           (arow (make-array n :element-type 'double-float))
           (dict (or dict (%iota (+ m n))))
           (obj 0d0))
+      (declare (double-float obj))
       (loop
         ;; pick largest coefficient
         (let (col
@@ -112,11 +123,17 @@ Optimal:
 
 (defun %dual-simplex! (a b c &optional dict)
   "Assumes c <= 0."
+  (declare (optimize (speed 3))
+           ((simple-array double-float (* *)) a)
+           ((simple-array double-float (*)) b c)
+           ((or null (simple-array fixnum (*))) dict))
   (destructuring-bind (m n) (array-dimensions a)
+    (declare ((mod #.array-dimension-limit) m n))
     (let ((acol (make-array m :element-type 'double-float))
           (arow (make-array n :element-type 'double-float))
           (dict (or dict (%iota (+ m n))))
           (obj 0d0))
+      (declare (double-float obj))
       (loop
         ;; pick least intercept
         (let (row
@@ -151,8 +168,31 @@ Optimal:
       (multiple-value-bind (res-primal res-dual) (%restore b c dict)
         (values obj res-primal res-dual dict)))))
 
+(declaim (ftype (function * (values (or double-float (member :unbounded :infeasible))
+                                    (or null (simple-array double-float (*)))
+                                    (or null (simple-array double-float (*)))
+                                    (or null (simple-array fixnum (*)))
+                                    &optional))
+                dual-primal!))
 (defun dual-primal! (a b c)
+  "Maximizes cx subject to Ax <= b and x >= 0. Returns four values:
+
+Optimal case:
+- optimal objective value
+- solutions for primal problem
+- solutions for dual problem: min. by s.t. (A^t)y >= c and y >= 0
+- current dictionary
+
+Unbounded case:
+- (values :unbounded nil nil nil)
+
+Infeasible case:
+- (values :infeasible nil nil nil)"
+  (declare (optimize (speed 3))
+           ((simple-array double-float (* *)) a)
+           ((simple-array double-float (*)) b c))
   (destructuring-bind (m n) (array-dimensions a)
+    (declare ((mod #.array-dimension-limit) m n))
     ;; Phase I: solve modified problem with objective = -x1-x2- ... -xn
     (let* ((c* (make-array n :element-type 'double-float :initial-element -1d0))
            (dict (%iota (+ n m)))
@@ -166,6 +206,7 @@ Optimal:
         (replace c* c)
         (fill c 0d0)
         (let ((obj 0d0))
+          (declare (double-float obj))
           (dotimes (j n)
             (let* ((coef (aref c* j))
                    (pos (aref poses j)))
@@ -182,4 +223,4 @@ Optimal:
           (multiple-value-bind (result2 primal dual) (%primal-simplex! a b c dict)
             (if (eql result2 :unbounded)
                 (values result2 nil nil nil)
-                (values (+ obj result2) primal dual dict))))))))
+                (values (+ obj (the double-float result2)) primal dual dict))))))))
