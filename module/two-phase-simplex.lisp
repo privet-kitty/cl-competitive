@@ -145,7 +145,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                     row i)))
           (unless row
             (error "All intercepts ~A are too large." b))
-          (when (> rowmin +eps+)
+          (when (> rowmin (- +eps+))
             (return))
           (dotimes (j n)
             (setf (aref arow j) (aref a row j)))
