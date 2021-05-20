@@ -1,29 +1,29 @@
 (defpackage :cp/two-phase-simplex
   (:use :cl)
   (:export #:dual-primal!)
-  (:documentation "Provides two-phase simplex method (dual-primal) using
+  (:documentation "Provides two-phase (dual-primal) revised simplex method using
 Dantzig's pivot rule.
 
 Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/two-phase-simplex)
 
-;; NOTE: not optimized at all
-
+(deftype simplex-float () 'double-float)
+(defconstant +zero+ (coerce 0 'simplex-float))
 (defconstant +eps+ 1d-8)
-
 (defconstant +neg-inf+ most-negative-double-float)
 (defconstant +pos-inf+ most-positive-double-float)
+
 
 ;; dict: col(0), col(1), ...., col(n-1), row(0), row(1), ..., row(m-1)
 ;;      |---------- non-basic ---------| |---------- basic ----------|
 
-(declaim (ftype (function * (values double-float &optional)) %pivot))
+(declaim (ftype (function * (values simplex-float &optional)) %pivot))
 (defun %pivot (row col a b c arow acol dict)
   (declare (optimize (speed 3))
            ((mod #.array-dimension-limit) row col)
-           ((simple-array double-float (* *)) a)
-           ((simple-array double-float (*)) b c arow acol)
+           ((simple-array simplex-float (* *)) a)
+           ((simple-array simplex-float (*)) b c arow acol)
            ((simple-array fixnum (*)) dict))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
@@ -50,12 +50,12 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 (defun %restore (b c dict)
   (declare (optimize (speed 3))
-           ((simple-array double-float (*)) b c)
+           ((simple-array simplex-float (*)) b c)
            ((simple-array fixnum (*)) dict))
   (let* ((m (length b))
          (n (length c))
-         (res-primal (make-array n :element-type 'double-float :initial-element 0d0))
-         (res-dual (make-array m :element-type 'double-float :initial-element 0d0)))
+         (res-primal (make-array n :element-type 'simplex-float :initial-element +zero+))
+         (res-dual (make-array m :element-type 'simplex-float :initial-element +zero+)))
     (dotimes (i m)
       (let ((index (aref dict (+ n i))))
         (when (< index n)
@@ -77,16 +77,16 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defun %primal-simplex! (a b c &optional dict)
   "Assumes b >= 0."
   (declare (optimize (speed 3))
-           ((simple-array double-float (* *)) a)
-           ((simple-array double-float (*)) b c)
+           ((simple-array simplex-float (* *)) a)
+           ((simple-array simplex-float (*)) b c)
            ((or null (simple-array fixnum (*))) dict))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
-    (let ((acol (make-array m :element-type 'double-float))
-          (arow (make-array n :element-type 'double-float))
+    (let ((acol (make-array m :element-type 'simplex-float))
+          (arow (make-array n :element-type 'simplex-float))
           (dict (or dict (%iota (+ m n))))
-          (obj 0d0))
-      (declare (double-float obj))
+          (obj +zero+))
+      (declare (simplex-float obj))
       (loop
         ;; pick largest coefficient
         (let (col
@@ -125,16 +125,16 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defun %dual-simplex! (a b c &optional dict)
   "Assumes c <= 0."
   (declare (optimize (speed 3))
-           ((simple-array double-float (* *)) a)
-           ((simple-array double-float (*)) b c)
+           ((simple-array simplex-float (* *)) a)
+           ((simple-array simplex-float (*)) b c)
            ((or null (simple-array fixnum (*))) dict))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
-    (let ((acol (make-array m :element-type 'double-float))
-          (arow (make-array n :element-type 'double-float))
+    (let ((acol (make-array m :element-type 'simplex-float))
+          (arow (make-array n :element-type 'simplex-float))
           (dict (or dict (%iota (+ m n))))
-          (obj 0d0))
-      (declare (double-float obj))
+          (obj +zero+))
+      (declare (simplex-float obj))
       (loop
         ;; pick least intercept
         (let (row
@@ -169,9 +169,9 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
       (multiple-value-bind (res-primal res-dual) (%restore b c dict)
         (values obj res-primal res-dual dict)))))
 
-(declaim (ftype (function * (values (or double-float (member :unbounded :infeasible))
-                                    (or null (simple-array double-float (*)))
-                                    (or null (simple-array double-float (*)))
+(declaim (ftype (function * (values (or simplex-float (member :unbounded :infeasible))
+                                    (or null (simple-array simplex-float (*)))
+                                    (or null (simple-array simplex-float (*)))
                                     (or null (simple-array fixnum (*)))
                                     &optional))
                 dual-primal!))
@@ -190,13 +190,14 @@ Unbounded case:
 Infeasible case:
 - (values :infeasible nil nil nil)"
   (declare (optimize (speed 3))
-           ((simple-array double-float (* *)) a)
-           ((simple-array double-float (*)) b c))
+           ((simple-array simplex-float (* *)) a)
+           ((simple-array simplex-float (*)) b c))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
     ;; Phase I: apply dual to the modified problem with objective = -x1-x2-
     ;; ... -xn
-    (let* ((c* (make-array n :element-type 'double-float :initial-element -1d0))
+    (let* ((c* (make-array n :element-type 'simplex-float
+                             :initial-element (coerce -1 'simplex-float)))
            (dict (%iota (+ n m)))
            (result1 (%dual-simplex! a b c* dict)))
       (when (eql result1 :infeasible)
@@ -206,9 +207,9 @@ Infeasible case:
         (dotimes (i (+ m n))
           (setf (aref poses (aref dict i)) i))
         (replace c* c)
-        (fill c 0d0)
-        (let ((obj 0d0))
-          (declare (double-float obj))
+        (fill c +zero+)
+        (let ((obj +zero+))
+          (declare (simplex-float obj))
           (dotimes (j n)
             (let* ((coef (aref c* j))
                    (pos (aref poses j)))
@@ -225,4 +226,4 @@ Infeasible case:
           (multiple-value-bind (result2 primal dual) (%primal-simplex! a b c dict)
             (if (eql result2 :unbounded)
                 (values result2 nil nil nil)
-                (values (+ obj (the double-float result2)) primal dual dict))))))))
+                (values (+ obj (the simplex-float result2)) primal dual dict))))))))
