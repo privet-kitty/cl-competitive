@@ -7,6 +7,8 @@
   (:documentation "Provides sliding window minimum/maximum."))
 (in-package :cp/sliding-window)
 
+;; TODO: more docs
+
 (defstruct (sliding-window (:constructor make-sliding-window
                                (size &aux
                                      (times (make-array size :element-type 'fixnum))
