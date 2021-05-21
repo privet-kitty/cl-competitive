@@ -78,7 +78,7 @@
                               (= 1 (aref ls i)))
                     do (setf (aref lms end) i)
                        (incf end))
-              (setq lms (adjust-array lms end)))
+              (setq lms (subseq lms 0 end)))
             (induce! lms)
             (unless (zerop m)
               (let ((sorted-lms (make-array m :element-type 'sa-int :initial-element 0))
@@ -92,7 +92,7 @@
                         unless (= -1 (aref lms-map v))
                         do (setf (aref sorted-lms end) v)
                            (incf end))
-                  (setq sorted-lms (adjust-array sorted-lms end)))
+                  (setq sorted-lms (subseq sorted-lms 0 end)))
                 (setf (aref rec-vector (aref lms-map (aref sorted-lms 0))) 0)
                 (loop for i from 1 below m
                       for l = (aref sorted-lms (- i 1))
