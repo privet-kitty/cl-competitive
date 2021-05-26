@@ -1,13 +1,10 @@
-;;;
-;;; Minimum cost flow (SSP)
-;;;
-
 (defpackage :cp/min-cost-flow
   (:use :cl :cp/max-flow)
   (:export #:cedge #:cedge-p #:copy-cedge #:add-cedge #:+inf-cost+ #:cost-type
            #:cedge-reversed #:cedge-cost #:cedge-capacity #:cedge-to #:cedge-default-capacity
            #:not-enough-capacity-error #:not-enough-capacity-error-graph
-           #:not-enough-capacity-error-flow #:not-enough-capacity-error-score))
+           #:not-enough-capacity-error-flow #:not-enough-capacity-error-score)
+  (:documantation "Provides data structure for minimum cost flow."))
 (in-package :cp/min-cost-flow)
 
 ;; COST-TYPE and +INF-COST+ may be changed. (A supposed use case is to adopt

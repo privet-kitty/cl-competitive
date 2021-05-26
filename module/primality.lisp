@@ -1,13 +1,10 @@
-;;;
-;;; Primality test (deterministic Miller-Rabin)
-;;;
-
-;; Tuned for SBCL on x86-64 ((INTEGER 0 #.MOST-POSITIVE-FIXNUM) ==
-;; (UNSIGNED-BYTE 62))
-
 (defpackage :cp/primality
   (:use :cl :cp/tzcount)
-  (:export #:prime-p))
+  (:export #:prime-p)
+  (:documentation "Provides primality test. (deterministic Miller-Rabin)
+
+This module is tune for SBCL on x86-64, i.e., assumes (integer 0
+#.MOST-POSITIVE-FIXNUM) == (UNSIGNED-BYTE 62)"))
 (in-package :cp/primality)
 
 (defun %strong-probable-prime-p (n base)
@@ -46,7 +43,7 @@
         ((< n 2152302898747)
          (loop for base in '(2 3 5 7 11)
                always (%strong-probable-prime-p n base)))
-        ;; NOTE: branches below are not tested
+        ;; NOTE: following branch is not tested
         (t
          (loop for base in '(2 325 9375 28178 450775 9780504 1795265022)
                always (%strong-probable-prime-p n base)))))

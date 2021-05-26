@@ -1,6 +1,8 @@
 (defpackage :cp/ssp
   (:use :cl :cp/min-cost-flow)
-  (:export #:min-cost-flow!))
+  (:export #:min-cost-flow!)
+  (:documentation "Provides successive shortest path algorithm for minimum cost
+flow problem."))
 (in-package :cp/ssp)
 
 ;; binary heap for Dijkstra's algorithm

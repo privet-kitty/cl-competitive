@@ -1,16 +1,15 @@
-;;;
-;;; Clojure-style placehoder syntax
-;;;
-;;; Examples:
-;;; #%(+ %1 %3) is expanded into (LAMBDA (#:G1 #:G2 #:G3) (+ #:G1 #:G3)).
-;;; #%(push % stack) is expanded into (LAMBDA (#:G1) (PUSH #:G1 STACK)).
-;;;
-
-;; TODO: %&
-
 (defpackage :cp/placeholder-syntax
   (:use :cl)
-  (:export #:enable-placeholder-syntax #:read-placeholder-form))
+  (:export #:enable-placeholder-syntax #:read-placeholder-form)
+  (:documentation "Provides Clojure-style placeholder syntax.
+
+Examples:
+#%(+ %1 %3) is expanded into (LAMBDA (#:G1 #:G2 #:G3) (+ #:G1 #:G3)).
+#%(push % stack) is expanded into (LAMBDA (#:G1) (PUSH #:G1 STACK)).
+
+
+TODO: %&
+"))
 (in-package :cp/placeholder-syntax)
 
 (defun placeholder-p (symbol)

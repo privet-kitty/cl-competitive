@@ -61,12 +61,14 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [wavelet-matrix.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/wavelet-matrix.lisp) wavelet matrix
 - [persistent-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-vector.lisp) persistent vector
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dice.lisp) six-sided dice
+- [swag.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/swag.lisp) sliding window aggregation
+- [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sliding-window.lisp) sliding window minimum (or maximum)
 
 ### Unclassified algorithms
 - [cumulative-sum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/cumulative-sum.lisp) n-dimensional cumulative sum
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
 - [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) maximum (minimum) of unimodal function
-- [monotone-minima.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/monotone-minima.lisp) divide-and-conquer algotighm for monotone matrix
+- [monotone-minima.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/monotone-minima.lisp) divide-and-conquer algorithm for monotone matrix
 - [quicksort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quicksort.lisp) quicksort
 - [merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/merge-sort.lisp) merge sort
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binsort.lisp) bin sort; counting sort
@@ -79,8 +81,6 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [inversion-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inversion-number.lisp) counting inversions of vector by merge sort
 - [lis.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lis.lisp) longest increasing subsequence
 - [mex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mex.lisp) minimum excludant on non-negative integers
-- [swag.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/swag.lisp) sliding window aggregation
-- [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sliding-window.lisp) sliding window minimum (or maximum)
 - [quickselect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quickselect.lisp) expected O(n) algorithm for k-th order statistic of sequence
 - [symmetric-group.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/symmetric-group.lisp) decomposition to cyclic permutations and some operations on a symmetric group
 - [fkm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fkm.lisp) Fredricksen, Kessler, and Maiorana algorithm
@@ -99,7 +99,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [bezout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bezout.lisp) Bezout equation
 - [mod-linear-algebra.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-linear-algebra.lisp) modular linear algebra
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation on arbitrary monoid
-- [binom-mod-prime.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-prime.lisp) binomial coefficient modulo prime; linear-time construction of tables of inverses, factorials, and inverses of factorials
+- [binom-mod-prime.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-prime.lisp) binomial coefficient modulo prime; linear-time construction of tables of inverses, factorials, and inverse of factorials
 - [binom-mod-small.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-small.lisp) binomial coefficient modulo small number
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bounded-partition-number.lisp) partition number with upper-bound
@@ -109,7 +109,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [linear-sieve.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/linear-sieve.lisp) linear sieve; fast prime factorization
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors of a given number
 - [divisor-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor-table.lisp) enumeration of divisors of first n natural numbers
-- [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/primality.lisp) primality test (Miller-Rabin)
+- [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/primality.lisp) primality test (deterministic Miller-Rabin)
 - [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/enum-quotients.lisp) enumeration of truncated quotients
 - [integer-root](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-root.lisp) integer nth root
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/gemm.lisp) matrix multiplication over semiring
@@ -145,7 +145,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [dinic.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dinic.lisp) maximum flow (Dinic's algorithm)
 - [lca.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lca.lisp) lowest common anscestor (binary lifting)
 - [binary-lifting](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-lifting.lisp) LCA and path queries on a static tree or forest with weighted edge or vertex (binary lifting)
-- [min-cost-flow.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/min-cost-flow.lisp) minimum cost flow (SSP)
+- [ssp.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ssp.lisp) minimum cost flow (SSP)
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
 - [euler-tour.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/euler-tour.lisp) Euler tour of tree
@@ -160,7 +160,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Optimization
 
-- [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase simplex method (dual-primal)
+- [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase (dual-primal) revised simplex method
 
 ### Euclidean geometry
 - [complex-geometry.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/complex-geometry.lisp) some utilities for 2D geometry with complex number
@@ -193,5 +193,5 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Weird things
 - [integer-pack.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-pack.lisp) `defstruct`-like macro to deal with an integer as a structure of several integer slots
-- [increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on contest sites.)
+- [increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/increase-space.lisp) This header runs another SBCL as external process and leaves the entire processing to it. (This ugly hack was invented to increase the stack size of SBCL on online judges.)
 - [compile-time-increase-space.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/non-module/compile-time-increase-space.lisp) analogue of increase-space at compile time

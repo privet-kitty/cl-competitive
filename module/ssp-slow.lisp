@@ -1,10 +1,8 @@
-;;;
-;;; Minimum cost flow (O(FEV))
-;;;
-
 (defpackage :cp/ssp-slow
   (:use :cl :cp/min-cost-flow)
-  (:export #:min-cost-flow!))
+  (:export #:min-cost-flow!)
+  (:documentation "Provides successive shortest path algorithm for minimum cost
+flow problem. Please use cp/ssp instead. I keep this for future reference."))
 (in-package :cp/ssp-slow)
 
 (defun min-cost-flow! (graph src-idx dest-idx flow)
