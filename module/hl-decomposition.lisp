@@ -1,12 +1,10 @@
-;;;
-;;; Heavy-Light decomposition (for commutative operation)
-;;;
-
 (defpackage :cp/hl-decomposition
   (:use :cl)
   (:export #:hl-decomposition #:make-hl-decomposition #:hl-decomposition-p
-           #:two-vertices-disconnected-error #:%hld-preords
-           #:hld-map-path #:hld-map-path-edge #:hld-get-lca))
+           #:two-vertices-disconnected-error
+           #:%hld-preords #:%hld-parents #:%hld-heads #:%hld-graph #:%hld-sizes
+           #:hld-map-path #:hld-map-path-edge #:hld-get-lca)
+  (:documentation "Provides heavy-light decomposition."))
 (in-package :cp/hl-decomposition)
 
 (defstruct (hl-decomposition (:constructor %make-hl-decomposition
