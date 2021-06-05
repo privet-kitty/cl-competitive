@@ -1,11 +1,8 @@
-;;;
-;;; FFT by simple recursion
-;;; (better to use in-place FFT instead. I leave it just for my reference.)
-;;;
-
 (defpackage :cp/fft-recursive
   (:use :cl)
-  (:export #:fft-float #:dft! #:inverse-dft! #:convolve!))
+  (:export #:fft-float #:dft! #:inverse-dft! #:convolve!)
+  (:documentation "Provides FFT by simple recursion. You should use cp/fft
+instead. I keep it just for my reference."))
 (in-package :cp/fft-recursive)
 
 (deftype fft-float () 'double-float)

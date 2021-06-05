@@ -1,14 +1,11 @@
-;;;
-;;; Complex FFT
-;;;
-;;; Reference:
-;;; http://www.prefield.com/algorithm/math/fft.html
-;;; http://techtipshoge.blogspot.com/2011/08/fft4.html (Japanese)
-;;;
-
 (defpackage :cp/fft
   (:use :cl)
-  (:export #:fft-float #:dft! #:inverse-dft! #:with-fixed-length-fft #:convolve!))
+  (:export #:fft-float #:dft! #:inverse-dft! #:with-fixed-length-fft #:convolve!)
+  (:documentation "Provides complex FFT.
+
+Reference:
+http://www.prefield.com/algorithm/math/fft.html
+http://techtipshoge.blogspot.com/2011/08/fft4.html (Japanese)"))
 (in-package :cp/fft)
 
 (deftype fft-float () 'double-float)
