@@ -98,8 +98,8 @@ adjacency lists."
          (tree (make-array comp-n :element-type t)))
     (dotimes (comp comp-n)
       (setf (aref tree comp)
-            ;; Resorting to EQ is substandard, though I use it here for
-            ;; efficiency.
+            ;; Resorting to EQ to store fixnum keys is substandard, though I use
+            ;; it here for efficiency.
             (make-hash-table :size (aref sizes comp) :test #'eq)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))

@@ -2,8 +2,8 @@
   (:use :cl)
   (:export #:scc #:scc-graph #:scc-components #:scc-sizes #:scc-count
            #:scc-p #:make-scc #:make-condensed-graph)
-  (:documentation "Provides strongly connected components of directed
-graph. (Tarjan's algorithm)
+  (:documentation "Provides decomposition to strongly connected components of
+directed graph. (Tarjan's algorithm)
 
 Reference:
 http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
@@ -95,7 +95,8 @@ http://www.prefield.com/algorithm/graph/strongly_connected_components.html"))
          (key (scc-key scc))
          (condensed (make-array comp-n :element-type t)))
     (dotimes (i comp-n)
-      ;; Resorting to EQ is substandard, though I use it here for efficiency.
+      ;; Resorting to EQ to store fixnum keys is substandard, though I use it
+      ;; here for efficiency.
       (setf (aref condensed i) (make-hash-table :test #'eq)))
     (dotimes (i n)
       (let ((i-comp (aref components i)))
