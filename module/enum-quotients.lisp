@@ -6,7 +6,7 @@
 (declaim (inline %calc-length))
 (defun %calc-length (x)
   (let ((sqrt (isqrt x)))
-    (if (= (floor x sqrt) sqrt)
+    (if (and (> x 0) (= (floor x sqrt) sqrt))
         (* 2 sqrt)
         (+ 1 (* 2 sqrt)))))
 
@@ -19,21 +19,24 @@ in {1, ..., N}. ENUM-QUOTIENTS returns the ascending vector of minimal integers
 k that take `new' values compared to floor(N/(k-1)). Note that this vector
 contains 1 and N+1.
 
+Returns #(1) for convenience when N == 0.
+
 Tips: Let A be the returned vector of length M+1 and an index i in {0, ..., M}
 be given; then A[i]A[j] <= N iff j < M-i."
   (declare (optimize (speed 3))
-           ((integer 1 #.most-positive-fixnum) n))
+           ((integer 0 #.most-positive-fixnum) n))
   (let ((k 1)
-        (result (make-array (- (%calc-length n) 1)
+        (result (make-array (%calc-length n)
                             :element-type '(integer 0 #.most-positive-fixnum)))
         (end 0))
     (declare ((mod #.array-dimension-limit) end))
-    (loop (when (> k n)
+    (loop (setf (aref result end) k)
+          (when (> k n)
             (return result))
-          (setf (aref result end) k)
           (incf end)
           (setq k (+ 1 (floor n (floor n k)))))))
 
+;; Another implementation:
 ;; (defun enum-quotients2 (n)
 ;;   (let ((sqrt (isqrt n))
 ;;         (res (make-array 0 :element-type 'fixnum :fill-pointer 0)))

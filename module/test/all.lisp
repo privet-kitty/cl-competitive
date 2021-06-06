@@ -48,6 +48,7 @@
   (:import-from :cp/test/eratosthenes)
   (:import-from :cp/test/euler-tour)
   (:import-from :cp/test/explicit-treap)
+  (:import-from :cp/test/floor-quotients)
   (:import-from :cp/test/functional-graph)
   (:import-from :cp/test/ext-gcd)
   (:import-from :cp/test/f2)

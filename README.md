@@ -110,7 +110,6 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [divisor.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor.lisp) enumeration of divisors of a given number
 - [divisor-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/divisor-table.lisp) enumeration of divisors of first n natural numbers
 - [primality.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/primality.lisp) primality test (deterministic Miller-Rabin)
-- [enum-quotients.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/enum-quotients.lisp) enumeration of truncated quotients
 - [integer-root](https://github.com/privet-kitty/cl-competitive/blob/master/module/integer-root.lisp) integer nth root
 - [gemm.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/gemm.lisp) matrix multiplication over semiring
 - [freiwald.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/freiwald.lisp) Freiwalds' algorithm
