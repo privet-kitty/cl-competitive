@@ -1,13 +1,10 @@
-;;;
-;;; Deque implementation with two stacks
-;;; (All the basic operations are amortized O(1))
-;;;
-
 (defpackage :cp/double-stack-deque
   (:use :cl)
   (:export #:deque-empty-error #:deque-empty-error-deque #:deque #:make-deque
            #:deque-push-back #:deque-push-front #:deque-pop-front #:deque-pop-back
-           #:deque-peek-front #:deque-peek-back #:deque-empty-p))
+           #:deque-peek-front #:deque-peek-back #:deque-empty-p)
+  (:documentation "Provides deque with two stacks. All the basic operations take
+amortized O(1) time."))
 (in-package :cp/double-stack-deque)
 
 (defstruct (deque (:constructor make-deque (&optional list &aux (stack1 list)))

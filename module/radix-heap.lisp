@@ -1,12 +1,9 @@
-;;;
-;;; Radix heap
-;;;
-
 (defpackage :cp/radix-heap
   (:use :cl)
   (:export #:rheap-empty-error #:rheap-not-monotone-error #:+radix-heap-bit-depth+
            #:rheap-count #:rheap-lowest
-           #:radix-heap #:make-radix-heap #:rheap-push #:rheap-pop #:rheap-empty-p))
+           #:radix-heap #:make-radix-heap #:rheap-push #:rheap-pop #:rheap-empty-p)
+  (:documentation "Provides radix heap."))
 (in-package :cp/radix-heap)
 
 ;; NOTE: this implementation permanently reuses every cons cell once it has been

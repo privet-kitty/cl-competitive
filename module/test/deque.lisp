@@ -7,7 +7,7 @@
 (define-deque deque :element-type (unsigned-byte 16))
 
 (test deque/hand
-  (declare (notinline deque-empty-p deque-ref deque-push-front deque-pop-front deque-push-back deque-pop-back deque-reinitialize))
+  (declare (notinline deque-empty-p deque-ref deque-push-front deque-pop-front deque-push-back deque-pop-back deque-clear))
   (let ((deque (make-deque 4)))
     ;; ()
     (is (deque-empty-p deque))
@@ -64,7 +64,7 @@
     (is (deque-empty-p deque))
     (deque-push-back 10 deque)
     ;; (10)
-    (deque-reinitialize deque)
+    (deque-clear deque)
     (is (deque-empty-p deque)))
   
   ;; zero length
@@ -127,7 +127,7 @@
             (8 (assert (if list
                            (not (deque-empty-p deq))
                            (deque-empty-p deq))))
-            ;; reinitialize
+            ;; clear
             (9
-             (deque-reinitialize deq)
+             (deque-clear deq)
              (setq list nil))))))))

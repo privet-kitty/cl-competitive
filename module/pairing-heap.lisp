@@ -1,14 +1,11 @@
-;;;
-;;; Meldable heap (pairing heap)
-;;;
-;;; Reference:
-;;; https://topcoder.g.hatena.ne.jp/spaghetti_source/20120929/1348886107
-;;;
-
 (defpackage :cp/pairing-heap
   (:use :cl)
   (:export #:pheap #:pheap-merge #:pheap-conj #:pheap-disj #:pheap-peek
-           #:pheap-push #:pheap-pop))
+           #:pheap-push #:pheap-pop)
+  (:documentation "Provides pairing heap.
+
+Reference:
+https://topcoder.g.hatena.ne.jp/spaghetti_source/20120929/1348886107"))
 (in-package :cp/pairing-heap)
 
 ;; Note: An empty heap is NIL.

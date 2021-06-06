@@ -17,7 +17,7 @@ This macro defines five functions:
 - <NAME>-REF: accessor and setter
 - <NAME>-FOLD: query function for range sum
 - MAKE-<NAME>: linear time constructor
-- <NAME>-MAX-RIGHT: binary search w.r.t. range sum in nomal order
+- <NAME>-MAX-RIGHT: binary search w.r.t. range sum in normal order
 - <NAME>-MIN-LEFT: binary search w.r.t. range sum in reverse order"
   (let* ((fname-ref (intern (format nil "~A-REF" (symbol-name name))))
          (fname-fold (intern (format nil "~A-FOLD" (symbol-name name))))

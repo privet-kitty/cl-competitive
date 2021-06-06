@@ -1,10 +1,7 @@
-;;;
-;;; Six-sided dice
-;;;
-
 (defpackage :cp/dice
   (:use :cl)
-  (:export #:dice #:dice-p #:copy-dice #:make-dice #:dice-rotate! #:dice-rotate))
+  (:export #:dice #:dice-p #:copy-dice #:make-dice #:dice-rotate! #:dice-rotate)
+  (:documentation "Provides six-sided dice."))
 (in-package :cp/dice)
 
 (declaim (inline %make-dice))

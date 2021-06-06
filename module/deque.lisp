@@ -1,10 +1,7 @@
-;;;
-;;; double-ended queue with ring-buffer
-;;;
-
 (defpackage :cp/deque
   (:use :cl)
-  (:export #:deque-empty-error #:deque-invalid-index-error #:define-deque))
+  (:export #:deque-empty-error #:deque-invalid-index-error #:define-deque)
+  (:documentation "Provides double-ended queue with ring-buffer."))
 (in-package :cp/deque)
 
 (declaim (inline %power-of-two-ceiling))
@@ -35,7 +32,7 @@ constructor: MAKE-<NAME>.
 basic operations: <NAME>-PUSH-FRONT, <NAME>-PUSH-BACK, <NAME>-POP-FRONT,
 <NAME>-POP-BACK.
 accessor: <NAME>-REF. <NAME>-PEEK-FRONT, <NAME>-PEEK-BACK
-utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
+utilities: <NAME>-EMPTY-P, <NAME>-CLEAR.
 "
   (let ((push-front (intern (format nil "~A-PUSH-FRONT" name)))
         (push-back (intern (format nil "~A-PUSH-BACK" name)))
@@ -45,7 +42,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
         (peek-back (intern (format nil "~A-PEEK-BACK" name)))
         (empty-p (intern (format nil "~A-EMPTY-P" name)))
         (constructor (intern (format nil "MAKE-~A" name)))
-        (reinitializer (intern (format nil "~A-REINITIALIZE" name)))
+        (reinitializer (intern (format nil "~A-CLEAR" name)))
         (reffer (intern (format nil "~A-REF" name)))
         (data-getter (intern (format nil "~A-DATA" name)))
         (front-getter (intern (format nil "~A-FRONT" name)))
@@ -179,7 +176,7 @@ utilities: <NAME>-EMPTY-P, <NAME>-REINITIALIZE.
 
        (declaim (inline ,reffer))
        (defun ,reffer (,name index)
-         "Returns the (0-based) INDEX-th element from the front."
+         "Returns the (0-based) INDEX-th element from the top."
          (declare (index index))
          (symbol-macrolet ((front (,front-getter ,name))
                            (count (,count-getter ,name)))

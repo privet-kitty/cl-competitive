@@ -62,12 +62,12 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [persistent-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-vector.lisp) persistent vector
 - [dice.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/dice.lisp) six-sided dice
 - [swag.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/swag.lisp) sliding window aggregation
-- [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sliding-window.lisp) sliding window minimum (or maximum)
+- [sliding-window.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sliding-window.lisp) sliding window extremum
 
 ### Unclassified algorithms
 - [cumulative-sum.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/cumulative-sum.lisp) n-dimensional cumulative sum
 - [bisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bisect.lisp) analogue of `std::lower_bound` and `std::upper_bound`
-- [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) maximum (minimum) of unimodal function
+- [trisect.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/trisect.lisp) extremum of strictly unimodal function
 - [monotone-minima.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/monotone-minima.lisp) divide-and-conquer algorithm for monotone matrix
 - [quicksort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quicksort.lisp) quicksort
 - [merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/merge-sort.lisp) merge sort
