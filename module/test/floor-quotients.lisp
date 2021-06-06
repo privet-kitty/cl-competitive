@@ -26,9 +26,12 @@
 
 (test enum-fdivisors2
   (let ((*test-dribble* nil))
-    (loop for x from 0 to 1000
+    (loop for x from 0 to 300
           for quots2 = (enum-fdivisors2 x)
           for fquot = (make-fquot-manager x)
           do (is (equalp (enum-fdivisors x) quots2))
              (dotimes (i (length quots2))
-               (is (= i (fquot-index fquot (aref quots2 i))))))))
+               (is (= i (fquot-index fquot (aref quots2 i))))
+               (when (< (+ i 1) (length quots2))
+                 (loop for x from (aref quots2 i) below (aref quots2 (+ i 1))
+                       do (is (= i (fquot-index fquot x)))))))))
