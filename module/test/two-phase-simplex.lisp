@@ -69,7 +69,7 @@
                    (incf obj1 (* (aref c j) (aref prim j))))
                  (dotimes (j m)
                    (incf obj2 (* (aref c* j) (aref dual j))))
-                 (nearly= 1d-8 obj1 obj2))))))))
+                 (is (nearly= 1d-8 result obj1 (- obj2))))))))))
 
 (defun make-random-instance (sigma feasible-p)
   (declare (optimize (speed 3))

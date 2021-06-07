@@ -69,6 +69,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (declaim (ftype (function * (values (simple-array fixnum (*)) &optional))
                 %iota))
 (defun %iota (n)
+  (declare ((mod #.array-dimension-limit) n))
   (let ((res (make-array n :element-type 'fixnum :initial-element 0)))
     (dotimes (i n)
       (setf (aref res i) i))
@@ -103,7 +104,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (setf (aref acol i) (aref a i col)))
           ;; select leaving variable
           (unless (find-if (lambda (x) (> x +eps+)) acol)
-            (return-from %primal-simplex! (values :unbounded nil nil nil)))
+            (return-from %primal-simplex! (values :unbounded nil nil)))
           (let (row
                 (rowmin +pos-inf+))
             (dotimes (i m)
@@ -120,7 +121,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (incf obj (%pivot row col a b c arow acol dict)))))
       ;; restore primal & dual solutions
       (multiple-value-bind (res-primal res-dual) (%restore b c dict)
-        (values obj res-primal res-dual dict)))))
+        (values obj res-primal res-dual)))))
 
 (defun %dual-simplex! (a b c &optional dict)
   "Assumes c <= 0."
@@ -151,7 +152,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (setf (aref arow j) (aref a row j)))
           ;; select leaving variable
           (unless (find-if (lambda (x) (< x (- +eps+))) arow)
-            (return-from %dual-simplex! (values :infeasible nil nil nil)))
+            (return-from %dual-simplex! (values :infeasible nil nil)))
           (let (col
                 (colmin +pos-inf+))
             (dotimes (j n)
@@ -167,15 +168,14 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (incf obj (%pivot row col a b c arow acol dict)))))
       ;; restore primal & dual solutions
       (multiple-value-bind (res-primal res-dual) (%restore b c dict)
-        (values obj res-primal res-dual dict)))))
+        (values obj res-primal res-dual)))))
 
 (declaim (ftype (function * (values (or simplex-float (member :unbounded :infeasible))
                                     (or null (simple-array simplex-float (*)))
                                     (or null (simple-array simplex-float (*)))
-                                    (or null (simple-array fixnum (*)))
                                     &optional))
                 dual-primal!))
-(defun dual-primal! (a b c)
+(defun dual-primal! (a b c &optional dict)
   "Maximizes cx subject to Ax <= b and x >= 0. Returns four values:
 
 Optimal case:
@@ -191,17 +191,18 @@ Infeasible case:
 - (values :infeasible nil nil nil)"
   (declare (optimize (speed 3))
            ((simple-array simplex-float (* *)) a)
-           ((simple-array simplex-float (*)) b c))
+           ((simple-array simplex-float (*)) b c)
+           ((or null (simple-array fixnum (*))) dict))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
     ;; Phase I: apply dual to the modified problem with objective = -x1-x2-
     ;; ... -xn
     (let* ((c* (make-array n :element-type 'simplex-float
                              :initial-element (coerce -1 'simplex-float)))
-           (dict (%iota (+ n m)))
+           (dict (or dict (%iota (+ n m))))
            (result1 (%dual-simplex! a b c* dict)))
       (when (eql result1 :infeasible)
-        (return-from dual-primal! (values :infeasible nil nil nil)))
+        (return-from dual-primal! (values :infeasible nil nil)))
       ;; restore original objective function
       (let ((poses (make-array (+ n m) :element-type 'fixnum)))
         (dotimes (i (+ m n))
@@ -225,5 +226,5 @@ Infeasible case:
           ;; Phase II: apply primal to the original problem
           (multiple-value-bind (result2 primal dual) (%primal-simplex! a b c dict)
             (if (eql result2 :unbounded)
-                (values result2 nil nil nil)
-                (values (+ obj (the simplex-float result2)) primal dual dict))))))))
+                (values result2 nil nil)
+                (values (+ obj (the simplex-float result2)) primal dual))))))))
