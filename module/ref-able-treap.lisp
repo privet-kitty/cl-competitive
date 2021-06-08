@@ -1,22 +1,20 @@
-;; Treap accessible by index (O(log(n)))
-;; Virtually it works like std::set of C++ or TreeSet of Java. 
-
-;; Note:
-;; - You shouldn't insert duplicate keys into a treap unless you know what you
-;; are doing.
-;; - You cannot rely on the side effect when you call any destructive operations
-;; on a treap. Always use the returned value.
-;; - An empty treap is NIL.
-
-;; TODO: abstraction
-
 (defpackage :cp/ref-able-treap
   (:use :cl)
   (:export #:treap #:treap-count #:treap-find #:treap-position
            #:treap-bisect-left #:treap-bisect-right
            #:treap-split #:treap-insert #:treap-push #:treap-pop #:make-treap
            #:treap-delete #:treap-merge #:treap-map #:invalid-treap-index-error
-           #:treap-ref #:treap-first #:treap-last #:treap-unite #:treap-reverse))
+           #:treap-ref #:treap-first #:treap-last #:treap-unite #:treap-reverse)
+  (:documentation "Provides a treap implementation of ordered set that is
+accessible by index.
+
+Note:
+- You shouldn't insert duplicate keys into a treap unless you know what you are
+doing. If what you want is a multiset, please use cp/multiset.
+- You cannot rely on a side effect when you call any destructive operations on a
+treap. Be sure to use the returned value.
+- An empty treap is NIL.
+"))
 (in-package :cp/ref-able-treap)
 
 (defstruct (treap (:constructor %make-treap (key priority &key left right (count 1)))
@@ -46,7 +44,7 @@
 
 (declaim (inline treap-find))
 (defun treap-find (key treap &key (order #'<))
-  "Returns KEY if TREAP contains it, otherwise NIL.
+  "Returns KEY if TREAP contains it; otherwise it returns NIL.
 
 An element in TREAP is considered to be equal to KEY iff (and (not (funcall
 order key <element>)) (not (funcall order <element> key))) is true."
@@ -62,7 +60,7 @@ order key <element>)) (not (funcall order <element> key))) is true."
 
 (declaim (inline treap-position))
 (defun treap-position (key treap &key (order #'<))
-  "Returns the index if TREAP contains KEY, otherwise NIL.
+  "Returns the index of KEY if TREAP contains it, otherwise it returns NIL.
 
 An element in TREAP is considered to be equal to KEY iff (and (not (funcall
 order key <element>)) (not (funcall order <element> key))) is true."
@@ -81,9 +79,9 @@ order key <element>)) (not (funcall order <element> key))) is true."
 (declaim (inline treap-bisect-left)
          (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional)) treap-bisect-left))
 (defun treap-bisect-left (value treap &key (order #'<))
-  "Returns two values: the smallest index and the corresponding key that
-satisfies TREAP[index] >= VALUE. Returns the size of TREAP and VALUE instead if
-TREAP[size-1] < VALUE."
+  "Returns two values: the least index and the corresponding key that satisfies
+TREAP[index] >= VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
+< VALUE holds for all keys."
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -106,9 +104,9 @@ TREAP[size-1] < VALUE."
          (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional))
                 treap-bisect-right))
 (defun treap-bisect-right (value treap &key (order #'<))
-  "Returns two values: the smallest index and the corresponding key that
-satisfies TREAP[index] > VALUE. Returns the size of TREAP and VALUE instead if
-TREAP[size-1] <= VALUE."
+  "Returns two values: the least index and the corresponding key that satisfies
+TREAP[index] > VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
+<= VALUE hold for all keys."
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -172,6 +170,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
                       treap))))
       (recur treap))))
 
+;; TODO: use setf-expander
 (defmacro treap-push (key treap &optional (order '#'<))
   "Pushes a KEY to TREAP."
   `(setf ,treap (treap-insert ,key ,treap :order ,order)))
@@ -180,8 +179,8 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   "Deletes a KEY from TREAP."
   `(setf ,treap (treap-delete ,key ,treap :order ,order)))
 
-;; NOTE: It takes O(nlog(n)).
 (defun treap (order &rest keys)
+  "NOTE: this constructor takes O(nlog(n))."
   (loop with res = nil
         for key in keys
         do (setf res (treap-insert key res :order order))
@@ -191,9 +190,8 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
   "Makes a treap from the given SORTED-VECTOR in O(n) time. Note that this
-function doesn't check if the SORTED-VECTOR is actually sorted w.r.t. your
-intended order. The consequence is undefined when a non-sorted vector is
-given."
+function doesn't check if SORTED-VECTOR is actually sorted w.r.t. your intended
+order. The consequence is undefined when a non-sorted vector is given."
   (declare (vector sorted-vector))
   (labels ((heapify (top)
              (when top
@@ -230,7 +228,7 @@ given."
 smaller (or larger, depending on the order) than those of RIGHT.
 
 Note that this `merge' is different from CL:MERGE and rather close to
-CL:CONCATENATE. (TREAP-UNITE is the analogue of the former.)"
+CL:CONCATENATE. (TREAP-UNITE is the analogue of the former operation.)"
   (declare (optimize (speed 3))
            ((or null treap) left right))
   (cond ((null left) right)
@@ -349,7 +347,8 @@ take one argument."
 
 (declaim (inline treap-reverse))
 (defun treap-reverse (treap)
-  "Destructively reverses the order of the whole treap."
+  "Destructively reverses the order of the whole treap. Note that this operation
+takes O(n) time."
   (labels ((recur (treap)
              (when treap
                (let ((left (recur (%treap-left treap)))

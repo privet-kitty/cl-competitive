@@ -5,7 +5,7 @@
            #:treap-map #:invalid-treap-index-error #:treap-first #:treap-last))
 (in-package :cp/treap)
 
-;; Not included in test script. Better to use ref-able-treap instead.
+;; No unit tests. You should use ref-able-treap instead.
 
 (defstruct (treap (:constructor %make-treap (key priority &optional left right))
                   (:copier nil)
@@ -22,9 +22,10 @@
 
 (declaim (inline treap-find))
 (defun treap-find (key treap &key (order #'<))
-  "Searches the sub-treap of TREAP whose key satisfies (and (not (funcall order
-key (%treap-key sub-treap))) (not (funcall order (%treap-key sub-treap) key))) and
-returns KEY. Returns NIL if KEY is not contained."
+  "Returns KEY if TREAP contains it; otherwise it returns NIL.
+
+An element in TREAP is considered to be equal to KEY iff (and (not (funcall
+order key <element>)) (not (funcall order <element> key))) is true."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap) nil)
@@ -37,7 +38,7 @@ returns KEY. Returns NIL if KEY is not contained."
 
 (declaim (inline treap-split))
 (defun treap-split (key treap &key (order #'<))
-  "Destructively splits the TREAP with reference to KEY and returns two treaps,
+  "Destructively splits TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
   (declare ((or null treap) treap))
   (labels ((recur (treap)

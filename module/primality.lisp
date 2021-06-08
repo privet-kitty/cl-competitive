@@ -1,19 +1,22 @@
 (defpackage :cp/primality
   (:use :cl :cp/tzcount)
   (:export #:prime-p)
-  (:documentation "Provides primality test. (deterministic Miller-Rabin)
+  (:documentation "Provides deterministic Miller-Rabin algorithm for primality
+test.
 
-This module is tune for SBCL on x86-64, i.e., assumes (integer 0
-#.MOST-POSITIVE-FIXNUM) == (UNSIGNED-BYTE 62)"))
+This module is tuned for SBCL on x86-64, i.e., here (integer 0
+#.MOST-POSITIVE-FIXNUM) is assumed to be (UNSIGNED-BYTE 62)"))
 (in-package :cp/primality)
+
+(deftype uint () '(unsigned-byte 62))
 
 (defun %strong-probable-prime-p (n base)
   (declare (optimize (speed 3))
-           ((unsigned-byte 62) n base))
+           (uint n base))
   (or (= n base)
       (labels ((mod-power (base power)
-                 (declare ((unsigned-byte 62) base power))
-                 (loop with res of-type (unsigned-byte 62) = 1
+                 (declare (uint base power))
+                 (loop with res of-type uint = 1
                        while (> power 0)
                        when (oddp power)
                        do (setq res (mod (* res base) n))
@@ -22,7 +25,7 @@ This module is tune for SBCL on x86-64, i.e., assumes (integer 0
                        finally (return res))))
         (let* ((d (floor (- n 1) (logand (- n 1) (- 1 n))))
                (y (mod-power base d)))
-          (declare ((unsigned-byte 62) y))
+          (declare (uint y))
           (or (= y 1)
               (= y (- n 1))
               (let ((s (tzcount (- n 1))))
@@ -34,7 +37,7 @@ This module is tune for SBCL on x86-64, i.e., assumes (integer 0
 ;; https://primes.utm.edu/prove/prove2_3.html
 ;; TODO: more efficient SPRP
 (defun prime-p (n)
-  (declare ((unsigned-byte 62) n))
+  (declare (uint n))
   (cond ((<= n 1) nil)
         ((evenp n) (= n 2))
         ((< n 4759123141)
