@@ -178,13 +178,12 @@ Optimal case:
 - optimal objective value
 - optimal solutions to the primal problem
 - optimal solutions to the dual problem: min. by s.t. (A^t)y >= c, y >= 0
-- current dictionary
 
 Unbounded case:
-- (values :unbounded nil nil nil)
+- (values :unbounded nil nil)
 
 Infeasible case:
-- (values :infeasible nil nil nil)"
+- (values :infeasible nil nil)"
   (declare (optimize (speed 3))
            ((simple-array simplex-float (* *)) a)
            ((simple-array simplex-float (*)) b c)
