@@ -172,7 +172,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                                     &optional))
                 dual-primal!))
 (defun dual-primal! (a b c &optional dict)
-  "Maximizes cx subject to Ax <= b and x >= 0. Returns four values:
+  "Maximizes cx subject to Ax <= b and x >= 0. Returns three values:
 
 Optimal case:
 - optimal objective value
