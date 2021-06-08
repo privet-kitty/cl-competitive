@@ -1,5 +1,6 @@
 (defpackage :cp/test/two-phase-simplex
-  (:use :cl :fiveam :cp/two-phase-simplex :cp/test/nearly-equal :cp/gaussian)
+  (:use :cl :fiveam :cp/two-phase-simplex :cp/lp-test-tool
+        :cp/test/nearly-equal :cp/gaussian)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/two-phase-simplex #:%primal-simplex! #:%dual-simplex!))
 (in-package :cp/test/two-phase-simplex)
@@ -19,11 +20,6 @@
         (dotimes (j n)
           (setf (aref a* j i) (- (aref a i j)))))
       (values a* b* c*))))
-
-(defun copy (a)
-  (let ((res (make-array (array-dimensions a) :element-type 'double-float)))
-    (replace (sb-ext:array-storage-vector res) (sb-ext:array-storage-vector a))
-    res))
 
 (defun check (a b c obj)
   (multiple-value-bind (a* b* c*) (dual-std a b c)
@@ -70,26 +66,6 @@
                  (dotimes (j m)
                    (incf obj2 (* (aref c* j) (aref dual j))))
                  (is (nearly= 1d-8 result obj1 (- obj2))))))))))
-
-(defun make-random-instance (sigma feasible-p)
-  (declare (optimize (speed 3))
-           (double-float sigma))
-  (let* ((m (round (* 5 (exp (* #.(log 10d0) (random 1d0))))))
-         (n (round (* 5 (exp (* #.(log 10d0) (random 1d0))))))
-         (as (make-array (list m n) :element-type 'double-float :initial-element 0d0))
-         (bs (make-array m :element-type 'double-float :initial-element 0d0))
-         (cs (make-array n :element-type 'double-float :initial-element 0d0)))
-    (dotimes (i m)
-      (dotimes (j n)
-        (setf (aref as i j) (* sigma (gaussian)))))
-    (dotimes (i m)
-      (setf (aref bs i) (* sigma (gaussian))))
-    (when feasible-p
-      (dotimes (i m)
-        (setf (aref bs i) (abs (aref bs i)))))
-    (dotimes (j n)
-      (setf (aref cs j) (* sigma (gaussian))))
-    (values as bs cs)))
 
 (test two-phase-simplex/hand
   (let ((a #2a((2d0 1d0 1d0 3d0) (1d0 3d0 1d0 2d0)))

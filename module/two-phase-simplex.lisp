@@ -196,10 +196,9 @@ Infeasible case:
     (let* ((c* (make-array n :element-type 'simplex-float
                              :initial-element (coerce -1 'simplex-float)))
            (dict (or dict (%iota (+ n m))))
+           (dict-saved (copy-seq dict))
            (result1 (%dual-simplex! a b c* dict)))
-      (when (eql result1 :infeasible)
-        (return-from dual-primal! (values :infeasible nil nil)))
-      ;; restore original objective function
+      ;; restore original objective function (even when phase I ended with :infeasible)
       (let ((poses (make-array (+ n m) :element-type 'fixnum)))
         (dotimes (i (+ m n))
           (setf (aref poses (aref dict i)) i))
@@ -207,18 +206,23 @@ Infeasible case:
         (fill c +zero+)
         (let ((obj +zero+))
           (declare (simplex-float obj))
-          (dotimes (j n)
-            (let* ((coef (aref c* j))
-                   (pos (aref poses j)))
-              (if (< pos n)
+          (dotimes (prev-pos n)
+            ;; j: position w.r.t. dict-saved
+            ;; new-pos: position w.r.t. dict
+            (let* ((coef (aref c* prev-pos))
+                   (var (aref dict-saved prev-pos))
+                   (new-pos (aref poses var)))
+              (if (< new-pos n)
                   ;; xj is non-basic
-                  (let ((col pos))
+                  (let ((col new-pos))
                     (incf (aref c col) coef))
                   ;; xj is basic
-                  (let ((row (- pos n)))
+                  (let ((row (- new-pos n)))
                     (dotimes (j n)
                       (decf (aref c j) (* coef (aref a row j))))
                     (incf obj (* coef (aref b row)))))))
+          (when (eql result1 :infeasible)
+            (return-from dual-primal! (values :infeasible nil nil)))
           ;; Phase II: apply primal to the original problem
           (multiple-value-bind (result2 primal dual) (%primal-simplex! a b c dict)
             (if (eql result2 :unbounded)
