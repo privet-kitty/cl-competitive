@@ -96,9 +96,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (when (> (aref c j) colmax)
               (setq colmax (aref c j)
                     col j)))
-          (unless col
-            (error "All coefficient ~A are too small." c))
-          (when (<= colmax +eps+)
+          (when (or (null col) (<= colmax +eps+))
             (return))
           (dotimes (i m)
             (setf (aref acol i) (aref a i col)))
@@ -144,9 +142,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
             (when (< (aref b i) rowmin)
               (setq rowmin (aref b i)
                     row i)))
-          (unless row
-            (error "All intercepts ~A are too large." b))
-          (when (>= rowmin (- +eps+))
+          (when (or (null row) (>= rowmin (- +eps+)))
             (return))
           (dotimes (j n)
             (setf (aref arow j) (aref a row j)))

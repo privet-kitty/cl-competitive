@@ -81,14 +81,14 @@
          (cs (make-array n :element-type 'double-float :initial-element 0d0)))
     (dotimes (i m)
       (dotimes (j n)
-        (setf (aref as i j) (* sigma (cp/gaussian:gaussian)))))
+        (setf (aref as i j) (* sigma (gaussian)))))
     (dotimes (i m)
-      (setf (aref bs i) (* sigma (cp/gaussian:gaussian))))
+      (setf (aref bs i) (* sigma (gaussian))))
     (when feasible-p
       (dotimes (i m)
         (setf (aref bs i) (abs (aref bs i)))))
     (dotimes (j n)
-      (setf (aref cs j) (* sigma (cp/gaussian:gaussian))))
+      (setf (aref cs j) (* sigma (gaussian))))
     (values as bs cs)))
 
 (test two-phase-simplex/hand
