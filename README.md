@@ -159,7 +159,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 
 ### Optimization
 
-- [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase (dual-primal) revised simplex method
+- [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase (dual-then-primal) simplex method
+- [incremental-lp.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/incremental-lp.lisp) warm-start LP solver for dynamically added constraints, using dual simplex method
 - [ols.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ols.lisp) ordinary least squares regression by Gaussian elimination
 
 ### Euclidean geometry

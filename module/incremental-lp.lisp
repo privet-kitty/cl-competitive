@@ -3,10 +3,8 @@
   (:import-from :cp/two-phase-simplex #:simplex-float #:+zero+ #:%dual-simplex!)
   (:export #:make-lp #:lp-add-row! #:lp-pop-row! #:lp-render #:lp-solve!)
   (:documentation "Provides warm-start LP solver for dynamically added
-constraints, which uses dual simplex method."))
+constraints, using dual simplex method."))
 (in-package :cp/incremental-lp)
-
-;; TODO: more docs
 
 (defstruct (lp (:constructor %make-lp))
   (mat nil :type (simple-array simplex-float (* *)))
@@ -37,6 +35,9 @@ constraints, which uses dual simplex method."))
     (%make-lp :mat mat :b b :c c :c-saved c-saved :dict dict)))
 
 (defun lp-add-row! (lp arow b)
+  "Destructively adds a new `lazy' constraint ax <= b to LP. You can rely on the
+side effect. Here `lazy' means you need to call LP-RENDER to create a new LP to
+which all the added constraints are reflected."
   (declare (optimize (speed 3))
            ((simple-array simplex-float (*)) arow)
            (simplex-float b))
@@ -46,11 +47,13 @@ constraints, which uses dual simplex method."))
   lp)
 
 (defun lp-pop-row! (lp)
+  "Destructively deletes the last added lazy constraint."
   (pop (lp-row-stack lp))
   (pop (lp-b-stack lp))
   lp)
 
 (defun lp-render (lp)
+  "Creates a new LP to which all the added constraints are reflected."
   (declare (optimize (speed 3)))
   (destructuring-bind (m n) (array-dimensions (lp-mat lp))
     (declare ((mod #.array-dimension-limit) m n))
@@ -113,6 +116,9 @@ constraints, which uses dual simplex method."))
                                     &optional))
                 lp-solve!))
 (defun lp-solve! (lp)
+  "Maximizes cx subject to Ax <= b and x >= 0, and returns three values. See
+docs of `cp/two-phase-simplex:dual-primal!' for the information of returned
+value."
   (declare (optimize (speed 3)))
   (assert (null (lp-row-stack lp)))
   (let* ((mat (lp-mat lp))

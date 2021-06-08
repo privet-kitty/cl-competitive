@@ -1,7 +1,7 @@
 (defpackage :cp/two-phase-simplex
   (:use :cl)
   (:export #:dual-primal!)
-  (:documentation "Provides two-phase (dual-primal) revised simplex method using
+  (:documentation "Provides two-phase (dual-then-primal) simplex method using
 Dantzig's pivot rule.
 
 Reference:
