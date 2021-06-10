@@ -1,13 +1,10 @@
-;;;
-;;; 2D sparse table
-;;;
-;;; Reference:
-;;; https://codeforces.com/blog/entry/45485
-;;;
-
 (defpackage :cp/2d-sparse-table
   (:use :cl)
-  (:export #:make-2d-sparse-table #:2dst-fold))
+  (:export #:make-2d-sparse-table #:2dst-fold)
+  (:documentation "Provides 2D sparse table.
+
+Reference:
+https://codeforces.com/blog/entry/45485"))
 (in-package :cp/2d-sparse-table)
 
 (declaim (inline make-2d-sparse-table))
@@ -53,8 +50,8 @@
 
 (declaim (inline 2dst-fold))
 (defun 2dst-fold (table binop i1 j1 i2 j2 &optional identity)
-  "Queries the rectangle region [I1, I2) * [J1, J2). Returns IDENTITY if the
-specified region is empty."
+  "Folds the rectangle region [I1, I2) * [J1, J2). Returns IDENTITY if the
+given region is empty."
   (declare ((integer 0 #.most-positive-fixnum) i1 j1 i2 j2))
   (assert (and (<= i1 i2 (array-dimension table 2))
                (<= j1 j2 (array-dimension table 3))))

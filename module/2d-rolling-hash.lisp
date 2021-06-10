@@ -1,10 +1,9 @@
-;;;
-;;; 2D rolling hash (32-bit)
-;;;
-
 (defpackage :cp/2d-rolling-hash
   (:use :cl)
-  (:export #:make-rhash2d #:rhash2d-matrix-hash))
+  (:export #:make-rhash2d #:rhash2d-matrix-hash)
+  (:documentation "Provides 2D rolling hash.
+
+Key length: 32-bit"))
 (in-package :cp/2d-rolling-hash)
 
 ;; This table consists of pairs of primes less than 2^32 and the random

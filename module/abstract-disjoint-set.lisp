@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:define-disjoint-set)
   (:documentation "Disjoint set by Union-Find algorithm over arbitrary
-monoid (union by size & path compression)"))
+monoid (with union by size & path compression)."))
 (in-package :cp/abstract-disjoint-set)
 
 (defmacro define-disjoint-set (name &key (op '#'+) (identity 0) (element-type 'fixnum) (union-by-size t) conc-name)

@@ -1,11 +1,11 @@
-;;;
-;;; Bron-Kerbosch-Tomita
-;;; Reference: http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf
-;;;
-
 (defpackage :cp/bron-kerbosch
   (:use :cl)
-  (:export #:find-max-clique))
+  (:export #:find-max-clique)
+  (:documentation "Provides Bron-Kerbosch-Tomita algorithm for maximum clique
+problem.
+
+Reference:
+http://www.dcs.gla.ac.uk/~pat/jchoco/clique/enumeration/report.pdf"))
 (in-package :cp/bron-kerbosch)
 
 ;; TODO: take an ordinary adjacency matrix as an input
@@ -31,7 +31,7 @@ neighbors of vertex i."
                    (let ((pivot 0)
                          (max -1)
                          (p-or-x (logior p x)))
-                     ;; Find a vertex in P∪X that has the most neighbors in P
+                     ;; Find a vertex in P \cup X that has the most neighbors in P
                      ;; and use it as a pivot vertex
                      (loop for u from (tzcount p-or-x) below (integer-length p-or-x)
                            do (when (logbitp u p-or-x)
