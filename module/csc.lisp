@@ -62,7 +62,8 @@ matrix."))
 Note:
 - This function uses the element closest to the end if duplicate (row, col) exist.
 - The returned CSC contains zero when VALUES contains it."
-  (declare (inline sort)
+  (declare (inline stable-sort)
+           ((mod #.array-dimension-limit) m n)
            (vector rows cols values))
   (assert (= (length rows) (length cols) (length values)))
   (let* ((indices (let ((tmp (make-array (length rows) :element-type 'fixnum)))
@@ -73,6 +74,9 @@ Note:
                                            (< (aref rows i1) (aref rows i2))
                                            (< (aref cols i1) (aref cols i2)))))))
          (length 0))
+    (declare ((simple-array fixnum (*)) indices)
+             ((mod #.array-dimension-limit) length))
+    ;; drop duplicate elements
     (dotimes (i* (length indices))
       (let ((i (aref indices i*)))
         (if (and (> i* 0)
