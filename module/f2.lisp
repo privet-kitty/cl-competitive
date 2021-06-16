@@ -1,10 +1,7 @@
-;;;
-;;; Fast operations on GF(2)
-;;;
-
 (defpackage :cp/f2
   (:use :cl)
-  (:export #:f2-gemm #:f2-gemv #:f2-echelon! #:f2-solve-linear-system! #:f2-binom))
+  (:export #:f2-gemm #:f2-gemv #:f2-echelon! #:f2-solve-linear-system! #:f2-binom)
+  (:documentation "Provides fast operation on GF(2)."))
 (in-package :cp/f2)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -71,6 +68,7 @@ multiple of 64."
           (setf (aref res row) value)))
       res)))
 
+;; not tested
 (defun f2-echelon! (matrix &optional extended)
   "Returns the row echelon form of MATRIX by gaussian elimination on GF(2). If
 EXTENDED is true, the last column is regarded as the right hand side of the
@@ -86,7 +84,8 @@ The width of MATRIX must be multiple of 64."
     (multiple-value-bind (n/64 rem) (floor n 64)
       (assert (zerop rem))
       (let* ((storage (sb-ext:array-storage-vector matrix))
-             (rank 0))
+             (rank 0)
+             (cols (make-array m :element-type 'fixnum :initial-element -1)))
         (declare (fixnum rank))
         (dotimes (target-col (if extended (- n 1) n))
           (let* ((pivot-row (do ((i rank (+ 1 i)))
@@ -110,8 +109,9 @@ The width of MATRIX must be multiple of 64."
                       do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
                                (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
                                        (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
+              (setf (aref cols rank) target-col)
               (incf rank))))
-        (values matrix rank)))))
+        (values matrix cols rank)))))
 
 (defun f2-solve-linear-system! (matrix vector)
   "Solves Ax = b on GF(2) and returns a root if it exists. Otherwise it returns
@@ -126,9 +126,10 @@ The width of A must be multiple of 64."
     (declare (optimize (safety 0))
              ((integer 0 #.most-positive-fixnum) m n))
     (multiple-value-bind (n/64 rem) (floor n 64)
-      (assert (zerop rem))
+      (assert (and (zerop rem) (= m (length vector))))
       (let* ((storage (sb-ext:array-storage-vector matrix))
-             (rank 0))
+             (rank 0)
+             (cols (make-array m :element-type 'fixnum :initial-element -1)))
         (declare (fixnum rank))
         (dotimes (target-col n)
           (let* ((pivot-row (do ((i rank (+ 1 i)))
@@ -154,10 +155,16 @@ The width of A must be multiple of 64."
                       do (setf (sb-kernel:%vector-raw-bits storage (+ base/64 k))
                                (logxor (sb-kernel:%vector-raw-bits storage (+ base/64 k))
                                        (sb-kernel:%vector-raw-bits storage (+ rank-row/64 k))))))))
+              (setf (aref cols rank) target-col)
               (incf rank))))
         (if (loop for i from rank below m
                   always (zerop (aref vector i)))
-            (values vector rank)
+            (let ((result (make-array n :element-type 'bit :initial-element 0)))
+              (dotimes (i m)
+                (let ((j (aref cols i)))
+                  (when (>= j 0)
+                    (setf (aref result j) (aref vector i)))))
+              (values result rank))
             (values nil rank))))))
 
 (declaim (inline f2-binom))
