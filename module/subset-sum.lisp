@@ -5,7 +5,10 @@
 
 (declaim (inline subset-sum-merge))
 (defun subset-sum-merge (vector new-value
-                         &key (op #'+) (negative-infinity most-negative-fixnum))
+                         &key
+                         (op #'+)
+                         (negative-infinity most-negative-fixnum)
+                         (drop-duplicate t))
   "Merges new item to the set of possible sum of values. VECTOR must be strictly
 increasing.
 
@@ -23,7 +26,7 @@ Example:
          (end 0))
     (declare ((mod #.array-dimension-limit) pos1 pos2 end))
     (labels ((%append (new-value)
-               (when (< current-value new-value)
+               (when (or (not drop-duplicate) (< current-value new-value))
                  (setf (aref res end) new-value
                        current-value new-value
                        end (+ end 1)))))

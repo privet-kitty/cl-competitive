@@ -10,4 +10,5 @@
   (is (equalp #(0 2) (subset-sum-merge #(0) 2)))
   (is (equalp #(0 2 4) (subset-sum-merge #(0 2) 2)))
   (is (equalp #(0 2 3 4 5 7) (subset-sum-merge #(0 2 4) 3)))
-  (is (equalp #(0 2 4) (subset-sum-merge #(0 2 4) 0))))
+  (is (equalp #(0 2 4) (subset-sum-merge #(0 2 4) 0)))
+  (is (equalp #(0 0 2 2) (subset-sum-merge #(0 0) 2 :drop-duplicate nil))))
