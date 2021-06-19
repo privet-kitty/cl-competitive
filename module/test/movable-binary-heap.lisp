@@ -1,0 +1,42 @@
+(defpackage :cp/test/movable-binary-heap
+  (:use :cl :fiveam :cp/movable-binary-heap)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/movable-binary-heap)
+(in-suite base-suite)
+
+(test movable-binary-heap/random
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil))
+    (dotimes (size 100)
+      (let ((priorities (make-array size :element-type 'fixnum :initial-element -1))
+            (heap (make-heap size)))
+        (is (heap-empty-p heap))
+        (when (> size 0)
+          (labels
+              ((proc (n)
+                 (dotimes (_ n)
+                   (ecase (random 4)
+                     ;; ensure key
+                     (0 (let ((new-key (random size))
+                              (new-pr (random most-positive-fixnum)))
+                          (unless (find new-pr priorities)
+                            (setf (aref priorities new-key) new-pr)
+                            (heap-ensure-key heap new-key new-pr (constantly new-pr)))))
+                     ;; peek
+                     (1 (if (heap-empty-p heap)
+                            (signals heap-empty-error (heap-peek heap))
+                            (multiple-value-bind (key pr) (heap-peek heap)
+                              (is (= (aref priorities key) pr)))))
+                     ;; pop
+                     (2 (if (heap-empty-p heap)
+                            (signals heap-empty-error (heap-pop heap))
+                            (multiple-value-bind (key pr) (heap-pop heap)
+                              (is (= (aref priorities key) pr))
+                              (setf (aref priorities key) -1))))
+                     (3 (is (= (heap-count heap)
+                               (count -1 priorities :test-not #'=))))))))
+            (proc 100)
+            (heap-clear heap)
+            (fill priorities -1)
+            (is (heap-empty-p heap))
+            (proc 100)))))))
