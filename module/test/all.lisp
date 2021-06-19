@@ -82,6 +82,7 @@
   (:import-from :cp/test/interval-map)
   (:import-from :cp/test/interval-set)
   (:import-from :cp/test/inversion-number)
+  (:import-from :cp/test/iterset)
   (:import-from :cp/test/jonker-volgenant)
   (:import-from :cp/test/lagrange-interpolation)
   (:import-from :cp/test/lca)
