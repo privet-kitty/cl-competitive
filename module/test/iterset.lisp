@@ -41,7 +41,7 @@
 (test iterset/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
-    (dotimes (_ 100)
+    (dotimes (_ 80)
       (let* ((pos 0)
              (vector (make-array 1 :element-type 'fixnum
                                    :initial-element (random most-positive-fixnum)))
@@ -50,7 +50,7 @@
         (iterset-insert iterset (aref vector pos))
         (let ((node (iterset-first iterset)))
           (is (= (node-key node) (aref vector pos)))
-          (dotimes (_ 100)
+          (dotimes (_ 80)
             (let ((key (random most-positive-fixnum)))
               (unless (find key vector)
                 (iterset-insert iterset key)
