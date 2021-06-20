@@ -7,8 +7,6 @@ add a new number: amortized O(1);
 get MEX: O(1)."))
 (in-package :cp/mex-manager)
 
-;; NOTE: not tested
-
 (declaim (inline %power-of-two-ceiling))
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
