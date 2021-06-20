@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:calc-game-value-for-tree #:calc-game-value-for-stalk)
   (:documentation
-   "Provides computation of game value of hackenbush.
+   "Provides computation of game value of Blue-Red Hackenbush.
 
 Reference:
 http://www.geometer.org/mathcircles/hackenbush.pdf"))
