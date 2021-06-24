@@ -1,5 +1,5 @@
 (defpackage :cp/test/csc
-  (:use :cl :fiveam :cp/csc)
+  (:use :cl :fiveam :cp/csc :cp/matrix-rotate)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/csc #:csc-float #:+zero+))
 (in-package :cp/test/csc)
@@ -18,7 +18,9 @@
                 (when (< (random 1d0) rate)
                   (setf (aref mat i j) (- (random 100d0) 50d0)))))
             (let ((csc (make-csc-from-array mat)))
-              (is (equalp (csc-to-array csc) mat))))
+              (is (equalp (csc-to-array csc) mat))
+              (is (equalp (csc-to-array (csc-transpose csc))
+                          (matrix-transpose mat)))))
           (let ((mat (make-array (list m n) :element-type 'csc-float))
                 (count (round (* rate m n)))
                 (rows (make-array 0 :element-type 'fixnum :fill-pointer 0))

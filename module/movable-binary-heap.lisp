@@ -85,7 +85,7 @@ increase-key operations."))
       (recur pos))))
 
 (declaim #+sbcl (sb-ext:maybe-inline heap-ensure-key))
-(defun heap-ensure-key (heap key priority if-exists)
+(defun heap-ensure-key (heap key priority &optional if-exists)
   "Adds KEY to HEAP if it doesn't exist and sets its priority to
 PRIORITY. Otherwise updates its priority by IF-EXISTS."
   (declare (optimize (speed 3))
@@ -108,7 +108,9 @@ PRIORITY. Otherwise updates its priority by IF-EXISTS."
               (incf end))
             (let ((prev-priority (aref priorities pos)))
               (setf (aref priorities pos)
-                    (funcall if-exists (aref priorities pos)))
+                    (if if-exists
+                        (funcall if-exists prev-priority)
+                        priority))
               (if (compare prev-priority (aref priorities pos))
                   (%heapify-down heap pos)
                   (%heapify-up heap pos)))))
