@@ -71,18 +71,18 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
-(defparameter *mat* #a((5 5) double-float
-                       (2d0 0d0 4d0 0d0 -2d0)
-                       (3d0 1d0 0d0 1d0 0d0)
-                       (-1d0 0d0 -1d0 0d0 -2d0)
-                       (0d0 -1d0 0d0 0d0 -6d0)
-                       (0d0 0d0 1d0 0d0 4d0)))
-(defparameter *mat0* #a((5 5) double-float
-                        (0d0 0d0 4d0 0d0 -2d0)
-                        (0d0 1d0 0d0 1d0 0d0)
-                        (0d0 0d0 -1d0 0d0 -2d0)
-                        (0d0 -1d0 0d0 0d0 -6d0)
-                        (0d0 0d0 1d0 0d0 4d0)))
+;; (defparameter *mat* #a((5 5) double-float
+;;                        (2d0 0d0 4d0 0d0 -2d0)
+;;                        (3d0 1d0 0d0 1d0 0d0)
+;;                        (-1d0 0d0 -1d0 0d0 -2d0)
+;;                        (0d0 -1d0 0d0 0d0 -6d0)
+;;                        (0d0 0d0 1d0 0d0 4d0)))
+;; (defparameter *mat0* #a((5 5) double-float
+;;                         (0d0 0d0 4d0 0d0 -2d0)
+;;                         (0d0 1d0 0d0 1d0 0d0)
+;;                         (0d0 0d0 -1d0 0d0 -2d0)
+;;                         (0d0 -1d0 0d0 0d0 -6d0)
+;;                         (0d0 0d0 1d0 0d0 4d0)))
 
 (deftype ivec () '(simple-array fixnum (*)))
 (deftype fvec () '(simple-array csc-float (*)))
