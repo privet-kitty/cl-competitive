@@ -1,9 +1,9 @@
 (defpackage :cp/lu-decomposition
   (:use :cl :cp/csc #:cp/movable-binary-heap)
-  (:import-from :cp/csc #:csc-float)
+  (:import-from :cp/csc #:csc-float #:+zero+)
   (:export #:lu-factor #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
-           #:make-lud-eta)
+           #:make-lud-eta #:dense-solve!)
   (:documentation "Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/lu-decomposition)
@@ -90,10 +90,10 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defconstant +nan+ -1)
 
 (defun lu-factor (matrix basis)
-  (declare (vector basis))
+  (declare (optimize (speed 3))
+           (vector basis))
   ;; B: submatrix of MATRIX w.r.t. BASIS
   ;; BT: transposition of B
-  (declare (optimize (speed 3)))
   (let* ((m (csc-m matrix))
          (colstarts (csc-colstarts matrix))
          (rows (csc-rows matrix))
@@ -310,7 +310,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
       (loop for i from rank below m
             do (setf (aref lower-colstarts (+ i 1)) (aref lower-colstarts i)
                      (aref tupper-colstarts (+ i 1)) (aref tupper-colstarts i)
-                     (aref diagu i) 0d0))
+                     (aref diagu i) +zero+))
       (dotimes (k (aref lower-colstarts m))
         (setf (aref lower-rows k)
               (aref irowperm (aref lower-rows k))))
@@ -336,3 +336,45 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                        :icolperm icolperm
                        :rowperm rowperm
                        :irowperm irowperm)))))
+
+(defun dense-solve! (lud-base y)
+  "Solves LUx = y and stores the solution to Y. The consequence is undefined
+when it is infeasible."
+  (declare (optimize (speed 3))
+           (fvec y))
+  (let* ((m (lud-m lud-base))
+         (irowperm (lud-irowperm lud-base))
+         (colperm (lud-colperm lud-base))
+         (lower (lud-lower lud-base))
+         (lower-colstarts (csc-colstarts lower))
+         (lower-rows (csc-rows lower))
+         (lower-values (csc-values lower))
+         (tupper (lud-tupper lud-base))
+         (tupper-colstarts (csc-colstarts tupper))
+         (tupper-rows (csc-rows tupper))
+         (tupper-values (csc-values tupper))
+         (diagu (lud-diagu lud-base))
+         (rank (lud-rank lud-base))
+         (tmp (make-array m :element-type 'csc-float)))
+    (dotimes (i m)
+      (setf (aref tmp i) (aref y i)))
+    (dotimes (i m)
+      (setf (aref y (aref irowperm i)) (aref tmp i)))
+    ;; y := L^(-1)y
+    (dotimes (i rank)
+      (let ((val (aref y i)))
+        (loop for k from (aref lower-colstarts i) below (aref lower-colstarts (+ i 1))
+              for row = (aref lower-rows k)
+              do (decf (aref y row) (* (aref lower-values k) val)))))
+    (loop for i from (- m 1) downto rank
+          do (setf (aref y i) +zero+))
+    (loop for i from (- rank 1) downto 0
+          for val of-type csc-float = (aref y i)
+          do (loop for k from (aref tupper-colstarts i) below (aref tupper-colstarts (+ i 1))
+                   do (decf val (* (aref tupper-values k) (aref y (aref tupper-rows k)))))
+             (setf (aref y i) (/ val (aref diagu i))))
+    (dotimes (i m)
+      (setf (aref tmp i) (aref y i)))
+    (dotimes (i m)
+      (setf (aref y (aref colperm i)) (aref tmp i)))
+    y))
