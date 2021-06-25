@@ -161,6 +161,7 @@
   (:import-from :cp/test/swag)
   (:import-from :cp/test/symmetric-group)
   (:import-from :cp/test/round-robin)
+  (:import-from :cp/test/treap)
   (:import-from :cp/test/tree-centroid)
   (:import-from :cp/test/tree-hash)
   (:import-from :cp/test/tree-path)

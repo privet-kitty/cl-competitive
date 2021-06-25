@@ -295,16 +295,48 @@ You cannot rely on the side effect. Use the returned value."
                       (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
     (recur itreap index)))
 
-(defmacro itreap-push (itreap pos obj)
-  "Pushes OBJ to ITREAP at POS."
-  `(setf ,itreap (itreap-insert ,itreap ,pos ,obj)))
+(defmacro treap-push (key treap &optional (order '#'<) &environment env)
+  "Pushes a KEY to TREAP."
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion treap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (treap-insert ,key ,getter :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
-(defmacro itreap-pop (itreap pos)
+(defmacro treap-pop (key treap &optional (order '#'<) &environment env)
+  "Deletes a KEY from TREAP."
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion treap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (treap-delete ,key ,getter :order ,order))
+            ,@(cdr stores))
+       ,setter)))
+
+(defmacro itreap-push (itreap pos obj &environment env)
+  "Pushes OBJ to ITREAP at POS."
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion itreap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (itreap-insert ,getter ,pos ,obj))
+            ,@(cdr stores))
+       ,setter)))
+
+(defmacro itreap-pop (itreap pos &environment env)
   "Returns the object at POS and deletes it."
-  (let ((p (gensym)))
-    `(let ((,p ,pos))
-       (prog1 (itreap-ref ,itreap ,p)
-         (setf ,itreap (itreap-delete ,itreap ,p))))))
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion itreap env)
+    (let ((source (gensym "SOURCE"))
+          (ret (gensym "RET"))
+          (p (gensym "POS")))
+      `(let* (,@(mapcar #'list temps vals)
+              (,source ,getter)
+              (,p ,pos)
+              (,ret (itreap-ref ,itreap ,p))
+              (,(car stores) (itreap-delete ,source ,p))
+              ,@(cdr stores))
+         ,setter
+         ,ret))))
 
 (declaim (inline itreap-map))
 (defun itreap-map (itreap function &optional (start 0) end)

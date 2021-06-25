@@ -170,14 +170,23 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
                       treap))))
       (recur treap))))
 
-;; TODO: use setf-expander
-(defmacro treap-push (key treap &optional (order '#'<))
+(defmacro treap-push (key treap &optional (order '#'<) &environment env)
   "Pushes a KEY to TREAP."
-  `(setf ,treap (treap-insert ,key ,treap :order ,order)))
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion treap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (treap-insert ,key ,getter :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
-(defmacro treap-pop (key treap &optional (order '#'<))
+(defmacro treap-pop (key treap &optional (order '#'<) &environment env)
   "Deletes a KEY from TREAP."
-  `(setf ,treap (treap-delete ,key ,treap :order ,order)))
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion treap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (treap-delete ,key ,getter :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
 (defun treap (order &rest keys)
   "NOTE: this constructor takes O(nlog(n))."

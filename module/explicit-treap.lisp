@@ -3,7 +3,7 @@
   (:export #:treap #:treap-p #:treap-key #:treap-accumulator
            #:treap-split #:treap-insert #:treap-merge #:treap-delete
            #:%treap-ensure-key #:treap-unite #:treap-map #:do-treap
-           #:make-treap #:treap-fold #:treap-update #:treap-ref
+           #:make-treap #:treap-fold #:treap-update #:treap-ref #:treap-pop
            #:treap-first #:treap-last #:treap-find
            #:treap-bisect-left #:treap-bisect-right #:treap-bisect-left-1 #:treap-bisect-right-1
            #:treap-fold-bisect #:treap-fold-bisect-from-end)
@@ -429,6 +429,15 @@ DEFAULT."
               `(treap-ref ,access-form ,key-tmp
                           :order ,order-tmp
                           :default ,default-tmp)))))
+
+(defmacro treap-pop (treap key &optional (order '#'<) &environment env)
+  "Deletes a KEY from TREAP."
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion treap env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (treap-delete ,getter ,key :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
 (defun treap-first (treap)
   "Returns the leftmost key of TREAP."

@@ -182,3 +182,14 @@
     (is (= 5 (treap-bisect-right 7 treap)))
     (is (= 5 (treap-bisect-right 9 treap)))
     (is (= 6 (treap-bisect-right 10 treap)))))
+
+(test treap/push-pop
+  (let ((vector (vector nil nil)))
+    (is (null (treap-find 10 (aref vector 1))))
+    (is (zerop (treap-bisect-left 15 (aref vector 1))))
+    (treap-push 10 (aref vector 1))
+    (treap-push 20 (aref vector 1))
+    (is (null (aref vector 0)))
+    (is (= 10 (treap-find 10 (aref vector 1))))
+    (is (= 1 (treap-bisect-left 15 (aref vector 1))))
+    (treap-pop 10 (aref vector 1))))

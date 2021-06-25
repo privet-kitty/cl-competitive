@@ -273,6 +273,17 @@
   (declare (notinline itreap-reverse))
   (is (null (itreap-reverse nil 0 0))))
 
+(test implicit-treap/push-pop
+  (declare (notinline itreap-ref make-itreap itreap-delete itreap-insert))
+  (let ((vector (vector nil (make-itreap 3  :initial-contents #(10 20 30)))))
+    (itreap-push (aref vector 1) 1 1000)
+    (is (itreap-ref (aref vector 1) 0) 10)
+    (is (itreap-ref (aref vector 1) 1) 1000)
+    (is (itreap-ref (aref vector 1) 2) 20)
+    (is (itreap-ref (aref vector 1) 3) 30)
+    (is (= 20 (itreap-pop (aref vector 1) 2)))
+    (is (itreap-ref (aref vector 1) 2) 30)))
+
 (test implicit-treap/random
   (let ((*test-dribble* nil)
         (*random-state* (sb-ext:seed-random-state 0)))

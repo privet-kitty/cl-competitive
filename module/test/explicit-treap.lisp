@@ -56,7 +56,7 @@
     (is (= 0 (treap-ref treap 1 :order #'>)))
     (is (null (treap-ref treap 10 :order #'>)))
     (is (= 3 (treap-ref treap 10 :order #'> :default 3)))
-    (setq treap (%treap-ensure-key treap 1 2 :order #'>))
+    (setf (treap-ref treap 1 :order #'>) 2)
     (setq treap (%treap-ensure-key treap 2 4 :order #'>))
     (is (= 2 (treap-ref treap 1 :order #'>)))
     (is (= 4 (treap-ref treap 2 :order #'>)))
@@ -64,7 +64,10 @@
     (setf (treap-ref treap 4 :order #'>) 8)
     (is (= 8 (treap-ref treap 4 :order #'>)))
     (incf (treap-ref treap 0 :order #'> :default 100) 100)
-    (is (= 200 (treap-ref treap 0 :order #'>)))))
+    (is (= 200 (treap-ref treap 0 :order #'>)))
+    (treap-pop treap 5 #'>)
+    (treap-pop treap 0 #'>)
+    (is (null (treap-ref treap 0 :order #'>)))))
 
 (test explicit-treap-bisection
   (declare (notinline treap-bisect-left treap-bisect-right treap-bisect-left-1 treap-bisect-right-1))
