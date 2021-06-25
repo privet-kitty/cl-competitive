@@ -332,7 +332,7 @@ You cannot rely on the side effect. Use the returned value."
       `(let* (,@(mapcar #'list temps vals)
               (,source ,getter)
               (,p ,pos)
-              (,ret (itreap-ref ,itreap ,p))
+              (,ret (itreap-ref ,source ,p))
               (,(car stores) (itreap-delete ,source ,p))
               ,@(cdr stores))
          ,setter
