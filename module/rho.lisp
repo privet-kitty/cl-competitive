@@ -4,8 +4,6 @@
   (:documentation "Provides prime factorization by pollard-rho method."))
 (in-package :cp/rho)
 
-;; NOTE: not tested
-
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
 (declaim (ftype (function * (values uint &optional))
@@ -17,7 +15,7 @@
     (declare (optimize (speed 3) (safety 0)))
     (macrolet ((f (x) `(let ((xx ,x)) (mod (+ c (* xx xx)) n))))
       (loop repeat 100
-            for c = (+ 1 (random 100))
+            for c = (+ 1 (random (- n 1)))
             for y of-type uint = 2
             for r of-type uint = 1
             for q of-type uint = 1
@@ -39,13 +37,12 @@
                                    (incf k m)))
                         (setq r (ash r 1)))
             when (= g n)
-            do (setq g 1)
-               (loop while (= g 1)
-                     do (setq ys (f ys)
-                              g (gcd (abs (- x ys)) n)))
+            do (loop do (setq ys (f ys)
+                              g (gcd (abs (- x ys)) n))
+                     while (= g 1))
             when (< g n)
             do (return g)
-            finally (error "Not found.")))))
+            finally (error "Huh?")))))
 
 (declaim ((simple-array (unsigned-byte 8) (*)) *small-primes*))
 (defparameter *small-primes*
