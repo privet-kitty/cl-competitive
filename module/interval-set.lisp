@@ -105,16 +105,14 @@ intervals whose left end is equal to or greater than LKEY."
 (declaim (ftype (function * (values fixnum &optional)) %iset-leftmost-key))
 (defun %iset-leftmost-key (iset)
   (declare (optimize (speed 3)))
-  (if (%iset-lnode iset)
-      (%iset-leftmost-key (%iset-lnode iset))
-      (%iset-lkey iset)))
+  (loop (setq iset (or (%iset-lnode iset)
+                       (return (%iset-lkey iset))))))
 
 (declaim (ftype (function * (values fixnum &optional)) %iset-rightmost-key))
 (defun %iset-rightmost-key (iset)
   (declare (optimize (speed 3)))
-  (if (%iset-rnode iset)
-      (%iset-rightmost-key (%iset-rnode iset))
-      (%iset-rkey iset)))
+  (loop (setq iset (or (%iset-rnode iset)
+                       (return (%iset-rkey iset))))))
 
 (defun iset-insert (iset lkey rkey)
   "Inserts an interval [LKEY, RKEY) to ISET."
@@ -155,6 +153,7 @@ intervals whose left end is equal to or greater than LKEY."
               (declare (fixnum new-lkey new-rkey))
               (%iset-insert base new-lkey new-rkey)))))))
 
+;; TODO: Use setf-expander
 (defmacro iset-push (lkey rkey iset)
   "PUSH-style macro for ISET-INSERT."
   `(setf ,iset (iset-insert ,iset ,lkey ,rkey)))
