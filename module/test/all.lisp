@@ -176,6 +176,7 @@
   (:import-from :cp/test/welzl)
   (:import-from :cp/test/with-cache)
   (:import-from :cp/test/write-double-float)
+  (:import-from :cp/test/xorshift)
   (:import-from :cp/test/zeta-integer)
   (:import-from :cp/test/zeta-transform)
   (:import-from :cp/test/zip)
