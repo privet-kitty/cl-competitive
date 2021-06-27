@@ -158,7 +158,7 @@ The behavior is undefined when duplicate keys are inserted."
                              (recur node (%treap-right treap))))
                    (force-up treap)
                    treap))))
-    (recur (%make-treap key (random most-positive-fixnum) value) treap)))
+    (recur (%make-treap key (random (+ 1 most-positive-fixnum)) value) treap)))
 
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
@@ -296,7 +296,7 @@ way. If it is not given, the identity element is used."
                  nil
                  (let* ((mid (ash (+ l r) -1))
                         (node (%make-treap (funcall key-function mid)
-                                           (random most-positive-fixnum)
+                                           (random (+ 1 most-positive-fixnum))
                                            (if value-function
                                                (funcall value-function mid)
                                                +op-identity+))))

@@ -135,7 +135,7 @@ cannot rely on the side effect. Use the returned value."
                           (update-size res)
                           res)))
                      (t nil)))))
-    (let ((res (recur (random most-positive-fixnum) mset nil)))
+    (let ((res (recur (random (+ 1 most-positive-fixnum)) mset nil)))
       (if (eql t res)
           mset
           res))))

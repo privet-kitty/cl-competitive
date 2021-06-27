@@ -77,7 +77,7 @@ The behavior is undefined when duplicate keys are inserted."
                         (setf (%treap-right treap)
                               (recur new-node (%treap-right treap))))
                     treap))))
-    (recur (%make-treap key (random most-positive-fixnum)) treap)))
+    (recur (%make-treap key (random (+ 1 most-positive-fixnum))) treap)))
 
 (declaim (inline treap-map))
 (defun treap-map (function treap)

@@ -151,7 +151,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 (defun treap-insert (key treap &key (order #'<))
   "Destructively inserts KEY into TREAP and returns the resultant treap."
   (declare ((or null treap) treap))
-  (let ((node (%make-treap key (random most-positive-fixnum))))
+  (let ((node (%make-treap key (random (+ 1 most-positive-fixnum)))))
     (labels ((recur (treap)
                (declare (treap node))
                (cond ((null treap) node)
@@ -223,7 +223,7 @@ order. The consequence is undefined when a non-sorted vector is given."
                  nil
                  (let* ((mid (ash (+ l r) -1))
                         (node (%make-treap (aref sorted-vector mid)
-                                           (random most-positive-fixnum))))
+                                           (random (+ 1 most-positive-fixnum)))))
                    (setf (%treap-left node) (build l mid))
                    (setf (%treap-right node) (build (+ mid 1) r))
                    (heapify node)

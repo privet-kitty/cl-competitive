@@ -9,7 +9,7 @@
 
 (defstruct (interval-set (:constructor %make-interval-set
                              (lkey rkey lnode rnode
-                              &aux (priority (random most-positive-fixnum))))
+                              &aux (priority (random (+ 1 most-positive-fixnum)))))
                          (:conc-name %iset-)
                          (:copier nil))
   "This structure maintains an ordered set of half-open intervals with a

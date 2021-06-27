@@ -170,7 +170,7 @@ INITIAL-ELEMENT (or identity element) unless INITIAL-CONTENTS are supplied."
                                                   (supplied-p
                                                    initial-element)
                                                   (t +op-identity+))
-                                            (random most-positive-fixnum))))
+                                            (random (+ 1 most-positive-fixnum)))))
                    (setf (%itreap-left node) (build l mid))
                    (setf (%itreap-right node) (build (+ mid 1) r))
                    (%heapify node)
