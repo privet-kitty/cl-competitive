@@ -11,6 +11,7 @@
 
 (declaim (inline xorshift))
 (defun xorshift (arg)
+  "Note that this RNG is not strictly uniform."
   (declare (optimize (speed 3))
            ((integer 1 #.(ash 1 64)) arg))
   (locally (declare (optimize (safety 0)))
