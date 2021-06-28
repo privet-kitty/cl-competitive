@@ -1,17 +1,15 @@
 (defpackage :cp/xorshift
   (:use :cl)
-  (:export #:xorshift #:randi #:randprob #:xorshift-seed!))
+  (:export #:xorshift #:randi #:randprob #:randprob1 #:xorshift-seed!))
 (in-package :cp/xorshift)
 
 (declaim ((simple-array (unsigned-byte 64) (1)) *state*))
 (sb-ext:defglobal *state*
   (make-array 1 :element-type '(unsigned-byte 64) :initial-element 88172645463325252))
 
-(defconstant +skip-count+ 50) ; FIXME: this is not based on any evidence
-
 (declaim (inline xorshift))
 (defun xorshift (arg)
-  "Note that this RNG is not strictly uniform."
+  "Note that this RNG is not strictly uniform because of modulo bias."
   (declare (optimize (speed 3))
            ((integer 1 #.(ash 1 64)) arg))
   (locally (declare (optimize (safety 0)))
@@ -21,6 +19,8 @@
       (setq x (ldb (byte 64 0) (logxor x (ash x 7))))
       (setq x (ldb (byte 64 0) (logxor x (ash x -9))))
       (mod (setf (aref state 0) x) arg))))
+
+(defconstant +skip-count+ 50) ; FIXME: this is not based on any evidence
 
 (defun xorshift-seed! (seed &optional (skip +skip-count+))
   (declare (optimize (speed 3))
@@ -32,19 +32,23 @@
 
 (declaim (inline randi))
 (defun randi (l r)
+  "Returns an integer within [L, R)."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) l r))
-  (sb-ext:truly-the (integer 0 #.most-positive-fixnum)
-                    (+ l (xorshift (- r l)))))
+           (fixnum l r))
+  (+ l (xorshift (- r l))))
 
-(defconstant +unit+ (float (/ (ash 1 53)) 1d0))
+(defconstant +epsilon+ (float (/ (ash 1 53)) 1d0))
 
 (declaim (inline randprob)
-         (ftype (function * (values (double-float 0d0 #.(* +unit+ (- (ash 1 53) 1)))
-                                    &optional))
-                randprob))
+         (ftype (function * (values (double-float 0d0 (1d0)) &optional)) randprob))
 (defun randprob ()
+  "Returns a double-float within [0, 1)."
   (* +unit+ (xorshift #.(ash 1 53))))
+
+(declaim (inline randprob1))
+(defun randprob1 ()
+  "Returns a double-float within [0, 1]."
+  (* double-float-epsilon (xorshift #.(ash 1 53))))
 
 ;; (defun test (sample)
 ;;   (declare (optimize (speed 3) (safety 0))
