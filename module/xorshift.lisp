@@ -43,7 +43,7 @@
          (ftype (function * (values (double-float 0d0 (1d0)) &optional)) randprob))
 (defun randprob ()
   "Returns a double-float within [0, 1)."
-  (* +unit+ (xorshift #.(ash 1 53))))
+  (* +epsilon+ (xorshift #.(ash 1 53))))
 
 (declaim (inline randprob1))
 (defun randprob1 ()
