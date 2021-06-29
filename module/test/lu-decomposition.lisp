@@ -1,5 +1,6 @@
 (defpackage :cp/test/lu-decomposition
-  (:use :cl :fiveam :cp/lu-decomposition :cp/csc :cp/gemm :cp/test/nearly-equal)
+  (:use :cl :fiveam :cp/lu-decomposition :cp/csc :cp/gemm :cp/test/nearly-equal
+        :cp/lp-test-tool)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/csc #:csc-float))
 (in-package :cp/test/lu-decomposition)
@@ -70,3 +71,24 @@
                                    (aref y i)
                                    (loop for j below m
                                          sum (* (aref mat i j) (aref sol j))))))))))))))))
+
+(defparameter *mat* (copy #2a((2d0 0d0 4d0 0d0 -2d0 1d0)
+                              (3d0 1d0 0d0 1d0 0d0 2d0)
+                              (-1d0 0d0 -1d0 0d0 -2d0 3d0)
+                              (0d0 -1d0 0d0 0d0 -6d0 0d0)
+                              (0d0 0d0 1d0 0d0 4d0 0d0))))
+
+(test sparse-solve
+  ;; Vanderbei. Linear Programming. 5th edition. p. 136.
+  (let* ((lude (make-lud-eta (lu-factor (make-csc-from-array *mat*) #(0 1 2 3 4))))
+         (sol1 (sparse-solve! lude (make-sparse-vector-from #(7d0 -2d0 0d0 3d0 0d0)))))
+    (add-eta! lude 2 sol1)
+    (dotimes (_ 5)
+      (is (nearly-equal 1d-8
+                        '(-1d0 0d0 2d0 1d0 -0.5d0)
+                        (coerce (to-dense-vector sol1) 'list))))
+    (let ((sol2 (sparse-solve! lude (make-sparse-vector-from #(5d0 0d0 0d0 0d0 -1d0)))))
+      (dotimes (_ 5)
+        (is (nearly-equal 1d-8
+                          '(0.5d0 3d0 0.5d0 -3.5d0 -0.25d0)
+                          (coerce (to-dense-vector sol2) 'list)))))))

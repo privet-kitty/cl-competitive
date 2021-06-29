@@ -2,7 +2,9 @@
   (:use :cl)
   (:export #:csc #:make-csc #:csc-to-array #:make-csc-from-array #:make-csc-from-coo
            #:csc-gemv #:csc-gemv-with-basis #:csc-transpose #:csc-m #:csc-n #:csc-nz
-           #:csc-colstarts #:csc-rows #:csc-values)
+           #:csc-colstarts #:csc-rows #:csc-values
+           #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from #:to-dense-vector
+           #:sparse-vector-nz #:sparse-vector-values #:sparse-vector-indices)
   (:documentation "Provides compressed sparse column representation of sparse
 matrix."))
 (in-package :cp/csc)
@@ -173,3 +175,34 @@ Note:
                (setf (aref new-rows new-pos) j
                      (aref new-values new-pos) (aref values k))))
     (make-csc n m nz new-colstarts new-rows new-values)))
+
+(defstruct (sparse-vector (:constructor make-sparse-vector (nz values indices)))
+  (nz nil :type (mod #.array-dimension-limit))
+  (values nil :type (simple-array csc-float (*)))
+  (indices nil :type (simple-array fixnum (*))))
+
+(defun make-sparse-vector-from (vector)
+  (declare (vector vector))
+  (let* ((nz (count +zero+ vector :test-not #'=))
+         (values (make-array nz :element-type 'csc-float))
+         (indices (make-array nz :element-type 'fixnum))
+         (end 0))
+    (declare ((mod #.array-dimension-limit) end))
+    (dotimes (i (length vector))
+      (unless (zerop (aref vector i))
+        (setf (aref values end) (aref vector i)
+              (aref indices end) i)
+        (incf end)))
+    (make-sparse-vector nz values indices)))
+
+(defun to-dense-vector (sparse-vector)
+  (let* ((nz (sparse-vector-nz sparse-vector))
+         (indices (sparse-vector-indices sparse-vector))
+         (values (sparse-vector-values sparse-vector))
+         (m (+ 1 (reduce #'max indices)))
+         (res (make-array m :element-type 'csc-float :initial-element +zero+)))
+    (dotimes (i nz)
+      (let ((index (aref indices i))
+            (value (aref values i)))
+        (setf (aref res index) value)))
+    res))

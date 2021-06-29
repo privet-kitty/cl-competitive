@@ -107,7 +107,8 @@ effect. The behavior is undefined when duplicate keys are inserted."
 (declaim (inline iterset-first))
 (defun iterset-first (iterset)
   "Returns the first **node** of ITERSET."
-  (node-first (%iterset-root iterset)))
+  (when (%iterset-root iterset)
+    (node-first (%iterset-root iterset))))
 
 (defun node-last (node)
   (declare (optimize (speed 3))
@@ -119,7 +120,8 @@ effect. The behavior is undefined when duplicate keys are inserted."
 (declaim (inline iterset-last))
 (defun iterset-last (iterset)
   "Returns the last **node** of ITERSET."
-  (node-last (%iterset-root iterset)))
+  (when (%iterset-root iterset)
+    (node-last (%iterset-root iterset))))
 
 (declaim (inline node-map))
 (defun node-map (function node)

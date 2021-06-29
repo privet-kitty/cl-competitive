@@ -1,12 +1,15 @@
 (defpackage :cp/lu-decomposition
-  (:use :cl :cp/csc #:cp/movable-binary-heap)
+  (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset)
   (:import-from :cp/csc #:csc-float #:+zero+)
   (:export #:lu-factor #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
-           #:make-lud-eta #:dense-solve!)
+           #:make-lud-eta #:dense-solve! #:add-eta! #:gauss-eta! #:lud-eta-lud
+           #:sparse-solve!)
   (:documentation "Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/lu-decomposition)
+
+;; NOTE: Incomplete
 
 (defconstant +eps+ (coerce 1d-14 'csc-float))
 (defconstant +epsnum+ (coerce 1d-9 'csc-float))
@@ -33,23 +36,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (rowperm nil :type (simple-array fixnum (*)))
   (irowperm nil :type (simple-array fixnum (*))))
 
-(defstruct (lud-eta (:constructor %make-lud-eta))
-  (lud nil :type lud-base)
-  ;; eta-file
-  (eta-iter 0 :type (mod #.array-dimension-limit))
-  (nz 0 :type (mod #.array-dimension-limit))
-  (leaving-cols nil :type (simple-array fixnum (*)))
-  (colstarts nil :type (simple-array fixnum (*)))
-  (rows nil :type (simple-array fixnum (*)))
-  (values nil :type (simple-array csc-float (*))))
-
-(defun make-lud-eta (lud &optional (initial-size 0))
-  (%make-lud-eta :lud lud
-                 :leaving-cols (make-array 0 :element-type 'fixnum)
-                 :colstarts (make-array 1 :element-type 'fixnum :initial-element 0)
-                 :rows (make-array initial-size :element-type 'fixnum)
-                 :values (make-array initial-size :element-type 'csc-float)))
-
 (defun extend-vector (vector size)
   (declare ((mod #.array-dimension-limit) size)
            (vector vector))
@@ -58,31 +44,23 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
         (adjust-array vector new-size)
         vector)))
 
+(defmacro ensure-vector (vector size)
+  (let ((new (gensym))
+        (current (gensym)))
+    `(let ((,current (length ,vector))
+           (,new ,size))
+       (when (< ,current ,new)
+         (setf ,vector (extend-vector ,vector ,new))))))
+
 (defmacro vector-set* (vector index new-element)
   (let ((i (gensym))
         (elm (gensym)))
     `(let ((,i ,index)
            (,elm ,new-element))
-       (when (>= ,i (length ,vector))
-         (setf ,vector (extend-vector ,vector
-                                      (the (mod #.array-dimension-limit)
-                                           (* 2 (length ,vector))))))
+       (ensure-vector ,vector (+ 1 ,i))
        (setf (aref ,vector ,i) ,elm))))
 
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
-
-;; (defparameter *mat* #a((5 5) double-float
-;;                        (2d0 0d0 4d0 0d0 -2d0)
-;;                        (3d0 1d0 0d0 1d0 0d0)
-;;                        (-1d0 0d0 -1d0 0d0 -2d0)
-;;                        (0d0 -1d0 0d0 0d0 -6d0)
-;;                        (0d0 0d0 1d0 0d0 4d0)))
-;; (defparameter *mat0* #a((5 5) double-float
-;;                         (0d0 0d0 4d0 0d0 -2d0)
-;;                         (0d0 1d0 0d0 1d0 0d0)
-;;                         (0d0 0d0 -1d0 0d0 -2d0)
-;;                         (0d0 -1d0 0d0 0d0 -6d0)
-;;                         (0d0 0d0 1d0 0d0 4d0)))
 
 (deftype ivec () '(simple-array fixnum (*)))
 (deftype fvec () '(simple-array csc-float (*)))
@@ -119,7 +97,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
         (setf (aref b-degs i) (- end start))
         (loop for k from start below end
               do (incf (aref bt-degs (aref rows k))))))
-    (let* ((estimated-nz (max 1 (ash (the fixnum (reduce #'+ b-degs)) -1)))
+    (let* ((estimated-nz (%power-of-two-ceiling
+                          (ash (the fixnum (reduce #'+ b-degs)) -1)))
            (lower-colstarts (make-array (+ m 1) :element-type 'fixnum :initial-element 0))
            (lower-rows (make-array estimated-nz :element-type 'fixnum))
            (lower-values (make-array estimated-nz :element-type 'csc-float))
@@ -378,3 +357,252 @@ when it is infeasible."
     (dotimes (i m)
       (setf (aref y (aref colperm i)) (aref tmp i)))
     y))
+
+(defstruct (lud-eta (:constructor %make-lud-eta))
+  (lud nil :type lud-base)
+  (count 0 :type (mod #.array-dimension-limit))
+  (nz 0 :type (mod #.array-dimension-limit))
+  ;; This vector stores the leaving columns of each pivotting. Note that this
+  ;; `column' doesn't mean the index of some variable but the column number of
+  ;; the matrix B.
+  (leaving-cols nil :type (simple-array fixnum (*)))
+  (colstarts nil :type (simple-array fixnum (*)))
+  (rows nil :type (simple-array fixnum (*)))
+  (values nil :type (simple-array csc-float (*))))
+
+(defun make-lud-eta (lud &optional (initial-size 0))
+  (%make-lud-eta :lud lud
+                 :leaving-cols (make-array 0 :element-type 'fixnum)
+                 :colstarts (make-array 1 :element-type 'fixnum :initial-element 0)
+                 :rows (make-array initial-size :element-type 'fixnum)
+                 :values (make-array initial-size :element-type 'csc-float)))
+
+(defun add-eta! (lud-eta leaving-col sparse-vector)
+  (declare (optimize (speed 3)))
+  (symbol-macrolet ((enz (lud-eta-nz lud-eta))
+                    (ecount (lud-eta-count lud-eta))
+                    (vector-nz (sparse-vector-nz sparse-vector))
+                    (leaving-cols (lud-eta-leaving-cols lud-eta))
+                    (colstarts (lud-eta-colstarts lud-eta))
+                    (rows (lud-eta-rows lud-eta))
+                    (values (lud-eta-values lud-eta)))
+    (vector-set* leaving-cols ecount leaving-col)
+    (loop for k from enz below (+ enz vector-nz)
+          for pos across (sparse-vector-indices sparse-vector)
+          for value of-type csc-float across (sparse-vector-values sparse-vector)
+          do (vector-set* rows k pos)
+             (vector-set* values k value))
+    (incf ecount)
+    (incf enz vector-nz)
+    (vector-set* colstarts ecount enz)
+    lud-eta))
+
+;; temporary storage
+(defconstant +initial-size+ 16)
+
+(declaim (fvec *gauss-eta-values*)
+         (ivec *gauss-eta-tags* *gauss-eta-rows*)
+         ((integer 0 #.most-positive-fixnum) *gauss-eta-tag*))
+(defparameter *gauss-eta-values* (make-array +initial-size+ :element-type 'csc-float))
+(defparameter *gauss-eta-tags* (make-array +initial-size+ :element-type 'fixnum))
+(defparameter *gauss-eta-tag* 1)
+(defparameter *gauss-eta-rows* (make-array +initial-size+ :element-type 'fixnum))
+
+(defmacro dbg (&rest forms)
+  (declare (ignorable forms))
+  #+swank (if (= (length forms) 1)
+              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
+              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
+
+(defun gauss-eta! (lud-eta xb)
+  (declare (optimize (speed 3))
+           (sparse-vector xb))
+  (let* ((lud (lud-eta-lud lud-eta))
+         (m (lud-m lud))
+         (vector-nz (sparse-vector-nz xb))
+         (vector-values (sparse-vector-values xb))
+         (vector-indices (sparse-vector-indices xb))
+         (tmp-values *gauss-eta-values*)
+         (tmp-tags *gauss-eta-tags*)
+         (tag *gauss-eta-tag*)
+         (tmp-rows *gauss-eta-rows*)
+         (tmp-end 0)
+         (leaving-cols (lud-eta-leaving-cols lud-eta))
+         (colstarts (lud-eta-colstarts lud-eta))
+         (values (lud-eta-values lud-eta))
+         (rows (lud-eta-rows lud-eta)))
+    (declare (fvec tmp-values vector-values)
+             (ivec tmp-rows tmp-tags vector-indices)
+             ((mod #.array-dimension-limit) tmp-end))
+    (ensure-vector tmp-values m)
+    (ensure-vector tmp-tags m)
+    (ensure-vector tmp-rows m)
+    (when (zerop (lud-eta-count lud-eta))
+      (return-from gauss-eta!))
+    (labels ((add-to-tmp (nzpos value)
+               (setf (aref tmp-values nzpos) value
+                     (aref tmp-tags nzpos) tag
+                     (aref tmp-rows tmp-end) nzpos)
+               (incf tmp-end)))
+      (dotimes (k vector-nz)
+        (add-to-tmp (aref vector-indices k) (aref vector-values k)))
+      (dotimes (j (lud-eta-count lud-eta))
+        (let ((leaving-col (aref leaving-cols j))
+              leaving-col-k)
+          (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+                for row = (aref rows k)
+                unless (= (aref tmp-tags row) tag)
+                do (add-to-tmp row +zero+)
+                when (= row leaving-col)
+                do (setq leaving-col-k k))
+          (let ((coef (/ (aref tmp-values leaving-col) (aref values leaving-col-k))))
+            (unless (zerop coef)
+              (loop for k from (aref colstarts j) below leaving-col-k
+                    for row = (aref rows k)
+                    do (decf (aref tmp-values row) (* (aref values k) coef)))
+              (setf (aref tmp-values leaving-col) coef)
+              (loop for k from (+ leaving-col-k 1) below (aref colstarts (+ j 1))
+                    for row = (aref rows k)
+                    do (decf (aref tmp-values row) (* (aref values k) coef)))))))
+      (let ((nz 0))
+        (dotimes (k tmp-end)
+          (let ((row (aref tmp-rows k)))
+            (when (> (abs (aref tmp-values row)) +eps+)
+              (vector-set* vector-values nz (aref tmp-values row))
+              (vector-set* vector-indices nz row)
+              (incf nz))))
+        (setf (sparse-vector-values xb) vector-values
+              (sparse-vector-indices xb) vector-indices
+              (sparse-vector-nz xb) nz))
+      (incf *gauss-eta-tag*)
+      (setq *gauss-eta-values* tmp-values
+            *gauss-eta-tags* tmp-tags
+            *gauss-eta-rows* tmp-rows)
+      xb)))
+
+(declaim (fvec *sparse-solve-values*)
+         (ivec *sparse-solve-tags* *sparse-solve-rows*)
+         ((integer 0 #.most-positive-fixnum) *sparse-solve-tag*))
+(defparameter *sparse-solve-values* (make-array +initial-size+ :element-type 'csc-float))
+(defparameter *sparse-solve-tags* (make-array +initial-size+ :element-type 'fixnum))
+(defparameter *sparse-solve-tag* 1)
+
+(defun sparse-solve! (lud-eta y)
+  (declare (optimize (speed 3)))
+  (let* ((lud (lud-eta-lud lud-eta))
+         (rank (lud-rank lud))
+         (m (lud-m lud))
+         (vector-nz (sparse-vector-nz y))
+         (vector-indices (sparse-vector-indices y))
+         (vector-values (sparse-vector-values y))
+         (tree (make-iterset))
+         ;; vector values sorted w.r.t. the order of LU decomposition
+         (tmp-values *sparse-solve-values*)
+         (tmp-tags *sparse-solve-tags*)
+         (tag *sparse-solve-tag*))
+    (declare (fvec tmp-values vector-values)
+             (ivec tmp-tags vector-indices))
+    (ensure-vector tmp-values m)
+    (ensure-vector tmp-tags m)
+    (labels ((add-to-tmp (lu-pos value)
+               (setf (aref tmp-values lu-pos) value
+                     (aref tmp-tags lu-pos) tag)
+               (iterset-insert tree lu-pos)))
+      (let ((irowperm (lud-irowperm lud)))
+        (dotimes (k vector-nz)
+          (let ((lu-pos (aref irowperm (aref vector-indices k))))
+            (add-to-tmp lu-pos (aref vector-values k)))))
+      ;; y := L^(-1)y
+      (let* ((lower (lud-lower lud))
+             (lower-colstarts (csc-colstarts lower))
+             (lower-rows (csc-rows lower))
+             (lower-values (csc-values lower))
+             (node (iterset-first tree)))
+        (loop while (and node (< (node-key node) rank))
+              for lu-pos = (node-key node)
+              for beta of-type csc-float = (aref tmp-values lu-pos)
+              do (loop for k from (aref lower-colstarts lu-pos) below (aref lower-colstarts (+ lu-pos 1))
+                       for row = (aref lower-rows k)
+                       unless (= (aref tmp-tags row) tag)
+                       do (add-to-tmp row +zero+)
+                       do (decf (aref tmp-values row) (* (aref lower-values k) beta)))
+                 (setq node (node-next node))))
+      ;; fill free variable
+      ;; y := U^(-1)y
+      (let* ((node (iterset-last tree))
+             (upper (lud-upper lud))
+             (upper-colstarts (csc-colstarts upper))
+             (upper-rows (csc-rows upper))
+             (upper-values (csc-values upper))
+             (diagu (lud-diagu lud)))
+        (loop while (and node (>= (node-key node) rank))
+              for lu-pos = (node-key node)
+              do (setf (aref tmp-values lu-pos) +zero+)
+                 (setq node (node-prev node)))
+        (loop while node
+              for lu-pos = (node-key node)
+              for beta of-type csc-float = (/ (aref tmp-values lu-pos) (aref diagu lu-pos))
+              do (loop for k from (aref upper-colstarts lu-pos) below (aref upper-colstarts (+ lu-pos 1))
+                       for row = (aref upper-rows k)
+                       unless (= (aref tmp-tags row) tag)
+                       do (add-to-tmp row +zero+)
+                       do (decf (aref tmp-values row) (* (aref upper-values k) beta)))
+                 (setf (aref tmp-values lu-pos) beta)
+                 (setq node (node-prev node)))))
+    ;; update y
+    (let ((nz 0)
+          (node (iterset-first tree))
+          (colperm (lud-colperm lud)))
+      (declare ((mod #.array-dimension-limit) nz))
+      (loop while node
+            for lu-pos = (node-key node)
+            when (> (abs (aref tmp-values lu-pos)) +eps+)
+            do (vector-set* vector-values nz (aref tmp-values lu-pos))
+               (vector-set* vector-indices nz (aref colperm lu-pos))
+               (incf nz)
+            do (setq node (node-next node)))
+      (setf (sparse-vector-nz y) nz
+            (sparse-vector-indices y) vector-indices
+            (sparse-vector-values y) vector-values))
+    (gauss-eta! lud-eta y)
+    (incf *sparse-solve-tag*)
+    (setq *sparse-solve-values* tmp-values
+          *sparse-solve-tags* tmp-tags)
+    y))
+
+;; (defparameter *mat56* #a((5 6) double-float
+;;                          (2d0 0d0 4d0 0d0 -2d0 1d0)
+;;                          (3d0 1d0 0d0 1d0 0d0 2d0)
+;;                          (-1d0 0d0 -1d0 0d0 -2d0 3d0)
+;;                          (0d0 -1d0 0d0 0d0 -6d0 0d0)
+;;                          (0d0 0d0 1d0 0d0 4d0 0d0)))
+
+;; (defparameter *new-mat* #a((5 6) double-float
+;;                            (2d0 0d0 4d0 0d0 -2d0 5d0)
+;;                            (3d0 1d0 0d0 1d0 0d0 0d0)
+;;                            (-1d0 0d0 -1d0 0d0 -2d0 0d0)
+;;                            (0d0 -1d0 0d0 0d0 -6d0 0d0)
+;;                            (0d0 0d0 1d0 0d0 4d0 -1d0)))
+
+;; (defparameter *mat1* #a((5 5) double-float
+;;                         (2d0 0d0 4d0 0d0 -2d0)
+;;                         (3d0 1d0 0d0 1d0 0d0)
+;;                         (-1d0 0d0 -1d0 0d0 -2d0)
+;;                         (0d0 -1d0 0d0 0d0 -6d0)
+;;                         (0d0 0d0 1d0 0d0 4d0)))
+
+;; (defparameter *mat2* #a((5 5) double-float
+;;                         (2d0 0d0 4d0 0d0 1d0)
+;;                         (3d0 1d0 0d0 1d0 2d0)
+;;                         (-1d0 0d0 -1d0 0d0 3d0)
+;;                         (0d0 -1d0 0d0 0d0 0d0)
+;;                         (0d0 0d0 1d0 0d0 0d0)))
+
+;; #a((5) double-float 7d0 -2d0 0d0 3d0 0d0)
+;; #(-1.0d0 -0.0d0 2.0d0 1.0d0 -0.5d0) mat1
+;; #(3.0d0 -3.0d0 0.0d0 -10.0d0 1.0d0) mat2
+
+;; (let ((lude (make-lud-eta (lu-factor (make-csc-from-array cp/lu-decomposition::*mat56*)
+;;                                      #(0 1 2 3 5)))))
+;;   (add-eta! lude 5 (make-sparse-vector-from #(3.0d0 -3.0d0 0.0d0 -10.0d0 1.0d0)))
+;;   (gauss-eta! lude (make-sparse-vector-from #a((5) double-float 7d0 -2d0 0d0 3d0 0d0))))
