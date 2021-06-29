@@ -1,6 +1,8 @@
 (defpackage :cp/xorshift
   (:use :cl)
-  (:export #:xorshift #:randi #:randprob #:randprob1 #:xorshift-seed!))
+  (:export #:xorshift #:randi #:randprob #:randprob1 #:xorshift-seed!)
+  (:documentation "Provides a random number generator that focuses only on
+efficiency."))
 (in-package :cp/xorshift)
 
 (declaim ((simple-array (unsigned-byte 64) (1)) *state*))
@@ -9,7 +11,8 @@
 
 (declaim (inline xorshift))
 (defun xorshift (arg)
-  "Note that this RNG is not strictly uniform because of modulo bias."
+  "Returns an integer within [0, ARG). Note that this RNG is not strictly
+uniform because of modulo bias."
   (declare (optimize (speed 3))
            ((integer 1 #.(ash 1 64)) arg))
   (locally (declare (optimize (safety 0)))
