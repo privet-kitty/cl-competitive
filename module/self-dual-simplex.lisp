@@ -13,6 +13,21 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                                     &optional))
                 self-dual!))
 (defun self-dual! (a b c &optional dict)
+  "Maximizes c'x subject to Ax <= b and x >= 0. Returns three values:
+
+Optimal case:
+- optimal objective value
+- optimal solutions to the primal problem
+- optimal solutions to the dual problem: min. b'y s.t. A'y >= c, y >= 0
+
+Primal infeasible case:
+- (values :infeasible nil nil)
+
+Dual infeasible case:
+- (values :dual-infeasible nil nil)
+
+Note that the result could be :infeasible or :dual-infeasible when both is
+infeasible. (It is not even deterministic.)"
   (declare (optimize (speed 3))
            ((simple-array simplex-float (* *)) a)
            ((simple-array simplex-float (*)) b c)
