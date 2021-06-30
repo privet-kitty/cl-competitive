@@ -1,8 +1,8 @@
 (defpackage :cp/two-phase-simplex
   (:use :cl)
   (:export #:dual-primal!)
-  (:documentation "Provides two-phase (dual-then-primal) simplex method using
-Dantzig's pivot rule.
+  (:documentation "Provides two-phase (dual-then-primal) simplex method for
+dense instance, using Dantzig's pivot rule.
 
 Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
@@ -13,7 +13,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defconstant +eps+ 1d-8)
 (defconstant +neg-inf+ most-negative-double-float)
 (defconstant +pos-inf+ most-positive-double-float)
-
 
 ;; dict: col(0), col(1), ...., col(n-1), row(0), row(1), ..., row(m-1)
 ;;      |---------- non-basic ---------| |---------- basic ----------|
@@ -172,12 +171,12 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                                     &optional))
                 dual-primal!))
 (defun dual-primal! (a b c &optional dict)
-  "Maximizes cx subject to Ax <= b and x >= 0. Returns three values:
+  "Maximizes c'x subject to Ax <= b and x >= 0. Returns three values:
 
 Optimal case:
 - optimal objective value
 - optimal solutions to the primal problem
-- optimal solutions to the dual problem: min. by s.t. (A^t)y >= c, y >= 0
+- optimal solutions to the dual problem: min. b'y s.t. A'y >= c, y >= 0
 
 Unbounded case:
 - (values :unbounded nil nil)
