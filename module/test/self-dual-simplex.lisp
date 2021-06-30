@@ -69,31 +69,3 @@
     (dotimes (_ 2000)
       (multiple-value-bind (a b c) (make-random-instance 10d0 nil t 1)
         (check* a b c)))))
-
-(defun test* ()
-  (let ((a #2A((-13.0d0) (5.0d0) (0.0d0) (-2.0d0)))
-        (b #(-3.0d0 5.0d0 -5.0d0 7.0d0))
-        (c #(4.0d0)))
-    (destructuring-bind  (m n) (array-dimensions a)
-      (multiple-value-bind (prim-res dual-res prim dual) 
-          (self-dual! (copy a) (copy b) (copy c))
-        (multiple-value-bind (a* b* c*) (dual-std a b c)
-          (multiple-value-bind (prim-res2 dual-res2 prim2 dual2) (self-dual! (copy a*) (copy b*) (copy c*))
-            (when prim2
-              (dotimes (i n)
-                (let ((lhs 0d0))
-                  (declare (double-float lhs))
-                  (dotimes (j m)
-                    (incf lhs (* (aref a* i j) (aref prim2 j))))
-                  (assert (<= lhs (+ +eps+ (aref b* i)))))))
-            (when dual
-              (dotimes (i n)
-                (let ((lhs 0d0))
-                  (declare (double-float lhs))
-                  (dotimes (j m)
-                    (incf lhs (* (aref a* i j) (aref dual j))))
-                  (assert (<= lhs (+ +eps+ (aref b* i)))))))
-            (values prim-res dual-res prim dual prim-res2 dual-res2 prim2 dual2)))))))
-
-
-

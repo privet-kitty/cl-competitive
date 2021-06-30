@@ -71,12 +71,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                 (aref c2 col) (- (* ccol2 /apivot)))
           (* ccol brow /apivot))))))
 
-(defmacro dbg (&rest forms)
-  (declare (ignorable forms))
-  #+swank (if (= (length forms) 1)
-              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
-
 (declaim (ftype (function * (values (or simplex-float (member :dual-infeasible :infeasible))
                                     (or null (simple-array simplex-float (*)))
                                     (or null (simple-array simplex-float (*)))
@@ -91,10 +85,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
     (declare ((mod #.array-dimension-limit) m n))
     (let ((acol (make-array m :element-type 'simplex-float))
           (arow (make-array n :element-type 'simplex-float))
-          (cparams (make-array n :element-type 'simplex-float ;; :initial-contents #(0.696955602926316d0 0.5118202056915149d0)
-                               ))
-          (bparams (make-array m :element-type 'simplex-float ;; :initial-contents #(0.849558960321475d0 0.8316427709449865d0)
-                               ))
+          (cparams (make-array n :element-type 'simplex-float))
+          (bparams (make-array m :element-type 'simplex-float))
           (dict (or dict (make-array (+ n m) :element-type 'fixnum)))
           (obj +zero+))
       (declare (simplex-float obj))
@@ -104,7 +96,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
         (setf (aref cparams j) (+ 0.5d0 (random 1d0))))
       (dotimes (i m)
         (setf (aref bparams i) (+ 0.5d0 (random 1d0))))
-      ;; (dbg bparams cparams)
       (loop
         (let ((mu-lo +neg-inf+)
               index)
@@ -120,7 +111,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                 (when (> lo mu-lo)
                   (setq mu-lo lo
                         index (+ i n))))))
-          ;; (dbg index mu-lo)
           (when (<= mu-lo +eps+)
             (return))
           (if (>= index n)
@@ -128,7 +118,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
               (let ((row (- index n)))
                 (dotimes (j n)
                   (setf (aref arow j) (aref a row j)))
-                ;; #>arow
                 (unless (find-if (lambda (x) (< x (- +eps+))) arow)
                   (return-from self-dual! (values :infeasible nil nil)))
                 (let (col
@@ -142,7 +131,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                                 colmin rate)))))
                   (unless col
                     (error "Pivot not found in row ~A." arow))
-                  ;; (dbg row col)
                   (dotimes (i m)
                     (setf (aref acol i) (aref a i col)))
                   (incf obj (%pivot row col a b c arow acol dict bparams cparams))))
@@ -150,7 +138,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
               (let ((col index))
                 (dotimes (i m)
                   (setf (aref acol i) (aref a i col)))
-                ;; #>acol
                 (unless (find-if (lambda (x) (> x +eps+)) acol)
                   (return-from self-dual! (values :dual-infeasible nil nil)))
                 (let (row
@@ -164,18 +151,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                                 rowmin rate)))))
                   (unless row
                     (error "Pivot not found in column ~A." acol))
-                  ;; (dbg row col)
                   (dotimes (j n)
                     (setf (aref arow j) (aref a row j)))
                   (incf obj (%pivot row col a b c arow acol dict bparams cparams)))))))
-      ;; #>b
-      ;; #>c
       (multiple-value-bind (res-primal res-dual) (%restore b c dict)
         (values obj res-primal res-dual)))))
-
-;; (defun test ()
-;;   (let ((a (make-array '(3 2) :element-type 'double-float
-;;                               :initial-contents '((-1d0 1d0) (-1d0 -2d0) (0d0 1d0))))
-;;         (b (make-array 3 :element-type 'double-float :initial-contents '(-1d0 -2d0 1d0)))
-;;         (c (make-array 2 :element-type 'double-float :initial-contents '(-2d0 3d0))))
-;;     (self-dual! a b c)))
