@@ -1,5 +1,5 @@
 (defpackage :cp/polynomial-ntt
-  (:use :cl :cp/ntt)
+  (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori))
 (in-package :cp/polynomial-ntt)
@@ -7,9 +7,7 @@
 ;; TODO: integrate with cp/polynomial
 
 (define-ntt +ntt-mod+
-  :convolve poly-multiply
-  :mod-inverse %mod-inverse
-  :mod-power %mod-power)
+  :convolve poly-multiply)
 
 ;; (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 ;; (defun poly-inverse (poly &optional result-length)
@@ -26,7 +24,7 @@
 ;;              :operands (list poly)))
 ;;     (let ((res (make-array 1
 ;;                            :element-type 'ntt-int
-;;                            :initial-element (%mod-inverse (aref poly 0))))
+;;                            :initial-element (mod-inverse (aref poly 0) +ntt-mod+)))
 ;;           (result-length (or result-length n)))
 ;;       (declare (ntt-vector res))
 ;;       (loop for i of-type ntt-int = 1 then (ash i 1)
@@ -60,7 +58,7 @@
     (let* ((result-length (or result-length n))
            (res (make-array 1
                             :element-type 'ntt-int
-                            :initial-element (%mod-inverse (aref poly 0)))))
+                            :initial-element (mod-inverse (aref poly 0) +ntt-mod+))))
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
             while (< i result-length)
@@ -79,7 +77,7 @@
                (dotimes (j (* 2 i))
                  (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
                (inverse-ntt! f)
-               (let ((inv-len (%mod-inverse (* 2 i))))
+               (let ((inv-len (mod-inverse (* 2 i) +ntt-mod+)))
                  (setq inv-len (mod (* inv-len (- +ntt-mod+ inv-len))
                                     +ntt-mod+))
                  (dotimes (j i)
@@ -170,7 +168,7 @@
                    while (< (+ i width) n)
                    do (setf (aref dp i)
                             (poly-multiply (aref dp i) (aref dp (+ i width))))))
-    (coerce (aref dp 0) 'ntt-vector)))
+    (coerce (the vector (aref dp 0)) 'ntt-vector)))
 
 (declaim (ftype (function * (values ntt-vector &optional)) multipoint-eval))
 (defun multipoint-eval (poly points)
@@ -227,7 +225,7 @@ https://codeforces.com/blog/entry/83532"
   (when (zerop (length poly))
     (return-from chirp-z (make-array length :element-type 'ntt-int :initial-element 0)))
   (let* ((poly (coerce poly 'ntt-vector))
-         (binv (%mod-inverse base))
+         (binv (mod-inverse base +ntt-mod+))
          (n (length poly))
          (m (max length n))
          (n+m (+ n m))
@@ -236,17 +234,17 @@ https://codeforces.com/blog/entry/83532"
     (declare (ntt-int n m n+m))
     (dotimes (i n)
       (setf (aref cs i) (mod (* (aref poly (- n 1 i))
-                                (%mod-power binv (ash (* (- n 1 i) (- n 2 i)) -1)))
+                                (mod-power binv (ash (* (- n 1 i) (- n 2 i)) -1) +ntt-mod+))
                              +ntt-mod+)))
     (dotimes (i n+m)
-      (setf (aref ds i) (%mod-power base (ash (* i (- i 1)) -1))))
+      (setf (aref ds i) (mod-power base (ash (* i (- i 1)) -1) +ntt-mod+)))
     (let ((result (subseq (poly-multiply cs ds)
                           (- n 1)
                           (+ (- n 1) length))))
       (dotimes (i length)
         (setf (aref result i)
               (mod (* (aref result i)
-                      (%mod-power binv (ash (* i (- i 1)) -1)))
+                      (mod-power binv (ash (* i (- i 1)) -1) +ntt-mod+))
                    +ntt-mod+)))
       result)))
 
@@ -295,8 +293,8 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
             do (setq num (odd u))
             do (setq denom (even (poly-multiply denom denom-))
                      index (ash index -1))
-            finally (return (mod (* (if (zerop (length num))
+            finally (return (rem (* (if (zerop (length num))
                                         0
                                         (aref num 0))
-                                    (%mod-inverse (aref denom 0)))
+                                    (mod-inverse (aref denom 0) +ntt-mod+))
                                  +ntt-mod+))))))

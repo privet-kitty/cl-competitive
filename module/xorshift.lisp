@@ -1,6 +1,6 @@
 (defpackage :cp/xorshift
   (:use :cl)
-  (:export #:xorshift #:randi #:randprob #:randprob1 #:xorshift-seed!)
+  (:export #:xorshift #:randi #:randprob #:randprob1 #:xorshift-seed! #:randf)
   (:documentation "Provides a random number generator that focuses only on
 efficiency."))
 (in-package :cp/xorshift)
@@ -52,6 +52,10 @@ uniform because of modulo bias."
 (defun randprob1 ()
   "Returns a double-float within [0, 1]."
   (* double-float-epsilon (xorshift #.(ash 1 53))))
+
+(declaim (inline randf))
+(defun randf (l r)
+  (+ l (* (- r l) (randprob))))
 
 ;; (defun test (sample)
 ;;   (declare (optimize (speed 3) (safety 0))
