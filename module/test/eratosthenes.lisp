@@ -5,8 +5,8 @@
 (in-suite base-suite)
 
 (test make-prime-table
-  (signals type-error (make-prime-table 0))
-  (signals type-error (make-prime-table 1))
+  (is (equalp #* (make-prime-table 0)))
+  (is (equalp #*0 (make-prime-table 1)))
   (is (equalp #*00 (make-prime-table 2)))
   (is (equalp #*001 (make-prime-table 3)))
   (is (equalp #*0011010100 (make-prime-table 10)))
@@ -24,8 +24,8 @@
           do (assert (sb-int:positive-primep i)))))
 
 (test make-prime-sequence
-  (signals type-error (make-prime-sequence 0))
-  (signals type-error (make-prime-sequence 1))
+  (is (equalp #() (make-prime-sequence 0)))
+  (is (equalp #() (make-prime-sequence 1)))
   (is (equalp #() (make-prime-sequence 2)))
   (is (equalp #(2) (make-prime-sequence 3)))
   (is (equalp #(2 3 5 7) (make-prime-sequence 10)))
@@ -55,4 +55,3 @@
              (factorize 252 (make-prime-data 4))))
   (is (equal '((2 . 2) (63 . 1))
              (factorize 252 (make-prime-data 3)))))
- 

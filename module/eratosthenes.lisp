@@ -15,7 +15,9 @@ is prime and 0 otherwise.
 
 Example: (make-prime-table 10) => #*0011010100"
   (declare (optimize (speed 3) (safety 0)))
-  (check-type sup (integer 2 (#.array-dimension-limit)))
+  (check-type sup (mod #.array-dimension-limit))
+  (when (<= sup 1)
+    (return-from make-prime-table (make-array sup :element-type 'bit :initial-element 0)))
   (let ((table (make-array sup :element-type 'bit :initial-element 0))
         (sup/64 (ceiling sup 64)))
     ;; special treatment for p = 2
@@ -39,7 +41,7 @@ Example: (make-prime-table 10) => #*0011010100"
   "Returns the ascending sequence of primes smaller than SUP. Internally calls
 MAKE-PRIME-TABLE and returns its result as the second value."
   (declare (optimize (speed 3) (safety 0)))
-  (check-type sup (integer 2 (#.array-dimension-limit)))
+  (check-type sup (mod #.array-dimension-limit))
   (let ((table (make-prime-table sup)))
     (let* ((length (count 1 table))
            (result (make-array length :element-type '(integer 0 #.most-positive-fixnum)))
