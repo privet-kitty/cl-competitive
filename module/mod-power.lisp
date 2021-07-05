@@ -20,4 +20,3 @@ POWER, MODULUS := non-negative fixnum"
           do (setq base (mod (* base base) modulus)
                    power (ash power -1)))
     res))
-
