@@ -3,9 +3,10 @@
   (:export #:make-random-instance #:copy #:dual-std))
 (in-package :cp/lp-test-tool)
 
-(defun make-random-instance (sigma non-negative-b &optional round (size 5))
+(defun make-random-instance (sigma &key non-negative-b round (size 5))
   (declare (optimize (speed 3))
-           (double-float sigma))
+           (double-float sigma)
+           (real size))
   (let* ((m (round (* size (exp (* #.(log 10d0) (random 1d0))))))
          (n (round (* size (exp (* #.(log 10d0) (random 1d0))))))
          (as (make-array (list m n) :element-type 'double-float :initial-element 0d0))

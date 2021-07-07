@@ -1,11 +1,8 @@
-;;;
-;;; Permutation and Combination
-;;;
-
 (defpackage :cp/map-permutations
   (:use :cl)
   (:export #:map-permutations! #:map-combinations #:map-permutations
-           #:do-permutations! #:do-combinations #:do-permutations))
+           #:do-permutations! #:do-combinations #:do-permutations)
+  (:documentation "Provides enumeration of permutation and combination."))
 (in-package :cp/map-permutations)
 
 (declaim (inline map-permutations!))

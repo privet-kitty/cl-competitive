@@ -3,8 +3,9 @@
   (:import-from :cp/csc #:csc-float #:+zero+)
   (:export #:lu-factor #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
-           #:make-lud-eta #:dense-solve! #:add-eta! #:gauss-eta! #:lud-eta-lud
-           #:sparse-solve!)
+           #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud #:refactor-p
+           #:gauss-eta! #:gauss-eta-transposed!
+           #:sparse-solve! #:sparse-solve-transposed!)
   (:documentation "Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/lu-decomposition)
@@ -480,6 +481,62 @@ when it is infeasible."
             *gauss-eta-rows* tmp-rows)
       xb)))
 
+(defun gauss-eta-transposed! (lud-eta xb)
+  (declare (optimize (speed 3)))
+  (let* ((lud (lud-eta-lud lud-eta))
+         (m (lud-m lud))
+         (vector-nz (sparse-vector-nz xb))
+         (vector-values (sparse-vector-values xb))
+         (vector-indices (sparse-vector-indices xb))
+         (tmp-values *gauss-eta-values*)
+         (tmp-tags *gauss-eta-tags*)
+         (tag *gauss-eta-tag*)
+         (leaving-cols (lud-eta-leaving-cols lud-eta))
+         (colstarts (lud-eta-colstarts lud-eta))
+         (values (lud-eta-values lud-eta))
+         (rows (lud-eta-rows lud-eta)))
+    (declare ((mod #.array-dimension-limit) tag)
+             (fvec tmp-values vector-values)
+             (ivec tmp-tags vector-indices))
+    (ensure-vector tmp-values m)
+    (ensure-vector tmp-tags m)
+    (loop for j from (- (lud-eta-count lud-eta) 1) downto 0
+          for leaving-col = (aref leaving-cols j)
+          for leaving-col-k = nil
+          do (dotimes (k vector-nz)
+               (let ((row (aref vector-indices k)))
+                 (when (= row leaving-col)
+                   (setq leaving-col-k k))
+                 (setf (aref tmp-values row) (aref vector-values k)
+                       (aref tmp-tags row) tag)))
+             (unless (= tag (aref tmp-tags leaving-col))
+               (vector-set* vector-values vector-nz +zero+)
+               (vector-set* vector-indices vector-nz leaving-col)
+               (setq leaving-col-k vector-nz)
+               (incf vector-nz)
+               (setf (aref tmp-values leaving-col) +zero+
+                     (aref tmp-tags leaving-col) tag))
+             (let ((tmp (aref vector-values leaving-col-k))
+                   leaving-col-eta-k)
+               (declare (csc-float tmp))
+               (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+                     for row = (aref rows k)
+                     when (= row leaving-col)
+                     do (setq leaving-col-eta-k k)
+                     when (and (= (aref tmp-tags row) tag)
+                               (/= row leaving-col))
+                     do (decf tmp (* (aref values k) (aref tmp-values row))))
+               (incf tag)
+               (setf (aref vector-values leaving-col-k)
+                     (/ tmp (aref values leaving-col-eta-k)))))
+    (setf (sparse-vector-values xb) vector-values
+          (sparse-vector-indices xb) vector-indices
+          (sparse-vector-nz xb) vector-nz)
+    (incf *gauss-eta-tag*)
+    (setq *gauss-eta-values* tmp-values
+          *gauss-eta-tags* tmp-tags)
+    xb))
+
 (declaim (fvec *sparse-solve-values*)
          (ivec *sparse-solve-tags* *sparse-solve-rows*)
          ((integer 0 #.most-positive-fixnum) *sparse-solve-tag*))
@@ -529,12 +586,12 @@ when it is infeasible."
                  (setq node (node-next node))))
       ;; fill free variable
       ;; y := U^(-1)y
-      (let* ((node (iterset-last tree))
-             (upper (lud-upper lud))
+      (let* ((upper (lud-upper lud))
              (upper-colstarts (csc-colstarts upper))
              (upper-rows (csc-rows upper))
              (upper-values (csc-values upper))
-             (diagu (lud-diagu lud)))
+             (diagu (lud-diagu lud))
+             (node (iterset-last tree)))
         (loop while (and node (>= (node-key node) rank))
               for lu-pos = (node-key node)
               do (setf (aref tmp-values lu-pos) +zero+)
@@ -570,6 +627,104 @@ when it is infeasible."
           *sparse-solve-tags* tmp-tags)
     y))
 
+(defun sparse-solve-transposed! (lud-eta y)
+  (declare (optimize (speed 3)))
+  (gauss-eta-transposed! lud-eta y)
+  (let* ((lud (lud-eta-lud lud-eta))
+         (rank (lud-rank lud))
+         (m (lud-m lud))
+         (vector-nz (sparse-vector-nz y))
+         (vector-indices (sparse-vector-indices y))
+         (vector-values (sparse-vector-values y))
+         (tree (make-iterset))
+         ;; vector values sorted w.r.t. the order of LU decomposition
+         (tmp-values *sparse-solve-values*)
+         (tmp-tags *sparse-solve-tags*)
+         (tag *sparse-solve-tag*))
+    (declare (fvec tmp-values vector-values)
+             (ivec tmp-tags vector-indices))
+    (ensure-vector tmp-values m)
+    (ensure-vector tmp-tags m)
+    (labels ((add-to-tmp (lu-pos value)
+               (setf (aref tmp-values lu-pos) value
+                     (aref tmp-tags lu-pos) tag)
+               (iterset-insert tree lu-pos)))
+      (let ((icolperm (lud-icolperm lud)))
+        (dotimes (k vector-nz)
+          (let ((lu-pos (aref icolperm (aref vector-indices k))))
+            (add-to-tmp lu-pos (aref vector-values k)))))
+      ;; y := U^(-T)y
+      (let* ((tupper (lud-tupper lud))
+             (tupper-colstarts (csc-colstarts tupper))
+             (tupper-rows (csc-rows tupper))
+             (tupper-values (csc-values tupper))
+             (diagu (lud-diagu lud))
+             (node (iterset-first tree)))
+        (loop while (and node (< (node-key node) rank))
+              for lu-pos = (node-key node)
+              for beta of-type csc-float = (/ (aref tmp-values lu-pos) (aref diagu lu-pos))
+              do (loop for k from (aref tupper-colstarts lu-pos) below (aref tupper-colstarts lu-pos)
+                       for row = (aref tupper-rows k)
+                       unless (= (aref tmp-tags row) tag)
+                       do (add-to-tmp row +zero+)
+                       do (decf (aref tmp-values row) (* (aref tupper-values k) beta)))
+                 (setf (aref tmp-values lu-pos) beta)
+                 (setq node (node-next node))))
+      ;; fill free varaiable
+      ;; y := L^(-T)y
+      (let* ((tlower (lud-tlower lud))
+             (tlower-colstarts (csc-colstarts tlower))
+             (tlower-rows (csc-rows tlower))
+             (tlower-values (csc-values tlower))
+             (node (iterset-last tree)))
+        (loop while (and node (>= (node-key node) rank))
+              for lu-pos = (node-key node)
+              do (setf (aref tmp-values lu-pos) +zero+)
+                 (setq node (node-prev node)))
+        (loop while node
+              for lu-pos = (node-key node)
+              for beta of-type csc-float = (aref tmp-values lu-pos)
+              do (loop for k from (aref tlower-colstarts lu-pos) below (aref tlower-colstarts (+ lu-pos 1))
+                       for row = (aref tlower-rows k)
+                       unless (= (aref tmp-tags row) tag)
+                       do (add-to-tmp row +zero+)
+                       do (decf (aref tmp-values row) (* (aref tlower-values k) beta)))
+                 (setq node (node-prev node)))))
+    ;; update y
+    (let ((nz 0)
+          (node (iterset-first tree))
+          (rowperm (lud-rowperm lud)))
+      (declare ((mod #.array-dimension-limit) nz))
+      (loop while node
+            for lu-pos = (node-key node)
+            when (> (abs (aref tmp-values lu-pos)) +eps+)
+            do (vector-set* vector-values nz (aref tmp-values lu-pos))
+               (vector-set* vector-indices nz (aref rowperm lu-pos))
+               (incf nz)
+            do (setq node (node-next node)))
+      (setf (sparse-vector-nz y) nz
+            (sparse-vector-indices y) vector-indices
+            (sparse-vector-values y) vector-values))
+    (incf *sparse-solve-tag*)
+    (setq *sparse-solve-values* tmp-values
+          *sparse-solve-tags* tmp-tags)
+    y))
+
+(defconstant +refactor-threshold+ 200)
+
+(defun refactor-p (lud-eta leaving-col)
+  (declare (optimize (speed 3))
+           ((mod #.array-dimension-limit) leaving-col))
+  (let ((count (lud-eta-count lud-eta))
+        (colstarts (lud-eta-colstarts lud-eta))
+        (rows (lud-eta-rows lud-eta)))
+    (assert (> count 0))
+    (or ;; TODO: measure time
+     (>= count +refactor-threshold+)
+     ;; leaving column vanishes at the last E
+     (loop for k from (aref colstarts (- count 1)) below (aref colstarts count)
+           never (= (aref rows k) leaving-col)))))
+
 ;; (defparameter *mat56* #a((5 6) double-float
 ;;                          (2d0 0d0 4d0 0d0 -2d0 1d0)
 ;;                          (3d0 1d0 0d0 1d0 0d0 2d0)
@@ -602,7 +757,7 @@ when it is infeasible."
 ;; #(-1.0d0 -0.0d0 2.0d0 1.0d0 -0.5d0) mat1
 ;; #(3.0d0 -3.0d0 0.0d0 -10.0d0 1.0d0) mat2
 
-;; (let ((lude (make-lud-eta (lu-factor (make-csc-from-array cp/lu-decomposition::*mat56*)
-;;                                      #(0 1 2 3 5)))))
-;;   (add-eta! lude 5 (make-sparse-vector-from #(3.0d0 -3.0d0 0.0d0 -10.0d0 1.0d0)))
-;;   (gauss-eta! lude (make-sparse-vector-from #a((5) double-float 7d0 -2d0 0d0 3d0 0d0))))
+;; (let ((lude (make-lud-eta (lu-factor (make-csc-from-array cp/lu-decomposition::*new-mat*)
+;;                                      #(0 1 2 3 4)))))
+;;   (add-eta! lude 2 (make-sparse-vector-from #(-1d0 0d0 2d0 1d0 -0.5d0)))
+;;   (sparse-solve! lude (make-sparse-vector-from #(5d0 0d0 0d0 0d0 -1d0))))
