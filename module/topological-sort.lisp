@@ -1,12 +1,10 @@
-;;;
-;;; Topological sort
-;;; Reference:
-;;; https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
-;;;
-
 (defpackage :cp/topological-sort
   (:use :cl)
-  (:export #:cycle-detected-error #:topological-sort))
+  (:export #:cycle-detected-error #:topological-sort)
+  (:documentation "Provides topological sorting based on DFSS.
+
+Reference:
+https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search"))
 (in-package :cp/topological-sort)
 
 (define-condition cycle-detected-error (error)
@@ -18,7 +16,8 @@
              (cycle-detected-error-vertex condition)
              (cycle-detected-error-graph condition)))))
 
-(declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*)) &optional))
+(declaim (ftype (function * (values (simple-array (integer 0 #.most-positive-fixnum) (*))
+                                    &optional))
                 topological-sort)
          (inline topological-sort))
 (defun topological-sort (graph &key (key #'identity))
@@ -28,7 +27,7 @@ function signals CYCLE-DETECTED-ERROR when it detects a cycle.
 GRAPH := vector of adjacency lists.
 
 Idiom:
-If you want to reorder some vector by topological order, then
+If you want to reorder some vector by topological order, then you can do
 \(cp/symmetric-group:perm* (topological-sort graph) vector)
 "
   (declare (vector graph))
