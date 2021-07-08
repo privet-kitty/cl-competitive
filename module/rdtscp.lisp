@@ -40,7 +40,7 @@ instruction."))
 (declaim (inline read-tsc))
 (defun read-tsc ()
   (multiple-value-bind (hi lo) (%read-tsc)
-    (dpb hi (byte 30 32) lo)))
+    (dpb hi (byte 32 32) lo)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (when (find-package :sb-x86-64-asm)

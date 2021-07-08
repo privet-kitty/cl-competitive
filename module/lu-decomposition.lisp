@@ -1,9 +1,11 @@
 (defpackage :cp/lu-decomposition
   (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset)
   (:import-from :cp/csc #:csc-float #:+zero+)
-  (:export #:lu-factor #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
+  (:export #:lud-base #:lud-eta #:lu-factor
+           #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
-           #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud #:refactor-p
+           #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud
+           #:refactor-p #:*refactor-threshold*
            #:gauss-eta! #:gauss-eta-transposed!
            #:sparse-solve! #:sparse-solve-transposed!)
   (:documentation "Reference:
@@ -710,7 +712,7 @@ when it is infeasible."
           *sparse-solve-tags* tmp-tags)
     y))
 
-(defconstant +refactor-threshold+ 200)
+(defparameter *refactor-threshold* 200)
 
 (defun refactor-p (lud-eta leaving-col)
   (declare (optimize (speed 3))
@@ -720,7 +722,7 @@ when it is infeasible."
         (rows (lud-eta-rows lud-eta)))
     (assert (> count 0))
     (or ;; TODO: measure time
-     (>= count +refactor-threshold+)
+     (>= count *refactor-threshold*)
      ;; leaving column vanishes at the last E
      (loop for k from (aref colstarts (- count 1)) below (aref colstarts count)
            never (= (aref rows k) leaving-col)))))

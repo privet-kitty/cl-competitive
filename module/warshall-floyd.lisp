@@ -22,7 +22,7 @@
 (declaim (inline warshall-floyd-with-restore!))
 (defun warshall-floyd-with-restore! (matrix)
   "Applies Warshall-Floyd algorithm to MATRIX and returns it. In addition this
-function returns a matrix NEXTS as the second value: NEXTS[u][v] := a vertex
+function returns a matrix NEXTS as the second value: NEXTS[u][v] is the vertex
 next to u on the shortest path from vertex u to vertex v.
 
 Example of restoration:
