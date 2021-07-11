@@ -1,16 +1,14 @@
-;;;
-;;; Weighted bipartite matching (Jonker-Volgenant algorithm)
-;;;
-;;; Reference:
-;;; Jonker, Volgenant: A shortest augmenting path algorithm for dense and sparse linear assignment problems
-;;; Jonker's C++ implementaion: https://web.archive.org/web/20070613181051/http://www.magiclogic.com/assignment/lap_cpp.zip
-;;;
-
 (defpackage :cp/jonker-volgenant
   (:use :cl)
   (:export #:solve-lap-jp #:+lap-null-vertex+ #:+lap-null-weight+
            #:lap #:make-lap #:%lap-size1 #:%lap-size2 #:%lap-matching1 #:%lap-matching2
-           #:lap-p #:lap-add-edge #:lap-build #:lap-score))
+           #:lap-p #:lap-add-edge #:lap-build #:lap-score)
+  (:documentation "Provides Jonker-Volgenant algorithm for a dense instance of
+assignment problem.
+
+Reference:
+Jonker, Volgenant: A shortest augmenting path algorithm for dense and sparse linear assignment problems
+Jonker's C++ implementaion: https://web.archive.org/web/20070613181051/http://www.magiclogic.com/assignment/lap_cpp.zip"))
 (in-package :cp/jonker-volgenant)
 
 (defconstant +lap-null-vertex+ -1)

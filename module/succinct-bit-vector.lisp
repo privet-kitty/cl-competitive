@@ -1,13 +1,12 @@
-;;;
-;;; Succinct bit vector (select: O(log(n)))
-;;;
-
 (defpackage :cp/succinct-bit-vector
   (:use :cl)
-  (:export #:succint-bit-vector #:make-sucbv! #:sucbv-ref #:sucbv-rank #:sucbv-select))
-(in-package :cp/succinct-bit-vector)
+  (:export #:succint-bit-vector #:make-sucbv! #:sucbv-ref #:sucbv-rank #:sucbv-select)
+  (:documentation "Provides three-layer succinct bit vector. You should use
+cp/compact-bit-vector instead as it is far more efficient. I keep this module
+just for my reference.
 
-;; NOTE: compact-bit-vector will be more efficient than this module.
+select: O(log(n))"))
+(in-package :cp/succinct-bit-vector)
 
 (defconstant +chunk-width+ (* 64 16))
 ;; This constant cannot be changed as the current implementation depends on the
@@ -46,11 +45,11 @@ vector is created."
                              :initial-element 0))
          (sum 0))
     (declare (simple-bit-vector vector)
-             ((integer 0 #.most-positive-fixnum) sum))
+             ((mod #.array-dimension-limit) sum))
     (dotimes (i chunk-count)
       (setf (aref chunks i) sum)
       (let ((block-sum 0))
-        (declare ((integer 0 #.most-positive-fixnum) block-sum))
+        (declare ((mod #.array-dimension-limit) block-sum))
         (dotimes (j +block-number+)
           (setf (aref blocks i j) block-sum)
           (incf block-sum
@@ -64,11 +63,12 @@ vector is created."
   (sbit (sucbv-storage sucbv) index))
 
 ;; NOTE: No error handling.
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) sucbv-rank))
+(declaim (ftype (function * (values (mod #.array-dimension-limit) &optional))
+                sucbv-rank))
 (defun sucbv-rank (sucbv end)
   "Counts the number of 1's in the range [0, END)."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) end))
+           ((mod #.array-dimension-limit) end))
   (let ((storage (sucbv-storage sucbv))
         (chunks (sucbv-chunks sucbv))
         (blocks (sucbv-blocks sucbv)))
@@ -84,12 +84,13 @@ vector is created."
                  (logcount (ldb (byte brem 0)
                                 (sb-kernel:%vector-raw-bits storage wordpos))))))))))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional)) sucbv-count))
+(declaim (ftype (function * (values (mod #.array-dimension-limit) &optional))
+                sucbv-count))
 (defun sucbv-count (sucbv value end)
   "Counts the number of VALUEs in the range [0, END)"
   (declare (optimize (speed 3))
            (bit value)
-           ((integer 0 #.most-positive-fixnum) end))
+           ((mod #.array-dimension-limit) end))
   (let ((count1 (sucbv-rank sucbv end)))
     (if (= value 1)
         count1
@@ -99,7 +100,7 @@ vector is created."
   "Detects the position of (1-based) NUM-th 1 in SUCBV. (SUCBV-SELECT 0) always
 returns 0."
   (declare (optimize (speed 3))
-           ((integer 0 #.most-positive-fixnum) num))
+           ((mod #.array-dimension-limit) num))
   (let* ((storage (sucbv-storage sucbv))
          (chunks (sucbv-chunks sucbv))
          (blocks (sucbv-blocks sucbv))

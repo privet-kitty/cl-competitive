@@ -12,9 +12,9 @@ https://en.wikipedia.org/wiki/Round-robin_tournament"))
   "Maps each list of N-1 matches of a round-robin tournement by N players.
 
 - N must be even.
-- FUNCTION takes two arguments: a vector that maps an opponent to each player,
-and the number of the round.
-- Consequence is undefined when the vector passed FUNCTION is modified.
+- FUNCTION takes two arguments: a vector that assigns an opponent to each
+player, and the number of the round.
+- Consequence is undefined when the vector passed to FUNCTION is modified.
 - Time complexity is O(N^2)."
   (declare (optimize (speed 3))
            ((mod #.array-dimension-limit) n))

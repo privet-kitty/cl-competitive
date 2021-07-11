@@ -9,6 +9,8 @@
 (defstruct (fquot-manager (:constructor %make-fquot-manager)
                           (:conc-name fquot-))
   (n nil :type (integer 0 #.most-positive-fixnum))
+  ;; Note that this length excludes n+1. i.e. (fquot-get n <length>) returns
+  ;; n+1.
   (length nil :type (integer 0 #.most-positive-fixnum))
   (short-p nil :type boolean)
   (fsqrt nil :type (integer 0 #.most-positive-fixnum)))

@@ -1,14 +1,11 @@
-;;;
-;;; Maximum bipartite matching (Ford-Fulkerson)
-;;; (Not fast. Better to use Hopcroft-Karp if you need speed)
-;;;
-;;; Referene:
-;;; Akiha, Iwata, Kitagawa. Programming Contest Challenge Book (Japanese)
-;;;
-
 (defpackage :cp/bipartite-matching
   (:use :cl)
-  (:export #:find-matching))
+  (:export #:find-matching)
+  (:documentation "Provides Ford-Fulkerson algorithm for bipartite
+matching. (Not fast. You should use Hopcroft-Karp instead.)
+
+Reference:
+Akiha, Iwata, Kitagawa. Programming Contest Challenge Book. (Japanese)"))
 (in-package :cp/bipartite-matching)
 
 (declaim (ftype (function * (values (simple-array fixnum (*))

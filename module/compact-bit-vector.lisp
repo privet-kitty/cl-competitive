@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:compact-bit-vector #:make-compact-bit-vector! #:cbv-storage #:cbv-blocks
            #:cbv-ref #:cbv-count #:cbv-rank #:cbv-select)
-  (:documentation "Provides compact bit vector"))
+  (:documentation "Provides two-layer compact bit vector."))
 (in-package :cp/compact-bit-vector)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -32,7 +32,7 @@ vector is created."
                              :initial-element 0))
          (sum 0))
     (declare (simple-bit-vector vector)
-             ((integer 0 #.most-positive-fixnum) sum))
+             ((mod #.array-dimension-limit) sum))
     (dotimes (i block-count)
       (setf (aref blocks i) sum)
       (incf sum (logcount (sb-kernel:%vector-raw-bits vector i))))
@@ -45,7 +45,7 @@ vector is created."
  
 ;; NOTE: No error handling.
 (declaim (inline cbv-rank)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+         (ftype (function * (values (mod #.array-dimension-limit) &optional))
                 cbv-rank))
 (defun cbv-rank (cbv end)
   "Counts the number of 1's in the range [0, END)."
@@ -55,13 +55,15 @@ vector is created."
          (bpos (ash end -6))
          (brem (logand #b111111 end)))
     (+ (aref blocks bpos)
-       (if (zerop brem) ; avoid out-of-bounds access
+       ;; I put this clause to avoid out-of-bounds access but I'm not sure it's
+       ;; mandatory. (It is faster without it.)
+       (if (zerop brem) 
            0
            (logcount (ldb (byte brem 0)
                           (sb-kernel:%vector-raw-bits storage bpos)))))))
 
 (declaim (inline cbv-count)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+         (ftype (function * (values (mod #.array-dimension-limit) &optional))
                 cbv-count))
 (defun cbv-count (cbv value end)
   "Counts the number of VALUEs in the range [0, END)"
@@ -99,8 +101,6 @@ returns 0."
                    (if (<= (- ng ok) 1)
                        ok
                        (let ((mid (ash (+ ok ng) -1)))
-                         ;; FIXME: Is there any better way than calling POPCNT
-                         ;; each time?
                          (if (<= ord (logcount (ldb (byte mid 0) word)))
                              (pos-bisect ok mid)
                              (pos-bisect mid ng))))))

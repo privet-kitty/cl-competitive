@@ -1,7 +1,7 @@
 (defpackage :cp/topological-sort
   (:use :cl)
   (:export #:cycle-detected-error #:topological-sort)
-  (:documentation "Provides topological sorting based on DFSS.
+  (:documentation "Provides topological sorting based on DFS.
 
 Reference:
 https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search"))
@@ -22,7 +22,8 @@ https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search"))
          (inline topological-sort))
 (defun topological-sort (graph &key (key #'identity))
   "Returns a vector of all the vertices sorted in topological order. This
-function signals CYCLE-DETECTED-ERROR when it detects a cycle.
+function signals CYCLE-DETECTED-ERROR when it detects a cycle. Please pay
+attention to the stack size if GRAPH is large.
 
 GRAPH := vector of adjacency lists.
 
