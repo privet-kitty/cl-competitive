@@ -86,9 +86,9 @@
     (dotimes (_ 5)
       (is (nearly-equal 1d-8
                         '(-1d0 0d0 2d0 1d0 -0.5d0)
-                        (coerce (to-dense-vector sol1) 'list))))
+                        (coerce (sparse-vector-to-dense sol1) 'list))))
     (let ((sol2 (sparse-solve! lude (make-sparse-vector-from #(5d0 0d0 0d0 0d0 -1d0)))))
       (dotimes (_ 5)
         (is (nearly-equal 1d-8
                           '(0.5d0 3d0 0.5d0 -3.5d0 -0.25d0)
-                          (coerce (to-dense-vector sol2) 'list)))))))
+                          (coerce (sparse-vector-to-dense sol2) 'list)))))))

@@ -1,10 +1,13 @@
 (defpackage :cp/csc
   (:use :cl)
-  (:export #:csc #:make-csc #:csc-to-array #:make-csc-from-array #:make-csc-from-coo
-           #:csc-gemv #:csc-gemv-with-basis #:csc-transpose #:csc-m #:csc-n #:csc-nz
-           #:csc-colstarts #:csc-rows #:csc-values
-           #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from #:to-dense-vector
-           #:sparse-vector-nz #:sparse-vector-values #:sparse-vector-indices)
+  (:export
+   #:coo #:coo-m #:coo-n #:make-coo #:coo-insert!
+   #:coo-rows #:coo-cols #:coo-values #:coo-nz
+   #:csc #:make-csc #:csc-to-array #:make-csc-from-array #:make-csc-from-coo
+   #:csc-gemv #:csc-gemv-with-basis #:csc-transpose #:csc-m #:csc-n #:csc-nz
+   #:csc-colstarts #:csc-rows #:csc-values
+   #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from #:sparse-vector-to-dense
+   #:sparse-vector-nz #:sparse-vector-values #:sparse-vector-indices)
   (:documentation "Provides compressed sparse column representation of sparse
 matrix."))
 (in-package :cp/csc)
@@ -13,9 +16,53 @@ matrix."))
 (defconstant +zero+ (coerce 0 'csc-float))
 (defconstant +one+ (coerce 1 'csc-float))
 
+(defstruct (coo (:constructor %make-coo (m n nz rows cols values))
+                (:copier nil)
+                (:predicate nil))
+  "Stores a sparse matrix with coordinate list representation (aka COO). Note
+that you can increase M and N after construction, but cannot decrease them."
+  (m nil :type (mod #.array-dimension-limit))
+  (n nil :type (mod #.array-dimension-limit))
+  (nz nil :type (mod #.array-dimension-limit))
+  (rows nil :type (simple-array fixnum (*)))
+  (cols nil :type (simple-array fixnum (*)))
+  (values nil :type (simple-array csc-float (*))))
+
+(defun make-coo (m n &optional (initial-size 4))
+  (declare ((integer 1 (#.array-dimension-limit)) initial-size))
+  (let ((initial-size (max 1 initial-size)))
+    (%make-coo m n 0
+               (make-array initial-size :element-type 'fixnum)
+               (make-array initial-size :element-type 'fixnum)
+               (make-array initial-size :element-type 'csc-float))))
+
+(defun coo-insert! (coo row col value)
+  "Executes an assignment operation: COO[ROW][COL] := VALUE."
+  (declare (optimize (speed 3))
+           ((mod #.array-dimension-limit) row col))
+  (assert (and (< row (coo-m coo))
+               (< col (coo-n coo))))
+  (symbol-macrolet ((rows (coo-rows coo))
+                    (cols (coo-cols coo))
+                    (values (coo-values coo))
+                    (nz (coo-nz coo)))
+    (when (= nz (length rows))
+      (let ((new-size (max 1 (the (mod #.array-dimension-limit) (* 2 nz)))))
+        (setq rows (adjust-array rows new-size)
+              cols (adjust-array cols new-size)
+              values (adjust-array values new-size))))
+    (setf (aref rows nz) row
+          (aref cols nz) col
+          (aref values nz) value
+          nz (+ nz 1))
+    coo))
+
 (defstruct (csc (:constructor make-csc (m n nz colstarts rows values))
                 (:copier nil)
                 (:predicate nil))
+  "Stores a sparse matrix compressed sparse column representation (aka
+CSC). Note that you can increase M after construction, but cannot decrease it or
+change N."
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
   (nz nil :type (mod #.array-dimension-limit))
@@ -65,18 +112,21 @@ matrix."))
       (make-csc m n nz colstarts rows values))))
 
 (declaim (inline make-csc-from-coo))
-(defun make-csc-from-coo (m n rows cols values)
+(defun make-csc-from-coo (coo)
   "Makes CSC from a coordinalte list expression of a sparse matrix.
 
 Note:
 - This function uses the element closest to the end if duplicate (row, col) exist.
 - The returned CSC contains zero when VALUES contains it."
-  (declare (inline stable-sort)
-           ((mod #.array-dimension-limit) m n)
-           (vector rows cols values))
-  (assert (= (length rows) (length cols) (length values)))
-  (let* ((indices (let ((tmp (make-array (length rows) :element-type 'fixnum)))
-                    (dotimes (i (length rows))
+  (declare (optimize (speed 3))
+           (inline stable-sort))
+  (let* ((m (coo-m coo))
+         (n (coo-n coo))
+         (rows (coo-rows coo))
+         (cols (coo-cols coo))
+         (values (coo-values coo))
+         (indices (let ((tmp (make-array (coo-nz coo) :element-type 'fixnum)))
+                    (dotimes (i (length tmp))
                       (setf (aref tmp i) i))
                     (stable-sort tmp (lambda (i1 i2)
                                        (if (= (aref cols i1) (aref cols i2))
@@ -202,7 +252,7 @@ Note:
         (incf end)))
     (%make-sparse-vector nz values indices)))
 
-(defun to-dense-vector (sparse-vector)
+(defun sparse-vector-to-dense (sparse-vector)
   (let* ((nz (sparse-vector-nz sparse-vector))
          (indices (sparse-vector-indices sparse-vector))
          (values (sparse-vector-values sparse-vector))
