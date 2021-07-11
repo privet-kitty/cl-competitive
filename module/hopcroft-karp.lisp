@@ -3,7 +3,9 @@
   (:export #:bipartite-graph #:make-bgraph #:bipartite-graph-p #:coerce-to-bgraph
            #:bgraph-matching1 #:bgraph-matching2 #:bgraph-size1 #:bgraph-size2 #:bgraph-graph1
            #:bgraph-add-edge! #:bgraph-build-matching! #:bgraph-decompose)
-  (:documentation "Provides maximum bipartite matching. (Hopcroft-Karp, O(E sqrt(V)))"))
+  (:documentation "Provides Hopcroft-Karp algorithm for maximum bipartite matching.
+
+Time complexity: O(E sqrt(V))"))
 (in-package :cp/hopcroft-karp)
 
 (defconstant +graph-inf-distance+ #xffffffff)

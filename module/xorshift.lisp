@@ -56,12 +56,3 @@ uniform because of modulo bias."
 (declaim (inline randf))
 (defun randf (l r)
   (+ l (* (- r l) (randprob))))
-
-;; (defun test (sample)
-;;   (declare (optimize (speed 3) (safety 0))
-;;            ((integer 0 #.most-positive-fixnum) sample))
-;;   (let ((res 0))
-;;     (declare ((unsigned-byte 62) res))
-;;     (dotimes (_ sample)
-;;       (incf res (xorshift 2)))
-;;     res))

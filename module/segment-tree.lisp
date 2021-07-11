@@ -1,8 +1,8 @@
 (defpackage :cp/segment-tree
   (:use :cl)
   (:export #:define-segtree)
-  (:documentation "Provides 1-dimensional segment tree on arbitrary
-monoid (bottom-up implementation)."))
+  (:documentation "Provides 1-dimensional segment tree over arbitrary monoid,
+using bottom-up implementation."))
 (in-package :cp/segment-tree)
 
 (deftype index () '(mod #.(floor array-dimension-limit 2)))
@@ -15,8 +15,8 @@ ELEMENT-TYPE := type specifier
 This macro defines five functions:
 
 - <NAME>-REF: accessor and setter
-- <NAME>-FOLD: query function for range sum
-- MAKE-<NAME>: linear time constructor
+- <NAME>-FOLD: function for querying range sum
+- MAKE-<NAME>: linear-time constructor
 - <NAME>-MAX-RIGHT: binary search w.r.t. range sum in normal order
 - <NAME>-MIN-LEFT: binary search w.r.t. range sum in reverse order"
   (let* ((fname-ref (intern (format nil "~A-REF" (symbol-name name))))
@@ -32,7 +32,7 @@ This macro defines five functions:
        (defstruct (,name (:constructor ,fname-%make
                              (vector &aux (n (ash (+ 1 (length vector)) -1))))
                          (:conc-name ,conc-name))
-         (n nil :type index)
+         (n nil :type index) ; length of original vector
          (vector nil :type (simple-array ,element-type (*))))
        (declaim (inline ,fname-make))
        (defun ,fname-make (size &key (initial-element ,identity) initial-contents)
@@ -109,9 +109,9 @@ Note:
          (assert (<= start (,fname-n ,name)))
          (let* ((n (,fname-n ,name))
                 (vector (,fname-vector ,name))
-                (size (length vector))
+                (n* (length vector))
                 (l (max 0 (+ start (- n 1))))
-                (r size)
+                (r n*)
                 (value ,identity)
                 (total-shift 0))
            (declare (index l r total-shift)
@@ -140,7 +140,7 @@ Note:
                             r (ash (- r 1) -1)
                             total-shift (+ total-shift 1)))
              (loop for shift from (- total-shift 1) above 0
-                   for r = (- (ash (+ size 1) (- shift)) 1)
+                   for r = (- (ash (+ n* 1) (- shift)) 1)
                    when (evenp r)
                    do (let ((new-value (funcall ,operator value (aref vector (- r 1)))))
                         (declare (,element-type new-value))
