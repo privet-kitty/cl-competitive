@@ -8,8 +8,7 @@
    #:csc-colstarts #:csc-rows #:csc-values
    #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from #:sparse-vector-to-dense
    #:sparse-vector-nz #:sparse-vector-values #:sparse-vector-indices)
-  (:documentation "Provides compressed sparse column representation of sparse
-matrix."))
+  (:documentation "Provides some representations of a sparse matrix."))
 (in-package :cp/csc)
 
 (deftype csc-float () 'double-float)
@@ -19,8 +18,9 @@ matrix."))
 (defstruct (coo (:constructor %make-coo (m n nz rows cols values))
                 (:copier nil)
                 (:predicate nil))
-  "Stores a sparse matrix with coordinate list representation (aka COO). Note
-that you can increase M and N after construction, but cannot decrease them."
+  "Stores a sparse matrix with coordinate list representation (aka COO
+format). Note that you can increase M and N after construction, but cannot
+decrease them."
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
   (nz nil :type (mod #.array-dimension-limit))
@@ -37,7 +37,7 @@ that you can increase M and N after construction, but cannot decrease them."
                (make-array initial-size :element-type 'csc-float))))
 
 (defun coo-insert! (coo row col value)
-  "Executes an assignment operation: COO[ROW][COL] := VALUE."
+  "Destructively executes an assignment operation: COO[ROW][COL] := VALUE."
   (declare (optimize (speed 3))
            ((mod #.array-dimension-limit) row col))
   (assert (and (< row (coo-m coo))
@@ -60,9 +60,9 @@ that you can increase M and N after construction, but cannot decrease them."
 (defstruct (csc (:constructor make-csc (m n nz colstarts rows values))
                 (:copier nil)
                 (:predicate nil))
-  "Stores a sparse matrix compressed sparse column representation (aka
-CSC). Note that you can increase M after construction, but cannot decrease it or
-change N."
+  "Stores a sparse matrix with compressed sparse column representation (aka CSC
+format). Note that you can increase M after construction, but cannot decrease it
+or change N."
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
   (nz nil :type (mod #.array-dimension-limit))
@@ -71,6 +71,7 @@ change N."
   (values nil :type (simple-array csc-float (*))))
 
 (defun csc-to-array (csc &optional rowperm colperm)
+  "Makes a 2-dimensional array from a CSC."
   (declare (optimize (speed 3))
            ((or null vector) rowperm colperm))
   (let* ((m (csc-m csc))
@@ -89,7 +90,7 @@ change N."
     res))
 
 (defun make-csc-from-array (array)
-  "Makes CSC from a 2-dimensional array."
+  "Makes a CSC from a 2-dimensional array."
   (declare (optimize (speed 3))
            ((array * (* *)) array))
   (destructuring-bind (m n) (array-dimensions array)
@@ -113,11 +114,8 @@ change N."
 
 (declaim (inline make-csc-from-coo))
 (defun make-csc-from-coo (coo)
-  "Makes CSC from a coordinalte list expression of a sparse matrix.
-
-Note:
-- This function uses the element closest to the end if duplicate (row, col) exist.
-- The returned CSC contains zero when VALUES contains it."
+  "Makes a CSC from a COO. Note that the returned CSC contains zero when COO
+contains it."
   (declare (optimize (speed 3))
            (inline stable-sort))
   (let* ((m (coo-m coo))
@@ -169,6 +167,7 @@ Note:
 
 (declaim (inline csc-gemv-with-basis))
 (defun csc-gemv-with-basis (csc vector basis)
+  "Multiplies CSC and VECTOR and returns a resultant vector."
   (declare (vector vector basis))
   (let* ((m (csc-m csc))
          (colstarts (csc-colstarts csc))
@@ -179,11 +178,12 @@ Note:
       (let ((bi (aref basis i)))
         (loop for k from (aref colstarts bi) below (aref colstarts (+ bi 1))
               do (incf (aref res (aref rows k))
-                       (* (aref values k) (float (aref vector i) 1d0))))))
+                       (* (aref values k) (coerce (aref vector i) 'csc-float))))))
     res))
 
 (declaim (inline csc-gemv))
 (defun csc-gemv (csc vector)
+  "Multiplies CSC and VECTOR and returns a resultant vector."
   (declare (vector vector))
   (let* ((m (csc-m csc))
          (n (csc-n csc))
@@ -194,7 +194,7 @@ Note:
     (dotimes (j n)
       (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
             do (incf (aref res (aref rows k))
-                     (* (aref values k) (float (aref vector j) 1d0)))))
+                     (* (aref values k) (coerce (aref vector j) 'csc-float)))))
     res))
 
 (defun csc-transpose (csc)
@@ -227,6 +227,7 @@ Note:
                      (aref new-values new-pos) (aref values k))))
     (make-csc n m nz new-colstarts new-rows new-values)))
 
+;; TODO: Should we store the intended dimension of vector?
 (defstruct (sparse-vector (:constructor %make-sparse-vector (nz values indices)))
   (nz nil :type (mod #.array-dimension-limit))
   (values nil :type (simple-array csc-float (*)))
