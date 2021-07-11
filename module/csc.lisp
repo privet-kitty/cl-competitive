@@ -11,6 +11,7 @@ matrix."))
 
 (deftype csc-float () 'double-float)
 (defconstant +zero+ (coerce 0 'csc-float))
+(defconstant +one+ (coerce 1 'csc-float))
 
 (defstruct (csc (:constructor make-csc (m n nz colstarts rows values))
                 (:copier nil)
@@ -176,10 +177,16 @@ Note:
                      (aref new-values new-pos) (aref values k))))
     (make-csc n m nz new-colstarts new-rows new-values)))
 
-(defstruct (sparse-vector (:constructor make-sparse-vector (nz values indices)))
+(defstruct (sparse-vector (:constructor %make-sparse-vector (nz values indices)))
   (nz nil :type (mod #.array-dimension-limit))
   (values nil :type (simple-array csc-float (*)))
   (indices nil :type (simple-array fixnum (*))))
+
+(defun make-sparse-vector (size)
+  (%make-sparse-vector
+   0
+   (make-array size :element-type 'csc-float)
+   (make-array size :element-type 'fixnum)))
 
 (defun make-sparse-vector-from (vector)
   (declare (vector vector))
@@ -193,13 +200,15 @@ Note:
         (setf (aref values end) (aref vector i)
               (aref indices end) i)
         (incf end)))
-    (make-sparse-vector nz values indices)))
+    (%make-sparse-vector nz values indices)))
 
 (defun to-dense-vector (sparse-vector)
   (let* ((nz (sparse-vector-nz sparse-vector))
          (indices (sparse-vector-indices sparse-vector))
          (values (sparse-vector-values sparse-vector))
-         (m (+ 1 (reduce #'max indices)))
+         (m (if (zerop (length indices))
+                0
+                (+ 1 (reduce #'max indices))))
          (res (make-array m :element-type 'csc-float :initial-element +zero+)))
     (dotimes (i nz)
       (let ((index (aref indices i))

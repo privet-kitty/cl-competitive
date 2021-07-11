@@ -26,8 +26,8 @@
     (multiple-value-bind (obj1 prim1 dual1) (%primal-simplex! (copy a) (copy b) (copy c))
       (multiple-value-bind (obj2 prim2 dual2) (%dual-simplex! (copy a*) (copy b*) (copy c*))
         (is (nearly= 1d-8 obj obj1 (- obj2)))
-        (is (nearly-equal 1d-8 (coerce prim1 'list) (coerce dual2 'list)))
-        (is (nearly-equal 1d-8 (coerce dual1 'list) (coerce prim2 'list)))))))
+        (is (nearly-equalp 1d-8 prim1 dual2))
+        (is (nearly-equalp 1d-8 dual1 prim2))))))
 
 (defconstant +eps+ 1d-8)
 

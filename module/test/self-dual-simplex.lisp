@@ -14,8 +14,8 @@
       (multiple-value-bind (obj res-primal res-dual)
           (self-dual! (copy a) (copy b) (copy c))
         (is (nearly= 1d-8 obj -1d0))
-        (is (nearly-equal 1d-8 (coerce res-primal 'list) '(2d0 1d0)))
-        (is (nearly-equal 1d-8 (coerce res-dual 'list) '(2d0 0d0 1d0)))))))
+        (is (nearly-equalp 1d-8 res-primal #(2d0 1d0)))
+        (is (nearly-equalp 1d-8 res-dual #(2d0 0d0 1d0)))))))
 
 (defconstant +eps+ 1d-8)
 

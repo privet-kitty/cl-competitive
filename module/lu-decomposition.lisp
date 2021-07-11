@@ -1,6 +1,6 @@
 (defpackage :cp/lu-decomposition
   (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset)
-  (:import-from :cp/csc #:csc-float #:+zero+)
+  (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:export #:lud-base #:lud-eta #:lu-factor
            #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
