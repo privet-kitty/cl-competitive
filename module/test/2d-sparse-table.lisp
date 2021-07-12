@@ -30,29 +30,29 @@
                    do (setq res (max res (aref matrix i j)))))
     res))
 
-(defun make-random-matrix (m n state)
+(defun make-random-matrix (m n)
   (let ((res (make-array (list m n) :element-type 'fixnum)))
     (dotimes (i m)
       (dotimes (j n)
-        (setf (aref res i j) (- (random 2000 state) 1000))))
+        (setf (aref res i j) (- (random 2000) 1000))))
     res))
 
 (test 2d-sparse-table/random
-  (let ((state (sb-ext:seed-random-state 0)))
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
     (dolist (dim '((7 . 17) (4 . 8) (2 . 1) (11 . 5)))
-      (finishes
-        (dotimes (_ 100)
-          (let* ((m (car dim))
-                 (n (cdr dim))
-                 (matrix (make-random-matrix m n state))
-                 (table (make-2d-sparse-table matrix #'max)))
-            (loop
-              for i1 from 0 to m
-              do (loop
-                   for j1 from 0 to n
-                   do (loop
-                        for i2 from i1 to m
-                        do (loop
-                             for j2 from j1 to n
-                             do (assert (= (2dst-fold table #'max i1 j1 i2 j2 -12345)
-                                           (fold-max matrix i1 j1 i2 j2 -12345)))))))))))))
+      (dotimes (_ 10)
+        (let* ((m (car dim))
+               (n (cdr dim))
+               (matrix (make-random-matrix m n))
+               (table (make-2d-sparse-table matrix #'max)))
+          (loop
+            for i1 from 0 to m
+            do (loop
+                 for j1 from 0 to n
+                 do (loop
+                      for i2 from i1 to m
+                      do (loop
+                           for j2 from j1 to n
+                           do (is (= (2dst-fold table #'max i1 j1 i2 j2 -12345)
+                                     (fold-max matrix i1 j1 i2 j2 -12345))))))))))))

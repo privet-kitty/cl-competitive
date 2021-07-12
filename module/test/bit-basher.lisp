@@ -131,7 +131,8 @@
   (is (equalp #*00000 (bit-rshift *seq* 1000000000000000000 #*00000))))
 
 (test bit-lshift/random
-  (let ((state (sb-ext:seed-random-state 0)))
+  (let ((*test-dribble* nil)
+        (state (sb-ext:seed-random-state 0)))
     (dolist (size '(0 1 10 100 1000 64 128))
       (dolist (delta '(0 1 10 100 1000 64 128 3))
         (let* ((vec1 (make-random-bit-vector size state))
@@ -140,19 +141,19 @@
           (bit-lshift vec1 delta t)
           (bit-lshift-naive vec2 delta t)
           (is (equalp vec1 vec2)))))
-    (finishes
-      (dotimes (_ 1000)
-        (let* ((size (random 100 state))
-               (delta (random 100 state))
-               (vec1 (make-random-bit-vector size state))
-               (vec2 (copy-seq vec1)))
-          (assert (equalp (bit-lshift vec1 delta) (bit-lshift-naive vec1 delta)))
-          (bit-lshift vec1 delta t)
-          (bit-lshift-naive vec2 delta t)
-          (assert (equalp vec1 vec2)))))))
+    (dotimes (_ 1000)
+      (let* ((size (random 100 state))
+             (delta (random 100 state))
+             (vec1 (make-random-bit-vector size state))
+             (vec2 (copy-seq vec1)))
+        (is (equalp (bit-lshift vec1 delta) (bit-lshift-naive vec1 delta)))
+        (bit-lshift vec1 delta t)
+        (bit-lshift-naive vec2 delta t)
+        (is (equalp vec1 vec2))))))
 
 (test bit-rshift/random
-  (let ((state (sb-ext:seed-random-state 0)))
+  (let ((*test-dribble* nil)
+        (state (sb-ext:seed-random-state 0)))
     (dolist (size '(0 1 10 100 1000 64 128))
       (dolist (delta '(0 1 10 100 1000 64 128 3))
         (let* ((vec1 (make-random-bit-vector size state))
@@ -167,10 +168,10 @@
                (delta (random 100 state))
                (vec1 (make-random-bit-vector size state))
                (vec2 (copy-seq vec1)))
-          (assert (equalp (bit-rshift vec1 delta) (bit-rshift-naive vec1 delta)))
+          (is (equalp (bit-rshift vec1 delta) (bit-rshift-naive vec1 delta)))
           (bit-rshift vec1 delta t)
           (bit-rshift-naive vec2 delta t)
-          (assert (equalp vec1 vec2)))))))
+          (is (equalp vec1 vec2)))))))
 
 (test bitwise-operations/hand
   (is (equalp #* (bit-not! #*)))
@@ -186,32 +187,33 @@
   (is (equalp #*1 (bit-fill! (copy-seq #*1) 0 0 0))))
 
 (test bitwise-operations
-  (dolist (size '(0 1 25 64 128 140))
-    (let ((target (make-array size :element-type 'bit :initial-element 0))
-          (reference (make-array size :element-type 'bit :initial-element 0))
-          (state (sb-ext:seed-random-state 0)))
-      (finishes
-        (dotimes (i 200)
-          ;; bit-not!
-          (let ((l (random (+ size 1) state))
-                (r (random (+ size 1) state)))
-            (unless (<= l r) (rotatef l r))
-            (bit-not! target l r)
-            (loop for i from l below r
-                  do (setf (sbit reference i) (logxor 1 (sbit reference i))))
-            (assert (equalp target reference)))
-          ;; bit-fill!
-          (let ((l (random (+ size 1) state))
-                (r (random (+ size 1) state))
-                (bit (random 2)))
-            (unless (<= l r) (rotatef l r))
-            (bit-fill! target bit l r)
-            (loop for i from l below r
-                  do (setf (sbit reference i) bit))
-            (assert (equalp target reference)))
-          ;; bit-count
-          (let ((l (random (+ size 1) state))
-                (r (random (+ size 1) state)))
-            (unless (<= l r) (rotatef l r))
-            (assert (= (bit-count target l r)
-                       (count 1 target :start l :end r)))))))))
+  (let ((*test-dribble* nil))
+    (dolist (size '(0 1 25 64 128 140))
+      (let ((target (make-array size :element-type 'bit :initial-element 0))
+            (reference (make-array size :element-type 'bit :initial-element 0))
+            (state (sb-ext:seed-random-state 0)))
+        (finishes
+          (dotimes (i 200)
+            ;; bit-not!
+            (let ((l (random (+ size 1) state))
+                  (r (random (+ size 1) state)))
+              (unless (<= l r) (rotatef l r))
+              (bit-not! target l r)
+              (loop for i from l below r
+                    do (setf (sbit reference i) (logxor 1 (sbit reference i))))
+              (is (equalp target reference)))
+            ;; bit-fill!
+            (let ((l (random (+ size 1) state))
+                  (r (random (+ size 1) state))
+                  (bit (random 2)))
+              (unless (<= l r) (rotatef l r))
+              (bit-fill! target bit l r)
+              (loop for i from l below r
+                    do (setf (sbit reference i) bit))
+              (is (equalp target reference)))
+            ;; bit-count
+            (let ((l (random (+ size 1) state))
+                  (r (random (+ size 1) state)))
+              (unless (<= l r) (rotatef l r))
+              (is (= (bit-count target l r)
+                     (count 1 target :start l :end r))))))))))
