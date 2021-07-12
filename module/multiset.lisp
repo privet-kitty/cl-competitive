@@ -177,13 +177,23 @@ excessive number of KEYs are attempted to be deleted."
                                       (%mset-right mset)))))))))
     (recur mset)))
 
-(defmacro mset-push (key mset &optional (order '#'<))
+(defmacro mset-push (key mset &optional (order '#'<) &environment env)
   "Pushes a KEY to MSET."
-  `(setf ,mset (mset-insert ,mset ,key :order ,order)))
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion mset env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (mset-insert ,getter ,key :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
-(defmacro mset-pop (key mset &optional (order '#'<))
+(defmacro mset-pop (key mset &optional (order '#'<) &environment env)
   "Deletes a KEY from MSET."
-  `(setf ,mset (mset-delete ,mset ,key :order ,order)))
+  (multiple-value-bind (temps vals stores setter getter)
+      (get-setf-expansion mset env)
+    `(let* (,@(mapcar #'list temps vals)
+            (,(car stores) (mset-delete ,getter ,key :order ,order))
+            ,@(cdr stores))
+       ,setter)))
 
 (declaim (inline mset-ref))
 (defun mset-count (mset key &key (order #'<))
@@ -233,21 +243,21 @@ the number of the key in MSET."
          (format stream "<~A . ~A>" key count))
        object))))
 
+(declaim (inline mset-first))
 (defun mset-first (mset)
   "Returns the leftmost key of MSET."
-  (declare (optimize (speed 3))
-           (mset mset))
-  (if (%mset-left mset)
-      (mset-first (%mset-left mset))
-      (%mset-key mset)))
+  (declare (mset mset))
+  (loop while (%mset-left mset)
+        do (setq mset (%mset-left mset)))
+  (%mset-key mset))
 
+(declaim (inline mset-last))
 (defun mset-last (mset)
   "Returns the rightmost key of MSET."
-  (declare (optimize (speed 3))
-           (mset mset))
-  (if (%mset-right mset)
-      (mset-last (%mset-right mset))
-      (%mset-key mset)))
+  (declare (mset mset))
+  (loop while (%mset-right mset)
+        do (setq mset (%mset-right mset)))
+  (%mset-key mset))
 
 (declaim (inline mset-find))
 (defun mset-find (mset key &key (order #'<))
