@@ -5,10 +5,10 @@
 
 (declaim (inline xor-series))
 (defun xor-series (x)
-  "Returns the xor of 1, 2, ..., X-1"
+  "Returns the bitwise xor of 1, 2, ..., X."
   (declare (unsigned-byte x))
   (case (logand 3 x)
-    (0 0)
-    (1 (- x 1))
-    (2 1)
-    (otherwise x)))
+    (0 x)
+    (1 1)
+    (2 (+ x 1))
+    (otherwise 0)))
