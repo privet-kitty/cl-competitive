@@ -1,16 +1,14 @@
-;;;
-;;; Freiwalds' algorithm
-;;;
-
 (defpackage :cp/freiwald
   (:use :cl)
-  (:export #:gemm-p))
+  (:export #:gemm-p)
+  (:documentation
+   "Provides Freiwalds's algorithm to verify matrix multiplication."))
 (in-package :cp/freiwald)
 
 ;; NOTE: not tested
 (declaim (inline gemm-p))
 (defun gemm-p (a b c &optional (count 32))
-  "Always returns true if AB = C. If AB != C, returns false with probability at
+  "Always returns true if AB = C. Otherwise returns false with probability at
 least 1 - (1/2)^COUNT."
   (declare ((integer 0 #.most-positive-fixnum) count)
            ((array * (* *)) a b c))
