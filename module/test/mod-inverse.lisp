@@ -1,8 +1,25 @@
 (defpackage :cp/test/mod-inverse
   (:use :cl :fiveam :cp/mod-inverse)
-  (:import-from :cp/test/base #:base-suite))
+  (:import-from :cp/test/base #:base-suite)
+  (:import-from :sb-kernel #:%simple-fun-type))
 (in-package :cp/test/mod-inverse)
 (in-suite base-suite)
+
+(defun test1 (x y)
+  (declare (integer x)
+           ((integer -3 5) y))
+  (mod-inverse x y))
+
+(defun test2 (x y)
+  (declare (integer x)
+           ((integer -3 *) y))
+  (mod-inverse x y))
+
+(test mod-inverse/type
+  (is (equalp (%simple-fun-type #'test1)
+              '(function (integer (integer -3 5)) (values (mod 5) &optional))))
+  (is (equalp (%simple-fun-type #'test2)
+              '(function (integer (integer -3)) (values unsigned-byte &optional)))))
 
 (test mod-inverse/hand
   (loop for x from -10 to 10
