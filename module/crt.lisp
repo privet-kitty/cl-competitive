@@ -1,31 +1,11 @@
 (defpackage :cp/crt
-  (:use :cl)
+  (:use :cl :cp/ext-gcd)
   (:export #:crt #:crt*)
   (:documentation "Provides bignum arithmetic by Chinese remainder theorem.
 
 Reference:
 https://qiita.com/drken/items/ae02240cd1f8edfc86fd (Japanese)"))
 (in-package :cp/crt)
-
-;; Extended Euclidean algorithm (Blankinship algorithm)
-(declaim (ftype (function * (values integer integer &optional)) %ext-gcd/bignum))
-(defun %ext-gcd/bignum (a b)
-  (declare (optimize (speed 3) (safety 0))
-           (unsigned-byte a b))
-  (let ((y 1)
-        (x 0)
-        (u 1)
-        (v 0))
-    (declare (integer y x u v))
-    (loop (when (zerop a)
-            (return (values x y)))
-          (let ((q (floor b a)))
-            (decf x (* q u))
-            (rotatef x u)
-            (decf y (* q v))
-            (rotatef y v)
-            (decf b (* q a))
-            (rotatef b a)))))
 
 (declaim (inline crt))
 (defun crt (b1 mod1 b2 mod2)
@@ -36,7 +16,7 @@ m2)). Returns LCM(m1, m2) as the second value.
 - If what you need is a positive solution, just adopt LCM instead of zero."
   (declare (integer b1 b2)
            ((integer 1) mod1 mod2))
-  (multiple-value-bind (p q) (%ext-gcd/bignum mod1 mod2)
+  (multiple-value-bind (p q) (ext-gcd mod1 mod2)
     (let ((gcd (+ (* p mod1) (* q mod2))))
       (declare (unsigned-byte gcd))
       (unless (zerop (mod (- b2 b1) gcd))
@@ -48,8 +28,8 @@ m2)). Returns LCM(m1, m2) as the second value.
         (values (mod (+ b1 (* mod1 tmp)) lcm) lcm)))))
 
 (defun crt* (rems moduli)
-  "Solves x_i ≡ b_i mod m_i, i in {1, 2, ..., k}. The returned integers are in
-[0, LCM(m_1, m_2, ..., m_k)). Returns LCM(m_1, m_2, ..., m_k} as the second
+  "Solves x_i ≡ b_i mod m_i, for i in {1, 2, ..., k}. The returned integers are
+in [0, LCM(m_1, m_2, ..., m_k)). Returns LCM(m_1, m_2, ..., m_k} as the second
 value.
 
 - This function returns (VALUES NIL NIL) when the system is infeasible.
@@ -69,7 +49,7 @@ MODULI := vector of positive integers"
             (m2 (aref moduli i)))
         (declare (integer b2)
                  ((integer 1) m2))
-        (multiple-value-bind (p q) (%ext-gcd/bignum modulus m2)
+        (multiple-value-bind (p q) (ext-gcd modulus m2)
           (let ((gcd (+ (* p modulus) (* q m2))))
             (declare (unsigned-byte gcd))
             (unless (zerop (mod (- b2 result) gcd))
