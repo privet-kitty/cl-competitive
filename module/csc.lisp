@@ -186,7 +186,7 @@ contains it."
   "Multiplies CSC and VECTOR and returns a resultant vector."
   (declare (vector vector))
   (let* ((m (csc-m csc))
-         (n (csc-n csc))
+         (n (length vector))
          (colstarts (csc-colstarts csc))
          (rows (csc-rows csc))
          (values (csc-values csc))
