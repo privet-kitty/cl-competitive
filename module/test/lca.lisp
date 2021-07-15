@@ -4,10 +4,6 @@
 (in-package :cp/test/lca)
 (in-suite base-suite)
 
-;; (defun make-tree (n &optional state)
-;;   (let ((state (or state *random-state*)))
-;;     (make-random-tree n :state state)))
-
 (defun %tree-jump (graph start end delta)
   (labels ((dfs (v parent path)
              (if (eql v end)
@@ -54,3 +50,25 @@
     (is (equalp #(0 0 0 1 3 0 1 2 0 2) (lca-depths table)))
     (signals two-vertices-disconnected-error (lca-get-lca table 0 1))
     (signals two-vertices-disconnected-error (lca-distance table 1 2))))
+
+(test lca/random
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil))
+    (loop for size from 1 to 20
+          for graph = (make-random-tree size)
+          for lcat = (make-lca-table graph)
+          do (dotimes (u size)
+               (dotimes (v size)
+                 (let ((dist (lca-distance lcat u v)))
+                   (dotimes (delta (+ dist 1))
+                     (is (= (lca-jump lcat u v delta)
+                            (%tree-jump graph u v delta))))))))
+    (dotimes (_ 100)
+      (let* ((graph (make-random-tree 10))
+             (lcat (make-lca-table graph)))
+        (dotimes (u 10)
+          (dotimes (v 10)
+            (let ((dist (lca-distance lcat u v)))
+              (dotimes (delta (+ dist 1))
+                (is (= (lca-jump lcat u v delta)
+                       (%tree-jump graph u v delta)))))))))))
