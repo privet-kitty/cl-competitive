@@ -1,5 +1,5 @@
 (defpackage :cp/test/scc
-  (:use :cl :fiveam :cp/scc :cp/random-graph)
+  (:use :cl :fiveam :cp/scc :cp/random-graph :cp/adjacent-duplicates)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/scc)
 (in-suite base-suite)
@@ -117,6 +117,13 @@ REVGRAPH := NIL | reversed graph of GRAPH"
         (return-from sorted-p nil))))
   t)
 
+(defun simple-p (list)
+  (declare (optimize (speed 3))
+           (inline sort sb-impl::stable-sort-list))
+  (let ((list (sort (copy-list list)
+                    (lambda (i j) (< (the fixnum i) (the fixnum j))))))
+    (equal list (delete-adjacent-duplicates (copy-list list)))))
+
 (test scc/random
   (let ((*test-dribble* nil)
         (*random-state* (sb-ext:seed-random-state 0)))
@@ -128,4 +135,6 @@ REVGRAPH := NIL | reversed graph of GRAPH"
              (cgraph2 (make-condensed-graph scc2)))
         (is (scc= scc1 scc2))
         (is (sorted-p cgraph1))
-        (is (sorted-p cgraph2))))))
+        (is (sorted-p cgraph2))
+        (is (every #'simple-p cgraph1))
+        (is (every #'simple-p cgraph2))))))
