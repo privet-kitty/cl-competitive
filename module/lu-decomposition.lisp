@@ -1,7 +1,7 @@
 (defpackage :cp/lu-decomposition
   (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
-  (:export #:lud-base #:lud-eta #:lu-factor
+  (:export #:lud #:lud-eta #:lu-factor
            #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
            #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud
@@ -21,7 +21,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
 
-(defstruct (lud-base (:conc-name lud-))
+(defstruct (lud (:conc-name lud-))
   (m nil :type (mod #.array-dimension-limit))
   ;; lower triangular matrix
   (lower nil :type csc)
@@ -307,36 +307,36 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
              (tupper (make-csc m m upper-nz tupper-colstarts tupper-rows tupper-values))
              (tlower (csc-transpose lower))
              (upper (csc-transpose tupper)))
-        (make-lud-base :m m
-                       :lower lower
-                       :tlower tlower
-                       :upper upper
-                       :tupper tupper
-                       :diagu diagu
-                       :rank rank
-                       :colperm colperm
-                       :icolperm icolperm
-                       :rowperm rowperm
-                       :irowperm irowperm)))))
+        (make-lud :m m
+                  :lower lower
+                  :tlower tlower
+                  :upper upper
+                  :tupper tupper
+                  :diagu diagu
+                  :rank rank
+                  :colperm colperm
+                  :icolperm icolperm
+                  :rowperm rowperm
+                  :irowperm irowperm)))))
 
-(defun dense-solve! (lud-base y)
+(defun dense-solve! (lud y)
   "Solves LUx = y and stores the solution to Y. The consequence is undefined
 when it is infeasible."
   (declare (optimize (speed 3))
            (fvec y))
-  (let* ((m (lud-m lud-base))
-         (irowperm (lud-irowperm lud-base))
-         (colperm (lud-colperm lud-base))
-         (lower (lud-lower lud-base))
+  (let* ((m (lud-m lud))
+         (irowperm (lud-irowperm lud))
+         (colperm (lud-colperm lud))
+         (lower (lud-lower lud))
          (lower-colstarts (csc-colstarts lower))
          (lower-rows (csc-rows lower))
          (lower-values (csc-values lower))
-         (tupper (lud-tupper lud-base))
+         (tupper (lud-tupper lud))
          (tupper-colstarts (csc-colstarts tupper))
          (tupper-rows (csc-rows tupper))
          (tupper-values (csc-values tupper))
-         (diagu (lud-diagu lud-base))
-         (rank (lud-rank lud-base))
+         (diagu (lud-diagu lud))
+         (rank (lud-rank lud))
          (tmp (make-array m :element-type 'csc-float)))
     (dotimes (i m)
       (setf (aref tmp i) (aref y i)))
@@ -362,7 +362,7 @@ when it is infeasible."
     y))
 
 (defstruct (lud-eta (:constructor %make-lud-eta))
-  (lud nil :type lud-base)
+  (lud nil :type lud)
   (count 0 :type (mod #.array-dimension-limit))
   (nz 0 :type (mod #.array-dimension-limit))
   ;; This vector stores the leaving columns of each pivotting. Note that this

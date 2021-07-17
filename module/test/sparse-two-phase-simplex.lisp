@@ -122,11 +122,11 @@
                                     always (>= x -1d-8)))))))))))))))
 
 (defun test* ()
-  (let ((m 1000)
-        (n 1000)
-        (rate 0.02d0)
+  (let ((m 400)
+        (n 300)
+        (rate 0.05d0)
         (*random-state* (sb-ext:seed-random-state 0)))
-    (dotimes (_ 2)
+    (dotimes (_ 5)
       (print _)
       (let ((coo (make-coo m n))
             (b (make-array m :element-type 'double-float :initial-element 0d0))
@@ -152,11 +152,11 @@
                       (obj2 (loop for x across prim
                                   for coef across c
                                   sum (* x coef))))
-                  (assert (nearly= 1d-8 obj obj2))
+                  (assert (nearly= 1d-5 obj obj2))
                   (dotimes (i (length prim-slack))
                     (incf (aref lhs i) (aref prim-slack i)))
-                  (assert (nearly-equalp 1d-8 lhs b))
+                  (assert (nearly-equalp 1d-5 lhs b))
                   (assert (loop for x across prim
-                                always (>= x -1d-8)))
+                                always (>= x -1d-5)))
                   (assert (loop for x across prim-slack
-                                always (>= x -1d-8)))))))))))
+                                always (>= x -1d-5)))))))))))
