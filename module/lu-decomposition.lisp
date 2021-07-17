@@ -1,5 +1,5 @@
 (defpackage :cp/lu-decomposition
-  (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset #:cp/rdtscp)
+  (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset #:cp/rdtscp #:cp/extend-vector)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:export #:lud #:lud-eta #:lu-factor
            #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
@@ -16,10 +16,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 (defconstant +eps+ (coerce 1d-14 'csc-float))
 (defconstant +epsnum+ (coerce 1d-9 'csc-float))
-
-(declaim (inline %power-of-two-ceiling))
-(defun %power-of-two-ceiling (x)
-  (ash 1 (integer-length (- x 1))))
 
 (defstruct (lud (:conc-name lud-))
   (m nil :type (mod #.array-dimension-limit))
@@ -39,23 +35,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (rowperm nil :type (simple-array fixnum (*)))
   (irowperm nil :type (simple-array fixnum (*))))
 
-(defun extend-vector (vector size)
-  (declare (optimize (speed 3))
-           ((mod #.array-dimension-limit) size)
-           (vector vector))
-  (let ((new-size (%power-of-two-ceiling (max size 1))))
-    (declare ((mod #.array-dimension-limit) new-size))
-    (if (< (length vector) new-size)
-        (adjust-array vector new-size)
-        vector)))
-
-(define-modify-macro extend-vectorf (new-size)
-  (lambda (vector new-size)
-    (declare ((mod #.array-dimension-limit) new-size))
-    (if (< (length vector) new-size)
-        (extend-vector vector new-size)
-        vector)))
-
 (defmacro vector-set* (vector index new-element)
   (let ((i (gensym))
         (elm (gensym)))
@@ -70,6 +49,10 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (deftype fvec () '(simple-array csc-float (*)))
 
 (defconstant +nan+ -1)
+
+(declaim (inline %power-of-two-ceiling))
+(defun %power-of-two-ceiling (x)
+  (ash 1 (integer-length (- x 1))))
 
 (defun lu-factor (matrix basis)
   (declare (optimize (speed 3))
