@@ -310,7 +310,7 @@ variables, and values of dual slack variables."
               ;; #>basic-flag
               (add-eta! lude col-out dx)
               (when (refactor-p lude col-out)
-                (setq lude (make-lud-eta (lu-factor mat basics)))))))))))
+                (setq lude (refactor mat basics))))))))))
 
 ;; (let* ((mat (make-csc-from-array #2a((1d0 0d0 2d0) (0d0 1d0 2d0))))
 ;;        (b #a((2) double-float 2d0 2d0))
