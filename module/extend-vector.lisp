@@ -20,10 +20,10 @@
         vector)))
 
 (defconstant +not-supplied+ (if (boundp '+not-supplied+)
-                                +not-supplied+
+                                (symbol-value '+not-supplied+)
                                 (make-symbol "NOT-SUPPLIED")))
 
-(define-modify-macro extend-vectorf (new-size &optional (initial-element +not-supplied+))
+(define-modify-macro extend-vectorf (new-size &optional (initial-element '+not-supplied+))
   (lambda (vector new-size initial-element)
     (declare ((mod #.array-dimension-limit) new-size))
     (if (< (length vector) new-size)
