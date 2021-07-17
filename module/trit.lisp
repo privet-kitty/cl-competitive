@@ -15,7 +15,7 @@
 
 (declaim ((simple-array uint (*)) *power3*))
 (sb-ext:define-load-time-global
-    *power3* (make-array +n-word-trits+ :element-type 'uint))
+    *power3* (make-array (+ 1 +n-word-trits+) :element-type 'uint))
 (dotimes (i (length *power3*))
   (setf (aref *power3* i) (expt 3 i)))
 
@@ -86,8 +86,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (locally (declare (sb-ext:muffle-conditions warning))
     (define-source-transform ldt (spec int &environment env)
-      (block ldt ;; source-transform is not enclosed with a block of the same
-                 ;; name before SBCL 1.3.8.
+      (block ldt ; source-transform is not enclosed with a block of the same
+                 ; name before SBCL 1.3.8.
         (labels ((pass () (return-from ldt (values nil t))))
           (let ((spec (handler-case (sb-int:%macroexpand spec env)
                         (error () (pass)))))
