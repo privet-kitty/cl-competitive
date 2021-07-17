@@ -169,6 +169,7 @@
   (:import-from :cp/test/trie)
   (:import-from :cp/test/triemap)
   (:import-from :cp/test/trisect)
+  (:import-from :cp/test/trit)
   (:import-from :cp/test/two-phase-simplex)
   (:import-from :cp/test/tzcount)
   (:import-from :cp/test/undoable-disjoint-set)
