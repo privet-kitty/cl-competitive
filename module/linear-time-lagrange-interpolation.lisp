@@ -1,6 +1,10 @@
 (defpackage :cp/linear-time-lagrange-interpolation
   (:use :cl :cp/binom-mod-prime :cp/mod-power :cp/mod-inverse)
-  (:export #:lagrange-interpolation #:lagrange-interpolation0))
+  (:export #:lagrange-interpolation #:lagrange-interpolation0)
+  (:documentation "Provides linear-time Lagrange interpolation over a finite
+field. Input values must comprise an arithmetic progression.
+
+Please note that here CP/BINOM-MOD-PRIME:+BINOM-MOD+ is used for a modulus."))
 (in-package :cp/linear-time-lagrange-interpolation)
 
 ;; (lagrange-interpolation #(-5 -1 3 7 11) #(10 7 0 -8 13) (+ 7 (expt 10 9)))

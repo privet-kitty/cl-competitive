@@ -1,18 +1,20 @@
 (defpackage :cp/integer-hash
   (:use :cl)
-  (:export #:%get-time-since-epoch #:integer-hash))
-(in-package :cp/integer-hash)
+  (:export #:%get-time-since-epoch #:integer-hash)
+  (:documentation "Provides integer hash function.
 
-;; Reference:
-;; https://codeforces.com/blog/entry/62393
-;; http://xoshiro.di.unimi.it/splitmix64.c
+Reference:
+https://codeforces.com/blog/entry/62393
+http://xoshiro.di.unimi.it/splitmix64.c
+"))
+(in-package :cp/integer-hash)
 
 ;; May be used for seeding random state at compile-time
 (declaim (ftype (function * (values (unsigned-byte 62) &optional))
                 %get-time-since-epoch))
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun %get-time-since-epoch ()
-    "Returns timeeconds since Unix epoch."
+    "Returns time in seconds since Unix epoch."
     #+sbcl (multiple-value-bind (sec microsec) (sb-ext:get-time-of-day)
              (+ (* sec #.(expt 10 6)) microsec))
     ;; See https://lisptips.com/post/11649360174/the-common-lisp-and-unix-epochs
