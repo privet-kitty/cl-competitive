@@ -6,6 +6,11 @@
   (:documentation "Provides two-phase (dual-then-primal) simplex method for
 sparse LP, using Dantzig's pivot rule.
 
+Usage procedure:
+1. MAKE-SPARSE-LP
+2. SPARSE-DUAL-PRIMAL!
+3. SRARSE-LP-RESTORE
+
 Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/sparse-two-phase-simplex)
@@ -54,7 +59,12 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
 (defun make-sparse-lp (a b c &optional (add-slack t))
-  "Makes LP from sparse matrix: max. c'x subject to Ax <= b, x >= 0."
+  "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
+c'x subject to Ax <= b, x >= 0.
+
+This function translates a given LP to an equality form Ax + w = b by adding
+slack variables. If you want to give an equality form directly, just disable
+ADD-SLACK."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
