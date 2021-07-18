@@ -1,9 +1,9 @@
-(defpackage :cp/test/lu-decomposition
-  (:use :cl :fiveam :cp/lu-decomposition :cp/csc :cp/gemm :cp/test/nearly-equal
+(defpackage :cp/test/lud
+  (:use :cl :fiveam :cp/lud :cp/csc :cp/gemm :cp/test/nearly-equal
         :cp/lp-test-tool)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/csc #:csc-float))
-(in-package :cp/test/lu-decomposition)
+(in-package :cp/test/lud)
 (in-suite base-suite)
 
 (test lu-factor/hand

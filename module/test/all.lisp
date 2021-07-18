@@ -91,7 +91,7 @@
   (:import-from :cp/test/log-ceil)
   (:import-from :cp/test/log-prefix-p)
   (:import-from :cp/test/logreverse)
-  (:import-from :cp/test/lu-decomposition)
+  (:import-from :cp/test/lud)
   (:import-from :cp/test/make-array-on-vector)
   (:import-from :cp/test/manhattan-fnn)
   (:import-from :cp/test/map-permutations)

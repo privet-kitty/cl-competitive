@@ -1,7 +1,7 @@
 (defpackage :cp/sparse-two-phase-simplex
-  (:use :cl :cp/csc :cp/lu-decomposition)
+  (:use :cl :cp/csc :cp/lud)
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
-  (:import-from :cp/lu-decomposition #:vector-set* #:extend-vectorf)
+  (:import-from :cp/lud #:vector-set* #:extend-vectorf)
   (:export #:make-sparse-lp #:sparse-primal! #:sparse-dual! #:sparse-lp-restore)
   (:documentation "Provides two-phase (dual-then-primal) simplex method for
 sparse LP, using Dantzig's pivot rule.

@@ -1,4 +1,4 @@
-(defpackage :cp/lu-decomposition
+(defpackage :cp/lud
   (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset #:cp/rdtscp #:cp/extend-vector)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:export #:lud #:lud-eta #:lu-factor
@@ -8,9 +8,12 @@
            #:refactor #:refactor-p #:*refactor-threshold* #:*refactor-by-time*
            #:gauss-eta! #:gauss-eta-transposed!
            #:sparse-solve! #:sparse-solve-transposed!)
-  (:documentation "Reference:
+  (:documentation "Provides LU decomposition for sparse matrix. This module is
+served for simplex method.
+
+Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
-(in-package :cp/lu-decomposition)
+(in-package :cp/lud)
 
 (defconstant +eps+ (coerce 1d-14 'csc-float))
 (defconstant +epsnum+ (coerce 1d-9 'csc-float))
@@ -57,7 +60,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
            (vector basis))
   ;; B: submatrix of MATRIX w.r.t. BASIS
   ;; BT: transposition of B
-  ;; #>matrix
   (let* ((m (csc-m matrix))
          (colstarts (csc-colstarts matrix))
          (rows (csc-rows matrix))
@@ -404,8 +406,9 @@ when it is infeasible."
          (let ((,timedelta (ldb (byte 64 0) (- (read-tsc) ,start-time))))
            (setf (lud-eta-cumtime ,lude)
                  (ldb (byte 64 0) (+ (lud-eta-cumtime ,lude) ,timedelta))))))))
-;; temporary storage
-(defconstant +initial-size+ 16)
+
+(defconstant +initial-size+ 16
+  "Is an initial size of temporary storage.")
 
 (declaim (fvec *gauss-eta-values*)
          (ivec *gauss-eta-tags* *gauss-eta-rows*)
