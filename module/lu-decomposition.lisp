@@ -12,8 +12,6 @@
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/lu-decomposition)
 
-;; NOTE: Incomplete
-
 (defconstant +eps+ (coerce 1d-14 'csc-float))
 (defconstant +epsnum+ (coerce 1d-9 'csc-float))
 
@@ -741,40 +739,3 @@ when it is infeasible."
                         (floor (lud-eta-prev-cumtime lud-eta) (- count 1)))))
       (setf (lud-eta-prev-cumtime lud-eta)
             (lud-eta-cumtime lud-eta)))))
-
-;; (defparameter *mat56* #a((5 6) double-float
-;;                          (2d0 0d0 4d0 0d0 -2d0 1d0)
-;;                          (3d0 1d0 0d0 1d0 0d0 2d0)
-;;                          (-1d0 0d0 -1d0 0d0 -2d0 3d0)
-;;                          (0d0 -1d0 0d0 0d0 -6d0 0d0)
-;;                          (0d0 0d0 1d0 0d0 4d0 0d0)))
-
-;; (defparameter *new-mat* #a((5 6) double-float
-;;                            (2d0 0d0 4d0 0d0 -2d0 5d0)
-;;                            (3d0 1d0 0d0 1d0 0d0 0d0)
-;;                            (-1d0 0d0 -1d0 0d0 -2d0 0d0)
-;;                            (0d0 -1d0 0d0 0d0 -6d0 0d0)
-;;                            (0d0 0d0 1d0 0d0 4d0 -1d0)))
-
-;; (defparameter *mat1* #a((5 5) double-float
-;;                         (2d0 0d0 4d0 0d0 -2d0)
-;;                         (3d0 1d0 0d0 1d0 0d0)
-;;                         (-1d0 0d0 -1d0 0d0 -2d0)
-;;                         (0d0 -1d0 0d0 0d0 -6d0)
-;;                         (0d0 0d0 1d0 0d0 4d0)))
-
-;; (defparameter *mat2* #a((5 5) double-float
-;;                         (2d0 0d0 4d0 0d0 1d0)
-;;                         (3d0 1d0 0d0 1d0 2d0)
-;;                         (-1d0 0d0 -1d0 0d0 3d0)
-;;                         (0d0 -1d0 0d0 0d0 0d0)
-;;                         (0d0 0d0 1d0 0d0 0d0)))
-
-;; #a((5) double-float 7d0 -2d0 0d0 3d0 0d0)
-;; #(-1.0d0 -0.0d0 2.0d0 1.0d0 -0.5d0) mat1
-;; #(3.0d0 -3.0d0 0.0d0 -10.0d0 1.0d0) mat2
-
-;; (let ((lude (make-lud-eta (lu-factor (make-csc-from-array cp/lu-decomposition::*new-mat*)
-;;                                      #(0 1 2 3 4)))))
-;;   (add-eta! lude 2 (make-sparse-vector-from #(-1d0 0d0 2d0 1d0 -0.5d0)))
-;;   (sparse-solve! lude (make-sparse-vector-from #(5d0 0d0 0d0 0d0 -1d0))))

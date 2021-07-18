@@ -2,7 +2,7 @@
   (:use :cl :cp/csc :cp/lu-decomposition)
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lu-decomposition #:vector-set* #:extend-vectorf)
-  (:export #:make-sparse-lp #:sparse-primal! #:sparse-lp-restore)
+  (:export #:make-sparse-lp #:sparse-primal! #:sparse-dual! #:sparse-lp-restore)
   (:documentation "Provides two-phase (dual-then-primal) simplex method for
 sparse LP, using Dantzig's pivot rule.
 
@@ -53,10 +53,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
-;; (+ (max (aref c j) +one+)
-;;    (random +one+))
-
 (defun make-sparse-lp (a b c &optional (add-slack t))
+  "Makes LP from sparse matrix: max. c'x subject to Ax <= b, x >= 0."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
@@ -130,8 +128,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
                   res index)))))
     res))
 
-(defconstant +max-iter+ 1000000)
-
 (defmacro dbg (&rest forms)
   (declare (ignorable forms))
   #+swank (if (= (length forms) 1)
@@ -139,6 +135,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
               `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
 
 (defconstant +initial-size+ 16)
+
 (declaim ((simple-array csc-float (*)) *tmp-values*)
          ((simple-array fixnum (*)) *tmp-tags* *tmp-rows*)
          ((integer 0 #.most-positive-fixnum) *tmp-tag*))
@@ -225,7 +222,13 @@ variables, and values of dual slack variables."
             (subseq x n)
             (subseq y 0 n))))
 
+;; (+ (max (aref c j) +one+)
+;;    (random +one+))
+
 (defun sparse-primal! (sparse-lp)
+  "Applies primal simplex method to SPARSE-LP and returns the terminal state:
+:optimal or :unbounded."
+  (declare (optimize (speed 3)))
   (let* ((m (sparse-lp-m sparse-lp))
          (n (sparse-lp-n sparse-lp))
          (x-basic (sparse-lp-x-basic sparse-lp))
@@ -249,11 +252,11 @@ variables, and values of dual slack variables."
                       (tmp-indices (sparse-vector-indices tmp))
                       (tmp-nz (sparse-vector-nz tmp)))
       (loop
-        ;; #>basics
-        ;; #>lude
+        ;; find entering column
         (let* ((col-in (pick-negative y-nonbasic)))
           (unless col-in
             (return :optimal))
+          ;; dx_B := B^(-1)Ne_j (j = col-in)
           (let ((acolstarts (csc-colstarts mat))
                 (arows (csc-rows mat))
                 (avalues (csc-values mat))
@@ -264,18 +267,18 @@ variables, and values of dual slack variables."
                            (aref dx-indices i) (aref arows k))
                   finally (setq dx-nz i)))
           (sparse-solve! lude dx)
-          ;; #>dx
+          ;; find leaving column
           (let ((col-out (ratio-test x-basic dx)))
             (unless col-out
               (return :unbounded))
+            ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
             (setf (aref tmp-values 0) (- +one+)
                   (aref tmp-indices 0) col-out
                   tmp-nz 1)
             (sparse-solve-transposed! lude tmp)
-            ;; #>tmp
             (tmat-times-vec! tmat tmp basic-flag dy)
-            ;; t = x_i/dx_i
-            ;; s = y_j/dy_j
+            ;; t := x_i/dx_i
+            ;; s := y_j/dy_j
             (let ((rate-t (loop for k below dx-nz
                                 when (= (aref dx-indices k) col-out)
                                 do (return (/ (aref x-basic col-out)
@@ -286,10 +289,10 @@ variables, and values of dual slack variables."
                                 do (return (/ (aref y-nonbasic col-in)
                                               (aref dy-values k)))
                                 finally (error "Huh?"))))
-              ;; y_N = y_N - s dy_N
-              ;; y_i = s
-              ;; x_B = x_B - t dx_B
-              ;; x_j = t
+              ;; y_N := y_N - s dy_N
+              ;; y_i := s
+              ;; x_B := x_B - t dx_B
+              ;; x_j := t
               (dotimes (k dy-nz)
                 (let ((j (aref dy-indices k)))
                   (decf (aref y-nonbasic j) (* rate-s (aref dy-values k)))))
@@ -305,9 +308,93 @@ variables, and values of dual slack variables."
                       (aref nonbasics col-in) i
                       (aref basic-flag i) (lognot col-in)
                       (aref basic-flag j) col-out))
-              ;; #>basics
-              ;; #>nonbasics
-              ;; #>basic-flag
+              (add-eta! lude col-out dx)
+              (when (refactor-p lude col-out)
+                (setq lude (refactor mat basics))))))))))
+
+(defun sparse-dual! (sparse-lp)
+  "Applies dual simplex method to SPARSE-LP and returns the terminal state:
+:optimal or :infeasible."
+  (declare (optimize (speed 3)))
+  (let* ((m (sparse-lp-m sparse-lp))
+         (n (sparse-lp-n sparse-lp))
+         (x-basic (sparse-lp-x-basic sparse-lp))
+         (y-nonbasic (sparse-lp-y-nonbasic sparse-lp))
+         (basics (sparse-lp-basics sparse-lp))
+         (nonbasics (sparse-lp-nonbasics sparse-lp))
+         (basic-flag (sparse-lp-basic-flag sparse-lp))
+         (mat (sparse-lp-mat sparse-lp))
+         (tmat (sparse-lp-tmat sparse-lp))
+         (dx (make-sparse-vector m))
+         (dy (make-sparse-vector n))
+         (tmp (make-sparse-vector m)))
+    (symbol-macrolet ((lude (sparse-lp-lude sparse-lp))
+                      (dx-values (sparse-vector-values dx))
+                      (dx-indices (sparse-vector-indices dx))
+                      (dx-nz (sparse-vector-nz dx))
+                      (dy-values (sparse-vector-values dy))
+                      (dy-indices (sparse-vector-indices dy))
+                      (dy-nz (sparse-vector-nz dy))
+                      (tmp-values (sparse-vector-values tmp))
+                      (tmp-indices (sparse-vector-indices tmp))
+                      (tmp-nz (sparse-vector-nz tmp)))
+      (loop
+        ;; find leaving column
+        (let ((col-out (pick-negative x-basic)))
+          (unless col-out
+            (return :optimal))
+          ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
+          (setf (aref tmp-values 0) (- +one+)
+                (aref tmp-indices 0) col-out
+                tmp-nz 1)
+          (sparse-solve-transposed! lude tmp)
+          (tmat-times-vec! tmat tmp basic-flag dy)
+          ;; find entering column
+          (let ((col-in (ratio-test y-nonbasic dy)))
+            (unless col-in
+              (return :infeasible))
+            ;; dx_B := B^(-1)Ne_j (j = col-in)
+            (let ((acolstarts (csc-colstarts mat))
+                  (arows (csc-rows mat))
+                  (avalues (csc-values mat))
+                  (j (aref nonbasics col-in)))
+              (loop for i from 0
+                    for k from (aref acolstarts j) below (aref acolstarts (+ j 1))
+                    do (setf (aref dx-values i) (aref avalues k)
+                             (aref dx-indices i) (aref arows k))
+                    finally (setq dx-nz i)))
+            (sparse-solve! lude dx)
+            ;; t := x_i/dx_i
+            ;; s := y_j/dy_j
+            (let ((rate-t (loop for k below dx-nz
+                                when (= (aref dx-indices k) col-out)
+                                do (return (/ (aref x-basic col-out)
+                                              (aref dx-values k)))
+                                finally (error "Huh?")))
+                  (rate-s (loop for k below dy-nz
+                                when (= (aref dy-indices k) col-in)
+                                do (return (/ (aref y-nonbasic col-in)
+                                              (aref dy-values k)))
+                                finally (error "Huh?"))))
+              ;; y_N := y_N - s dy_N
+              ;; y_i := s
+              ;; x_B := x_B - t dx_B
+              ;; x_j := t
+              (dotimes (k dy-nz)
+                (let ((j (aref dy-indices k)))
+                  (decf (aref y-nonbasic j) (* rate-s (aref dy-values k)))))
+              (setf (aref y-nonbasic col-in) rate-s)
+              (dotimes (k dx-nz)
+                (let ((i (aref dx-indices k)))
+                  (decf (aref x-basic i) (* rate-t (aref dx-values k)))))
+              (setf (aref x-basic col-out) rate-t)
+              ;; Update basis
+              (let ((i (aref basics col-out))
+                    (j (aref nonbasics col-in)))
+                (setf (aref basics col-out) j
+                      (aref nonbasics col-in) i
+                      (aref basic-flag i) (lognot col-in)
+                      (aref basic-flag j) col-out))
               (add-eta! lude col-out dx)
               (when (refactor-p lude col-out)
                 (setq lude (refactor mat basics))))))))))

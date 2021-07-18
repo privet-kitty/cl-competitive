@@ -60,7 +60,7 @@
         (let* ((lp (make-sparse-lp csc b c-)))
           (is (eql :optimal (sparse-primal! lp))))))))
 
-(test sparse-primal!/random
+(test sparse-one-phase-simplex/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (labels
@@ -84,43 +84,81 @@
                        (when (< (random 1d0) rate)
                          (let ((val (float (- (random 20) 10) 1d0)))
                            (setf (aref mat i j) val
-                                 (aref mat-dual j i) val)))))
+                                 (aref mat-dual j i) (- val))))))
                    (dotimes (i m)
                      (setf (aref b i) (float (random 20) 1d0)))
                    (dotimes (j n)
                      (setf (aref c j) (float (- (random 20) 10) 1d0)))
-                   (let* ((csc (make-csc-from-array mat))
+                   (let* ((b- (map '(simple-array double-float (*)) #'- b))
+                          (c- (map '(simple-array double-float (*)) #'- c))
+                          (csc (make-csc-from-array mat))
                           (csc-dual (make-csc-from-array mat-dual))
                           (lp (make-sparse-lp csc b c))
-                          (result (sparse-primal! lp)))
-                     (if (eql result :optimal)
-                         (multiple-value-bind (obj prim dual prim-slack dual-slack)
-                             (sparse-lp-restore lp)
-                           ;; check primal
-                           (let ((lhs (csc-gemv csc prim))
-                                 (obj2 (loop for x across prim
-                                             for coef across c
-                                             sum (* x coef))))
-                             (is (nearly= 1d-8 obj obj2))
-                             (dotimes (i (length prim-slack))
-                               (incf (aref lhs i) (aref prim-slack i)))
-                             (is (nearly-equalp 1d-8 lhs b))
-                             (is (loop for x across prim
-                                       always (>= x -1d-8)))
-                             (is (loop for x across prim-slack
-                                       always (>= x -1d-8))))
-                           (let ((lhs (csc-gemv csc-dual dual))
-                                 (obj2 (loop for y across dual
-                                             for coef across b
-                                             sum (* y coef))))
-                             (dotimes (i (length dual-slack))
-                               (decf (aref lhs i) (aref dual-slack i)))
-                             (is (nearly= 1d-8 obj obj2))
-                             (is (nearly-equalp 1d-8 lhs c))
-                             (is (loop for x across dual
-                                       always (>= x -1d-8)))
-                             (is (loop for x across dual-slack
-                                       always (>= x -1d-8)))))))))))))
+                          (lp-dual (make-sparse-lp csc-dual c- b-))
+                          (result1 (sparse-primal! lp))
+                          (result2 (sparse-dual! lp-dual)))
+                     (is (or (and (eql result1 :optimal) (eql result2 :optimal))
+                             (and (eql result1 :unbounded) (eql result2 :infeasible))))
+                     ;; check sparse-primal!
+                     (when (eql result1 :optimal)
+                       (multiple-value-bind (obj prim dual prim-slack dual-slack)
+                           (sparse-lp-restore lp)
+                         ;; check primal
+                         (let ((lhs (csc-gemv csc prim))
+                               (obj2 (loop for x across prim
+                                           for coef across c
+                                           sum (* x coef))))
+                           (is (nearly= 1d-8 obj obj2))
+                           (dotimes (i (length prim-slack))
+                             (incf (aref lhs i) (aref prim-slack i)))
+                           (is (nearly-equalp 1d-8 lhs b))
+                           (is (loop for x across prim
+                                     always (>= x -1d-8)))
+                           (is (loop for x across prim-slack
+                                     always (>= x -1d-8))))
+                         ;; check dual
+                         (let ((lhs (csc-gemv csc-dual dual))
+                               (obj2 (loop for y across dual
+                                           for coef across b-
+                                           sum (* y coef))))
+                           (dotimes (i (length dual-slack))
+                             (incf (aref lhs i) (aref dual-slack i)))
+                           (is (nearly= 1d-8 obj (- obj2)))
+                           (is (nearly-equalp 1d-8 lhs c-))
+                           (is (loop for x across dual
+                                     always (>= x -1d-8)))
+                           (is (loop for x across dual-slack
+                                     always (>= x -1d-8))))))
+                     ;; check sparse-dual!
+                     (when (eql result2 :optimal)
+                       (multiple-value-bind (obj prim dual prim-slack dual-slack)
+                           (sparse-lp-restore lp-dual)
+                         ;; check primal
+                         (let ((lhs (csc-gemv csc-dual prim))
+                               (obj2 (loop for x across prim
+                                           for coef across b-
+                                           sum (* x coef))))
+                           (is (nearly= 1d-8 obj obj2))
+                           (dotimes (i (length prim-slack))
+                             (incf (aref lhs i) (aref prim-slack i)))
+                           (is (nearly-equalp 1d-8 lhs c-))
+                           (is (loop for x across prim
+                                     always (>= x -1d-8)))
+                           (is (loop for x across prim-slack
+                                     always (>= x -1d-8))))
+                         ;; check dual
+                         (let ((lhs (csc-gemv csc dual))
+                               (obj2 (loop for y across dual
+                                           for coef across c
+                                           sum (* y coef))))
+                           (dotimes (i (length dual-slack))
+                             (incf (aref lhs i) (aref dual-slack i)))
+                           (is (nearly= 1d-8 obj (- obj2)))
+                           (is (nearly-equalp 1d-8 lhs b))
+                           (is (loop for x across dual
+                                     always (>= x -1d-8)))
+                           (is (loop for x across dual-slack
+                                     always (>= x -1d-8)))))))))))))
       (let ((*refactor-threshold* 1))
         (proc))
       (let ((*refactor-threshold* 200)
