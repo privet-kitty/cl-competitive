@@ -65,7 +65,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defun correct-y-nonbasic! (lude y-nonbasic)
   (declare (ignore lude y-nonbasic)))
 
-(defun make-sparse-lp (a b c &optional (add-slack t))
+(defun make-sparse-lp (a b c &key (add-slack t))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
 
