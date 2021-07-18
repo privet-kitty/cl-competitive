@@ -58,6 +58,13 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 #+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
 
+(defun correct-x-basic! (lude x-basic)
+  (assert (zerop (lud-eta-count lude)))
+  (dense-solve! (lud-eta-lud lude) x-basic))
+
+(defun correct-y-nonbasic! (lude y-nonbasic)
+  (declare (ignore lude y-nonbasic)))
+
 (defun make-sparse-lp (a b c &optional (add-slack t))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
@@ -86,9 +93,8 @@ ADD-SLACK."
         (setf (aref basics i) (+ n i)
               (aref basic-flag (+ n i)) i
               (aref x-basic i) (aref b i)))
-      (let* ((lud (lu-factor a basics))
-             (lude (make-lud-eta lud)))
-        (dense-solve! lud x-basic)
+      (let* ((lude (refactor a basics)))
+        (correct-x-basic! lude x-basic)
         (%make-sparse-lp :m m :n n
                          :mat a :tmat a-transposed
                          :b b :c c

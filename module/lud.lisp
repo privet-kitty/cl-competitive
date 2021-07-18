@@ -4,7 +4,7 @@
   (:export #:lud #:lud-eta #:lu-factor
            #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
            #:lud-rank #:lud-colperm #:lud-icolperm #:lud-rowperm #:lud-irowperm #:lud-m
-           #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud
+           #:make-lud-eta #:dense-solve! #:add-eta! #:lud-eta-lud #:lud-eta-count
            #:refactor #:refactor-p #:*refactor-threshold* #:*refactor-by-time*
            #:gauss-eta! #:gauss-eta-transposed!
            #:sparse-solve! #:sparse-solve-transposed!)
@@ -722,7 +722,7 @@ when it is infeasible."
       y)))
 
 (declaim ((integer 0 #.most-positive-fixnum) *refactor-threshold*))
-(defparameter *refactor-threshold* 200)
+(defparameter *refactor-threshold* 100)
 (defparameter *refactor-by-time* t)
 
 (defun refactor-p (lud-eta leaving-col)
