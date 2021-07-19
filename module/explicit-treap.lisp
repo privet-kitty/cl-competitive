@@ -114,7 +114,8 @@ NOTE: please see cp/multiset if what you want is a multiset."))
 (defun treap-split (treap key &key (order #'<))
   "Destructively splits TREAP with reference to KEY and returns two treaps,
 the smaller sub-treap (< KEY) and the larger one (>= KEY)."
-  (declare (function order)
+  (declare (optimize (speed 3))
+           (function order)
            ((or null treap) treap))
   (if (null treap)
       (values nil nil)
@@ -307,6 +308,7 @@ way. If it is not given, the identity element is used."
                    node))))
     (build 0 size)))
 
+(declaim (inline treap-fold))
 (defun treap-fold (treap &key left right (order #'<))
   "Returns the sum (w.r.t. OP) of the half-open interval specified by the keys: [LEFT,
 RIGHT). If LEFT [RIGHT] is not given, it is assumed to be -inf [+inf]."
