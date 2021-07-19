@@ -57,8 +57,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (basic-flag nil :type (simple-array fixnum (*)))
   (lude nil :type lud-eta))
 
-#+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
-
 (defun correct-x-basic! (lude x-basic)
   (assert (zerop (lud-eta-count lude)))
   (dense-solve! (lud-eta-lud lude) x-basic))
@@ -173,12 +171,6 @@ directly, just disable ADD-SLACK."
                   res index)))))
     res))
 
-(defmacro dbg (&rest forms)
-  (declare (ignorable forms))
-  #+swank (if (= (length forms) 1)
-              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
-
 (defconstant +initial-size+ 16)
 
 (declaim ((simple-array csc-float (*)) *tmp-values*)
@@ -246,9 +238,10 @@ directly, just disable ADD-SLACK."
       res)))
 
 (defun sparse-lp-restore (sparse-lp)
-  "Restores the current solution of LP and returns five values: optimal
-objective value, primal solution, dual solution, values of primal slack
-variables, and values of dual slack variables."
+  "Restores the current solution of LP and returns five values: objective value,
+primal solution, dual solution, values of primal slack variables, and values of
+dual slack variables. (Note that they are not necessarily feasible solutions if
+the current dictionary is not optimal.)"
   (declare (optimize (speed 3)))
   (let* ((m (sparse-lp-m sparse-lp))
          (n (sparse-lp-n sparse-lp))
@@ -461,46 +454,3 @@ variables, and values of dual slack variables."
         (return-from sparse-dual-primal! state-dual))
       (correct-y-nonbasic! sparse-lp)
       (sparse-primal! sparse-lp))))
-
-;; (let* ((mat (cp/csc:make-csc-from-array #2a((-1d0 -1d0 -1d0) (2d0 -1d0 1d0))))
-;;        (b #a((2) double-float -2d0 1d0))
-;;        (c #a((3) double-float 2d0 -6d0 0d0))
-;;        (slp (cp/sparse-two-phase-simplex::make-sparse-lp mat b c)))
-;;   ;; #>slp
-;;   (cp/sparse-two-phase-simplex:sparse-dual-primal! slp))
-
-;; (let* ((mat (make-csc-from-array #2a((2d0 1d0 1d0 3d0) (1d0 3d0 1d0 2d0))))
-;;        (b #a((2) double-float 5d0 3d0))
-;;        (c #a((4) double-float 6d0 8d0 5d0 9d0))
-;;        (slp (cp/sparse-two-phase-simplex::make-sparse-lp mat b c)))
-;;   ;; #>slp
-;;   (cp/sparse-two-phase-simplex::sparse-primal! slp)
-;;   (cp/sparse-two-phase-simplex::sparse-lp-restore slp))
-
-;; (defun test ()
-;;   (let ((vec (make-sparse-vector-from #(1d0 0d0 2d0 0d0 -1d0)))
-;;         (tmat (make-csc-from-array #2a((1d0 2d0 3d0 4d0 7d0)
-;;                                        (6d0 7d0 8d0 9d0 10d0)
-;;                                        (11d0 12d0 13d0 14d0 15d0)
-;;                                        (16d0 17d0 18d0 19d00 20d0)
-;;                                        (21d0 22d0 23d0 24d0 25d0)
-;;                                        (100d0 0d0 100d0 1d0 1d0))))
-;;         (res (make-sparse-vector 5))
-;;         (basic-flag (coerce '(-1 -2 -4 -5 0 -3) '(simple-array fixnum (*)))))
-;;     (tmat-times-vec! tmat vec basic-flag res)))
-
-;; (let* ((mat (cp/csc:make-csc-from-array #2A((6.0d0 -2.0d0 -9.0d0)
-;;                                             (4.0d0 1.0d0 0.0d0))))
-;;        (b #a((2) double-float 5d0 15d0))
-;;        (c #a((3) double-float 4d0 2d0 -1d0))
-;;        (slp (cp/sparse-two-phase-simplex:make-sparse-lp mat b c)))
-;;   (cp/sparse-two-phase-simplex:sparse-primal! slp)
-;;   (cp/sparse-two-phase-simplex:sparse-lp-restore slp))
-
-;; (let* ((mat (cp/csc:make-csc-from-array #2A((8.0d0 0.0d0 -5.0d0)
-;;                                             (-7.0d0 6.0d0 8.0d0))))
-;;        (b #a((2) double-float 9.0d0 4.0d0))
-;;        (c #a((3) double-float 6.0d0 -7.0d0 6.0d0))
-;;        (slp (cp/sparse-two-phase-simplex:make-sparse-lp mat b c)))
-;;   (cp/sparse-two-phase-simplex:sparse-primal! slp)
-;;   (cp/sparse-two-phase-simplex:sparse-lp-restore slp))

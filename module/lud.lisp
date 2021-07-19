@@ -44,8 +44,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
        (extend-vectorf ,vector (+ 1 ,i))
        (setf (aref ,vector ,i) ,elm))))
 
-#+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
-
 (deftype ivec () '(simple-array fixnum (*)))
 (deftype fvec () '(simple-array csc-float (*)))
 
@@ -417,12 +415,6 @@ when it is infeasible."
 (defparameter *gauss-eta-tags* (make-array +initial-size+ :element-type 'fixnum))
 (defparameter *gauss-eta-tag* 1)
 (defparameter *gauss-eta-rows* (make-array +initial-size+ :element-type 'fixnum))
-
-(defmacro dbg (&rest forms)
-  (declare (ignorable forms))
-  #+swank (if (= (length forms) 1)
-              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
 
 (defun gauss-eta! (lud-eta xb)
   (declare (optimize (speed 3))

@@ -25,14 +25,6 @@
                                 (make-array 0 :element-type 'fixnum)
                                 (make-sparse-vector 0))))))
 
-#+swank (set-dispatch-macro-character #\# #\> #'cl-debug-print:debug-print-reader)
-
-(defmacro dbg (&rest forms)
-  (declare (ignorable forms))
-  #+swank (if (= (length forms) 1)
-              `(format *error-output* "~A => ~A~%" ',(car forms) ,(car forms))
-              `(format *error-output* "~A => ~A~%" ',forms `(,,@forms))))
-
 (test sparse-primal!
   ;; trival lp
   (let* ((b (make-array 0 :element-type 'double-float))
