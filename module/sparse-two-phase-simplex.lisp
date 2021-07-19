@@ -2,7 +2,8 @@
   (:use :cl :cp/csc :cp/lud)
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lud #:vector-set* #:extend-vectorf)
-  (:export #:make-sparse-lp #:sparse-primal! #:sparse-dual! #:sparse-lp-restore)
+  (:export #:make-sparse-lp #:sparse-primal! #:sparse-dual!
+           #:sparse-dual-primal! #:sparse-lp-restore)
   (:documentation "Provides two-phase (dual-then-primal) simplex method for
 sparse LP, using Dantzig's pivot rule.
 
@@ -62,16 +63,44 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (assert (zerop (lud-eta-count lude)))
   (dense-solve! (lud-eta-lud lude) x-basic))
 
-(defun correct-y-nonbasic! (lude y-nonbasic)
-  (declare (ignore lude y-nonbasic)))
+(defun correct-y-nonbasic! (sparse-lp)
+  (declare (optimize (speed 3)))
+  (let* ((lude (sparse-lp-lude sparse-lp))
+         (m (sparse-lp-m sparse-lp))
+         (n (sparse-lp-n sparse-lp))
+         (tmat (sparse-lp-tmat sparse-lp))
+         (c (sparse-lp-c sparse-lp))
+         (tmp (make-sparse-vector m))
+         (basics (sparse-lp-basics sparse-lp))
+         (nonbasics (sparse-lp-nonbasics sparse-lp))
+         (basic-flag (sparse-lp-basic-flag sparse-lp))
+         (y-nonbasic (sparse-lp-y-nonbasic sparse-lp))
+         (tmp-values (sparse-vector-values tmp))
+         (tmp-indices (sparse-vector-indices tmp)))
+    (symbol-macrolet ((tmp-nz (sparse-vector-nz tmp)))
+      (dotimes (i m)
+        (let ((coef (aref c (aref basics i))))
+          (when (> (abs coef) +eps1+)
+            (setf (aref tmp-values tmp-nz) coef
+                  (aref tmp-indices tmp-nz) i)
+            (incf tmp-nz))))
+      (sparse-solve-transposed! lude tmp)
+      (let* ((tmp (tmat-times-vec! tmat tmp basic-flag))
+             (tmp-values (sparse-vector-values tmp))
+             (tmp-indices (sparse-vector-indices tmp)))
+        (dotimes (j n)
+          (setf (aref y-nonbasic j) (- (aref c (aref nonbasics j)))))
+        (dotimes (k (sparse-vector-nz tmp))
+          (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
+    sparse-lp))
 
 (defun make-sparse-lp (a b c &key (add-slack t))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
 
 This function translates a given LP to an equality form Ax + w = b by adding
-slack variables. If you want to give an equality form directly, just disable
-ADD-SLACK."
+slack variables and changes A to (A E). If you want to give an equality form
+directly, just disable ADD-SLACK."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
@@ -162,10 +191,11 @@ ADD-SLACK."
 (defparameter *tmp-tag* 1)
 (defparameter *tmp-rows* (make-array +initial-size+ :element-type 'fixnum))
 
-(defun tmat-times-vec! (tmat vec basic-flag res)
+(defun tmat-times-vec! (tmat vec basic-flag &optional res)
   (declare (optimize (speed 3))
            (csc tmat)
-           (sparse-vector vec res)
+           (sparse-vector vec)
+           ((or null sparse-vector) res)
            ((simple-array fixnum (*)) basic-flag))
   (let ((m (csc-m tmat)))
     (extend-vectorf *tmp-values* m)
@@ -194,9 +224,10 @@ ADD-SLACK."
                          end (+ end 1)))
                  (incf (aref tmp-values row)
                        (* (aref vector-values k1) (aref tmat-values k2))))))
-    (let ((res-values (sparse-vector-values res))
-          (res-indices (sparse-vector-indices res))
-          (nz 0))
+    (let* ((res (or res (make-sparse-vector end)))
+           (res-values (sparse-vector-values res))
+           (res-indices (sparse-vector-indices res))
+           (nz 0))
       (declare ((simple-array csc-float (*)) res-values)
                ((simple-array fixnum (*)) res-indices)
                ((mod #.array-dimension-limit) nz))
@@ -210,9 +241,9 @@ ADD-SLACK."
                   nz (+ nz 1)))))
       (setf (sparse-vector-values res) res-values
             (sparse-vector-indices res) res-indices
-            (sparse-vector-nz res) nz))
-    (incf *tmp-tag*))
-  res)
+            (sparse-vector-nz res) nz)
+      (incf *tmp-tag*)
+      res)))
 
 (defun sparse-lp-restore (sparse-lp)
   "Restores the current solution of LP and returns five values: optimal
@@ -237,9 +268,6 @@ variables, and values of dual slack variables."
             (subseq y n)
             (subseq x n)
             (subseq y 0 n))))
-
-;; (+ (max (aref c j) +one+)
-;;    (random +one+))
 
 (defun sparse-primal! (sparse-lp)
   "Applies primal simplex method to SPARSE-LP and returns the terminal state:
@@ -415,13 +443,31 @@ variables, and values of dual slack variables."
               (when (refactor-p lude col-out)
                 (setq lude (refactor mat basics))))))))))
 
-;; (let* ((mat (make-csc-from-array #2a((1d0 0d0 2d0) (0d0 1d0 2d0))))
-;;        (b #a((2) double-float 2d0 2d0))
-;;        (c #a((3) double-float 1d0 2d0 0d0))
+(defun sparse-dual-primal! (sparse-lp)
+  "Applies two-phase simplex method to SPARSE-LP and returns the terminal state:
+:optimal, :unbounded, or :infeasible. "
+  (declare (optimize (speed 3)))
+  (let ((n (sparse-lp-n sparse-lp))
+        (nonbasics (sparse-lp-nonbasics sparse-lp))
+        (y-nonbasic (sparse-lp-y-nonbasic sparse-lp))
+        (c (sparse-lp-c sparse-lp)))
+    ;; Set all the coefficiets of objective to negative values.
+    (dotimes (j n)
+      (setf (aref y-nonbasic j)
+            (+ (max (aref c (aref nonbasics j)) +one+)
+               (random +one+))))
+    (let ((state-dual (sparse-dual! sparse-lp)))
+      (unless (eql state-dual :optimal)
+        (return-from sparse-dual-primal! state-dual))
+      (correct-y-nonbasic! sparse-lp)
+      (sparse-primal! sparse-lp))))
+
+;; (let* ((mat (cp/csc:make-csc-from-array #2a((-1d0 -1d0 -1d0) (2d0 -1d0 1d0))))
+;;        (b #a((2) double-float -2d0 1d0))
+;;        (c #a((3) double-float 2d0 -6d0 0d0))
 ;;        (slp (cp/sparse-two-phase-simplex::make-sparse-lp mat b c)))
 ;;   ;; #>slp
-;;   (cp/sparse-two-phase-simplex::sparse-primal! slp)
-;;   (cp/sparse-two-phase-simplex::sparse-lp-restore slp))
+;;   (cp/sparse-two-phase-simplex:sparse-dual-primal! slp))
 
 ;; (let* ((mat (make-csc-from-array #2a((2d0 1d0 1d0 3d0) (1d0 3d0 1d0 2d0))))
 ;;        (b #a((2) double-float 5d0 3d0))

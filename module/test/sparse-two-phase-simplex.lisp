@@ -60,6 +60,36 @@
         (let* ((lp (make-sparse-lp csc b c-)))
           (is (eql :optimal (sparse-primal! lp))))))))
 
+(defun check (mat b c mat-dual b-dual c-dual lp)
+  (multiple-value-bind (obj prim dual prim-slack dual-slack)
+      (sparse-lp-restore lp)
+    ;; check primal
+    (let ((lhs (csc-gemv mat prim))
+          (obj2 (loop for x across prim
+                      for coef across c
+                      sum (* x coef))))
+      (is (nearly= 1d-8 obj obj2))
+      (dotimes (i (length prim-slack))
+        (incf (aref lhs i) (aref prim-slack i)))
+      (is (nearly-equalp 1d-8 lhs b))
+      (is (loop for x across prim
+                always (>= x -1d-8)))
+      (is (loop for x across prim-slack
+                always (>= x -1d-8))))
+    ;; check dual
+    (let ((lhs (csc-gemv mat-dual dual))
+          (obj2 (loop for y across dual
+                      for coef across c-dual
+                      sum (* y coef))))
+      (dotimes (i (length dual-slack))
+        (incf (aref lhs i) (aref dual-slack i)))
+      (is (nearly= 1d-8 obj (- obj2)))
+      (is (nearly-equalp 1d-8 lhs b-dual))
+      (is (loop for x across dual
+                always (>= x -1d-8)))
+      (is (loop for x across dual-slack
+                always (>= x -1d-8))))))
+
 (test sparse-one-phase-simplex/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
@@ -101,69 +131,69 @@
                              (and (eql result1 :unbounded) (eql result2 :infeasible))))
                      ;; check sparse-primal!
                      (when (eql result1 :optimal)
-                       (multiple-value-bind (obj prim dual prim-slack dual-slack)
-                           (sparse-lp-restore lp)
-                         ;; check primal
-                         (let ((lhs (csc-gemv csc prim))
-                               (obj2 (loop for x across prim
-                                           for coef across c
-                                           sum (* x coef))))
-                           (is (nearly= 1d-8 obj obj2))
-                           (dotimes (i (length prim-slack))
-                             (incf (aref lhs i) (aref prim-slack i)))
-                           (is (nearly-equalp 1d-8 lhs b))
-                           (is (loop for x across prim
-                                     always (>= x -1d-8)))
-                           (is (loop for x across prim-slack
-                                     always (>= x -1d-8))))
-                         ;; check dual
-                         (let ((lhs (csc-gemv csc-dual dual))
-                               (obj2 (loop for y across dual
-                                           for coef across b-
-                                           sum (* y coef))))
-                           (dotimes (i (length dual-slack))
-                             (incf (aref lhs i) (aref dual-slack i)))
-                           (is (nearly= 1d-8 obj (- obj2)))
-                           (is (nearly-equalp 1d-8 lhs c-))
-                           (is (loop for x across dual
-                                     always (>= x -1d-8)))
-                           (is (loop for x across dual-slack
-                                     always (>= x -1d-8))))))
+                       (check csc b c csc-dual c- b- lp))
                      ;; check sparse-dual!
                      (when (eql result2 :optimal)
-                       (multiple-value-bind (obj prim dual prim-slack dual-slack)
-                           (sparse-lp-restore lp-dual)
-                         ;; check primal
-                         (let ((lhs (csc-gemv csc-dual prim))
-                               (obj2 (loop for x across prim
-                                           for coef across b-
-                                           sum (* x coef))))
-                           (is (nearly= 1d-8 obj obj2))
-                           (dotimes (i (length prim-slack))
-                             (incf (aref lhs i) (aref prim-slack i)))
-                           (is (nearly-equalp 1d-8 lhs c-))
-                           (is (loop for x across prim
-                                     always (>= x -1d-8)))
-                           (is (loop for x across prim-slack
-                                     always (>= x -1d-8))))
-                         ;; check dual
-                         (let ((lhs (csc-gemv csc dual))
-                               (obj2 (loop for y across dual
-                                           for coef across c
-                                           sum (* y coef))))
-                           (dotimes (i (length dual-slack))
-                             (incf (aref lhs i) (aref dual-slack i)))
-                           (is (nearly= 1d-8 obj (- obj2)))
-                           (is (nearly-equalp 1d-8 lhs b))
-                           (is (loop for x across dual
-                                     always (>= x -1d-8)))
-                           (is (loop for x across dual-slack
-                                     always (>= x -1d-8)))))))))))))
+                       (check csc-dual c- b- csc b c lp-dual)))))))))
       (let ((*refactor-threshold* 1))
         (proc))
       (let ((*refactor-threshold* 200)
             (*refactor-by-time* nil))
         (proc)))))
+
+(test sparse-two-phase-simplex/random
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil))
+    (labels
+        ((proc ()
+           (dolist (dim '((2 . 3) (10 . 10) (1 . 1) (10 . 3) (3 . 10)))
+             (dolist (rate '(0.1 0.5 0.9))
+               (dotimes (_ 200)
+                 (let* ((m (car dim))
+                        (n (cdr dim))
+                        (mat (make-array (list m n)
+                                         :element-type 'double-float
+                                         :initial-element 0d0))
+                        (mat-dual (make-array (list n m)
+                                              :element-type 'double-float
+                                              :initial-element 0d0))
+                        
+                        (b (make-array m :element-type 'double-float :initial-element 0d0))
+                        (c (make-array n :element-type 'double-float :initial-element 0d0)))
+                   (dotimes (i m)
+                     (dotimes (j n)
+                       (when (< (random 1d0) rate)
+                         (let ((val (float (- (random 20) 10) 1d0)))
+                           (setf (aref mat i j) val
+                                 (aref mat-dual j i) (- val))))))
+                   (dotimes (i m)
+                     (setf (aref b i) (float (- (random 20) 10) 1d0)))
+                   (dotimes (j n)
+                     (setf (aref c j) (float (- (random 20) 10) 1d0)))
+                   (let* ((b- (map '(simple-array double-float (*)) #'- b))
+                          (c- (map '(simple-array double-float (*)) #'- c))
+                          (csc (make-csc-from-array mat))
+                          (csc-dual (make-csc-from-array mat-dual))
+                          (lp (make-sparse-lp csc b c))
+                          (lp-dual (make-sparse-lp csc-dual c- b-))
+                          (result1 (sparse-dual-primal! lp))
+                          (result2 (sparse-dual-primal! lp-dual)))
+                     (is (or (and (eql result1 :optimal) (eql result2 :optimal))
+                             (and (eql result1 :unbounded) (eql result2 :infeasible))
+                             (and (eql result1 :infeasible) (eql result2 :unbounded))
+                             (and (eql result1 :infeasible) (eql result2 :infeasible))))
+                     ;; check sparse-primal!
+                     (when (eql result1 :optimal)
+                       (check csc b c csc-dual c- b- lp))
+                     ;; check sparse-dual!
+                     (when (eql result2 :optimal)
+                       (check csc-dual c- b- csc b c lp-dual)))))))))
+      (let ((*refactor-threshold* 1))
+        (proc))
+      (let ((*refactor-threshold* 200)
+            (*refactor-by-time* nil))
+        (proc)))))
+
 
 (defun test* ()
   (let ((m 500)
