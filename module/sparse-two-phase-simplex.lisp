@@ -3,7 +3,7 @@
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lud #:vector-set* #:extend-vectorf)
   (:export #:make-dictionary #:make-sparse-lp #:sparse-primal! #:sparse-dual!
-           #:sparse-dual-primal! #:sparse-lp-restore)
+           #:sparse-dual-primal! #:sparse-lp-restore #:sparse-lp-lude)
   (:documentation "Provides two-phase (dual-then-primal) simplex method for
 sparse LP, using Dantzig's pivot rule.
 
@@ -20,28 +20,25 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defconstant +eps2+ (coerce 1d-12 'csc-float))
 (defconstant +inf+ most-positive-double-float)
 
-(defun add-slack! (a c)
+(defun add-slack! (a)
   (declare (optimize (speed 3))
-           (csc a)
-           ((simple-array csc-float (*)) c))
+           (csc a))
   (symbol-macrolet ((m (csc-m a))
                     (n (csc-n a))
                     (colstarts (csc-colstarts a))
                     (rows (csc-rows a))
                     (values (csc-values a))
                     (nz (csc-nz a)))
-    (setq c (adjust-array c (the (mod #.array-dimension-limit) (+ n m))))
     ;; Add slack variable
     (loop for row below m
-          for col from n
+          for col of-type (mod #.array-dimension-limit) from n
           for k from (aref colstarts n)
-          do (setf (aref c col) +zero+)
-             (vector-set* values k +one+)
+          do (vector-set* values k +one+)
              (vector-set* rows k row)
              (vector-set* colstarts (+ col 1) (+ k 1))
              (incf nz)
           finally (setf n (+ n m)))
-    (values a c)))
+    a))
 
 (defstruct (dictionary (:constructor %make-dictionary))
   (m nil :type (mod #.array-dimension-limit))
@@ -137,21 +134,29 @@ which is currently basic.
           (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
     sparse-lp))
 
-;; NOTE: start from arbitrary dictionary is broken
 (defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
 
 This function translates a given LP to an equality form Ax + w = b by adding
 slack variables and changes A to (A E). If you want to give an equality form
-directly, just disable ADD-SLACK."
+directly, just disable ADD-SLACK.
+
+You can set DICTIONARY to an arbitrary initial dictionary, but please note that
+the consequence is undefined when it is rank-deficient."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
   (let* ((m (csc-m a))
          (n (if add-slack (csc-n a) (- (csc-n a) (csc-m a)))))
+    (assert (= m (length b)))
     (when add-slack
-      (setf (values a c) (add-slack! a c)))
+      (setq a (add-slack! a)))
+    ;; Add coefficients for basic variables
+    (unless (= (length c) (+ m n))
+      (assert (= n (length c)))
+      (setq c (adjust-array c (the (mod #.array-dimension-limit) (+ n m))
+                            :initial-element +zero+)))
     (let* ((x-basic (make-array m :element-type 'csc-float))
            (y-nonbasic (make-array n :element-type 'csc-float))
            (dictionary (or dictionary
