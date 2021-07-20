@@ -121,7 +121,7 @@ directly, just disable ADD-SLACK."
               (aref basic-flag (+ n i)) i
               (aref x-basic i) (aref b i)))
       (let* ((lude (refactor a basics)))
-        (correct-x-basic! lude x-basic)
+        ;; (correct-x-basic! lude x-basic)
         (%make-sparse-lp :m m :n n
                          :mat a :tmat a-transposed
                          :b b :c c
