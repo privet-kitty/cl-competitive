@@ -1,6 +1,6 @@
 (defpackage :cp/test/sparse-two-phase-simplex
   (:use :cl :fiveam :cp/sparse-two-phase-simplex :cp/test/nearly-equal
-        :cp/csc :cp/lud :cp/lp-test-tool)
+        :cp/csc :cp/lud :cp/lp-test-tool :cp/shuffle)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/sparse-two-phase-simplex #:tmat-times-vec!))
 (in-package :cp/test/sparse-two-phase-simplex)
@@ -98,7 +98,6 @@
                         (mat-dual (make-array (list n m)
                                               :element-type 'double-float
                                               :initial-element 0d0))
-                        
                         (b (make-array m :element-type 'double-float :initial-element 0d0))
                         (c (make-array n :element-type 'double-float :initial-element 0d0)))
                    (dotimes (i m)
@@ -133,6 +132,11 @@
             (*refactor-by-time* nil))
         (proc)))))
 
+(defun choose (vector k)
+  (let ((vector (copy-seq vector)))
+    (shuffle! vector)
+    (subseq vector 0 k)))
+
 (test sparse-two-phase-simplex/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
@@ -149,9 +153,11 @@
                         (mat-dual (make-array (list n m)
                                               :element-type 'double-float
                                               :initial-element 0d0))
-                        
                         (b (make-array m :element-type 'double-float :initial-element 0d0))
-                        (c (make-array n :element-type 'double-float :initial-element 0d0)))
+                        (c (make-array n :element-type 'double-float :initial-element 0d0))
+                        (cols (make-array (+ n m) :element-type 'fixnum)))
+                   (dotimes (i (length cols))
+                     (setf (aref cols i) i))
                    (dotimes (i m)
                      (dotimes (j n)
                        (when (< (random 1d0) rate)
@@ -162,7 +168,9 @@
                      (setf (aref b i) (float (- (random 20) 10) 1d0)))
                    (dotimes (j n)
                      (setf (aref c j) (float (- (random 20) 10) 1d0)))
-                   (let* ((b- (map '(simple-array double-float (*)) #'- b))
+                   (let* ((basics (choose cols m))
+                          (dictionary (make-dictionary m n basics))
+                          (b- (map '(simple-array double-float (*)) #'- b))
                           (c- (map '(simple-array double-float (*)) #'- c))
                           (csc (make-csc-from-array mat))
                           (csc-dual (make-csc-from-array mat-dual))
@@ -185,7 +193,6 @@
       (let ((*refactor-threshold* 200)
             (*refactor-by-time* nil))
         (proc)))))
-
 
 (defun test* ()
   (let ((m 500)

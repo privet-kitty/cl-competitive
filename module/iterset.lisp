@@ -110,9 +110,9 @@ effect. The behavior is undefined when duplicate keys are inserted."
   (when (%iterset-root iterset)
     (node-first (%iterset-root iterset))))
 
+(declaim (inline node-last))
 (defun node-last (node)
-  (declare (optimize (speed 3))
-           (node node))
+  (declare (node node))
   (loop while (%node-right node)
         do (setq node (%node-right node)))
   node)
@@ -153,7 +153,8 @@ argument."
 
 (defun node-next (node)
   "Returns the next node of NODE. Returns NIL instead if NODE is the last node."
-  (declare (node node))
+  (declare (optimize (speed 3))
+           (node node))
   (let ((key (%node-key node)))
     (if (%node-right node)
         (node-first (%node-right node))
@@ -166,7 +167,8 @@ argument."
 (defun node-prev (node)
   "Returns the previous node of NODE. Returns NIL instead if NODE is the first
 node."
-  (declare (node node))
+  (declare (optimize (speed 3))
+           (node node))
   (let ((key (%node-key node)))
     (if (%node-left node)
         (node-last (%node-left node))
