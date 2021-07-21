@@ -12,8 +12,8 @@
   (:documentation
    "Provides two kinds of simplex method for sparse LP:
 
-- two-phase (dual-then-primal) simplex method, using Dantzig's pivot rule.
-- TODO: parametric self-dual simplex method
+- two-phase (dual-then-primal) simplex method using Dantzig's pivot rule;
+- TODO: parametric self-dual simplex method.
 
 Usage procedure:
 1. MAKE-SPARSE-LP
@@ -66,6 +66,7 @@ which is currently basic.
   (declare (optimize (speed 3))
            (vector basics)
            ((mod #.array-dimension-limit) m n))
+  (assert (= m (length basics)))
   (let* ((basics (coerce basics '(simple-array fixnum (*))))
          (basic-flag (make-array (+ n m) :element-type 'fixnum :initial-element +nan+))
          (nonbasics (make-array n :element-type 'fixnum)))
