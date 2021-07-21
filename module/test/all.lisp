@@ -148,6 +148,8 @@
   (:import-from :cp/test/scc)
   (:import-from :cp/test/seek-line)
   (:import-from :cp/test/self-dual-simplex)
+  (:import-from :cp/test/sparse-simplex-common)
+  (:import-from :cp/test/sparse-two-phase-simplex)
   (:import-from :cp/test/ssp)
   (:import-from :cp/test/ssp-slow)
   (:import-from :cp/test/shuffle)

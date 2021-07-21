@@ -1,37 +1,18 @@
 (defpackage :cp/test/sparse-two-phase-simplex
-  (:use :cl :fiveam :cp/sparse-two-phase-simplex :cp/test/nearly-equal
-        :cp/csc :cp/lud :cp/lp-test-tool :cp/shuffle)
+  (:use :cl :fiveam :cp/sparse-two-phase-simplex :cp/sparse-simplex-common
+        :cp/test/nearly-equal :cp/csc :cp/lud :cp/lp-test-tool :cp/shuffle)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/sparse-two-phase-simplex #:tmat-times-vec!))
 (in-package :cp/test/sparse-two-phase-simplex)
 (in-suite base-suite)
 
-(test tmat-times-vec!
-  (let* ((vec (make-sparse-vector-from #(1d0 0d0 2d0 0d0 -1d0)))
-         (tmat (make-csc-from-array #2a((1d0 2d0 3d0 4d0 7d0)
-                                        (6d0 7d0 8d0 9d0 10d0)
-                                        (11d0 12d0 13d0 14d0 15d0)
-                                        (16d0 17d0 18d0 19d00 20d0)
-                                        (21d0 22d0 23d0 24d0 25d0)
-                                        (100d0 0d0 100d0 1d0 1d0))))
-         (res (make-sparse-vector 5))
-         (basic-flag (coerce '(-1 -2 -4 -5 0 -3) '(simple-array fixnum (*))))
-         (dense (sparse-vector-to-dense (tmat-times-vec! tmat vec basic-flag res))))
-    (is (nearly-equalp 1d-8 #(0d0 12d0 299d0 22d0 32d0) dense)))
-  (is (equalp #()
-              (sparse-vector-to-dense
-               (tmat-times-vec! (make-csc-from-array #2a())
-                                (make-sparse-vector 0)
-                                (make-array 0 :element-type 'fixnum)
-                                (make-sparse-vector 0))))))
-
-(test sparse-primal!
+(test slp-primal!
   ;; trival lp
   (let* ((b (make-array 0 :element-type 'double-float))
          (c (make-array 0 :element-type 'double-float))
          (lp (make-sparse-lp (make-csc-from-array #2a()) b c)))
-    (is (eql :optimal (sparse-primal! lp)))
-    (multiple-value-bind (obj prim dual prim-slack dual-slack) (sparse-lp-restore lp)
+    (is (eql :optimal (slp-primal! lp)))
+    (multiple-value-bind (obj prim dual prim-slack dual-slack) (slp-restore lp)
       (is (zerop obj))
       (is (equalp #() prim))
       (is (equalp #() dual))
@@ -43,18 +24,17 @@
       (let* ((mat (make-array (list m n) :element-type 'double-float :initial-element 0d0))
              (b (make-array m :element-type 'double-float :initial-element 0d0))
              (c+ (make-array n :element-type 'double-float :initial-element 1d0))
-             (c- (make-array n :element-type 'double-float :initial-element -1d0))
-             (csc (make-csc-from-array mat)))
+             (c- (make-array n :element-type 'double-float :initial-element -1d0)))
         (dotimes (i m)
           (setf (aref b i) (float (random 20) 1d0)))
-        (let* ((lp (make-sparse-lp csc b c+)))
-          (is (eql :unbounded (sparse-primal! lp))))
-        (let* ((lp (make-sparse-lp csc b c-)))
-          (is (eql :optimal (sparse-primal! lp))))))))
+        (let* ((lp (make-sparse-lp (make-csc-from-array mat) b c+)))
+          (is (eql :unbounded (slp-primal! lp))))
+        (let* ((lp (make-sparse-lp (make-csc-from-array mat) b c-)))
+          (is (eql :optimal (slp-primal! lp))))))))
 
 (defun check (mat b c mat-dual b-dual c-dual lp)
   (multiple-value-bind (obj prim dual prim-slack dual-slack)
-      (sparse-lp-restore lp)
+      (slp-restore lp)
     ;; check primal
     (let ((lhs (csc-gemv mat prim))
           (obj2 (loop for x across prim
@@ -116,8 +96,8 @@
                           (csc-dual (make-csc-from-array mat-dual))
                           (lp (make-sparse-lp csc b c))
                           (lp-dual (make-sparse-lp csc-dual c- b-))
-                          (result1 (sparse-primal! lp))
-                          (result2 (sparse-dual! lp-dual)))
+                          (result1 (slp-primal! lp))
+                          (result2 (slp-dual! lp-dual)))
                      (is (or (and (eql result1 :optimal) (eql result2 :optimal))
                              (and (eql result1 :unbounded) (eql result2 :infeasible))))
                      ;; check sparse-primal!
@@ -175,12 +155,12 @@
                           (csc (make-csc-from-array mat))
                           (csc-dual (make-csc-from-array mat-dual))
                           (lp (let ((lp (make-sparse-lp csc b c :dictionary dictionary)))
-                                (if (= m (lud-rank (lud-eta-lud (sparse-lp-lude lp))))
+                                (if (= m (lud-rank (lud-eta-lud (slp-lude lp))))
                                     lp
                                     (make-sparse-lp csc b c :add-slack nil))))
                           (lp-dual (make-sparse-lp csc-dual c- b-)))
-                     (let ((result1 (sparse-dual-primal! lp))
-                           (result2 (sparse-dual-primal! lp-dual)))
+                     (let ((result1 (slp-dual-primal! lp))
+                           (result2 (slp-dual-primal! lp-dual)))
                        (is (or (and (eql result1 :optimal) (eql result2 :optimal))
                                (and (eql result1 :unbounded) (eql result2 :infeasible))
                                (and (eql result1 :infeasible) (eql result2 :unbounded))
@@ -227,14 +207,14 @@
                (csc (make-csc-from-coo coo))
                (csc-dual (make-csc-from-coo coo-dual))
                (lp (make-sparse-lp csc b c :dictionary dict))
-               (rank (lud-rank (lud-eta-lud (sparse-lp-lude lp)))))
+               (rank (lud-rank (lud-eta-lud (slp-lude lp)))))
           (when (= m rank)
-            (let ((result (sparse-dual-primal! lp)))
+            (let ((result (slp-dual-primal! lp)))
               ;; (print result)
               (when (eql result :optimal)
                 (incf count)
                 (multiple-value-bind (obj prim dual prim-slack dual-slack)
-                    (sparse-lp-restore lp)
+                    (slp-restore lp)
                   ;; check primal
                   (let ((lhs (csc-gemv csc prim))
                         (obj2 (loop for x across prim
