@@ -1,7 +1,7 @@
 (defpackage :cp/with-cache
   (:use :cl)
   (:export #:with-cache #:with-caches)
-  (:documentation "Provides memoization macro."))
+  (:documentation "Provides macros for memoization."))
 (in-package :cp/with-cache)
 
 ;; FIXME: *RECURSION-DEPTH* should be included within the macro.

@@ -1,6 +1,6 @@
 (defpackage :cp/map-monotone-subseq
   (:use :cl)
-  (:export #:map-monotone-subseq #:map-altering-monotone-subseq))
+  (:export #:map-monotone-subseq #:map-alternating-monotone-subseq))
 (in-package :cp/map-monotone-subseq)
 
 ;; not tested
@@ -8,34 +8,36 @@
 ;; TODO: integrate these two functions
 (declaim (inline map-monotone-subseq))
 (defun map-monotone-subseq (function vector order)
-  "Applies FUNCTION to each monotone subarray of VECTOR. FUNCTION must take two
-arguments, L and R, where an interval [L, R) corresponds to a monotone subarray.
+  "Applies FUNCTION to each maximal monotone subarray of VECTOR. FUNCTION must
+take two arguments, L and R, such that the interval [L, R) corresponds to a
+monotone subarray on VECTOR.
 
-Definition: SEQ[l, r) is monotone iff (FUNCALL ORDER SEQ[i] SEQ[i+1]) always
-returns true in this range."
-  (declare (vector vector)
-           (function function order))
+Definition: VECTOR[l], .., VECTOR[r-1] is monotone iff (FUNCALL ORDER VECTOR[i]
+VECTOR[i+1]) always returns true."
+  (declare (vector vector))
   (unless (zerop (length vector))
-       (let ((prev 0))
-         (loop for i from 1 below (length vector)
-               unless (funcall order (aref vector (- i 1)) (aref vector i))
-               do (funcall function prev i)
-                  (setq prev i)
-               finally (funcall function prev (length vector))))))
+    (let ((prev 0))
+      (declare ((mod #.array-dimension-limit) prev))
+      (loop for i from 1 below (length vector)
+            unless (funcall order (aref vector (- i 1)) (aref vector i))
+            do (funcall function prev i)
+               (setq prev i)
+            finally (funcall function prev (length vector))))))
 
-(declaim (inline map-altering-monotone-subseq))
-(defun map-altering-monotone-subseq (function vector order)
+(declaim (inline map-alternating-monotone-subseq))
+(defun map-alternating-monotone-subseq (function vector order)
   "Alternately applies FUNCTION to each increasing subarray and decreasing
-one (if ORDER is #'<, for example). FUNCTION must take two arguments, L and R,
-where a **closed** interval [L, R] corresponds to a monotone subarray.
+one (if ORDER is #'<, for example). FUNCTION receives two arguments, L and R,
+such that the **closed** interval [L, R] corresponds to a monotone subarray on
+VECTOR.
 
 `Decreasing and then increasing' can also be realized by passing a descending
 order (e.g. #'>) to ORDER. Non-decreasing (#'<=) and non-increasing (#'>=) are
-also allowed."
+also available."
   (declare (vector vector))
   (let ((prev 0)
         (up t))
-    (declare ((integer 0 #.most-positive-fixnum) prev))
+    (declare ((mod #.array-dimension-limit) prev))
     (unless (zerop (length vector))
       (loop for i from 1 below (length vector)
             do (if up

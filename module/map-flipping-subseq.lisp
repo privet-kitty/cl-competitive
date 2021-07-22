@@ -6,8 +6,8 @@
 (declaim (inline map-flipping-subseq))
 (defun map-flipping-subseq (function vector &key (test #'eql))
   "Applies FUNCTION to each `flipping' subarray of VECTOR. `Flipping' here means
-that each two adjacent elements are different. FUNCTION receives two arguments L
-and R which expresses an interval [L, R).
+that all two adjacent elements are different. FUNCTION receives two arguments L
+and R which represent the interval [L, R).
 
 CL-USER> (map-flipping-subseq (lambda (x y) (format t \"~&~D ~D\" x y))
                               #(1 0 1 0 1 1 1 0))
@@ -18,7 +18,7 @@ CL-USER> (map-flipping-subseq (lambda (x y) (format t \"~&~D ~D\" x y))
   (declare (vector vector))
   (let ((n (length vector))
         (base 0))
-    (declare ((integer 0 #.most-positive-fixnum) base))
+    (declare ((mod #.array-dimension-limit) base))
     (loop for i from 1 below n
           when (funcall test (aref vector i) (aref vector (- i 1)))
           do (funcall function base i)
