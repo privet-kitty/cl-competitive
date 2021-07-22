@@ -6,7 +6,8 @@
    #:csc #:make-csc #:csc-to-array #:make-csc-from-array #:make-csc-from-coo
    #:csc-gemv #:csc-gemv-with-basis #:csc-transpose #:csc-m #:csc-n #:csc-nz
    #:csc-colstarts #:csc-rows #:csc-values
-   #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from #:sparse-vector-to-dense
+   #:sparse-vector #:make-sparse-vector #:make-sparse-vector-from
+   #:make-array-from-sparse-vector
    #:sparse-vector-nz #:sparse-vector-values #:sparse-vector-indices)
   (:documentation "Provides some representations of a sparse matrix."))
 (in-package :cp/csc)
@@ -253,7 +254,7 @@ contains it."
         (incf end)))
     (%make-sparse-vector nz values indices)))
 
-(defun sparse-vector-to-dense (sparse-vector)
+(defun make-array-from-sparse-vector (sparse-vector)
   (let* ((nz (sparse-vector-nz sparse-vector))
          (indices (sparse-vector-indices sparse-vector))
          (values (sparse-vector-values sparse-vector))
