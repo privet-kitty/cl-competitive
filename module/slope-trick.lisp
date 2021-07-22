@@ -1,7 +1,7 @@
 (defpackage :cp/slope-trick
   (:use :cl :cp/binary-heap)
   (:export #:make-slope-trick #:strick-add+ #:strick-add- #:strick-add
-           #:strick-min #:strick-argmin)
+           #:strick-min #:strick-argmin #:strick-shift #:strick-left-cum #:strick-right-cum)
   (:documentation
    "Reference:
 https://maspypy.com/slope-trick-1-%e8%a7%a3%e8%aa%ac%e7%b7%a8"))
@@ -100,7 +100,7 @@ NIL."
   (setf (%strick-loffset slope-trick) 0)
   slope-trick)
 
-(defun strick-translate (slope-trick ldelta &optional rdelta)
+(defun strick-shift (slope-trick ldelta &optional rdelta)
   "Replaces f to g such that g(x) := min_{x-r <= t <= x-l}f(x)."
   (declare (optimize (speed 3))
            (fixnum ldelta)
