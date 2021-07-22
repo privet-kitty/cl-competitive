@@ -25,6 +25,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (in-package :cp/sparse-simplex)
 
 (defconstant +eps-large+ (coerce 1d-8 'csc-float))
+(defconstant +eps-middle+ (coerce 1d-10 'csc-float))
 (defconstant +eps-small+ (coerce 1d-12 'csc-float))
 (defconstant +inf+ most-positive-double-float)
 

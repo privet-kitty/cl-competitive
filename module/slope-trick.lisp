@@ -1,8 +1,13 @@
 (defpackage :cp/slope-trick
   (:use :cl :cp/binary-heap)
   (:export #:make-slope-trick #:strick-add+ #:strick-add- #:strick-add
-           #:strick-min #:strick-argmin))
+           #:strick-min #:strick-argmin)
+  (:documentation
+   "Reference:
+https://maspypy.com/slope-trick-1-%e8%a7%a3%e8%aa%ac%e7%b7%a8"))
 (in-package :cp/slope-trick)
+
+;; TODO: add test
 
 (define-binary-heap heap<
   :order #'<
@@ -13,9 +18,10 @@
   :element-type fixnum)
 
 (defstruct (slope-trick (:constructor make-slope-trick
-                            (&optional (size 0)
-                             &aux (lheap (make-heap> size))
-                                  (rheap (make-heap< size))))
+                            (lsize
+                             &optional (rsize lsize) 
+                             &aux (lheap (make-heap> lsize))
+                                  (rheap (make-heap< rsize))))
                         (:conc-name %strick-)
                         (:copier nil)
                         (:predicate nil))
@@ -36,6 +42,9 @@
 (declaim (ftype (function * (values (or null fixnum) (or null fixnum) &optional))
                 strick-argmin))
 (defun strick-argmin (slope-trick)
+  "Returns two values: the left end and the right end of the closed interval on
+which f takes the minimum. Positive and negative infinities are represented by
+NIL."
   (let ((lheap (%strick-lheap slope-trick))
         (rheap (%strick-rheap slope-trick))
         (loffset (%strick-loffset slope-trick))
@@ -46,7 +55,7 @@
               (+ roffset (heap<-peek rheap))))))
 
 (defun strick-add+ (slope-trick a)
-  "Inserts x |-> max(0, x-a)."
+  "Adds x |-> max(0, x-a) to f."
   (declare (fixnum a))
   (symbol-macrolet ((min (%strick-min slope-trick))
                     (lheap (%strick-lheap slope-trick))
@@ -60,7 +69,7 @@
     slope-trick))
 
 (defun strick-add- (slope-trick a)
-  "Inserts x |-> max(0, a-x)."
+  "Adds x |-> max(0, a-x) to f."
   (declare (fixnum a))
   (symbol-macrolet ((min (%strick-min slope-trick))
                     (lheap (%strick-lheap slope-trick))
@@ -74,7 +83,7 @@
     slope-trick))
 
 (defun strick-add (slope-trick a)
-  "Inserts x |-> abs(x-a)."
+  "Adds x |-> abs(x-a) to f."
   (declare (fixnum a))
   (strick-add+ slope-trick a)
   (strick-add- slope-trick a))
