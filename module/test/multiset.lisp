@@ -41,7 +41,11 @@
             ;; split and concat
             (2 (let ((key (random 15)))
                  (multiple-value-bind (l r) (mset-split mset key :order #'>)
-                   (setq mset (%mset-concat l r)))))
+                   (setq mset (%mset-concat l r))))
+             (let ((index (random (+ 1 (length vector)))))
+               (multiple-value-bind (l r) (mset-indexed-split mset index)
+                 (setq mset (mset-concat l r :order #'>)))))
+            ;; search
             (3
              (let ((key (random 15)))
                (is (eql (mset-find mset key :order #'>)
@@ -81,4 +85,11 @@
                (mset-map (lambda (key)
                            (is (= key (aref vector i)))
                            (incf i))
-                         mset)))))))))
+                         mset))
+             (let ((counter (make-array 15 :element-type 'fixnum :initial-element 0)))
+               (mset-map-run-length
+                (lambda (key count)
+                  (declare (ignore count))
+                  (incf (aref counter key)))
+                mset)
+               (is (every (lambda (x) (<= x 1)) counter))))))))))

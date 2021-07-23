@@ -1,12 +1,13 @@
 (defpackage :cp/multiset
   (:use :cl)
   (:export #:mset #:mset-empty-error #:mset-empty-error-mset
-           #:%mset-concat #:mset-split #:mset-insert #:mset-delete
+           #:%mset-concat #:mset-concat #:mset-split #:mset-indexed-split
+           #:mset-insert #:mset-delete
            #:mset-push #:mset-pop #:mset-map #:mset-map-run-length
            #:mset-find #:mset-count #:mset-first #:mset-last #:mset-size
            #:mset-bisect-left #:mset-bisect-right #:mset-bisect-left-1 #:mset-bisect-right-1
            #:mset-position-left #:mset-position-right #:mset-ref)
-  (:documentation "Provides multiset implementation with access by index."))
+  (:documentation "Provides multiset implementation."))
 (in-package :cp/multiset)
 
 (define-condition mset-empty-error (error)
@@ -18,7 +19,6 @@
 
 (defstruct (mset (:constructor %make-mset
                      (key priority count &key left right (size count)))
-                 (:copier nil)
                  (:conc-name %mset-))
   key
   (count 0 :type (integer 0 #.most-positive-fixnum))
@@ -78,6 +78,48 @@ the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
                       (values left mset))))))
     (recur mset)))
 
+(declaim (ftype (function * (values (or null mset) (or null mset) &optional))
+                mset-indexed-split))
+(defun mset-indexed-split (mset index)
+  "Destructively splits MSET at INDEX and returns two multisets, the smaller
+sub-multiset and the larger one."
+  (declare (optimize (speed 3))
+           ((or null mset) mset)
+           ((integer 0 #.most-positive-fixnum) index))
+  (assert (<= index (mset-size mset)))
+  (labels
+      ((recur (mset index)
+         (declare ((integer 0 #.most-positive-fixnum) index))
+         (if (null mset)
+             (values nil nil)
+             (let* ((start (mset-size (%mset-left mset)))
+                    (end (+ start (%mset-count mset))))
+               (declare ((integer 0 #.most-positive-fixnum) start end))
+               (cond ((<= end index)
+                      (multiple-value-bind (left right)
+                          (recur (%mset-right mset) (- index end))
+                        (setf (%mset-right mset) left)
+                        (update-size mset)
+                        (values mset right)))
+                     ((<= index start)
+                      (multiple-value-bind (left right)
+                          (recur (%mset-left mset) index)
+                        (setf (%mset-left mset) right)
+                        (update-size mset)
+                        (values left mset)))
+                     (t
+                      (let ((count (%mset-count mset))
+                            (lnode (copy-mset mset))
+                            (rnode mset))
+                        (setf (%mset-count lnode) (- index start)
+                              (%mset-count rnode) (- count (%mset-count lnode))
+                              (%mset-right lnode) nil
+                              (%mset-left rnode) nil)
+                        (update-size lnode)
+                        (update-size rnode)
+                        (values lnode rnode))))))))
+    (recur mset index)))
+
 (declaim (ftype (function * (values (or null mset) &optional))
                 %mset-concat))
 (defun %mset-concat (left right)
@@ -97,6 +139,39 @@ the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
                (%mset-concat left (%mset-left right)))
          (update-size right)
          right)))
+
+(declaim (ftype (function * (values (or null mset) &optional))
+                mset-concat)
+         (inline mset-concat))
+(defun mset-concat (left right &key (order #'<))
+  "Destructively concatenates two multisets. Assumes that all keys of LEFT are
+equal to or smaller (or larger, depending on the order) than those of RIGHT.
+
+This function includes %MSET-CONCAT, but it is not as fast."
+  (declare ((or null mset) left right))
+  (block outer
+    (labels
+        ((lrecur (mset)
+           (if (%mset-right mset)
+               (lrecur (%mset-right mset))
+               (let ((lend mset))
+                 (labels
+                     ((rrecur (mset)
+                        (cond ((%mset-left mset)
+                               (setf (%mset-left mset) (rrecur (%mset-left mset)))
+                               (update-size mset)
+                               mset)
+                              ((not (or (funcall order (%mset-key mset) (%mset-key lend))
+                                        (funcall order (%mset-key lend) (%mset-key mset))))
+                               (incf (%mset-count lend) (%mset-count mset))
+                               (%mset-right mset))
+                              (t (return-from outer)))))
+                   (setq right (rrecur right)))))
+           (update-size mset)
+           mset))
+      (when (and left right)
+        (setq left (lrecur left)))))
+  (%mset-concat left right))
 
 (declaim (inline mset-insert))
 (defun mset-insert (mset key &key (count 1) (order #'<))
