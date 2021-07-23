@@ -1,12 +1,10 @@
-;;;
-;;; Non-mod integer convolution
-;;; Reference:
-;;; https://github.com/atcoder/ac-library/blob/master/atcoder/convolution.hpp
-;;;
-
 (defpackage :cp/convolution-ntt
   (:use :cl :cp/ntt)
-  (:export #:convolve #:convolution-int #:convolution-vector #:mod-convolve))
+  (:export #:convolve #:convolution-int #:convolution-vector #:mod-convolve)
+  (:documentation "Provides integer convolution within [-2^63, 2^63).
+
+Reference:
+https://github.com/atcoder/ac-library/blob/master/atcoder/convolution.hpp"))
 (in-package :cp/convolution-ntt)
 
 (deftype convolution-int () '(signed-byte 64))
@@ -30,20 +28,17 @@
                      (rotatef m0 m1))
             (when (< m0 0)
               (incf m0 (truncate b s)))
-            (values s m0))))))
+            (values s m0)))))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +mod1+ 754974721)
   (defconstant +mod2+ 167772161)
-  (defconstant +mod3+ 469762049))
+  (defconstant +mod3+ 469762049)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +m2m3+ (* +mod2+ +mod3+))
   (defconstant +m1m3+ (* +mod1+ +mod3+))
   (defconstant +m1m2+ (* +mod1+ +mod2+))
-  (defconstant +m1m2m3+ (ldb (byte 64 0) (* +mod1+ +mod2+ +mod3+))))
+  (defconstant +m1m2m3+ (ldb (byte 64 0) (* +mod1+ +mod2+ +mod3+)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +i1+ (nth-value 1 (inv-gcd +m2m3+ +mod1+)))
   (defconstant +i2+ (nth-value 1 (inv-gcd +m1m3+ +mod2+)))
   (defconstant +i3+ (nth-value 1 (inv-gcd +m1m2+ +mod3+))))
@@ -61,6 +56,15 @@
   :inverse-ntt intt3
   :convolve convolve3)
 
+(declaim (inline ensure-ntt-vector))
+(defun ensure-ntt-vector (vector mod)
+  (declare (vector vector))
+  (let* ((len (length vector))
+         (res (make-array len :element-type '(unsigned-byte 31))))
+    (dotimes (i len)
+      (setf (aref res i) (mod (aref vector i) mod)))
+    res))
+
 ;; TODO: deal with negative number
 (declaim (ftype (function * (values convolution-vector &optional)) convolve))
 (defun convolve (vector1 vector2)
@@ -73,9 +77,12 @@
       (return-from convolve (make-array 0 :element-type 'convolution-int)))
     (let* ((vector1 (coerce vector1 'convolution-vector))
            (vector2 (coerce vector2 'convolution-vector))
-           (c1 (convolve1 vector1 vector2))
-           (c2 (convolve2 vector1 vector2))
-           (c3 (convolve3 vector1 vector2))
+           (c1 (convolve1 (ensure-ntt-vector vector1 +mod1+)
+                          (ensure-ntt-vector vector2 +mod1+)))
+           (c2 (convolve2 (ensure-ntt-vector vector1 +mod2+)
+                          (ensure-ntt-vector vector2 +mod2+)))
+           (c3 (convolve3 (ensure-ntt-vector vector1 +mod3+)
+                          (ensure-ntt-vector vector2 +mod3+)))
            (result (make-array (+ n m -1) :element-type 'convolution-int)))
       (dotimes (i (+ n m -1))
         (let* ((x (ldb (byte 64 0)

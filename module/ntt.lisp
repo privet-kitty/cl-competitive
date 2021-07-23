@@ -1,5 +1,5 @@
 (defpackage :cp/ntt
-  (:use :cl)
+  (:use :cl :cp/mod-inverse)
   (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector #:+ntt-mod+)
   (:documentation
    "Provides fast number theoretic transform.
@@ -83,15 +83,12 @@ CL:ADJUST-ARRAY should copy the array or not.)"
     (assert (and (zerop (logand len (- len 1))) ; power of two
                  (typep len 'ntt-int)))))
 
-(defmacro define-ntt (modulus &key ntt inverse-ntt convolve mod-inverse mod-power
-                              &environment env)
+(defmacro define-ntt (modulus &key ntt inverse-ntt convolve &environment env)
   (assert (constantp modulus env))
   (let* ((modulus #+sbcl (sb-int:constant-form-value modulus env) #-sbcl modulus)
          (ntt (or ntt (intern "NTT!")))
          (inverse-ntt (or inverse-ntt (intern "INVERSE-NTT!")))
          (convolve (or convolve (intern "CONVOLVE")))
-         (mod-power (or mod-power (gensym "MOD-POWER")))
-         (mod-inverse (or mod-inverse (gensym "MOD-INVERSE")))
          (ntt-base (gensym "*NTT-BASE*"))
          (ntt-inv-base (gensym "*NTT-INV-BASE*"))
          (base-size (%tzcount (- modulus 1)))
@@ -99,21 +96,6 @@ CL:ADJUST-ARRAY should copy the array or not.)"
          (modulus (sb-int:constant-form-value modulus env)))
     (declare (ntt-int modulus))
     `(progn
-       (declaim (inline ,mod-power))
-       (defun ,mod-power (base exp)
-         (declare (ntt-int base)
-                  ((integer 0 #.most-positive-fixnum) exp))
-         (let ((res 1))
-           (declare (ntt-int res))
-           (loop while (> exp 0)
-                 when (oddp exp)
-                 do (setq res (mod (* res base) ,modulus))
-                 do (setq base (mod (* base base) ,modulus)
-                          exp (ash exp -1)))
-           res))
-       (declaim (inline ,mod-inverse))
-       (defun ,mod-inverse (x)
-         (,mod-power x (- ,modulus 2)))
        (declaim (ntt-vector ,ntt-base ,ntt-inv-base))
        (sb-ext:define-load-time-global ,ntt-base
          (make-array ,base-size :element-type 'ntt-int))
@@ -187,7 +169,7 @@ CL:ADJUST-ARRAY should copy the array or not.)"
                                (incf k)
                                (setq w (mod* w (aref base (%tzcount k))))))
              (when inverse
-               (let ((inv-len (,mod-power len (- ,modulus 2))))
+               (let ((inv-len (mod-inverse len ,modulus)))
                  (dotimes (i len)
                    (setf (aref vector i) (mod* inv-len (aref vector i))))))
              vector)))
