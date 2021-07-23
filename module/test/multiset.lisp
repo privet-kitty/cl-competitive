@@ -24,16 +24,23 @@
             (1 (let ((key (random 15)))
                  (is (eql (mset-find mset key :order #'>)
                           (find key vector)))
-                 (if (mset-find mset key :order #'>)
+                 (if (zerop (random 4))
                      (progn
-                       (mset-pop key mset #'>)
-                       (setq vector (delete key vector :count 1)))
-                     (signals mset-empty-error
-                       (mset-pop key mset #'>)))))
+                       (setq mset (mset-delete mset key
+                                               :count most-positive-fixnum
+                                               :error-p nil
+                                               :order #'>))
+                       (setq vector (delete key vector)))
+                     (if (mset-find mset key :order #'>)
+                         (progn
+                           (mset-pop key mset #'>)
+                           (setq vector (delete key vector :count 1)))
+                         (signals mset-empty-error
+                           (mset-pop key mset #'>))))))
             ;; split and concat
             (2 (let ((key (random 15)))
                  (multiple-value-bind (l r) (mset-split mset key :order #'>)
-                   (setq mset (mset-concat l r)))))
+                   (setq mset (%mset-concat l r)))))
             (3
              (let ((key (random 15)))
                (is (eql (mset-find mset key :order #'>)

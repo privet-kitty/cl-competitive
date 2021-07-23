@@ -1,7 +1,7 @@
 (defpackage :cp/multiset
   (:use :cl)
   (:export #:mset #:mset-empty-error #:mset-empty-error-mset
-           #:mset-concat #:mset-split #:mset-insert #:mset-delete
+           #:%mset-concat #:mset-split #:mset-insert #:mset-delete
            #:mset-push #:mset-pop #:mset-map #:mset-map-run-length
            #:mset-find #:mset-count #:mset-first #:mset-last #:mset-size
            #:mset-bisect-left #:mset-bisect-right #:mset-bisect-left-1 #:mset-bisect-right-1
@@ -79,22 +79,22 @@ the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
     (recur mset)))
 
 (declaim (ftype (function * (values (or null mset) &optional))
-                mset-concat))
-(defun mset-concat (left right)
+                %mset-concat))
+(defun %mset-concat (left right)
   "Destructively concatenates two multisets. Assumes that all keys of LEFT are
-smaller (or larger, depending on the order) than those of RIGHT."
+**strictly** smaller (or larger, depending on the order) than those of RIGHT."
   (declare (optimize (speed 3))
            ((or null mset) left right))
   (cond ((null left) right)
         ((null right) left)
         ((> (%mset-priority left) (%mset-priority right))
          (setf (%mset-right left)
-               (mset-concat (%mset-right left) right))
+               (%mset-concat (%mset-right left) right))
          (update-size left)
          left)
         (t
          (setf (%mset-left right)
-               (mset-concat left (%mset-left right)))
+               (%mset-concat left (%mset-left right)))
          (update-size right)
          right)))
 
@@ -143,19 +143,21 @@ cannot rely on the side effect. Use the returned value."
 (declaim (ftype (function * (values (or null mset) &optional))
                 mset-delete)
          (inline mset-delete))
-(defun mset-delete (mset key &key (count 1) (order #'<) (empty-error-p t))
+(defun mset-delete (mset key &key (count 1) (order #'<) (error-p t))
   "Destructively deletes KEY in MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned multiset.
 
-If EMPTY-ERROR-P is true, this function throws an MSET-EMPTY-ERROR when
-excessive number of KEYs are attempted to be deleted."
+If ERROR-P is true, this function throws an MSET-EMPTY-ERROR when excessive
+number of KEYs are attempted to be deleted.
+
+If COUNT is T, this function deletes all KEYs contained in MSET."
   (declare ((or null mset) mset)
-           ((integer 0 #.most-positive-fixnum) count))
+           ((or (eql t) (integer 0 #.most-positive-fixnum)) count))
   (labels
       ((%error () (error 'mset-empty-error :mset mset))
        (recur (mset)
          (cond ((null mset)
-                (when empty-error-p (%error)))
+                (when error-p (%error)))
                ((funcall order key (%mset-key mset))
                 (setf (%mset-left mset) (recur (%mset-left mset)))
                 (update-size mset)
@@ -166,15 +168,15 @@ excessive number of KEYs are attempted to be deleted."
                 mset)
                (t
                 (let ((current (%mset-count mset)))
-                  (cond ((and empty-error-p (< current count))
+                  (cond ((and error-p (< current count))
                          (%error))
                         ((> current count)
                          (decf (%mset-count mset) count)
                          (update-size mset)
                          mset)
                         (t
-                         (mset-concat (%mset-left mset)
-                                      (%mset-right mset)))))))))
+                         (%mset-concat (%mset-left mset)
+                                       (%mset-right mset)))))))))
     (recur mset)))
 
 (defmacro mset-push (key mset &optional (order '#'<) &environment env)
