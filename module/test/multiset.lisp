@@ -13,24 +13,25 @@
         (dotimes (_ 300)
           (ecase (random 5)
             ;; push
-            (0 (let ((key (random 15)))
-                 (mset-push key mset #'>)
+            (0 (let ((key (random 15))
+                     (count (+ 1 (random 3))))
+                 (setq mset (mset-insert mset key :count count :order #'>))
                  (let ((pos (bisect-left vector key :order #'>)))
-                   (setq vector (concatenate '(simple-array fixnum (*))
-                                             (subseq vector 0 pos)
-                                             (vector key)
-                                             (subseq vector pos))))))
+                   (setq vector (concatenate
+                                 '(simple-array fixnum (*))
+                                 (subseq vector 0 pos)
+                                 (make-array count :initial-element key)
+                                 (subseq vector pos))))))
             ;; pop
             (1 (let ((key (random 15)))
                  (is (eql (mset-find mset key :order #'>)
                           (find key vector)))
-                 (if (zerop (random 4))
-                     (progn
-                       (setq mset (mset-delete mset key
-                                               :count most-positive-fixnum
-                                               :error-p nil
-                                               :order #'>))
-                       (setq vector (delete key vector)))
+                 (if (zerop (random 2))
+                     (setq mset (mset-delete mset key
+                                             :count most-positive-fixnum
+                                             :error-p nil
+                                             :order #'>)
+                           vector (delete key vector))
                      (if (mset-find mset key :order #'>)
                          (progn
                            (mset-pop key mset #'>)
