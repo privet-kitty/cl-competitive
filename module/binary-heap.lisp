@@ -15,7 +15,7 @@
   "Defines a binary heap specialized for the given order and the element
 type. This macro defines a structure of the given NAME and relevant functions:
 MAKE-<NAME>, <NAME>-PUSH, <NAME>-POP, <NAME>-CLEAR, <NAME>-EMPTY-P,
-<NAME>-COUNT, and <NAME>-PEEK.
+<NAME>-COUNT, <NAME>-PEEK, and <NAME>-MAP.
 
 If ORDER is not given, heap for dynamic order is defined instead, and the
 constructor takes an order function as an argument. Note that it will be
@@ -29,6 +29,7 @@ slightly slower than a static order, as it cannot be inlined."
          (fname-count (intern (format nil "~A-COUNT" string-name)))
          (fname-peek (intern (format nil "~A-PEEK" string-name)))
          (fname-make (intern (format nil "MAKE-~A" string-name)))
+         (fname-map (intern (format nil "~A-MAP" string-name)))
          (acc-position (intern (format nil "~A-POSITION" string-name)))
          (acc-data (intern (format nil "~A-DATA" string-name)))
          (acc-order (intern (format nil "~A-ORDER" string-name)))
@@ -86,23 +87,24 @@ HEAP-EMPTY-ERROR if HEAP is empty."
            (let ((data (,acc-data heap))
                  ,@(when dynamic-order `((order (,acc-order heap)))))
              (declare ((simple-array ,element-type (*)) data))
-             (labels ((heapify (pos)
-                        (declare (optimize (speed 3) (safety 0))
-                                 ((mod #.array-dimension-limit) pos))
-                        (let* ((child-pos1 (+ pos pos))
-                               (child-pos2 (1+ child-pos1)))
-                          (declare ((mod #.array-dimension-limit) child-pos1 child-pos2))
-                          (when (<= child-pos1 position)
-                            (if (<= child-pos2 position)
-                                (if (funcall ,order (aref data child-pos1) (aref data child-pos2))
-                                    (unless (funcall ,order (aref data pos) (aref data child-pos1))
-                                      (rotatef (aref data pos) (aref data child-pos1))
-                                      (heapify child-pos1))
-                                    (unless (funcall ,order (aref data pos) (aref data child-pos2))
-                                      (rotatef (aref data pos) (aref data child-pos2))
-                                      (heapify child-pos2)))
+             (labels
+                 ((heapify (pos)
+                    (declare (optimize (speed 3) (safety 0))
+                             ((mod #.array-dimension-limit) pos))
+                    (let* ((child-pos1 (+ pos pos))
+                           (child-pos2 (1+ child-pos1)))
+                      (declare ((mod #.array-dimension-limit) child-pos1 child-pos2))
+                      (when (<= child-pos1 position)
+                        (if (<= child-pos2 position)
+                            (if (funcall ,order (aref data child-pos1) (aref data child-pos2))
                                 (unless (funcall ,order (aref data pos) (aref data child-pos1))
-                                  (rotatef (aref data pos) (aref data child-pos1))))))))
+                                  (rotatef (aref data pos) (aref data child-pos1))
+                                  (heapify child-pos1))
+                                (unless (funcall ,order (aref data pos) (aref data child-pos2))
+                                  (rotatef (aref data pos) (aref data child-pos2))
+                                  (heapify child-pos2)))
+                            (unless (funcall ,order (aref data pos) (aref data child-pos1))
+                              (rotatef (aref data pos) (aref data child-pos1))))))))
                (when (= position 1)
                  (error 'heap-empty-error :heap heap))
                (prog1 (aref data 1)
@@ -132,7 +134,15 @@ HEAP-EMPTY-ERROR if HEAP is empty."
 is empty."
          (if (= 1 (,acc-position heap))
              (error 'heap-empty-error :heap heap)
-             (aref (,acc-data heap) 1))))))
+             (aref (,acc-data heap) 1)))
+
+       (declaim (inline ,fname-map))
+       (defun ,fname-map (function heap)
+         "Applies FUNCTION to all the elements in HEAP. Note that the order in
+which the elements in HEAP are passed to FUNCTION is not defined."
+         (let ((data (,acc-data heap)))
+           (loop for i from 1 below (,acc-position heap)
+                 do (funcall function (aref data i))))))))
 
 #+(or)
 (define-binary-heap heap

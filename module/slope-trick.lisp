@@ -1,7 +1,7 @@
 (defpackage :cp/slope-trick
   (:use :cl :cp/binary-heap)
-  (:export #:make-slope-trick #:strick-add+ #:strick-add- #:strick-add
-           #:strick-min #:strick-argmin #:strick-shift #:strick-left-cum #:strick-right-cum)
+  (:export #:make-slope-trick #:strick-add+ #:strick-add- #:strick-add #:strick-shift
+           #:strick-min #:strick-argmin #:strick-left-cum #:strick-right-cum #:strick-merge)
   (:documentation
    "Reference:
 https://maspypy.com/slope-trick-1-%e8%a7%a3%e8%aa%ac%e7%b7%a8"))
@@ -56,30 +56,32 @@ NIL."
 
 (defun strick-add+ (slope-trick a)
   "Adds x |-> max(0, x-a) to f."
-  (declare (fixnum a))
+  (declare (optimize (speed 3))
+           (fixnum a))
   (symbol-macrolet ((min (%strick-min slope-trick))
                     (lheap (%strick-lheap slope-trick))
                     (rheap (%strick-rheap slope-trick))
                     (loffset (%strick-loffset slope-trick))
                     (roffset (%strick-roffset slope-trick)))
     (unless (heap>-empty-p lheap)
-      (incf min (max 0 (- (+ (heap>-peek lheap) loffset) a))))
-    (heap>-push (- a loffset) lheap)
-    (heap<-push (- (+ loffset (heap>-pop lheap)) roffset) rheap)
+      (incf min (max 0 (the fixnum (- (the fixnum (+ (heap>-peek lheap) loffset)) a)))))
+    (heap>-push (the fixnum (- a loffset)) lheap)
+    (heap<-push (the fixnum (- (the fixnum (+ loffset (heap>-pop lheap))) roffset)) rheap)
     slope-trick))
 
 (defun strick-add- (slope-trick a)
   "Adds x |-> max(0, a-x) to f."
-  (declare (fixnum a))
+  (declare (optimize (speed 3))
+           (fixnum a))
   (symbol-macrolet ((min (%strick-min slope-trick))
                     (lheap (%strick-lheap slope-trick))
                     (rheap (%strick-rheap slope-trick))
                     (loffset (%strick-loffset slope-trick))
                     (roffset (%strick-roffset slope-trick)))
     (unless (heap<-empty-p rheap)
-      (incf min (max 0 (- a (+ (heap<-peek rheap) roffset)))))
-    (heap<-push (- a roffset) rheap)
-    (heap>-push (- (+ roffset (heap<-pop rheap)) loffset) lheap)
+      (incf min (max 0 (the fixnum (- a (the fixnum (+ (heap<-peek rheap) roffset)))))))
+    (heap<-push (the fixnum (- a roffset)) rheap)
+    (heap>-push (the fixnum (- (the fixnum (+ roffset (heap<-pop rheap))) loffset)) lheap)
     slope-trick))
 
 (defun strick-add (slope-trick a)
@@ -110,3 +112,26 @@ NIL."
     (incf (%strick-loffset slope-trick) ldelta)
     (incf (%strick-roffset slope-trick) rdelta)
     slope-trick))
+
+(declaim (ftype (function * (values (mod #.array-dimension-limit) &optional))
+                strick-size))
+(defun strick-size (slope-trick)
+  (+ (heap>-count (%strick-lheap slope-trick))
+     (heap<-count (%strick-rheap slope-trick))))
+
+(defun strick-merge (slope-trick1 slope-trick2)
+  "Merges to SLOPE-TRICKs. You cannot use a side effect. Use a returned
+value."
+  (declare (optimize (speed 3)))
+  (when (< (strick-size slope-trick1) (strick-size slope-trick2))
+    (rotatef slope-trick1 slope-trick2))
+  (let ((loffset2 (%strick-loffset slope-trick2)))
+    (heap>-map (lambda (a)
+                 (strick-add- slope-trick1 (the fixnum (+ a loffset2))))
+               (%strick-lheap slope-trick2)))
+  (let ((roffset2 (%strick-roffset slope-trick2)))
+    (heap<-map (lambda (a)
+                 (strick-add+ slope-trick1 (the fixnum (+ a roffset2))))
+               (%strick-rheap slope-trick2)))
+  (incf (%strick-min slope-trick1) (%strick-min slope-trick2))
+  slope-trick1)
