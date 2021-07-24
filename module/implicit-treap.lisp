@@ -46,7 +46,7 @@ the target interval."
   (accumulator +op-identity+ :type fixnum)
   (lazy +updater-identity+ :type fixnum)
   (reversed nil :type boolean)
-  (priority 0 :type (mod #.most-positive-fixnum))
+  (priority 0 :type (integer 0 #.most-positive-fixnum))
   (count 1 :type index) ; size of (sub)treap
   (left nil :type (or null itreap))
   (right nil :type (or null itreap)))
@@ -248,7 +248,7 @@ You cannot rely on the side effect. Use the returned value."
            (index index))
   (unless (<= index (itreap-count itreap))
     (error 'invalid-itreap-index-error :itreap itreap :index index))
-  (let ((node (%make-itreap obj (random most-positive-fixnum))))
+  (let ((node (%make-itreap obj (random (+ 1 most-positive-fixnum)))))
     (labels ((recur (itreap ikey)
                (declare (index ikey))
                (unless itreap (return-from recur node))
@@ -380,7 +380,7 @@ each time."
      ,result))
 
 (defun itreap (&rest args)
-  ;; NOTE: This function takes O(nlog(n)) time. Use MAKE-ITREAP for efficiency.
+  ;; NOTE: This constructor takes O(nlog(n)) time.
   (labels ((recur (list position itreap)
              (declare (index position))
              (if (null list)
