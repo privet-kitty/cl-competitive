@@ -1,17 +1,15 @@
-;;;
-;;; Fast Zeta/Moebius transforms w.r.t. divisor or multiple in O(nloglog(n)) time.
-;;;
-
 (defpackage :cp/zeta-integer
   (:use :cl)
   (:export #:divisor-transform! #:inverse-divisor-transform!
-           #:multiple-transform! #:inverse-multiple-transform!))
+           #:multiple-transform! #:inverse-multiple-transform!)
+  (:documentation "Provides fast zeta/Moebius transforms w.r.t. divisor or
+multiple. Time complexity is O(nloglog(n))."))
 (in-package :cp/zeta-integer)
 
 (declaim (inline divisor-transform!))
 (defun divisor-transform! (vector &optional (op+ #'+) (handle-zero t))
-  "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of i in
-O(nloglog(n)) time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
+  "Sets each VECTOR[i] to the sum of VECTOR[d] for all the divisors d of
+i. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
          (sieve (make-array n :element-type 'bit :initial-element 1)))
@@ -30,8 +28,8 @@ O(nloglog(n)) time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
 
 (declaim (inline inverse-divisor-transform!))
 (defun inverse-divisor-transform! (vector &optional (op- #'-) (handle-zero t))
-  "Does the inverse transform of DIVISOR-TRANSFORM! in O(nloglog(n))
-time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
+  "Does the inverse transform of DIVISOR-TRANSFORM!. Ignores VECTOR[0] when
+HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
          (sieve (make-array n :element-type 'bit :initial-element 1)))
@@ -50,9 +48,9 @@ time. Ignores VECTOR[0] when HANDLE-ZERO is NIL."
 
 (declaim (inline multiple-transform!))
 (defun multiple-transform! (vector &optional (op+ #'+) (handle-zero t))
-  "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of in
-O(nloglog(n)) time. (To be precise, all the multiples smaller than the length of
-VECTOR.) Ignores VECTOR[0] when HANDLE-ZERO is NIL."
+  "Sets each VECTOR[i] to the sum of VECTOR[m] for all the multiples m of i. (To
+be precise, all the multiples smaller than the length of VECTOR.) Ignores
+VECTOR[0] when HANDLE-ZERO is NIL."
   (declare (vector vector))
   (let* ((n (length vector))
          (sieve (make-array n :element-type 'bit :initial-element 1)))
