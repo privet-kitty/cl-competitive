@@ -8,7 +8,7 @@
            #:slp-mat #:slp-tmat #:slp-b #:slp-c #:slp-x-basic #:slp-y-nonbasic
            #:correct-x-basic! #:correct-y-nonbasic!
            #:dictionary-basics #:dictionary-nonbasics #:dictionary-basic-flag
-           #:slp-primal! #:slp-dual! #:slp-dual-primal!)
+           #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!)
   (:documentation
    "Provides two kinds of simplex method for sparse LP:
 
@@ -28,6 +28,7 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defconstant +eps-middle+ (coerce 1d-10 'csc-float))
 (defconstant +eps-small+ (coerce 1d-12 'csc-float))
 (defconstant +inf+ most-positive-double-float)
+(defconstant +neg-inf+ most-negative-double-float)
 
 (defun add-slack! (a)
   (declare (optimize (speed 3))
@@ -512,3 +513,177 @@ the current dictionary is not feasible.)"
       (unless (eql state-dual :optimal)
         (return-from slp-dual-primal! state-dual))
       (slp-primal! sparse-lp))))
+
+;;;
+;;; self-dual simplex method
+;;;
+
+(defun self-dual-ratio-test (x dx mu x-params)
+  (declare (optimize (speed 3))
+           ((simple-array csc-float (*)) x x-params)
+           (sparse-vector dx)
+           (csc-float mu))
+  (let ((min +inf+)
+        (dx-indices (sparse-vector-indices dx))
+        (dx-values (sparse-vector-values dx))
+        res)
+    (dotimes (k (sparse-vector-nz dx))
+      (when (> (aref dx-values k) +eps-large+)
+        (let* ((index (aref dx-indices k))
+               (rate (/ (+ (aref x index) (* mu (aref x-params index)))
+                        (aref dx-values k))))
+          (when (< rate min)
+            (setq min rate
+                  res index)))))
+    res))
+
+;; not tested
+(defun slp-self-dual! (sparse-lp)
+  "Applies self-dual simplex method to SPARSE-LP and returns the terminal state:
+:optimal, :infeasible, or :dual-infeasible."
+  (declare (optimize (speed 3)))
+  (let* ((m (slp-m sparse-lp))
+         (n (slp-n sparse-lp))
+         (x-basic (slp-x-basic sparse-lp))
+         (y-nonbasic (slp-y-nonbasic sparse-lp))
+         (dictionary (slp-dictionary sparse-lp))
+         (basics (dictionary-basics dictionary))
+         (nonbasics (dictionary-nonbasics dictionary))
+         (basic-flag (dictionary-basic-flag dictionary))
+         (mat (slp-mat sparse-lp))
+         (tmat (slp-tmat sparse-lp))
+         (dx (make-sparse-vector m))
+         (dy (make-sparse-vector n))
+         (tmp (make-sparse-vector m))
+         (x-params (make-array n :element-type 'csc-float :initial-element +zero+))
+         (y-params (make-array m :element-type 'csc-float :initial-element +zero+)))
+    (symbol-macrolet ((lude (slp-lude sparse-lp))
+                      (dx-values (sparse-vector-values dx))
+                      (dx-indices (sparse-vector-indices dx))
+                      (dx-nz (sparse-vector-nz dx))
+                      (dy-values (sparse-vector-values dy))
+                      (dy-indices (sparse-vector-indices dy))
+                      (dy-nz (sparse-vector-nz dy))
+                      (tmp-values (sparse-vector-values tmp))
+                      (tmp-indices (sparse-vector-indices tmp))
+                      (tmp-nz (sparse-vector-nz tmp)))
+      ;; initialize parameters for x and y
+      (dotimes (j n)
+        (let ((colstarts (csc-colstarts mat))
+              (rows (csc-rows mat))
+              (values (csc-values mat)))
+          (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+                for a2 of-type csc-float = (expt (aref values k) 2)
+                do (incf (aref x-params (aref rows k)) a2)
+                   (incf (aref y-params j) a2))))
+      (map-into x-params
+                (lambda (x) (+ (random 1d0) (sqrt (the (double-float 0d0) x))))
+                x-params)
+      (map-into y-params
+                (lambda (x) (+ (random 1d0) (sqrt (the (double-float 0d0) x))))
+                y-params)
+      (loop
+        (let ((mu +neg-inf+)
+              col-in
+              col-out)
+          (dotimes (j n)
+            (when (and (> (aref y-params j) +eps-small+)
+                       (< mu (/ (- (aref y-nonbasic j)) (aref y-params j))))
+              (setq mu (/ (- (aref y-nonbasic j)) (aref y-params j))
+                    col-in j)))
+          (dotimes (i m)
+            (when (and (> (aref x-params i) +eps-small+)
+                       (< mu (/ (- (aref x-basic i)) (aref x-params i))))
+              (setq mu (/ (- (aref x-basic i)) (aref x-params i))
+                    col-out i)))
+          (when (<= mu +eps-middle+)
+            (return :optimal))
+          (assert (or (and col-in (not col-out))
+                      (and (not col-in) col-out)))
+          (when col-out
+            ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
+            (setf (aref tmp-values 0) (- +one+)
+                  (aref tmp-indices 0) col-out
+                  tmp-nz 1)
+            (sparse-solve-transposed! lude tmp)
+            (tmat-times-vec! tmat tmp basic-flag dy)
+            (let ((col-in (self-dual-ratio-test y-nonbasic dy mu y-params)))
+              (unless col-in
+                (return :infeasible))
+              ;; dx_B := B^(-1)Ne_j where j is entering column
+              (let* ((j (aref nonbasics col-in))
+                     (colstarts (csc-colstarts mat))
+                     (rows (csc-rows mat))
+                     (values (csc-values mat))
+                     (start (aref colstarts j))
+                     (end (aref colstarts (+ j 1))))
+                (loop for k from start below end
+                      for i of-type (mod #.array-dimension-limit) = (- k start)
+                      do (setf (aref dx-values i) (aref values k)
+                               (aref dx-indices i) (aref rows k)))
+                (setq dx-nz (- end start))
+                (sparse-solve! lude dx))))
+          (when col-in
+            ;; dx_B := B^(-1)Ne_j where j is entering column
+            (let* ((j (aref nonbasics col-in))
+                   (colstarts (csc-colstarts mat))
+                   (rows (csc-rows mat))
+                   (values (csc-values mat))
+                   (start (aref colstarts j))
+                   (end (aref colstarts (+ j 1))))
+              (loop for k from start below end
+                    for i of-type (mod #.array-dimension-limit) = (- k start)
+                    do (setf (aref dx-values i) (aref values k)
+                             (aref dx-indices i) (aref rows k)))
+              (setq dx-nz (- end start))
+              (sparse-solve! lude dx)
+              (let ((col-out (self-dual-ratio-test x-basic dx mu x-params)))
+                (unless col-out
+                  (return :dual-infeasible))
+                ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
+                (setf (aref tmp-values 0) (- +one+)
+                      (aref tmp-indices 0) col-out
+                      tmp-nz 1)
+                (sparse-solve-transposed! lude tmp)
+                (tmat-times-vec! tmat tmp basic-flag dy))))
+          ;; t := x_i/dx_i
+          ;; tparam := xparam_i/dx_i
+          ;; s := y_j/dy_j
+          ;; sparam := y_param_j/dy_j
+          (multiple-value-bind (rate-t rate-tparam)
+              (dotimes (k dx-nz (error "Huh?"))
+                (when (= (aref dx-indices k) col-out)
+                  (return (values (/ (aref x-basic col-out)
+                                     (aref dx-values k))
+                                  (/ (aref x-params col-out)
+                                     (aref dx-values k))))))
+            (multiple-value-bind (rate-s rate-sparam)
+                (dotimes (k dy-nz (error "Huh?"))
+                  (when (= (aref dy-indices k) col-in)
+                    (return (values (/ (aref y-nonbasic col-in)
+                                       (aref dy-values k))
+                                    (/ (aref y-params col-in)
+                                       (aref dy-values k))))))
+              ;; y_N := y_N - s dy_N
+              ;; yparam := yparam - s dy_N
+              ;; y_i := s
+              ;; x_B := x_B - t dx_B
+              ;; xparam_B := xparam - t dx_B
+              ;; x_j := t
+              (dotimes (k dy-nz)
+                (let ((j (aref dy-indices k)))
+                  (decf (aref y-nonbasic j) (* rate-s (aref dy-values k)))
+                  (decf (aref y-params j) (* rate-sparam (aref dy-values k)))))
+              (setf (aref y-nonbasic col-in) rate-s
+                    (aref y-params col-in) rate-sparam)
+              (dotimes (k dx-nz)
+                (let ((i (aref dx-indices k)))
+                  (decf (aref x-basic i) (* rate-t (aref dx-values k)))
+                  (decf (aref x-params i) (* rate-tparam (aref dx-values k)))))
+              (setf (aref x-basic col-out) rate-t
+                    (aref x-params col-out) rate-tparam)
+              ;; Update basis
+              (dictionary-swap! dictionary col-out col-in)
+              (add-eta! lude col-out dx)
+              (when (refactor-p lude col-out)
+                (setq lude (refactor mat basics))))))))))
