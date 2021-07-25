@@ -1,5 +1,5 @@
 (defpackage :cp/test/fkm
-  (:use :cl :fiveam :cp/fkm :cp/test/set-equal)
+  (:use :cl :fiveam :cp/fkm :cp/set-equal)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/fkm)
 (in-suite base-suite)

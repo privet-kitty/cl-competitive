@@ -1,5 +1,5 @@
 (defpackage :cp/test/divisor
-  (:use :cl :fiveam :cp/divisor :cp/test/set-equal)
+  (:use :cl :fiveam :cp/divisor :cp/set-equal)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/divisor)
 (in-suite base-suite)

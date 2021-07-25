@@ -32,16 +32,6 @@
   (is (equalp #(2 3 5 7) (make-prime-sequence 11)))
   (is (equalp #(2 3 5 7 11 13 17 19 23 29) (make-prime-sequence 30))))
 
-(defun set-equal (list1 list2)
-  (let ((table1 (make-hash-table :test #'equalp))
-        (table2 (make-hash-table :test #'equalp)))
-    (dolist (x list1)
-      (setf (gethash x table1) t))
-    (dolist (x list2)
-      (setf (gethash x table2) t))
-    (and (loop for x in list1 always (gethash x table2))
-         (loop for x in list2 always (gethash x table1)))))
-
 (test factorize
   (is (null (factorize 1 (make-prime-data 2))))
   (is (null (factorize 1 (make-prime-data 20))))

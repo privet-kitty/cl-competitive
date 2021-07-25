@@ -1,5 +1,5 @@
 (defpackage :cp/test/symmetric-group
-  (:use :cl :fiveam :cp/symmetric-group :cp/test/set-equal)
+  (:use :cl :fiveam :cp/symmetric-group :cp/set-equal)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/symmetric-group)
 (in-suite base-suite)

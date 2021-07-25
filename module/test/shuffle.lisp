@@ -1,20 +1,8 @@
 (defpackage :cp/test/shuffle
-  (:use :cl :fiveam :cp/shuffle)
+  (:use :cl :fiveam :cp/shuffle :cp/set-equal)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/shuffle)
 (in-suite base-suite)
-
-(defun set-equal (seq1 seq2)
-  (let ((table1 (make-hash-table))
-        (table2 (make-hash-table)))
-    (loop for x being each element of seq1
-          do (setf (gethash x table1) t))
-    (loop for x being each element of seq2
-          do (setf (gethash x table2) t))
-    (and (loop for x being each element of seq1
-               always (gethash x table2))
-         (loop for x being each element of seq2
-               always (gethash x table1)))))
 
 (test shuffle
   (let ((seq #(0 1 2 3 4)))

@@ -1,11 +1,12 @@
-(defpackage :set-equal
+(defpackage :cp/set-equal
   (:use :cl)
   (:export #:set-equal #:multiset-equal))
-(in-package :set-equal)
+(in-package :cp/set-equal)
 
 (declaim (inline set-equal))
 (defun set-equal (seq1 seq2 &key (test #'eql))
   "Returns true iff SEQ1 and SEQ2 are identical as a set."
+  (declare (sequence seq1 seq2))
   (let ((table (make-hash-table :test test)))
     (sequence:dosequence (elm seq1)
       (setf (gethash elm table) t))

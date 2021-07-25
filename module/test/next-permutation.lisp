@@ -1,5 +1,5 @@
 (defpackage :cp/test/next-permutation
-  (:use :cl :fiveam :cp/next-permutation :cp/map-permutations :cp/test/set-equal)
+  (:use :cl :fiveam :cp/next-permutation :cp/map-permutations :cp/set-equal)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/next-permutation)
 (in-suite base-suite)
