@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:hash-table-keys #:hash-table-values #:alist-hash-table #:keys-hash-table
            #:hash-table-nunion #:hash-table-intersection #:hash-table-intersect-p
-           #:hash-table-merge #:hash-table-set= #:multiset=))
+           #:hash-table-merge #:hash-table-set=))
 (in-package :cp/hash-table)
 
 (declaim (inline hash-table-keys))
@@ -80,20 +80,3 @@ hold the same value for the same key.) This function is non-destructive."
              always (nth-value 1 (gethash key1 hash-table2)))
        (loop for key2 being each hash-key of hash-table2
              always (nth-value 1 (gethash key2 hash-table1)))))
-
-(declaim (inline multiset=))
-(defun multiset= (seq1 seq2 &key (test #'eql))
-  "Returns true iff SEQ1 and SEQ2 are identical as a multiset."
-  (declare (sequence seq1 seq2))
-  (let ((table (make-hash-table :test test)))
-    (sequence:dosequence (elm seq1)
-      (incf (the (integer 0 #.most-positive-fixnum) (gethash elm table 0))))
-    (sequence:dosequence (elm seq2)
-      (multiple-value-bind (count present-p) (gethash elm table)
-        (declare ((or null (integer 0 #.most-positive-fixnum)) count))
-        (cond ((not present-p)
-               (return-from multiset= nil))
-              ((eql 1 count)
-               (remhash elm table))
-              (t (setf (gethash elm table) (- count 1))))))
-    (zerop (hash-table-count table))))
