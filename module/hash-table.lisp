@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:hash-table-keys #:hash-table-values #:alist-hash-table #:keys-hash-table
            #:hash-table-nunion #:hash-table-intersection #:hash-table-intersect-p
-           #:hash-table-merge))
+           #:hash-table-merge #:hash-table-set= #:multiset=))
 (in-package :cp/hash-table)
 
 (declaim (inline hash-table-keys))
@@ -18,8 +18,9 @@
 (declaim (inline alist-hash-table))
 (defun alist-hash-table (alist &key (test #'eql))
   (let ((table (make-hash-table :test test)))
-    (dolist (pair alist table)
-      (setf (gethash (car pair) table) (cdr pair)))))
+    (loop for (key . value) in alist
+          do (setf (gethash key table) value))
+    table))
 
 (declaim (inline list-hash-table))
 (defun keys-hash-table (seq &key (test #'eql) (initial-value t))
@@ -37,6 +38,11 @@
   hash-table1)
 
 (defun hash-table-intersection (hash-table1 hash-table2)
+  "Returns a hash-table containing all the keys in both HASH-TABLE1 and
+HASH-TABLE2. Note that the value assigned to a key may be from HASH-TABLE1 or
+HASH-TABLE2. (In other words, it is assumed that HASH-TABLE1 and HASH-TABLE2
+hold the same value for the same key.) This function is non-destructive."
+  (declare (optimize (speed 3)))
   (when (< (hash-table-count hash-table1) (hash-table-count hash-table2))
     (rotatef hash-table1 hash-table2))
   (let ((result (make-hash-table :test (hash-table-test hash-table1))))
@@ -47,9 +53,11 @@
     result))
 
 (defun hash-table-intersect-p (hash-table1 hash-table2)
+  (declare (optimize (speed 3)))
   (when (< (hash-table-count hash-table1) (hash-table-count hash-table2))
     (rotatef hash-table1 hash-table2))
   (maphash (lambda (key value)
+             (declare (ignore value))
              (when (gethash key hash-table1)
                (return-from hash-table-intersect-p t)))
            hash-table2))
@@ -64,3 +72,28 @@
                      (funcall op value1 value2))))
            hash-table2)
   hash-table1)
+
+(declaim (inline hash-table-set=))
+(defun hash-table-set= (hash-table1 hash-table2)
+  "Returns true iff HASH-TABLE1 and HASH-TABLE2 have identical set of keys."
+  (and (loop for key1 being each hash-key of hash-table1
+             always (nth-value 1 (gethash key1 hash-table2)))
+       (loop for key2 being each hash-key of hash-table2
+             always (nth-value 1 (gethash key2 hash-table1)))))
+
+(declaim (inline multiset=))
+(defun multiset= (seq1 seq2 &key (test #'eql))
+  "Returns true iff SEQ1 and SEQ2 are identical as a multiset."
+  (declare (sequence seq1 seq2))
+  (let ((table (make-hash-table :test test)))
+    (sequence:dosequence (elm seq1)
+      (incf (the (integer 0 #.most-positive-fixnum) (gethash elm table 0))))
+    (sequence:dosequence (elm seq2)
+      (multiple-value-bind (count present-p) (gethash elm table)
+        (declare ((or null (integer 0 #.most-positive-fixnum)) count))
+        (cond ((not present-p)
+               (return-from multiset= nil))
+              ((eql 1 count)
+               (remhash elm table))
+              (t (setf (gethash elm table) (- count 1))))))
+    (zerop (hash-table-count table))))
