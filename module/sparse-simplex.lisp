@@ -69,9 +69,12 @@ which is currently basic.
            (vector basics)
            ((mod #.array-dimension-limit) m n))
   (assert (= m (length basics)))
-  (let* ((basics (coerce basics '(simple-array fixnum (*))))
+  (let* ((basics (if (typep basics '(simple-array fixnum (*)))
+                     (copy-seq basics)
+                     (coerce basics '(simple-array fixnum (*)))))
          (basic-flag (make-array (+ n m) :element-type 'fixnum :initial-element +nan+))
          (nonbasics (make-array n :element-type 'fixnum)))
+    (declare ((simple-array fixnum (*)) basics))
     (dotimes (i m)
       (let ((col (aref basics i)))
         (setf (aref basic-flag col) i)))
@@ -96,117 +99,6 @@ which is currently basic.
           (aref basic-flag i) (lognot col-in)
           (aref basic-flag j) col-out))
   dictionary)
-
-(defstruct (sparse-lp (:constructor %make-sparse-lp)
-                      (:conc-name slp-))
-  (m nil :type (mod #.array-dimension-limit))
-  (n nil :type (mod #.array-dimension-limit))
-  (mat nil :type csc)
-  (tmat nil :type csc)
-  (b nil :type (simple-array csc-float (*)))
-  (c nil :type (simple-array csc-float (*)))
-  (x-basic nil :type (simple-array csc-float (*)))
-  (y-nonbasic nil :type (simple-array csc-float (*)))
-  (dictionary nil :type dictionary)
-  (lude nil :type lud-eta))
-
-(defun correct-x-basic! (lude x-basic)
-  (assert (zerop (lud-eta-count lude)))
-  (dense-solve! (lud-eta-lud lude) x-basic))
-
-(defun correct-y-nonbasic! (sparse-lp)
-  (declare (optimize (speed 3)))
-  (let* ((lude (slp-lude sparse-lp))
-         (m (slp-m sparse-lp))
-         (n (slp-n sparse-lp))
-         (tmat (slp-tmat sparse-lp))
-         (c (slp-c sparse-lp))
-         (tmp (make-sparse-vector m))
-         (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
-         (basic-flag (dictionary-basic-flag dictionary))
-         (y-nonbasic (slp-y-nonbasic sparse-lp))
-         (tmp-values (sparse-vector-values tmp))
-         (tmp-indices (sparse-vector-indices tmp)))
-    (symbol-macrolet ((tmp-nz (sparse-vector-nz tmp)))
-      (dotimes (i m)
-        (let ((coef (aref c (aref basics i))))
-          (when (> (abs coef) +eps-large+)
-            (setf (aref tmp-values tmp-nz) coef
-                  (aref tmp-indices tmp-nz) i)
-            (incf tmp-nz))))
-      (sparse-solve-transposed! lude tmp)
-      (let* ((tmp (tmat-times-vec! tmat tmp basic-flag))
-             (tmp-values (sparse-vector-values tmp))
-             (tmp-indices (sparse-vector-indices tmp)))
-        (dotimes (j n)
-          (setf (aref y-nonbasic j) (- (aref c (aref nonbasics j)))))
-        (dotimes (k (sparse-vector-nz tmp))
-          (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
-    sparse-lp))
-
-(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p))
-  "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
-c'x subject to Ax <= b, x >= 0.
-
-This function translates a given LP to an equality form Ax + w = b by adding
-slack variables and changes A to (A E). If you want to give an equality form
-directly, just disable ADD-SLACK.
-
-You can set DICTIONARY to an arbitrary initial dictionary, but please note that
-the consequence is undefined when it is rank-deficient."
-  (declare (optimize (speed 3))
-           (csc a)
-           ((simple-array csc-float (*)) b c))
-  (let* ((m (csc-m a))
-         (n (if add-slack (csc-n a) (- (csc-n a) (csc-m a)))))
-    (assert (= m (length b)))
-    (when add-slack
-      (setq a (add-slack! a)))
-    ;; Add coefficients for basic variables
-    (unless (= (length c) (+ m n))
-      (assert (= n (length c)))
-      (setq c (adjust-array c (the (mod #.array-dimension-limit) (+ n m))
-                            :initial-element +zero+)))
-    (let* ((x-basic (make-array m :element-type 'csc-float))
-           (y-nonbasic (make-array n :element-type 'csc-float))
-           (dictionary (or dictionary
-                           (let ((basics (make-array m :element-type 'fixnum)))
-                             (dotimes (i m)
-                               (setf (aref basics i) (+ n i)))
-                             (make-dictionary m n basics))))
-           (basics (dictionary-basics dictionary))
-           (a-transposed (csc-transpose a)))
-      (unless supplied-p
-        (dotimes (j n)
-          (setf (aref y-nonbasic j) (- (aref c j)))))
-      (dotimes (i m)
-        (setf (aref x-basic i) (aref b i)))
-      (let* ((lude (refactor a basics))
-             (slp (%make-sparse-lp :m m :n n
-                                   :mat a :tmat a-transposed
-                                   :b b :c c
-                                   :x-basic x-basic
-                                   :y-nonbasic y-nonbasic
-                                   :dictionary dictionary
-                                   :lude lude)))
-        (when supplied-p
-          (correct-x-basic! lude x-basic)
-          (correct-y-nonbasic! slp))
-        slp))))
-
-(declaim (ftype (function * (values csc-float &optional)) dot*))
-(defun dot* (coefs x-basic basics)
-  (declare (optimize (speed 3))
-           ((simple-array csc-float (*)) coefs x-basic)
-           ((simple-array fixnum (*)) basics))
-  (let ((res +zero+))
-    (declare (csc-float res))
-    (dotimes (i (length x-basic))
-      (incf res (* (aref coefs (aref basics i)) (aref x-basic i))))
-    res))
-
 (defconstant +initial-size+ 16)
 
 (declaim ((simple-array csc-float (*)) *tmp-values*)
@@ -272,6 +164,118 @@ the consequence is undefined when it is rank-deficient."
             (sparse-vector-nz res) nz)
       (incf *tmp-tag*)
       res)))
+
+(defstruct (sparse-lp (:constructor %make-sparse-lp)
+                      (:conc-name slp-))
+  (m nil :type (mod #.array-dimension-limit))
+  (n nil :type (mod #.array-dimension-limit))
+  (mat nil :type csc)
+  (tmat nil :type csc)
+  (b nil :type (simple-array csc-float (*)))
+  (c nil :type (simple-array csc-float (*)))
+  (x-basic nil :type (simple-array csc-float (*)))
+  (y-nonbasic nil :type (simple-array csc-float (*)))
+  (dictionary nil :type dictionary)
+  (lude nil :type lud-eta))
+
+(defun correct-x-basic! (lude x-basic)
+  (assert (zerop (lud-eta-count lude)))
+  (dense-solve! (lud-eta-lud lude) x-basic))
+
+(defun correct-y-nonbasic! (sparse-lp)
+  (declare (optimize (speed 3)))
+  (let* ((lude (slp-lude sparse-lp))
+         (m (slp-m sparse-lp))
+         (n (slp-n sparse-lp))
+         (tmat (slp-tmat sparse-lp))
+         (c (slp-c sparse-lp))
+         (tmp (make-sparse-vector m))
+         (dictionary (slp-dictionary sparse-lp))
+         (basics (dictionary-basics dictionary))
+         (nonbasics (dictionary-nonbasics dictionary))
+         (basic-flag (dictionary-basic-flag dictionary))
+         (y-nonbasic (slp-y-nonbasic sparse-lp))
+         (tmp-values (sparse-vector-values tmp))
+         (tmp-indices (sparse-vector-indices tmp)))
+    (symbol-macrolet ((tmp-nz (sparse-vector-nz tmp)))
+      (dotimes (i m)
+        (let ((coef (aref c (aref basics i))))
+          (when (> (abs coef) +eps-large+)
+            (setf (aref tmp-values tmp-nz) coef
+                  (aref tmp-indices tmp-nz) i)
+            (incf tmp-nz))))
+      (sparse-solve-transposed! lude tmp)
+      (let* ((tmp (tmat-times-vec! tmat tmp basic-flag))
+             (tmp-values (sparse-vector-values tmp))
+             (tmp-indices (sparse-vector-indices tmp)))
+        (dotimes (j n)
+          (setf (aref y-nonbasic j) (- (aref c (aref nonbasics j)))))
+        (dotimes (k (sparse-vector-nz tmp))
+          (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
+    sparse-lp))
+
+(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p))
+  "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
+c'x subject to Ax <= b, x >= 0.
+
+This function translates a given LP to an equality form Ax + w = b by adding
+slack variables and changes A to (A E). If you want to give an equality form
+directly, just disable ADD-SLACK.
+
+You can set DICTIONARY to an arbitrary initial dictionary, but please note that
+the consequence is undefined when it is rank-deficient.
+
+Note that A is modified when ADD-SLACK is true."
+  (declare (optimize (speed 3))
+           (csc a)
+           ((simple-array csc-float (*)) b c))
+  (let* ((m (csc-m a))
+         (n (if add-slack (csc-n a) (- (csc-n a) (csc-m a)))))
+    (assert (= m (length b)))
+    (when add-slack
+      (setq a (add-slack! a)))
+    ;; Add coefficients for basic variables
+    (unless (= (length c) (+ m n))
+      (assert (= n (length c)))
+      (setq c (adjust-array c (the (mod #.array-dimension-limit) (+ n m))
+                            :initial-element +zero+)))
+    (let* ((x-basic (make-array m :element-type 'csc-float))
+           (y-nonbasic (make-array n :element-type 'csc-float))
+           (dictionary (or dictionary
+                           (let ((basics (make-array m :element-type 'fixnum)))
+                             (dotimes (i m)
+                               (setf (aref basics i) (+ n i)))
+                             (make-dictionary m n basics))))
+           (basics (dictionary-basics dictionary))
+           (a-transposed (csc-transpose a)))
+      (unless supplied-p
+        (dotimes (j n)
+          (setf (aref y-nonbasic j) (- (aref c j)))))
+      (dotimes (i m)
+        (setf (aref x-basic i) (aref b i)))
+      (let* ((lude (refactor a basics))
+             (slp (%make-sparse-lp :m m :n n
+                                   :mat a :tmat a-transposed
+                                   :b b :c c
+                                   :x-basic x-basic
+                                   :y-nonbasic y-nonbasic
+                                   :dictionary dictionary
+                                   :lude lude)))
+        (when supplied-p
+          (correct-x-basic! lude x-basic)
+          (correct-y-nonbasic! slp))
+        slp))))
+
+(declaim (ftype (function * (values csc-float &optional)) dot*))
+(defun dot* (coefs x-basic basics)
+  (declare (optimize (speed 3))
+           ((simple-array csc-float (*)) coefs x-basic)
+           ((simple-array fixnum (*)) basics))
+  (let ((res +zero+))
+    (declare (csc-float res))
+    (dotimes (i (length x-basic))
+      (incf res (* (aref coefs (aref basics i)) (aref x-basic i))))
+    res))
 
 (defun slp-restore (sparse-lp)
   "Restores the current solution of LP and returns five values: objective value,
@@ -537,7 +541,6 @@ the current dictionary is not feasible.)"
                   res index)))))
     res))
 
-;; not tested
 (defun slp-self-dual! (sparse-lp)
   "Applies self-dual simplex method to SPARSE-LP and returns the terminal state:
 :optimal, :infeasible, or :dual-infeasible."
@@ -555,8 +558,8 @@ the current dictionary is not feasible.)"
          (dx (make-sparse-vector m))
          (dy (make-sparse-vector n))
          (tmp (make-sparse-vector m))
-         (x-params (make-array n :element-type 'csc-float :initial-element +zero+))
-         (y-params (make-array m :element-type 'csc-float :initial-element +zero+)))
+         (x-params (make-array m :element-type 'csc-float :initial-element +zero+))
+         (y-params (make-array n :element-type 'csc-float :initial-element +zero+)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
@@ -567,6 +570,7 @@ the current dictionary is not feasible.)"
                       (tmp-values (sparse-vector-values tmp))
                       (tmp-indices (sparse-vector-indices tmp))
                       (tmp-nz (sparse-vector-nz tmp)))
+      ;; FIXME: make it for arbitrary initial dictionary
       ;; initialize parameters for x and y
       (dotimes (j n)
         (let ((colstarts (csc-colstarts mat))
@@ -577,11 +581,13 @@ the current dictionary is not feasible.)"
                 do (incf (aref x-params (aref rows k)) a2)
                    (incf (aref y-params j) a2))))
       (map-into x-params
-                (lambda (x) (+ (random 1d0) (sqrt (the (double-float 0d0) x))))
+                (lambda (x) (+ (random +one+) (sqrt (the (double-float #.+zero+) x))))
                 x-params)
       (map-into y-params
-                (lambda (x) (+ (random 1d0) (sqrt (the (double-float 0d0) x))))
+                (lambda (x) (+ (random +one+) (sqrt (the (double-float #.+zero+) x))))
                 y-params)
+      ;; (map-into x-params (constantly +one+) x-params)
+      ;; (map-into y-params (constantly +one+) y-params)
       (loop
         (let ((mu +neg-inf+)
               col-in
@@ -595,21 +601,36 @@ the current dictionary is not feasible.)"
             (when (and (> (aref x-params i) +eps-small+)
                        (< mu (/ (- (aref x-basic i)) (aref x-params i))))
               (setq mu (/ (- (aref x-basic i)) (aref x-params i))
-                    col-out i)))
+                    col-out i
+                    col-in nil)))
           (when (<= mu +eps-middle+)
             (return :optimal))
           (assert (or (and col-in (not col-out))
                       (and (not col-in) col-out)))
-          (when col-out
-            ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
-            (setf (aref tmp-values 0) (- +one+)
-                  (aref tmp-indices 0) col-out
-                  tmp-nz 1)
-            (sparse-solve-transposed! lude tmp)
-            (tmat-times-vec! tmat tmp basic-flag dy)
-            (let ((col-in (self-dual-ratio-test y-nonbasic dy mu y-params)))
-              (unless col-in
-                (return :infeasible))
+          (if col-out
+              (progn
+                ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
+                (setf (aref tmp-values 0) (- +one+)
+                      (aref tmp-indices 0) col-out
+                      tmp-nz 1)
+                (sparse-solve-transposed! lude tmp)
+                (tmat-times-vec! tmat tmp basic-flag dy)
+                (setq col-in (self-dual-ratio-test y-nonbasic dy mu y-params))
+                (unless col-in
+                  (return :infeasible))
+                ;; dx_B := B^(-1)Ne_j where j is entering column
+                (let* ((j (aref nonbasics col-in))
+                       (colstarts (csc-colstarts mat))
+                       (rows (csc-rows mat))
+                       (values (csc-values mat))
+                       (start (aref colstarts j))
+                       (end (aref colstarts (+ j 1))))
+                  (loop for k from start below end
+                        for i of-type (mod #.array-dimension-limit) = (- k start)
+                        do (setf (aref dx-values i) (aref values k)
+                                 (aref dx-indices i) (aref rows k)))
+                  (setq dx-nz (- end start))
+                  (sparse-solve! lude dx)))
               ;; dx_B := B^(-1)Ne_j where j is entering column
               (let* ((j (aref nonbasics col-in))
                      (colstarts (csc-colstarts mat))
@@ -622,22 +643,8 @@ the current dictionary is not feasible.)"
                       do (setf (aref dx-values i) (aref values k)
                                (aref dx-indices i) (aref rows k)))
                 (setq dx-nz (- end start))
-                (sparse-solve! lude dx))))
-          (when col-in
-            ;; dx_B := B^(-1)Ne_j where j is entering column
-            (let* ((j (aref nonbasics col-in))
-                   (colstarts (csc-colstarts mat))
-                   (rows (csc-rows mat))
-                   (values (csc-values mat))
-                   (start (aref colstarts j))
-                   (end (aref colstarts (+ j 1))))
-              (loop for k from start below end
-                    for i of-type (mod #.array-dimension-limit) = (- k start)
-                    do (setf (aref dx-values i) (aref values k)
-                             (aref dx-indices i) (aref rows k)))
-              (setq dx-nz (- end start))
-              (sparse-solve! lude dx)
-              (let ((col-out (self-dual-ratio-test x-basic dx mu x-params)))
+                (sparse-solve! lude dx)
+                (setq col-out (self-dual-ratio-test x-basic dx mu x-params))
                 (unless col-out
                   (return :dual-infeasible))
                 ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
@@ -645,21 +652,21 @@ the current dictionary is not feasible.)"
                       (aref tmp-indices 0) col-out
                       tmp-nz 1)
                 (sparse-solve-transposed! lude tmp)
-                (tmat-times-vec! tmat tmp basic-flag dy))))
+                (tmat-times-vec! tmat tmp basic-flag dy)))
           ;; t := x_i/dx_i
           ;; tparam := xparam_i/dx_i
           ;; s := y_j/dy_j
           ;; sparam := y_param_j/dy_j
           (multiple-value-bind (rate-t rate-tparam)
               (dotimes (k dx-nz (error "Huh?"))
-                (when (= (aref dx-indices k) col-out)
+                (when (eql (aref dx-indices k) col-out)
                   (return (values (/ (aref x-basic col-out)
                                      (aref dx-values k))
                                   (/ (aref x-params col-out)
                                      (aref dx-values k))))))
             (multiple-value-bind (rate-s rate-sparam)
                 (dotimes (k dy-nz (error "Huh?"))
-                  (when (= (aref dy-indices k) col-in)
+                  (when (eql (aref dy-indices k) col-in)
                     (return (values (/ (aref y-nonbasic col-in)
                                        (aref dy-values k))
                                     (/ (aref y-params col-in)
