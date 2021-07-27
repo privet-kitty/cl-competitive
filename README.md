@@ -9,7 +9,7 @@ The greater part of this library is distributed as public domain, or licensed un
 ## Style
 Although I put this code collection in a ASDF module, this project is primarily made for competitive programming and the whole structure will be quite different from a common ASDF library. I don't recommend that you directly load this module for your software.
 
-On portability: I'll try to write portable code as long as it doesn't make the code structure too complex. However, I occasionally resort to the extension and the behaviour of SBCL x86-64, mainly for performance reasons. Below is a SBCL-specific feature that I always depend on:
+On portability: I try to write portable code as long as the code structure doesn't get too complicated. However, I occasionally use extensions and behaviours of SBCL x86-64, mainly for performance reasons. Below is a SBCL-specific feature that I always depend on:
 
 - declaration as assertion
 
@@ -162,7 +162,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [two-phase-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/two-phase-simplex.lisp) two-phase (dual-then-primal) simplex method for dense LP
 - [self-dual-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/self-dual-simplex.lisp) parametric self-dual simplex method for dense LP
 - [incremental-lp.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/incremental-lp.lisp) warm-start LP solver for dynamically added constraints, using dual simplex method for dense LP
-- [sparse-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sparse-simplex.lisp) two-phase (dual-then-primal) simplex method for sparse LP
+- [sparse-simplex.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/sparse-simplex.lisp) two-phase (dual-then-primal) simplex method and self-dual simplex method for sparse LP
 - [ols.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ols.lisp) ordinary least squares regression by Gaussian elimination
 
 ### Euclidean geometry
