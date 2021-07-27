@@ -154,6 +154,7 @@
   (:import-from :cp/test/ssp)
   (:import-from :cp/test/ssp-slow)
   (:import-from :cp/test/shuffle)
+  (:import-from :cp/test/simple-dual-segment-tree)
   (:import-from :cp/test/sliding-window)
   (:import-from :cp/test/sliding-window-fixed)
   (:import-from :cp/test/sort-by-index)
