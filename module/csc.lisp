@@ -1,7 +1,7 @@
 (defpackage :cp/csc
   (:use :cl)
   (:export
-   #:coo #:coo-m #:coo-n #:make-coo #:coo-insert!
+   #:coo #:coo-m #:coo-n #:make-coo #:coo-to-array #:coo-insert!
    #:coo-rows #:coo-cols #:coo-values #:coo-nz
    #:csc #:make-csc #:csc-to-array #:make-csc-from-array #:make-csc-from-coo
    #:csc-gemv #:csc-gemv-with-basis #:csc-transpose #:csc-m #:csc-n #:csc-nz
@@ -36,6 +36,20 @@ decrease them."
                (make-array initial-size :element-type 'fixnum)
                (make-array initial-size :element-type 'fixnum)
                (make-array initial-size :element-type 'csc-float))))
+
+(defun coo-to-array (coo)
+  "Makes a 2-dimensional array from a COO."
+  (declare (optimize (speed 3)))
+  (let* ((m (coo-m coo))
+         (n (coo-n coo))
+         (rows (coo-rows coo))
+         (cols (coo-cols coo))
+         (values (coo-values coo))
+         (res (make-array (list m n) :element-type 'csc-float :initial-element +zero+)))
+    (dotimes (pos (coo-nz coo))
+      (setf (aref res (aref rows pos) (aref cols pos))
+            (aref values pos)))
+    res))
 
 (defun coo-insert! (coo row col value)
   "Destructively executes an assignment operation: COO[ROW][COL] := VALUE."
