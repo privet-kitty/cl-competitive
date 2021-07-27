@@ -38,10 +38,11 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [binary-heap](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-heap.lisp) binary heap for static or dynamic order function
 - [pairing-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/pairing-heap.lisp) meldable heap (pairing heap)
 - [radix-heap.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/radix-heap.lisp) radix heap
-- [segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/segment-tree.lisp) segment tree on arbitrary monoid
+- [segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/segment-tree.lisp) segment tree over an arbitrary monoid
+- [simple-dual-segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/simple-dual-segment-tree.lisp) dual segment tree for a commutative operator
 - [persistent-segment-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-segment-tree.lisp) persistent segment tree
 - [persistent-starry-sky-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/persistent-starry-sky-tree.lisp) persistent starry sky tree
-- [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-indexed-tree.lisp) binary indexed tree (aka Fenwick tree) on arbitrary commutative monoid
+- [binary-indexed-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binary-indexed-tree.lisp) binary indexed tree (aka Fenwick tree) over an arbitrary commutative monoid
 - [2d-bit.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-bit.lisp) 2D binary indexed tree
 - [disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-set.lisp) disjoint set by Union-Find algorithm
 - [undoable-disjoint-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/undoable-disjoint-set.lisp) undoable disjoint set
@@ -53,7 +54,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [multiset.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/multiset.lisp) multiset
 - [interval-set.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/interval-set.lisp) ordered set of half-open intervals
 - [disjoint-sparse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/disjoint-sparse-table.lisp) disjoint sparse table on arbitrary semigroup
-- [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/range-tree.lisp) 2D range tree on arbitrary commutative monoid
+- [range-tree.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/range-tree.lisp) 2D range tree over an arbitrary commutative monoid
 - [range-tree-fc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/range-tree-fc.lisp) 2D range tree with fractional cascading
 - [convex-hull-trick.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull-trick.lisp) convex hull trick
 - [succinct-bit-vector.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/succinct-bit-vector.lisp) three-layer succinct bit vector
@@ -98,7 +99,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [mod-log.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-log.lisp) modular logarithm
 - [bezout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bezout.lisp) Bezout equation
 - [mod-linear-algebra.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-linear-algebra.lisp) modular linear algebra
-- [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation on arbitrary monoid
+- [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation over an arbitrary monoid
 - [binom-mod-prime.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-prime.lisp) binomial coefficient modulo prime; linear-time construction of tables of inverses, factorials, and inverse of factorials
 - [binom-mod-small.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-small.lisp) binomial coefficient modulo small number
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
