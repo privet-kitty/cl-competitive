@@ -1,11 +1,9 @@
-;;;
-;;; Disjoint set (union by size & path compression)
-;;;
-
 (defpackage :cp/disjoint-set
   (:use :cl)
   (:export #:disjoint-set #:make-disjoint-set #:ds-data
-           #:ds-root #:ds-unite! #:ds-connected-p #:ds-size #:ds-clear))
+           #:ds-root #:ds-unite! #:ds-connected-p #:ds-size #:ds-clear)
+  (:documentation "Provides disjoint set implementation with union by size and
+path compression."))
 (in-package :cp/disjoint-set)
 
 (defstruct (disjoint-set
