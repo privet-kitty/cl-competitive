@@ -43,13 +43,15 @@ This macro defines five functions:
              (replace res initial-contents :start1 (max 0 (- size 1))))
            (,fname-%make res)))
 
+       (declaim (inline ,fname-ref))
        (defun ,fname-ref (,name index)
          "Returns the element at INDEX."
          (declare (index index))
          (let* ((vector (,fname-vector ,name))
                 (i (+ index (- (,fname-n ,name) 1)))
                 (res (aref vector i)))
-           (declare (index i))
+           (declare (index i)
+                    (,element-type res))
            (loop while (> i 0)
                  do (setq i (ash (- i 1) -1))
                     (setq res (funcall ,operator res (aref vector i))))
