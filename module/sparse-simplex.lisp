@@ -13,11 +13,11 @@
    "Provides two kinds of simplex method for sparse LP:
 
 - two-phase (dual-then-primal) simplex method using Dantzig's pivot rule;
-- TODO: parametric self-dual simplex method.
+- parametric self-dual simplex method.
 
 Usage procedure:
 1. MAKE-SPARSE-LP
-2. SPARSE-DUAL-PRIMAL!
+2. SLP-DUAL-PRIMAL!, SLP-SELF-DUAL!, SLP-DUAL!, or SLP-PRIMAL!
 3. SRARSE-LP-RESTORE
 
 Reference:
@@ -333,7 +333,8 @@ the current dictionary is not feasible.)"
 
 (defun slp-primal! (sparse-lp)
   "Applies primal simplex method to SPARSE-LP and returns the terminal state:
-:optimal or :unbounded."
+:optimal or :unbounded. Note that this function doesn't check if the initial
+dictionary is primal feasible."
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
@@ -416,7 +417,8 @@ the current dictionary is not feasible.)"
 
 (defun slp-dual! (sparse-lp)
   "Applies dual simplex method to SPARSE-LP and returns the terminal state:
-:optimal or :infeasible."
+:optimal or :infeasible. Note that this function doesn't check if the initial
+dictionary is dual feasible."
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
@@ -543,7 +545,10 @@ the current dictionary is not feasible.)"
 
 (defun slp-self-dual! (sparse-lp)
   "Applies self-dual simplex method to SPARSE-LP and returns the terminal state:
-:optimal, :infeasible, or :dual-infeasible."
+:optimal, :infeasible, or :dual-infeasible.
+
+Note that this function could return either :infeasible or :dual-infeasible for
+a both infeasible instance. (It is not even deterministic.)"
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
