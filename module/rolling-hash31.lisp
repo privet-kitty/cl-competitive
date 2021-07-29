@@ -158,7 +158,7 @@ LENGTH2 := length of the second sequence."
   "Returns the length of the longest common prefix of two suffixes which begin
 at START1 and START2."
   (declare (optimize (speed 3))
-           ((mod #.most-positive-fixnum) start1 start2))
+           ((mod #.array-dimension-limit) start1 start2))
   (assert (and (< start1 (length (rhash-cumul rhash1)))
                (< start2 (length (rhash-cumul rhash2)))))
   (let ((max-length (min (- (length (rhash-cumul rhash1)) start1 1)

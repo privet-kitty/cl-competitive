@@ -52,8 +52,8 @@
 1. whose prefix coincide with STRING, if TARGET is :PREFIX;
 2. which coincide with STRING, if TARGET is :WHOLE."
   (declare (vector string)
-           ((mod #.most-positive-fixnum) start)
-           ((or null (mod #.most-positive-fixnum)) end)
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end)
            ((member :prefix :whole) target))
   (let ((end (or end (length string))))
     (labels ((recur (node position)

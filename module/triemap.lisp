@@ -56,8 +56,8 @@ means the string doesn't exist in the triemap: that is, (triemap-insert!
   "Calls FUNCTION for each prefix of STRING existing in TRIEMAP. FUNCTION
 takes two arguments: the end position and the assigned value."
   (declare (vector string)
-           ((mod #.most-positive-fixnum) start)
-           ((or null (mod #.most-positive-fixnum)) end)
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end)
            (function function))
   (let ((end (or end (length string))))
     (labels ((recur (node position)
@@ -74,8 +74,8 @@ takes two arguments: the end position and the assigned value."
   "Finds STRING in TRIEMAP and returns the assigned value if it exists,
 otherwise NIL."
   (declare (vector string)
-           ((mod #.most-positive-fixnum) start)
-           ((or null (mod #.most-positive-fixnum)) end))
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end))
   (let ((end (or end (length string))))
     (labels ((recur (node position)
                (if (= position end)
@@ -90,12 +90,12 @@ otherwise NIL."
   "Returns the end position and the value of the longest word in TRIEMAP which
 coincides with a prefix of STRING. Returns NIL when no such words exist."
   (declare (vector string)
-           ((mod #.most-positive-fixnum) start)
-           ((or null (mod #.most-positive-fixnum)) end))
+           ((mod #.array-dimension-limit) start)
+           ((or null (mod #.array-dimension-limit)) end))
   (let ((end (or end (length string)))
         result-position
         result-value)
-    (declare ((or null (mod #.most-positive-fixnum)) result-position))
+    (declare ((or null (mod #.array-dimension-limit)) result-position))
     (labels ((recur (node position)
                (when (triemap-value node)
                  (setq result-position position
