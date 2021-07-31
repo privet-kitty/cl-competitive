@@ -149,7 +149,7 @@ equal to or smaller (or larger, depending on the order) than those of RIGHT.
 
 This function includes %MSET-CONCAT, but it is not as fast."
   (declare ((or null mset) left right))
-  (block outer
+  (block preprocess
     (labels
         ((lrecur (mset)
            (if (%mset-right mset)
@@ -165,7 +165,7 @@ This function includes %MSET-CONCAT, but it is not as fast."
                                         (funcall order (%mset-key lend) (%mset-key mset))))
                                (incf (%mset-count lend) (%mset-count mset))
                                (%mset-right mset))
-                              (t (return-from outer)))))
+                              (t (return-from preprocess)))))
                    (setq right (rrecur right)))))
            (update-size mset)
            mset))
@@ -255,7 +255,7 @@ If COUNT is T, this function deletes all KEYs contained in MSET."
     (recur mset)))
 
 (defmacro mset-push (key mset &optional (order '#'<) &environment env)
-  "Pushes a KEY to MSET."
+  "Inserts a KEY to MSET."
   (multiple-value-bind (temps vals stores setter getter)
       (get-setf-expansion mset env)
     `(let* (,@(mapcar #'list temps vals)
