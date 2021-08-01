@@ -8,10 +8,12 @@
   "Returns the number of 1's at POS-th digit of all the integers in {0, 1, ...,
 N}."
   (let ((mask (ash 1 (+ pos 1))))
-    (+ (* (ash mask -1) (floor n mask))
-       (if (zerop (mod n mask))
+    (+ (* (ash mask -1)
+          (ash n (- (+ pos 1)))) ; (floor n mask)
+       (if (zerop (logand n (- mask 1))) ; (zerop (mod n mask))
            0
            (max (- (ash mask -1)
-                   (- (* mask (ceiling n mask))
+                   (- (* mask
+                         (+ 1 (ash (- n 1) (- (+ pos 1))))) ; (ceiling n mask)
                       (+ n 1)))
                 0)))))
