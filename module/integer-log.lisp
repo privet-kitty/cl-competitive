@@ -1,7 +1,7 @@
-(defpackage :cp/log-ceil
+(defpackage :cp/integer-log
   (:use :cl)
   (:export #:log2-ceil #:log-ceil))
-(in-package :cp/log-ceil)
+(in-package :cp/integer-log)
 
 (declaim (inline log2-ceil))
 (defun log2-ceil (x)

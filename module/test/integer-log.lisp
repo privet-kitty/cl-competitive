@@ -1,7 +1,7 @@
-(defpackage :cp/test/log-ceil
-  (:use :cl :fiveam :cp/log-ceil)
+(defpackage :cp/test/integer-log
+  (:use :cl :fiveam :cp/integer-log)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/log-ceil)
+(in-package :cp/test/integer-log)
 (in-suite base-suite)
 
 (test log2-ceil
@@ -32,7 +32,8 @@
   (is (= 2 (log-ceil 7/2 3)))
   (is (= 3 (log-ceil 27 3)))
 
-  (let ((list (list 998244353 100000007 100000009)))
+  (let ((list (list 998244353 100000007 100000009))
+        (*test-dribble* nil))
     (loop for i to 10
           do (when (> i 0)
                (push i list))
@@ -41,14 +42,13 @@
              (push (+ (floor most-positive-fixnum 2) i) list)
              (push (- (floor most-positive-fixnum 3) i) list)
              (push (+ (floor most-positive-fixnum 3) i) list))
-    (finishes
-      (dolist (x list)
-        (dolist (base list)
-          (when (>= base 2)
-            (let ((log (log-ceil x base)))
-              (assert (and (>= (expt base log) x)
-                           (or (zerop log)
-                               (< (expt base (- log 1)) x))))))))))
+    (dolist (x list)
+      (dolist (base list)
+        (when (>= base 2)
+          (let ((log (log-ceil x base)))
+            (is (and (>= (expt base log) x)
+                     (or (zerop log)
+                         (< (expt base (- log 1)) x)))))))))
 
   (loop for base from 2 to 10
         do (is (loop for x from 1 to 2000
