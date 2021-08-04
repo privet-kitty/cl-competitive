@@ -7,6 +7,7 @@
 (defun count-set-bit-at (n pos)
   "Returns the number of 1's at POS-th digit of all the integers in {0, 1, ...,
 N}."
+  (declare (unsigned-byte n pos))
   (let ((mask (ash 1 (+ pos 1))))
     (+ (* (ash mask -1)
           (ash n (- (+ pos 1)))) ; (floor n mask)
