@@ -1,8 +1,9 @@
 (defpackage :cp/complex-geometry
   (:use :cl)
   (:export #:intersect-p #:calc-internal-angle #:calc-angle #:on-line-segment-p
-           #:cross* #:dot* #:inside-convex-polygon-p #:in-circle
-           #:barycentric #:convex-quad-p)
+           #:parallel-p #:overlap-p #:cross* #:dot* #:inside-convex-polygon-p #:in-circle
+           #:barycentric #:convex-quad-p
+           #:point< #:merge-segments #:calc-intersection #:canonize-line)
   (:documentation "Provides utilities for 2D geometry using complex number.
 
 Reference:
@@ -10,11 +11,12 @@ Christer Ericson. Real-Time Collision Detection. (I checked only a translation
 to Japanese)"))
 (in-package :cp/complex-geometry)
 
-;; not tested
+;; TODO: more docs and tests
+
 ;; Reference: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 (declaim (inline intersect-p))
 (defun intersect-p (p1 p2 q1 q2 &optional (eps 0))
-  "Returns true iff the line segment from P1 to P2 intersects or overwraps with
+  "Returns true iff the line segment from P1 to P2 intersects or overlaps with
 the one from Q1 to Q2."
   (labels ((calc-orientation (p q r)
              (let ((val (- (* (- (imagpart q) (imagpart p))
@@ -62,6 +64,10 @@ NOTE: it is similar to CL:PHASE, the range of which is (-PI, PI]."
   (- (* (realpart p1) (imagpart p2))
      (* (imagpart p1) (realpart p2))))
 
+(declaim (inline parallel-p))
+(defun parallel-p (p1 p2 q1 q2 &optional (eps 0))
+  (<= (abs (cross* (- p1 p2) (- q1 q2))) eps))
+
 (declaim (inline dot-product))
 (defun dot* (p1 p2)
   (+ (* (realpart p1) (realpart p2))
@@ -75,6 +81,14 @@ NOTE: it is similar to CL:PHASE, the range of which is (-PI, PI]."
            (<= (realpart end2) (realpart point) (realpart end1)))
        (or (<= (imagpart end1) (imagpart point) (imagpart end2))
            (<= (imagpart end2) (imagpart point) (imagpart end1)))))
+
+(declaim (inline overlap-p))
+(defun overlap-p (p1 p2 q1 q2 &optional (eps 0))
+  (and (parallel-p p1 p2 q1 q2 eps)
+       (or (on-line-segment-p p1 q1 q2 eps)
+           (on-line-segment-p p2 q1 q2 eps)
+           (on-line-segment-p q1 p1 p2 eps)
+           (on-line-segment-p q2 p1 p2 eps))))
 
 ;; Reference: https://stackoverflow.com/questions/1119627/how-to-test-if-a-point-is-inside-of-a-convex-polygon-in-2d-integer-coordinates
 ;; TODO: introduce eps
@@ -156,3 +170,48 @@ counterclowise) is convex."
        (let ((acd (cross* (- c a) (- d a)))
              (acb (cross* (- c a) (- b a))))
          (< (dot* acd acb) 0))))
+
+(declaim (inline point<))
+(defun point< (p1 p2)
+  "Lexicographically compares two points."
+  (if (= (realpart p1) (realpart p2))
+      (< (imagpart p1) (imagpart p2))
+      (< (realpart p1) (realpart p2))))
+
+(defun canonize-line (p1 p2)
+  "Returns a list of three integers that characterizes the line that crosses P1
+and P2. P1 and P2 must be grid points."
+  (assert (/= p1 p2))
+  (let* ((dy (- (imagpart p2) (imagpart p1)))
+         (dx (- (realpart p2) (realpart p1)))
+         (c (- (* (imagpart p1) dx) (* (realpart p1) dy)))
+         (gcd (gcd dy dx c))
+         (a (floor dy gcd))
+         (b (floor (- dx) gcd))
+         (c (floor c gcd)))
+    (if (or (< a 0)
+            (and (zerop a) (< b)))
+        (list (- a) (- b) (- c))
+        (list a b c))))
+
+(declaim (inline merge-segments))
+(defun merge-segments (sorted-segments)
+  (let (stack)
+    (dolist (segment sorted-segments)
+      (destructuring-bind (p1 . p2) segment
+        (if (or (null stack)
+                (point< (cdr (car stack)) p1))
+            (push segment stack)
+            (when (point< (cdr (car stack)) p2)
+              (let ((new-segment (cons (car (car stack)) p2)))
+                (pop stack)
+                (push new-segment stack))))))
+    (nreverse stack)))
+
+(defun calc-intersection (line1 line2)
+  (destructuring-bind (a1 b1 c1) line1
+    (destructuring-bind (a2 b2 c2) line2
+      (let ((det (- (* a1 b2) (* b1 a2))))
+        (unless (zerop det)
+          (cons (/ (- (* b1 c2) (* b2 c1)) det)
+                (/ (- (* a2 c1) (* a1 c2)) det)))))))
