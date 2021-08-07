@@ -190,7 +190,7 @@ and P2. P1 and P2 must be grid points."
          (b (floor (- dx) gcd))
          (c (floor c gcd)))
     (if (or (< a 0)
-            (and (zerop a) (< b)))
+            (and (zerop a) (< b 0)))
         (list (- a) (- b) (- c))
         (list a b c))))
 
