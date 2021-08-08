@@ -1,11 +1,7 @@
-;;;
-;;; Sort multiple vectors
-;;;
-
-(defpackage :cp/parallel-sort
+(defpackage :cp/synced-sort
   (:use :cl)
-  (:export #:parallel-sort!))
-(in-package :cp/parallel-sort)
+  (:export #:synced-sort!))
+(in-package :cp/synced-sort)
 
 (declaim (inline %median3))
 (defun %median3 (x y z order)
@@ -21,7 +17,7 @@
               x
               z))))
 
-(defun parallel-sort! (vector order &rest vectors)
+(defun synced-sort! (vector order &rest vectors)
   "Destructively sorts VECTOR by ORDER and applies the same permutation to all
 the vectors in VECTORS.
 
@@ -58,7 +54,7 @@ the vectors in VECTORS.
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (locally (declare (sb-ext:muffle-conditions warning))
-    (sb-c:define-source-transform parallel-sort! (vector order &rest vectors)
+    (sb-c:define-source-transform synced-sort! (vector order &rest vectors)
       (let ((vec (gensym))
             (vecs (loop for _ in vectors collect (gensym))))
         `(let ((,vec ,vector)

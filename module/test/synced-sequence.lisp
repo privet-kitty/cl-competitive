@@ -1,37 +1,37 @@
-(defpackage :cp/test/parallel-sequence
-  (:use :cl :fiveam :cp/parallel-sort :cp/parallel-shuffle)
+(defpackage :cp/test/synced-sequence
+  (:use :cl :fiveam :cp/synced-sort :cp/synced-shuffle)
   (:import-from :cp/test/base #:base-suite))
-(in-package :cp/test/parallel-sequence)
+(in-package :cp/test/synced-sequence)
 (in-suite base-suite)
 
 ;; test both of source-transform and full call
 (defmacro with-not/inline (&body body)
-  `(progn (locally (declare (notinline parallel-shuffle! parallel-sort!))
+  `(progn (locally (declare (notinline synced-shuffle! synced-sort!))
             ,@body)
           ,@body))
 
-(test parallel-shuffle!
+(test synced-shuffle!
   (let ((vector1 (coerce (loop for v below 26 collect (code-char (+ v 65))) 'vector))
         (vector2 (coerce (loop for v below 26 collect (code-char (+ v 97))) 'vector))
         (vector3 (coerce (loop for v below 26 collect v) 'vector)))
     (finishes
       (dotimes (i 200)
         (with-not/inline
-            (parallel-shuffle! vector1 vector2 vector3)
+            (synced-shuffle! vector1 vector2 vector3)
           (dotimes (i 26)
             (assert (= (- (char-code (aref vector1 i)) 65)
                        (- (char-code (aref vector2 i)) 97)
                        (aref vector3 i)))))))))
 
-(test parallel-sort!
+(test synced-sort!
   (let ((vector1 (coerce (loop for v below 26 collect (code-char (+ v 65))) 'vector))
         (vector2 (coerce (loop for v below 26 collect (code-char (+ v 97))) 'vector))
         (vector3 (coerce (loop for v below 26 collect v) 'vector)))
     (finishes
       (dotimes (i 200)
         (with-not/inline
-            (parallel-shuffle! vector1 vector2 vector3)
-          (parallel-sort! vector1 #'char< vector2 vector3)
+            (synced-shuffle! vector1 vector2 vector3)
+          (synced-sort! vector1 #'char< vector2 vector3)
           (dotimes (i 26)
             (assert (= (- (char-code (aref vector1 i)) 65)
                        (- (char-code (aref vector2 i)) 97)
