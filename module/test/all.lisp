@@ -76,6 +76,7 @@
   (:import-from :cp/test/hopcroft-karp)
   (:import-from :cp/test/implicit-treap)
   (:import-from :cp/test/incremental-lp)
+  (:import-from :cp/test/inplace-merge)
   (:import-from :cp/test/integer-expression)
   (:import-from :cp/test/integer-log)
   (:import-from :cp/test/integer-pack)
