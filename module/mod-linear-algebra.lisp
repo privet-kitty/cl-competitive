@@ -1,17 +1,13 @@
-;;;
-;;; Linear algebra and modular arithmetic
-;;;
-
 (defpackage :cp/mod-linear-algebra
   (:use :cl #:cp/mod-inverse)
-  (:export #:mod-echelon! #:mod-determinant! #:mod-inverse-matrix! #:mod-solve-linear-system))
+  (:export #:mod-echelon! #:mod-determinant! #:mod-inverse-matrix! #:mod-solve-linear-system)
+  (:documentation "Provides linear algebra over a finite field."))
 (in-package :cp/mod-linear-algebra)
 
 ;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800 (Japanese)
 (declaim (inline mod-echelon!))
 (defun mod-echelon! (matrix modulus &optional extended)
-  "Returns the row echelon form of MATRIX by gaussian elimination and returns
-the rank as the second value.
+  "Returns the row echelon form of MATRIX by gaussian elimination.
 
 This function destructively modifies MATRIX."
   (declare ((integer 1 #.most-positive-fixnum) modulus))
@@ -20,7 +16,8 @@ This function destructively modifies MATRIX."
     (dotimes (i m)
       (dotimes (j n)
         (setf (aref matrix i j) (mod (aref matrix i j) modulus))))
-    (let ((rank 0))
+    (let ((rank 0)
+          (cols (make-array m :element-type 'fixnum :initial-element -1)))
       (dotimes (target-col (if extended (- n 1) n))
         (let ((pivot-row (do ((i rank (+ 1 i)))
                              ((= i m) -1)
@@ -42,8 +39,9 @@ This function destructively modifies MATRIX."
                                    (mod (- (aref matrix i j)
                                            (mod (* (aref matrix rank j) factor) modulus))
                                         modulus)))))))
+            (setf (aref cols rank) target-col)
             (incf rank))))
-      (values matrix rank))))
+      (values matrix rank cols))))
 
 ;; not tested
 ;; TODO: integrate into MOD-ECHELON!
@@ -145,19 +143,22 @@ returns NIL otherwise. This function destructively modifies MATRIX."
 NIL. In addition, this function returns the rank of A as the second value."
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((integer 0 #.most-positive-fixnum) m n))
-    (assert (= n (length vector)))
+    (assert (= m (length vector)))
     (let ((extended (make-array (list m (+ n 1)) :element-type (array-element-type matrix))))
       (dotimes (i m)
         (dotimes (j n)
           (setf (aref extended i j) (aref matrix i j)))
         (setf (aref extended i n) (aref vector i)))
-      (let ((rank (nth-value 1 (mod-echelon! extended modulus t))))
+      (multiple-value-bind (_ rank cols) (mod-echelon! extended modulus t)
+        (declare (ignore _))
         (if (loop for i from rank below m
                   always (zerop (aref extended i n)))
             (let ((result (make-array m
                                       :element-type (array-element-type matrix)
                                       :initial-element 0)))
-              (dotimes (i rank)
-                (setf (aref result i) (aref extended i n)))
+              (dotimes (i m)
+                (let ((j (aref cols i)))
+                  (when (>= j 0)
+                    (setf (aref result j) (aref extended i n)))))
               (values result rank))
             (values nil rank))))))
