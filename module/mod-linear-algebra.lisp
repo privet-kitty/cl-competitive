@@ -4,15 +4,16 @@
   (:documentation "Provides linear algebra over a finite field."))
 (in-package :cp/mod-linear-algebra)
 
+;; TODO: more tests
+
 ;; Reference: http://drken1215.hatenablog.com/entry/2019/03/20/202800 (Japanese)
 (declaim (inline mod-echelon!))
 (defun mod-echelon! (matrix modulus &optional extended)
-  "Returns the row echelon form of MATRIX by gaussian elimination.
-
-This function destructively modifies MATRIX."
+  "Destructively transforms MATRIX to a row echelon form by gaussian
+elimination."
   (declare ((integer 1 #.most-positive-fixnum) modulus))
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (dotimes (i m)
       (dotimes (j n)
         (setf (aref matrix i j) (mod (aref matrix i j) modulus))))
@@ -43,7 +44,6 @@ This function destructively modifies MATRIX."
             (incf rank))))
       (values matrix rank cols))))
 
-;; not tested
 ;; TODO: integrate into MOD-ECHELON!
 (declaim (inline mod-determinant!))
 (defun mod-determinant! (matrix modulus)
@@ -98,7 +98,7 @@ MATRIX."
 returns NIL otherwise. This function destructively modifies MATRIX."
   (declare ((integer 1 #.most-positive-fixnum) modulus))
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (= m n))
     (dotimes (i n)
       (dotimes (j n)
@@ -142,7 +142,7 @@ returns NIL otherwise. This function destructively modifies MATRIX."
   "Solves Ax ≡ b and returns a root vector if it exists. Otherwise it returns
 NIL. In addition, this function returns the rank of A as the second value."
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 #.most-positive-fixnum) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (= m (length vector)))
     (let ((extended (make-array (list m (+ n 1)) :element-type (array-element-type matrix))))
       (dotimes (i m)
@@ -153,10 +153,10 @@ NIL. In addition, this function returns the rank of A as the second value."
         (declare (ignore _))
         (if (loop for i from rank below m
                   always (zerop (aref extended i n)))
-            (let ((result (make-array m
+            (let ((result (make-array n
                                       :element-type (array-element-type matrix)
                                       :initial-element 0)))
-              (dotimes (i m)
+              (dotimes (i (min m n))
                 (let ((j (aref cols i)))
                   (when (>= j 0)
                     (setf (aref result j) (aref extended i n)))))

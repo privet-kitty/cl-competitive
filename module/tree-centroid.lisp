@@ -1,11 +1,8 @@
-;;;
-;;; Centroid of tree
-;;;
-
 (defpackage :cp/tree-centroid
   (:use :cl)
   (:export #:tree-centroid #:make-tree-centroid #:tc-size #:tc-graph #:tc-validities
-           #:tc-find-centroid #:tc-disable-vertex #:tree-centroid-disabled-vertex-error))
+           #:tc-find-centroid #:tc-disable-vertex #:tree-centroid-disabled-vertex-error)
+  (:documentation "Provides detection of centroid of tree."))
 (in-package :cp/tree-centroid)
 
 (deftype tc-vertex-integer () '(signed-byte 32))

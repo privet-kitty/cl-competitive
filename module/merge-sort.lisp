@@ -1,7 +1,7 @@
 (defpackage :cp/merge-sort
   (:use :cl)
   (:export #:merge-sort!)
-  (:documentation "Provides merge sort by bottom-up implementation."))
+  (:documentation "Provides merge sort with bottom-up implementation."))
 (in-package :cp/merge-sort)
 
 (declaim (inline %merge))
@@ -34,13 +34,14 @@
 ;; NOTE: This merge sort is slow on SBCL version earlier than 1.5.0 as the type
 ;; propagation of MAKE-ARRAY doesn't work.
 
-;; TODO: Peephole optimization of SBCL is not sufficient to optimize empty KEY
-;; function. Defining deftransform will work.
+;; TODO: Peephole optimization of SBCL is not sufficient to optimize identity
+;; KEY function. Defining deftransform will work.
 (declaim (inline merge-sort!))
 (defun merge-sort! (vector order &key (start 0) end (key #'identity))
-  "Destructively sorts VECTOR. (You can rely on the side effect.)
+  "Destructively sorts VECTOR. You can rely on the side effect. Note that this
+sort is not stable.
 
-ORDER := strict order"
+ORDER := strict order."
   (declare (vector vector)
            (function order key))
   (let* ((end (or end (length vector)))

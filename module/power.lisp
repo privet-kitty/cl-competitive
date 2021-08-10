@@ -1,10 +1,7 @@
-;;;
-;;; Calculate a^n on any monoids in O(log(n)) time
-;;;
-
 (defpackage :cp/power
   (:use :cl)
-  (:export #:power))
+  (:export #:power)
+  (:documentation "Provides fast exponentiation over any monoids."))
 (in-package :cp/power)
 
 (declaim (inline power))

@@ -295,24 +295,6 @@ You cannot rely on the side effect. Use the returned value."
                       (itreap-merge (%itreap-left itreap) (%itreap-right itreap)))))))
     (recur itreap index)))
 
-(defmacro treap-push (key treap &optional (order '#'<) &environment env)
-  "Pushes a KEY to TREAP."
-  (multiple-value-bind (temps vals stores setter getter)
-      (get-setf-expansion treap env)
-    `(let* (,@(mapcar #'list temps vals)
-            (,(car stores) (treap-insert ,key ,getter :order ,order))
-            ,@(cdr stores))
-       ,setter)))
-
-(defmacro treap-pop (key treap &optional (order '#'<) &environment env)
-  "Deletes a KEY from TREAP."
-  (multiple-value-bind (temps vals stores setter getter)
-      (get-setf-expansion treap env)
-    `(let* (,@(mapcar #'list temps vals)
-            (,(car stores) (treap-delete ,key ,getter :order ,order))
-            ,@(cdr stores))
-       ,setter)))
-
 (defmacro itreap-push (itreap pos obj &environment env)
   "Pushes OBJ to ITREAP at POS."
   (multiple-value-bind (temps vals stores setter getter)

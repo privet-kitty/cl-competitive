@@ -5,8 +5,6 @@
 O(N(logN)^2)."))
 (in-package :cp/inplace-merge)
 
-;; TODO: more docs
-
 (declaim (inline %reverse))
 (defun %reverse (vector start end)
   (declare ((mod #.array-dimension-limit) start end))
@@ -17,6 +15,9 @@ O(N(logN)^2)."))
 
 (declaim (inline inplace-merge!))
 (defun inplace-merge! (vector order start mid end)
+  "Destructively merges two sorted subarrays of VECTOR in the ranges [START,
+MID) and [MID, END). The result are stored in VECTOR itself. Time complexity is
+O(NlogN)."
   (declare (vector vector)
            ((mod #.array-dimension-limit) start mid end))
   (assert (<= start mid end))
@@ -70,6 +71,7 @@ O(N(logN)^2)."))
 
 (declaim (inline merge-sort!))
 (defun inplace-merge-sort! (vector order &key (start 0) end)
+  "ORDER := strict order."
   (declare (vector vector)
            (function order))
   (let* ((end (or end (length vector))))

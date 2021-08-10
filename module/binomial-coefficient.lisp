@@ -1,10 +1,7 @@
-;;;
-;;; Compute binomial coefficient by direct bignum arithmetic
-;;;
-
 (defpackage :cp/binomial-coefficient
   (:use :cl)
-  (:export #:factorial #:binomial-coefficient))
+  (:export #:factorial #:binomial-coefficient)
+  (:documentation "Computes binomial coefficient by bignum arithmetic."))
 (in-package :cp/binomial-coefficient)
 
 ;; dead copy of alexandria::%multiply-range

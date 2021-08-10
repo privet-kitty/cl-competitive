@@ -1,12 +1,10 @@
-;;;
-;;; SA-IS
-;;; Reference:
-;;; https://github.com/atcoder/ac-library/blob/master/atcoder/string.hpp
-;;;
-
 (defpackage :cp/suffix-array
   (:use :cl)
-  (:export #:sa-int #:sa-vector #:make-suffix-array #:make-lcp-array))
+  (:export #:sa-int #:sa-vector #:make-suffix-array #:make-lcp-array)
+  (:documentation "Provides SA-IS
+
+Reference:
+https://github.com/atcoder/ac-library/blob/master/atcoder/string.hpp"))
 (in-package :cp/suffix-array)
 
 (deftype sa-int () '(signed-byte 32))
