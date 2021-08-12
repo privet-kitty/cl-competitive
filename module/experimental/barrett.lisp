@@ -38,14 +38,14 @@
 
   ;; *-high62
   (defknown *-high62 ((unsigned-byte 62) (unsigned-byte 62)) (unsigned-byte 62)
-      (movable foldable flushable commutative sb-c::always-translatable)
+    (movable foldable flushable commutative sb-c::always-translatable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (*-high62 derive-type) ((x y))
     (derive-* x y))
 
   (define-vop (fast-*-high62/fixnum)
-    (:translate *-high62)
+      (:translate *-high62)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target eax)
            (y :scs (any-reg control-stack)))
@@ -68,7 +68,7 @@
                 (move r edx)))
 
   (define-vop (fast-c-*-high62-/fixnum)
-    (:translate *-high62)
+      (:translate *-high62)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target eax))
     (:info y)
@@ -96,7 +96,7 @@
 
   ;; %himod
   (defknown %himod ((unsigned-byte 32) (unsigned-byte 31)) (unsigned-byte 31)
-      (movable foldable flushable sb-c:always-translatable)
+    (movable foldable flushable sb-c:always-translatable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (%himod derive-type) ((integer modulus))
@@ -104,7 +104,7 @@
     (derive-mod modulus))
 
   (define-vop (fast-c-%himod)
-    (:translate %himod)
+      (:translate %himod)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target r))
     (:info m)
@@ -126,12 +126,12 @@
                 (inst cmp r (- m 2))
                 (inst lea y #.(if (fboundp 'ea)
                                   `(sb-vm::ea (- m) r)
-                                  `(sb-vm::make-ea :dword :disp (- m) :base r)))
+                                  `(,(find-symbol "MAKE-EA" :sb-vm) :dword :disp (- m) :base r)))
                 (inst cmov :a r y)))
 
   ;; fast-mod
   (defknown fast-mod (integer unsigned-byte) unsigned-byte
-      (movable foldable flushable)
+    (movable foldable flushable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (fast-mod derive-type) ((integer modulus))
@@ -157,19 +157,3 @@
                ;; Not so effective because branch prediction is usually correct?
                ;; (sb-ext:truly-the (mod ,mod) (%himod x ,mod))
                ))))))
-
-;; (defun bench ()
-;;   (declare (optimize (speed 3) (safety 0)))
-;;   (loop for x from #.(expt 10 9) to #.(expt 10 18) by #.(expt 10 9)
-;;         sum (logand 1 (mod x 998244353))
-;;         of-type (unsigned-byte 62)))
-
-;; (defun bench-fast ()
-;;   (declare (optimize (speed 3) (safety 0)))
-;;   (loop for x from #.(expt 10 9) to #.(expt 10 18) by #.(expt 10 9)
-;;         sum (logand 1 (fast-mod x 998244353))
-;;         of-type (unsigned-byte 62)))
-
-;; #-swank
-;; (progn (time (bench))
-;;        (time (bench-fast)))

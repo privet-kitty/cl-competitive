@@ -121,7 +121,7 @@ NIL."
      (heap<-count (%strick-rheap slope-trick))))
 
 (defun strick-merge (slope-trick1 slope-trick2)
-  "Merges to SLOPE-TRICKs. You cannot use a side effect. Use a returned
+  "Merges two SLOPE-TRICKs. You cannot use a side effect. Use a returned
 value."
   (declare (optimize (speed 3)))
   (when (< (strick-size slope-trick1) (strick-size slope-trick2))
