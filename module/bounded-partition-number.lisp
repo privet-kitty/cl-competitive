@@ -15,7 +15,7 @@ P_m(n, k) = P(n, n) (k > n)
   "Generates a table of partition numbers using the recurrence relation P_max(n,
 k) = P_max(n, k-1) + P_max(n-k, k) + P_max(n-k-m, k-1)."
   (declare ((integer 0 #.most-positive-fixnum) size max)
-           ((integer 1 #.most-positive-fixnum) divisor))
+           ((integer 1 #.most-positive-fixnum) modulus))
   (let ((table (make-array (list size size) :element-type '(integer 0 #.most-positive-fixnum))))
     (dotimes (k size)
       (setf (aref table 0 k) 1))
@@ -29,7 +29,7 @@ k) = P_max(n, k-1) + P_max(n-k, k) + P_max(n-k-m, k-1)."
                                      (- (+ (aref table n (- k 1))
                                            (aref table (- n k) k))
                                         (aref table (the fixnum (- n k max)) (- k 1))))
-                                 divisor)))
+                                 modulus)))
              (loop for k from (+ n 1) below size
                    do (setf (aref table n k)
                             (aref table n n))))
