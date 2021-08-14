@@ -8,6 +8,7 @@
            #:slp-mat #:slp-tmat #:slp-b #:slp-c #:slp-x-basic #:slp-y-nonbasic
            #:correct-x-basic! #:correct-y-nonbasic!
            #:dictionary-basics #:dictionary-nonbasics #:dictionary-basic-flag
+           #:dictionary-add-basic
            #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!)
   (:documentation
    "Provides two kinds of simplex method for sparse LP:
@@ -85,6 +86,22 @@ which is currently basic.
                 (aref basic-flag col) (lognot j))
           (incf j))))
     (%make-dictionary :m m :n n :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
+
+(defun dictionary-add-basic! (dictionary)
+  (symbol-macrolet ((basics (dictionary-basics dictionary))
+                    (basic-flag (dictionary-basic-flag dictionary))
+                    (m (dictionary-m dictionary))
+                    (n (dictionary-n dictionary)))
+    (when (< (length basics) (+ m 1))
+      (setq basics (adjust-array basics (* 2 (+ m 1)))))
+    (when (< (length basic-flag) (+ n m 1))
+      (setq basic-flag (adjust-array basic-flag (* 2 (+ n m 1)))))
+    (let ((new-col (+ m n)))
+      (declare ((mod #.array-dimension-limit) new-col))
+      (setf (aref basics m) new-col
+            (aref basic-flag new-col) m)
+      (incf m)
+      new-col)))
 
 (defun dictionary-swap! (dictionary col-out col-in)
   (declare (optimize (speed 3))
@@ -591,8 +608,6 @@ a both infeasible instance. (It is not even deterministic.)"
       (map-into y-params
                 (lambda (x) (+ (random +one+) (sqrt (the (double-float #.+zero+) x))))
                 y-params)
-      ;; (map-into x-params (constantly +one+) x-params)
-      ;; (map-into y-params (constantly +one+) y-params)
       (loop
         (let ((mu +neg-inf+)
               col-in
