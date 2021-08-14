@@ -72,7 +72,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [monotone-minima.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/monotone-minima.lisp) divide-and-conquer algorithm for monotone matrix
 - [quicksort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/quicksort.lisp) quicksort
 - [merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/merge-sort.lisp) merge sort
-- [inplace-merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inplace-merge-sort.lisp) in-place merge sort
+- [inplace-merge-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inplace-merge.lisp) in-place merge sort
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binsort.lisp) bin sort; counting sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/map-permutations.lisp) permutation and combination
 - [next-permutation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/next-permutation.lisp) next permutation w.r.t. lexicographical order
