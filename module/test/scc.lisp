@@ -48,7 +48,9 @@
   (let ((scc (make-scc #((1) (2) (0)))))
     (is (equalp #(0 0 0) (scc-components scc)))
     (is (= 1 (scc-count scc)))
-    (is (= 3 (aref (scc-sizes scc) 0)))))
+    (is (= 3 (aref (scc-sizes scc) 0))))
+  (let ((scc (make-scc #((4 3 1) (2) (1) NIL NIL))))
+    (equalp #((1 2 3) nil nil nil) (make-condensed-graph scc))))
 
 (defun %make-revgraph (graph)
   (let* ((n (length graph))
