@@ -611,13 +611,15 @@ keeping the order. Returns the size of ITREAP if ITREAP[length-1] <
 VALUE. The time complexity is O(log(n))."
   (labels ((recur (count itreap)
              (declare (index count))
-             (cond ((null itreap) nil)
-                   ((funcall order (funcall key (%itreap-value itreap)) value)
-                    (recur count (%itreap-right itreap)))
-                   (t
-                    (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
-                      (or (recur left-count (%itreap-left itreap))
-                          left-count))))))
+             (when itreap
+               (force-down itreap)
+               (prog1
+                   (if (funcall order (funcall key (%itreap-value itreap)) value)
+                       (recur count (%itreap-right itreap))
+                       (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
+                         (or (recur left-count (%itreap-left itreap))
+                             left-count)))
+                 (force-up itreap)))))
     (or (recur (itreap-count itreap) itreap)
         (itreap-count itreap))))
 
@@ -631,13 +633,15 @@ order. Returns the size of ITREAP if ITREAP[length-1] <= VALUE. The time
 complexity is O(log(n))."
   (labels ((recur (count itreap)
              (declare (index count))
-             (cond ((null itreap) nil)
-                   ((funcall order value (funcall key (%itreap-value itreap)))
-                    (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
-                      (or (recur left-count (%itreap-left itreap))
-                          left-count)))
-                   (t
-                    (recur count (%itreap-right itreap))))))
+             (when itreap
+               (force-down itreap)
+               (prog1
+                   (if (funcall order value (funcall key (%itreap-value itreap)))
+                       (let ((left-count (- count (itreap-count (%itreap-right itreap)) 1)))
+                         (or (recur left-count (%itreap-left itreap))
+                             left-count))
+                       (recur count (%itreap-right itreap)))
+                 (force-up itreap)))))
     (or (recur (itreap-count itreap) itreap)
         (itreap-count itreap))))
 
