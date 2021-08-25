@@ -93,3 +93,29 @@
                   (incf (aref counter key)))
                 mset)
                (is (every (lambda (x) (<= x 1)) counter))))))))))
+
+(test mset-unite
+  (dotimes (_ 500)
+    (let* ((n1 (random 20))
+           (n2 (random 20))
+           (counter (make-array 15 :element-type 'fixnum :initial-element 0))
+           mset1
+           mset2)
+      (dotimes (i n1)
+        (let ((x (random 15)))
+          (incf (aref counter x))
+          (mset-push x mset1 #'>)))
+      (dotimes (i n2)
+        (let ((x (random 15)))
+          (incf (aref counter x))
+          (mset-push x mset2 #'>)))
+      (let ((mset (mset-unite mset1 mset2 :order #'>))
+            (prev most-positive-fixnum))
+        (mset-map-run-length
+         (lambda (key count)
+           (decf (aref counter key) count)
+           (is (> prev key))
+           (setq prev key))
+         mset)
+        (is (loop for x across counter
+                  always (zerop x)))))))

@@ -6,7 +6,7 @@
            #:mset-push #:mset-pop #:mset-map #:mset-map-run-length
            #:mset-find #:mset-count #:mset-first #:mset-last #:mset-size
            #:mset-bisect-left #:mset-bisect-right #:mset-bisect-left-1 #:mset-bisect-right-1
-           #:mset-position-left #:mset-position-right #:mset-ref)
+           #:mset-position-left #:mset-position-right #:mset-ref #:mset-unite)
   (:documentation "Provides multiset implementation."))
 (in-package :cp/multiset)
 
@@ -461,3 +461,38 @@ smaller than any keys in MSET."
                    (t (or (recur (%mset-right mset))
                           mset)))))
     (mset-key (recur mset))))
+
+(declaim (inline mset-unite))
+(defun mset-unite (mset1 mset2 &key (order #'<))
+  (labels
+      ((recur (mset1 mset2)
+         (cond ((null mset1) mset2)
+               ((null mset2) mset1)
+               (t
+                (when (< (%mset-priority mset1) (%mset-priority mset2))
+                  (rotatef mset1 mset2))
+                (let ((key (mset-key mset1))
+                      (count2 0))
+                  (declare ((integer 0 #.most-positive-fixnum) count2))
+                  (labels
+                      ((split (mset)
+                         (cond ((null mset) (values nil nil))
+                               ((funcall order (%mset-key mset) key)
+                                (multiple-value-bind (left right) (split (%mset-right mset))
+                                  (setf (%mset-right mset) left)
+                                  (update-size mset)
+                                  (values mset right)))
+                               ((funcall order key (%mset-key mset))
+                                (multiple-value-bind (left right) (split (%mset-left mset))
+                                  (setf (%mset-left mset) right)
+                                  (update-size mset)
+                                  (values left mset)))
+                               (t (setq count2 (%mset-count mset))
+                                  (values (%mset-left mset) (%mset-right mset))))))
+                    (multiple-value-bind (left2 right2) (split mset2)
+                      (incf (%mset-count mset1) count2)
+                      (setf (%mset-left mset1) (recur (%mset-left mset1) left2)
+                            (%mset-right mset1) (recur (%mset-right mset1) right2))
+                      (update-size mset1)
+                      mset1)))))))
+    (recur mset1 mset2)))
