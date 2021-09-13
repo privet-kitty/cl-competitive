@@ -59,7 +59,7 @@ pathname: run MAIN using the text file as input.
   "Submits PATHNAME to URL. If TEST is true, this function verifies the code
 with (RUN :SAMPLE) before submission."
   (let ((url (or url
-                 (if (boundp '*problem-url*)
+                 (if (and (boundp '*problem-url*) *problem-url*)
                      *problem-url*
                      (error "Don't know to which URL to do submission"))))
         (pathname (or pathname
