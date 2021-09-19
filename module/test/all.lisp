@@ -88,6 +88,7 @@
   (:import-from :cp/test/iterset)
   (:import-from :cp/test/jonker-volgenant)
   (:import-from :cp/test/lagrange-interpolation)
+  (:import-from :cp/test/laguerre)
   (:import-from :cp/test/lca)
   (:import-from :cp/test/linear-sieve)
   (:import-from :cp/test/lis)
