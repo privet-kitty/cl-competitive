@@ -7,7 +7,10 @@
 
 (test poly-inverse/hand
   (signals division-by-zero (poly-inverse #()))
-  (signals division-by-zero (poly-inverse #(0 2))))
+  (signals division-by-zero (poly-inverse #(0 2)))
+  (is (equalp #(1) (poly-inverse #(1))))
+  (is (equalp #(1 0) (poly-inverse #(1) 2)))
+  (is (equalp #() (poly-inverse #(1) 0))))
 
 (test poly-total-prod/hand
   (let ((polys #(#(998244343 1) #(998244347 1) #(0 1))))
@@ -47,6 +50,11 @@
                (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
                (res2 (multipoint-eval poly1 points)))
           (is (equalp res1 res2)))))))
+
+(test poly-log
+  (is (equalp #(0 1 2 3 4) (poly-log #(1 1 499122179 166374064 291154613))))
+  (is (equalp #(0 1 2 3) (poly-log #(1 1 499122179 166374064 291154613) 4)))
+  (is (equalp #(0) (poly-log #(1 1 499122179 166374064 291154613) 1))))
 
 (test bostan-mori
   ;; fibonacci

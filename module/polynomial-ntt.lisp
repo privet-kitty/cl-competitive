@@ -1,13 +1,28 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
-           #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori))
+           #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
+           #:poly-differentiate1 #:poly-integrate #:poly-log))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
 
 (define-ntt +ntt-mod+
   :convolve poly-multiply)
+
+(declaim (inline %adjust))
+(defun %adjust (vector size)
+  (declare (ntt-vector vector))
+  (if (or (null size) (= size (length vector)))
+      vector
+      (let ((res (make-array size :element-type 'ntt-int :initial-element 0)))
+        (replace res vector)
+        res)))
+
+(declaim (inline %power-of-two-ceiling))
+(defun %power-of-two-ceiling (x)
+  (declare (ntt-int x))
+  (ash 1 (integer-length (- x 1))))
 
 ;; (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
 ;; (defun poly-inverse (poly &optional result-length)
@@ -62,17 +77,19 @@
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
             while (< i result-length)
-            for f of-type ntt-vector = (subseq poly 0 (min n (* 2 i)))
-            for g of-type ntt-vector = (copy-seq res)
-            do (setq f (adjust-array f (* 2 i) :initial-element 0)
-                     g (adjust-array g (* 2 i) :initial-element 0))
+            for f of-type ntt-vector = (make-array (* 2 i) :element-type 'ntt-int
+                                                           :initial-element 0)
+            for g of-type ntt-vector = (make-array (* 2 i) :element-type 'ntt-int
+                                                           :initial-element 0)
+            do (replace f poly :end2 (min n (* 2 i)))
+               (replace g res)
                (ntt! f)
                (ntt! g)
                (dotimes (j (* 2 i))
                  (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
                (inverse-ntt! f)
-               (setq f (subseq f i (* 2 i)))
-               (setq f (adjust-array f (* 2 i) :initial-element 0))
+               (replace f f :start1 0 :end1 i :start2 i :end2 (* 2 i))
+               (fill f 0 :start i :end (* 2 i))
                (ntt! f)
                (dotimes (j (* 2 i))
                  (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
@@ -82,9 +99,9 @@
                                     +ntt-mod+))
                  (dotimes (j i)
                    (setf (aref f j) (mod (* inv-len (aref f j)) +ntt-mod+)))
-                 (setq res (adjust-array res (* 2 i)))
+                 (setq res (%adjust res (* 2 i)))
                  (replace res f :start1 i)))
-      (adjust-array res result-length))))
+      (%adjust res result-length))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-floor))
 (defun poly-floor (poly1 poly2)
@@ -311,9 +328,26 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
       (let ((coef (mod (* (aref p (+ i 1)) (+ i 1)) +ntt-mod+)))
         (declare ((integer 0 #.most-positive-fixnum) coef))
         (setf (aref p i) coef)))
-    (let ((end (+ 1 (or (position 0 p :from-end t :end (- (length p) 1) :test-not #'=)
+    (let ((end (+ 1 (or (position 0 p :from-end t :end (- (length p) 1) :test-not #'eql)
                         -1))))
-      (adjust-array p end))))
+      (subseq p 0 end))))
+
+(declaim (ntt-vector *inv*))
+(defparameter *inv* (make-array 2 :element-type 'ntt-int :initial-contents '(0 1)))
+
+(defun fill-inv! (new-size)
+  (declare (optimize (speed 3))
+           ((mod #.array-dimension-limit) new-size))
+  (let* ((old-size (length *inv*))
+         (new-size (%power-of-two-ceiling (max old-size new-size))))
+    (when (< old-size new-size)
+      (loop with inv of-type ntt-vector = (adjust-array *inv* new-size)
+            for x from old-size below new-size
+            do (setf (aref inv x)
+                     (- +ntt-mod+
+                        (mod (* (aref inv (rem +ntt-mod+ x)) (floor +ntt-mod+ x))
+                             +ntt-mod+)))
+            finally (setq *inv* inv)))))
 
 (declaim (inline poly-integrate))
 (defun poly-integrate (p)
@@ -324,9 +358,24 @@ be zero."
          (n (length p)))
     (when (zerop n)
       (return-from poly-integrate (make-array 0 :element-type 'ntt-int)))
-    (let ((result (make-array (+ n 1) :element-type 'ntt-int :initial-element 0)))
+    (fill-inv! (+ n 1))
+    (let ((result (make-array (+ n 1) :element-type 'ntt-int :initial-element 0))
+          (inv *inv*))
       (dotimes (i n)
         (setf (aref result (+ i 1))
-              (mod (* (the fixnum (aref p i)) (mod-inverse (+ i 1) +ntt-mod+))
+              (mod (* (the fixnum (aref p i)) (aref inv (+ i 1)))
                    +ntt-mod+)))
       result)))
+
+(declaim (ftype (function * (values ntt-vector &optional)) poly-log))
+(defun poly-log (poly &optional result-length)
+  (declare (optimize (speed 3))
+           (vector poly)
+           ((or null (integer 1 (#.array-dimension-limit))) result-length))
+  (let* ((poly (coerce poly 'ntt-vector))
+         (length (or result-length (length poly))))
+    (assert (= 1 (aref poly 0)))
+    (let ((res (poly-integrate (%adjust (poly-multiply (poly-differentiate! (copy-seq poly))
+                                                       (poly-inverse poly length))
+                                        (- length 1)))))
+      (%adjust res result-length))))
