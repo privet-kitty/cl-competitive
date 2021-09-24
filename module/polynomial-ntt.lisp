@@ -2,7 +2,7 @@
   (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
-           #:poly-differentiate1 #:poly-integrate #:poly-log))
+           #:poly-differentiate! #:poly-integrate #:poly-log))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
