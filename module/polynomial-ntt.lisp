@@ -47,14 +47,14 @@
 ;;             for decr = (poly-multiply (poly-multiply res res)
 ;;                                       (subseq poly 0 (min (length poly) (* 2 i))))
 ;;             for decr-len = (length decr)
-;;             do (setq res (adjust-array res (* 2 i) :initial-element 0))
+;;             do (setq res (%adjust res (* 2 i) :initial-element 0))
 ;;                (dotimes (j (* 2 i))
 ;;                  (setf (aref res j)
 ;;                        (mod (the ntt-int
 ;;                                  (+ (mod (* 2 (aref res j)) +ntt-mod+)
 ;;                                     (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
 ;;                             +ntt-mod+))))
-;;       (adjust-array res result-length))))
+;;       (%adjust res result-length))))
 
 ;; Reference: https://opt-cp.com/fps-fast-algorithms/
 (declaim (ftype (function * (values ntt-vector &optional)) poly-inverse))
@@ -116,8 +116,8 @@
     (setq poly1 (nreverse (subseq poly1 0 deg1))
           poly2 (nreverse (subseq poly2 0 deg2)))
     (let* ((res-len (+ 1 (- deg1 deg2)))
-           (res (adjust-array (poly-multiply poly1 (poly-inverse poly2 res-len))
-                              res-len)))
+           (res (%adjust (poly-multiply poly1 (poly-inverse poly2 res-len))
+                         res-len)))
       (nreverse res))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-sub))
@@ -137,7 +137,7 @@
                   (- value +ntt-mod+)
                   value))))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
-      (adjust-array res end))))
+      (%adjust res end))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-add))
 (defun poly-add (poly1 poly2)
@@ -155,7 +155,7 @@
                   (- value +ntt-mod+)
                   value))))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
-      (adjust-array res end))))
+      (%adjust res end))))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-mod))
 (defun poly-mod (poly1 poly2)
@@ -325,9 +325,8 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
       (return-from poly-differentiate! p))
     (dotimes (i (- (length p) 1))
       (declare (ntt-int i))
-      (let ((coef (mod (* (aref p (+ i 1)) (+ i 1)) +ntt-mod+)))
-        (declare ((integer 0 #.most-positive-fixnum) coef))
-        (setf (aref p i) coef)))
+      (setf (aref p i)
+            (mod (* (aref p (+ i 1)) (+ i 1)) +ntt-mod+)))
     (let ((end (+ 1 (or (position 0 p :from-end t :end (- (length p) 1) :test-not #'eql)
                         -1))))
       (subseq p 0 end))))
@@ -341,7 +340,7 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
   (let* ((old-size (length *inv*))
          (new-size (%power-of-two-ceiling (max old-size new-size))))
     (when (< old-size new-size)
-      (loop with inv of-type ntt-vector = (adjust-array *inv* new-size)
+      (loop with inv of-type ntt-vector = (%adjust *inv* new-size)
             for x from old-size below new-size
             do (setf (aref inv x)
                      (- +ntt-mod+
@@ -363,7 +362,7 @@ be zero."
           (inv *inv*))
       (dotimes (i n)
         (setf (aref result (+ i 1))
-              (mod (* (the fixnum (aref p i)) (aref inv (+ i 1)))
+              (mod (* (aref p i) (aref inv (+ i 1)))
                    +ntt-mod+)))
       result)))
 

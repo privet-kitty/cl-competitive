@@ -56,6 +56,21 @@
   (is (equalp #(0 1 2 3) (poly-log #(1 1 499122179 166374064 291154613) 4)))
   (is (equalp #(0) (poly-log #(1 1 499122179 166374064 291154613) 1))))
 
+(test poly-differentiate!
+  (is (equalp #() (poly-differentiate! #(1))))
+  (is (equalp #() (poly-differentiate! #(2 0))))
+  (is (equalp #(3) (poly-differentiate! #(1 3))))
+  (is (equalp #(3) (poly-differentiate! #(1 3 0))))
+  (is (equalp #(3 2) (poly-differentiate! #(4 3 1))))
+  (is (equalp #(3 2) (poly-differentiate! #(4 3 1 0)))))
+
+(test poly-integrate
+  (is (equalp #() (poly-integrate #())))
+  (is (equalp #(0 3) (poly-integrate #(3))))
+  (is (equalp #(0 0) (poly-integrate #(0))))
+  (is (equalp #(0 1 1) (poly-integrate #(1 2))))
+  (is (equalp #(0 1 1 1) (poly-integrate #(1 2 3)))))
+
 (test bostan-mori
   ;; fibonacci
   (is (equal (cons 0 (loop for a0 = 0 then a1
