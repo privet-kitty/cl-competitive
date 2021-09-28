@@ -35,11 +35,15 @@ This module is tuned for SBCL on x86-64, i.e., here (integer 0
                          (when (= y (- n 1)) (return t)))))))))
 
 ;; https://primes.utm.edu/prove/prove2_3.html
-;; TODO: more efficient SPRP
+;; https://miller-rabin.appspot.com/
 (defun prime-p (n)
-  (declare (uint n))
+  (declare (optimize (speed 3))
+           (uint n))
   (cond ((<= n 1) nil)
         ((evenp n) (= n 2))
+        ((< n 49141)
+         (or (= n 331)
+             (%strong-probable-prime-p n 921211727)))
         ((< n 4759123141)
          (loop for base in '(2 7 61)
                always (%strong-probable-prime-p n base)))
