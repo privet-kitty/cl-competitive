@@ -95,7 +95,7 @@ inserted with keeping the order. (or equivalent to lower_bound() of C++)."
         one)))
 
 (defun %build-tree! (biset)
-  (declare (optimize (speed 3)))
+  (declare (optimize (speed 3) (safety 0)))
   (let ((nw (%biset-nw biset))
         (tree (%biset-tree biset))
         (bits (%biset-bits biset)))
@@ -120,6 +120,19 @@ inserted with keeping the order. (or equivalent to lower_bound() of C++)."
       (replace bits initial-contents)
       (setf (%biset-total res) (count 1 bits))
       (%build-tree! res))
+    res))
+
+;; not tested
+(declaim (inline %make-biset-from))
+(defun %make-biset-from (bits)
+  (declare (optimize (speed 3))
+           (simple-bit-vector bits))
+  (let* ((length (length bits))
+         (nw (ceiling length n-word-bits))
+         (tree (make-array nw :element-type 'uint :initial-element 0))
+         (res (%make-biset :n length :nw nw :tree tree :bits bits)))
+    (setf (%biset-total res) (count 1 bits))
+    (%build-tree! res)
     res))
 
 (declaim (ftype (function * (values uint &optional)) biset-select))
