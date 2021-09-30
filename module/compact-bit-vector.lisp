@@ -9,7 +9,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= n-word-bits 64)))
 
-(deftype uint () '(unsigned-byte 62))
+(deftype uint () '(integer 0 #.most-positive-fixnum))
 
 (defstruct (compact-bit-vector (:constructor %make-cbv (storage blocks))
                                (:conc-name cbv-)
@@ -23,14 +23,14 @@
 vector is created."
   (declare (optimize (speed 3)))
   (check-type vector simple-bit-vector)
-  (let* ((len (length vector))
-         (vector (if (zerop (mod len sb-vm:n-word-bits))
+  (let* ((vector (if (zerop (mod (length vector) sb-vm:n-word-bits))
                      vector
-                     (let ((tmp (make-array (* n-word-bits (ceiling len n-word-bits))
+                     (let ((tmp (make-array (* n-word-bits
+                                               (ceiling (length vector) n-word-bits))
                                             :element-type 'bit
                                             :initial-element 0)))
                        (replace tmp vector))))
-         (block-count (floor len n-word-bits))
+         (block-count (floor (length vector) n-word-bits))
          (blocks (make-array (+ 1 block-count) :element-type 'uint :initial-element 0))
          (sum 0))
     (declare (simple-bit-vector vector)

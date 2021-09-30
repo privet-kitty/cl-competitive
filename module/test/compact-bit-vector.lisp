@@ -4,7 +4,7 @@
 (in-package :cp/test/compact-bit-vector)
 (in-suite base-suite)
 
-(test compact-bit-vector
+(test compact-bit-vector/hand
   (let ((cbv (make-compact-bit-vector! #*101101)))
     (is (= 0 (cbv-rank cbv 0)))
     (is (= 1 (cbv-rank cbv 1)))
@@ -24,9 +24,10 @@
   ;; null case
   (let ((cbv (make-compact-bit-vector! #*)))
     (is (= 0 (cbv-rank cbv 0)))
-    (is (= 0 (cbv-select cbv 0))))
+    (is (= 0 (cbv-select cbv 0)))))
 
-  ;; random case (non-multiple of word size)
+
+(test compact-bit-vector/random
   (let ((state (sb-ext:seed-random-state 0)))
     (let* ((vec (let ((tmp (make-array 10000 :element-type 'bit)))
                   (dotimes (i (length tmp) tmp)
