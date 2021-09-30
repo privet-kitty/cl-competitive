@@ -17,6 +17,7 @@
   (:import-from :cp/test/binom-quadratic)
   (:import-from :cp/test/bipartite-matching)
   (:import-from :cp/test/bisect)
+  (:import-from :cp/test/biset)
   (:import-from :cp/test/bit-basher)
   (:import-from :cp/test/bounded-partition-number)
   (:import-from :cp/test/buffered-read-line)
