@@ -8,11 +8,11 @@
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogue of lower_bound() of C++ or bisect_left() of Python: Returns the
-smallest index (or input) i that fulfills TARGET[i] >= VALUE, where '>=' is the
-complement of ORDER. In other words, this function returns the leftmost index at
-which VALUE can be inserted with keeping the order. Therefore, TARGET must be
-monotonically non-decreasing with respect to ORDER.
+Analogue of lower_bound() of C++ or bisect_left() of Python: Returns the least
+index (or input) i such that TARGET[i] >= VALUE, where '>=' is the complement of
+ORDER. In other words, this function returns the leftmost index at which VALUE
+can be inserted with keeping the order. Therefore, TARGET must be monotonically
+non-decreasing with respect to ORDER.
 
 - This function returns END if VALUE exceeds TARGET[END-1]. 
 - The range [START, END) is half-open.
@@ -48,11 +48,11 @@ monotonically non-decreasing with respect to ORDER.
   "TARGET := vector | function (taking an integer argument)
 ORDER := strict order
 
-Analogue of upper_bound() of C++ or bisect_right() of Python: Returns the
-smallest index (or input) i that fulfills TARGET[i] > VALUE. In other words,
-this function returns the rightmost index at which VALUE can be inserted with
-keeping the order. Therefore, TARGET must be monotonically non-decreasing with
-respect to ORDER.
+Analogue of upper_bound() of C++ or bisect_right() of Python: Returns the least
+index (or input) i such that TARGET[i] > VALUE. In other words, this function
+returns the rightmost index at which VALUE can be inserted with keeping the
+order. Therefore, TARGET must be monotonically non-decreasing with respect to
+ORDER.
 
 - This function returns END if VALUE >= TARGET[END-1].
 - The range [START, END) is half-open.

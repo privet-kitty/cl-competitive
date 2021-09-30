@@ -2,34 +2,36 @@
   (:use :cl)
   (:export #:compact-bit-vector #:make-compact-bit-vector! #:cbv-storage #:cbv-blocks
            #:cbv-ref #:cbv-count #:cbv-rank #:cbv-select)
+  (:import-from #:sb-vm #:n-word-bits)
   (:documentation "Provides two-layer compact bit vector."))
 (in-package :cp/compact-bit-vector)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (assert (= sb-vm:n-word-bits 64)))
- 
+  (assert (= n-word-bits 64)))
+
+(deftype uint () '(unsigned-byte 62))
+
 (defstruct (compact-bit-vector (:constructor %make-cbv (storage blocks))
                                (:conc-name cbv-)
                                (:copier nil)
                                (:predicate nil))
   (storage nil :type simple-bit-vector)
-  (blocks nil :type (simple-array (integer 0 #.most-positive-fixnum) (*))))
+  (blocks nil :type (simple-array uint (*))))
  
 (defun make-compact-bit-vector! (vector)
   "The consequence is undefined when VECTOR is modified after a compact bit
 vector is created."
   (declare (optimize (speed 3)))
   (check-type vector simple-bit-vector)
-  (let* ((vector (if (zerop (mod (length vector) sb-vm:n-word-bits))
+  (let* ((len (length vector))
+         (vector (if (zerop (mod len sb-vm:n-word-bits))
                      vector
-                     (adjust-array vector
-                                   (* sb-vm:n-word-bits
-                                      (ceiling (length vector) sb-vm:n-word-bits))
-                                   :initial-element 0)))
-         (block-count (floor (length vector) sb-vm:n-word-bits))
-         (blocks (make-array (+ 1 block-count)
-                             :element-type '(integer 0 #.most-positive-fixnum)
-                             :initial-element 0))
+                     (let ((tmp (make-array (* n-word-bits (ceiling len n-word-bits))
+                                            :element-type 'bit
+                                            :initial-element 0)))
+                       (replace tmp vector))))
+         (block-count (floor len n-word-bits))
+         (blocks (make-array (+ 1 block-count) :element-type 'uint :initial-element 0))
          (sum 0))
     (declare (simple-bit-vector vector)
              ((mod #.array-dimension-limit) sum))
@@ -96,13 +98,14 @@ returns 0."
       (let* ((block-idx (block-bisect 0 block-size))
              (ord (- ord (aref blocks block-idx)))
              (word (sb-kernel:%vector-raw-bits storage block-idx)))
+        ;; TODO: use PDEP instruction here
         (labels ((pos-bisect (ok ng)
-                   (declare ((integer 0 #.sb-vm:n-word-bits) ok ng))
+                   (declare ((integer 0 #.n-word-bits) ok ng))
                    (if (<= (- ng ok) 1)
                        ok
                        (let ((mid (ash (+ ok ng) -1)))
                          (if (<= ord (logcount (ldb (byte mid 0) word)))
                              (pos-bisect ok mid)
                              (pos-bisect mid ng))))))
-          (let ((pos (pos-bisect 0 sb-vm:n-word-bits)))
-            (+ (* sb-vm:n-word-bits block-idx) pos)))))))
+          (let ((pos (pos-bisect 0 n-word-bits)))
+            (+ (* n-word-bits block-idx) pos)))))))

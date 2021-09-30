@@ -5,8 +5,8 @@
            #:treap-split #:treap-insert #:treap-push #:treap-pop #:make-treap
            #:treap-delete #:treap-merge #:treap-map #:invalid-treap-index-error
            #:treap-ref #:treap-first #:treap-last #:treap-unite #:treap-reverse)
-  (:documentation "Provides a treap implementation of ordered set that is
-accessible by index.
+  (:documentation "Provides a treap implementation of ordered set with random
+access.
 
 Note:
 - You shouldn't insert duplicate keys into a treap unless you know what you are
@@ -44,9 +44,9 @@ treap. Be sure to use the returned value.
 
 (declaim (inline treap-find))
 (defun treap-find (key treap &key (order #'<))
-  "Returns KEY if TREAP contains it; otherwise it returns NIL.
+  "Returns KEY if TREAP contains it, otherwise returns NIL.
 
-An element in TREAP is considered to be equal to KEY iff (and (not (funcall
+Here an element in TREAP is considered to be equal to KEY iff (and (not (funcall
 order key <element>)) (not (funcall order <element> key))) is true."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
@@ -77,9 +77,10 @@ order key <element>)) (not (funcall order <element> key))) is true."
     (recur (treap-count treap) treap)))
 
 (declaim (inline treap-bisect-left)
-         (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional)) treap-bisect-left))
+         (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional))
+                treap-bisect-left))
 (defun treap-bisect-left (value treap &key (order #'<))
-  "Returns two values: the least index and the corresponding key that satisfies
+  "Returns two values: the least index and the corresponding key such that
 TREAP[index] >= VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
 < VALUE holds for all keys."
   (labels ((recur (count treap)
@@ -104,9 +105,9 @@ TREAP[index] >= VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
          (ftype (function * (values (integer 0 #.most-positive-fixnum) t &optional))
                 treap-bisect-right))
 (defun treap-bisect-right (value treap &key (order #'<))
-  "Returns two values: the least index and the corresponding key that satisfies
+  "Returns two values: the least index and the corresponding key such that
 TREAP[index] > VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
-<= VALUE hold for all keys."
+<= VALUE holds for all keys."
   (labels ((recur (count treap)
              (declare ((integer 0 #.most-positive-fixnum) count))
              (cond ((null treap) (values nil nil))
@@ -130,7 +131,7 @@ TREAP[index] > VALUE. Returns the size of TREAP and VALUE instead if TREAP[key]
          (ftype (function * (values (or null treap) (or null treap) &optional)) treap-split))
 (defun treap-split (key treap &key (order #'<))
   "Destructively splits TREAP with reference to KEY and returns two treaps,
-the smaller sub-treap (< KEY) and the larger one (>= KEY)."
+the left sub-treap (< KEY) and the right one (>= KEY)."
   (declare ((or null treap) treap))
   (labels ((recur (treap)
              (cond ((null treap)
@@ -171,7 +172,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
       (recur treap))))
 
 (defmacro treap-push (key treap &optional (order '#'<) &environment env)
-  "Pushes a KEY to TREAP."
+  "Inserts KEY to TREAP."
   (multiple-value-bind (temps vals stores setter getter)
       (get-setf-expansion treap env)
     `(let* (,@(mapcar #'list temps vals)
@@ -180,7 +181,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
        ,setter)))
 
 (defmacro treap-pop (key treap &optional (order '#'<) &environment env)
-  "Deletes a KEY from TREAP."
+  "Deletes KEY from TREAP."
   (multiple-value-bind (temps vals stores setter getter)
       (get-setf-expansion treap env)
     `(let* (,@(mapcar #'list temps vals)
@@ -189,7 +190,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
        ,setter)))
 
 (defun treap (order &rest keys)
-  "NOTE: this constructor takes O(nlog(n))."
+  "NOTE: this constructor takes O(nlog(n)) time."
   (loop with res = nil
         for key in keys
         do (setf res (treap-insert key res :order order))
@@ -198,7 +199,7 @@ the smaller sub-treap (< KEY) and the larger one (>= KEY)."
 ;; Reference: https://cp-algorithms.com/data_structures/treap.html
 (declaim (inline make-treap))
 (defun make-treap (sorted-vector)
-  "Makes a treap from the given SORTED-VECTOR in O(n) time. Note that this
+  "Creates a treap from the given SORTED-VECTOR in O(n) time. Note that this
 function doesn't check if SORTED-VECTOR is actually sorted w.r.t. your intended
 order. The consequence is undefined when a non-sorted vector is given."
   (declare (vector sorted-vector))
@@ -234,7 +235,7 @@ order. The consequence is undefined when a non-sorted vector is given."
 (declaim (ftype (function * (values (or null treap) &optional)) treap-merge))
 (defun treap-merge (left right)
   "Destructively concatenates two treaps. Assumes that all keys of LEFT are
-smaller (or larger, depending on the order) than those of RIGHT.
+less (or greater, depending on the order) than those of RIGHT.
 
 Note that this `merge' is different from CL:MERGE and rather close to
 CL:CONCATENATE. (TREAP-UNITE is the analogue of the former operation.)"
@@ -356,8 +357,8 @@ take one argument."
 
 (declaim (inline treap-reverse))
 (defun treap-reverse (treap)
-  "Destructively reverses the order of the whole treap. Note that this operation
-takes O(n) time."
+  "Destructively reverses the entire treap. Note that this operation takes O(n)
+time."
   (labels ((recur (treap)
              (when treap
                (let ((left (recur (%treap-left treap)))
