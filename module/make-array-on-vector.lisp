@@ -44,5 +44,5 @@ product of DIMENSIONS must be equal to the length of VECTOR."
              array)
           vector)
     (dotimes (axis array-rank)
-      (setf (sb-kernel:%array-dimension array axis) (pop dimensions)))
+      (sb-kernel:%set-array-dimension array axis (pop dimensions)))
     array))
