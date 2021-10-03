@@ -172,6 +172,7 @@ ordered set interpretation: Returns the (0-based) RANK-th element."
       (biset-select biset rank))))
 
 (defun biset-find> (biset x)
+  "Returns the successor of X if it exists; otherwise it returns NIL."
   (declare (optimize (speed 3))
            (uint x))
   (let ((rank (biset-count1 biset (+ x 1))))
@@ -186,6 +187,7 @@ ordered set interpretation: Returns the (0-based) RANK-th element."
       (biset-select biset rank))))
 
 (defun biset-find< (biset x)
+  "Returns the predecessor of X if it exists; otherwise it returns NIL."
   (declare (optimize (speed 3))
            (uint x))
   (let ((rank (- (biset-count1 biset x) 1)))
