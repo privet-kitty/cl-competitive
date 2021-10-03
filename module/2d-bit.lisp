@@ -14,7 +14,7 @@ Defines no structure; 2D BIT is just a 2-dimensional array. This macro defines
 three functions: <NAME>-UPDATE!, <NAME>-FOLD and <NAME>-BUILD!.
 
 SUM-TYPE is used only for type declarations: each sum is declared to be this
-type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
+type. (The element-type of an array itself doesn't need to be SUM-TYPE.)"
   (let* ((name (string name))
          (fname-update (intern (format nil "~A-UPDATE!" name)))
          (fname-fold (intern (format nil "~A-FOLD" name)))
@@ -43,18 +43,20 @@ type. (The element-type of vector itself doesn't need to be SUM-TYPE.)"
          (declare ((integer 0 #.most-positive-fixnum) end1 end2))
          (let ((res ,identity))
            ,@(when sum-type `((declare (type ,sum-type res))))
-           (do ((i (- end1 1) (- (logand i (+ i 1)) 1)))
-               ((< i 0))
+           (do ((i end1 (logand i (- i 1))))
+               ((zerop i))
              (declare (fixnum i))
-             (do ((j (- end2 1) (- (logand j (+ j 1)) 1)))
-                 ((< j 0))
+             (do ((j end2 (logand j (- j 1))))
+                 ((zerop j))
                (declare (fixnum j))
-               (setf res (funcall ,operator res (aref bitree i j)))))
+               (setf res (funcall ,operator res (aref bitree (- i 1) (- j 1))))))
            res))
 
        (declaim (inline ,fname-build))
        (defun ,fname-build (array)
-         "Destructively constructs 2D BIT from 2D array."
+         "Destructively constructs 2D BIT from 2D array. (You don't need to call
+this constructor if what you need is a `zero-filled' BIT, because a vector
+filled with the identity element is a valid BIT as it is.)"
          (let ((length1 (array-dimension array 0))
                (length2 (array-dimension array 1)))
            (dotimes (i length1)

@@ -53,9 +53,9 @@ doesn't need to be identical to SUM-TYPE."
 
        (declaim (inline ,fname-build))
        (defun ,fname-build (vector)
-         "Destructively constructs BIT from VECTOR. (You doesn't need to call
-this constructor if what you need is a `zero-filled' BIT, because a vector
-filled with the identity element is a valid BIT as it is.)"
+         "Destructively constructs BIT from VECTOR. (You don't need to call this
+constructor if what you need is a `zero-filled' BIT, because a vector filled
+with the identity element is a valid BIT as it is.)"
          (loop with len = (length vector)
                for i below len
                for dest-i = (logior i (+ i 1))
