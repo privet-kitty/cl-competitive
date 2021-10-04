@@ -17,6 +17,7 @@
   (:import-from :cp/test/binom-quadratic)
   (:import-from :cp/test/bipartite-matching)
   (:import-from :cp/test/bisect)
+  ;; FIXME: more sane branching
   #.(if (and (find-package "SB-X86-64-ASM")
              (find-symbol "EMIT-VEX" :sb-x86-64-asm))
         '(:import-from :cp/test/biset) '(:use))
@@ -130,6 +131,7 @@
   (:import-from :cp/test/persistent-disjoint-set)
   (:import-from :cp/test/persistent-vector)
   (:import-from :cp/test/phase)
+  (:import-from :cp/test/pisinger)
   (:import-from :cp/test/placeholder-syntax)
   (:import-from :cp/test/polynomial-ntt)
   (:import-from :cp/test/power)
