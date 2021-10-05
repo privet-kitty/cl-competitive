@@ -5,7 +5,7 @@
 
 (declaim (inline count-set-bit-at))
 (defun count-set-bit-at (n pos)
-  "Returns the number of 1's at POS-th digit of all the integers in {0, 1, ...,
+  "Returns the number of 1's at POS-th bit of all the integers in {0, 1, ...,
 N}."
   (declare (unsigned-byte n pos))
   (let ((mask (ash 1 (+ pos 1))))
