@@ -1,24 +1,25 @@
 (defpackage :cp/experimental/barrett
   (:use :cl)
-  (:import-from :sb-ext #:truly-the)
-  (:import-from :sb-c
+  (:import-from #:sb-ext #:truly-the)
+  (:import-from #:sb-c
                 #:deftransform
                 #:derive-type
                 #:defoptimizer
                 #:defknown #:movable #:foldable #:flushable #:commutative
+                #:always-translatable
                 #:lvar-type
                 #:lvar-value
                 #:give-up-ir1-transform
                 #:integer-type-numeric-bounds
                 #:define-vop)
-  (:import-from :sb-vm
-                #:move #:inst #:eax-offset #:edx-offset
+  (:import-from #:sb-vm
+                #:move #:inst #:eax-offset #:edx-offset #:r11-offset
                 #:any-reg #:control-stack #:unsigned-reg
                 #:positive-fixnum
                 #:fixnumize #:ea)
-  (:import-from :sb-kernel #:specifier-type)
-  (:import-from :sb-int #:explicit-check #:constant-arg)
-  (:export #:fast-mod #:%himod)
+  (:import-from #:sb-kernel #:specifier-type)
+  (:import-from #:sb-int #:explicit-check #:constant-arg)
+  (:export #:fast-mod #:%himod #:%lomod)
   (:documentation "Provides Barrett reduction."))
 (in-package :cp/experimental/barrett)
 
@@ -36,16 +37,23 @@
                           `(integer 0 (,high))
                           `(integer 0)))))
 
-  ;; *-high62
+  (defun gpr-tn-p (x)
+    (declare (ignorable x))
+    #.(if (find-symbol "GPR-TN-P" :sb-vm)
+          `(funcall (intern "GPR-TN-P" :sb-vm) x)
+          t)))
+
+;; *-high62
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defknown *-high62 ((unsigned-byte 62) (unsigned-byte 62)) (unsigned-byte 62)
-    (movable foldable flushable commutative sb-c::always-translatable)
+      (movable foldable flushable commutative always-translatable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (*-high62 derive-type) ((x y))
     (derive-* x y))
 
   (define-vop (fast-*-high62/fixnum)
-      (:translate *-high62)
+    (:translate *-high62)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target eax)
            (y :scs (any-reg control-stack)))
@@ -68,7 +76,7 @@
                 (move r edx)))
 
   (define-vop (fast-c-*-high62-/fixnum)
-      (:translate *-high62)
+    (:translate *-high62)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target eax))
     (:info y)
@@ -92,11 +100,12 @@
 
   (defun *-high62 (x y)
     (declare (explicit-check))
-    (*-high62 x y))
+    (*-high62 x y)))
 
-  ;; %himod
+;; %himod
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defknown %himod ((unsigned-byte 32) (unsigned-byte 31)) (unsigned-byte 31)
-    (movable foldable flushable sb-c:always-translatable)
+      (movable foldable flushable always-translatable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (%himod derive-type) ((integer modulus))
@@ -104,34 +113,74 @@
     (derive-mod modulus))
 
   (define-vop (fast-c-%himod)
-      (:translate %himod)
+    (:translate %himod)
     (:policy :fast-safe)
     (:args (x :scs (any-reg) :target r))
     (:info m)
     (:arg-types positive-fixnum (:constant (unsigned-byte 31)))
-    (:temporary (:sc any-reg :from :eval :to :result) y)
+    (:temporary (:sc any-reg :from :eval :to :result ;; :offset r11-offset
+                     )
+                y)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
     (:note "inline constant %himod")
     (:vop-var vop)
-    (:generator 4
-                (assert #.(if (find-symbol "GPR-TN-P" :sb-vm)
-                              `(funcall (intern "GPR-TN-P" :sb-vm) x)
-                              t))
-                (when (sb-c:tn-p m)
-                  (assert (sb-c:sc-is m sb-vm::immediate))
-                  (setq m (sb-c::tn-value m)))
-                (setq m (fixnumize m))
-                (move r x)
-                (inst cmp r (- m 2))
-                (inst lea y #.(if (fboundp 'ea)
-                                  `(sb-vm::ea (- m) r)
-                                  `(,(find-symbol "MAKE-EA" :sb-vm) :dword :disp (- m) :base r)))
-                (inst cmov :a r y)))
+    (:generator
+     4
+     ;; maybe verbose
+     (assert (gpr-tn-p x))
+     (when (sb-c:tn-p m)
+       (assert (sb-c:sc-is m sb-vm::immediate))
+       (setq m (sb-c::tn-value m)))
+     (setq m (fixnumize m))
+     (move r x)
+     (inst cmp r (- m 2))
+     (inst lea y #.(if (fboundp 'ea)
+                       `(sb-vm::ea (- m) r)
+                       `(,(find-symbol "MAKE-EA" :sb-vm) :dword :disp (- m) :base r)))
+     (inst cmov :a r y))))
 
-  ;; fast-mod
+;; %lomod
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defknown %lomod ((signed-byte 32) (unsigned-byte 31)) (unsigned-byte 31)
+      (movable foldable flushable always-translatable)
+    :overwrite-fndb-silently t)
+
+  (defoptimizer (%lomod derive-type) ((integer modulus))
+    (declare (ignore integer))
+    (derive-mod modulus))
+
+  (define-vop (fast-c-%lomod)
+    (:translate %lomod)
+    (:policy :fast-safe)
+    (:args (x :scs (any-reg) :target r))
+    (:info m)
+    (:arg-types fixnum (:constant (unsigned-byte 31)))
+    (:temporary (:sc any-reg :from :eval :to :result ;; :offset r11-offset
+                     )
+                y)
+    (:results (r :scs (any-reg)))
+    (:result-types positive-fixnum)
+    (:note "inline constant %lomod")
+    (:vop-var vop)
+    (:generator
+     4
+     (assert (gpr-tn-p x))
+     (when (sb-c:tn-p m)
+       (assert (sb-c:sc-is m sb-vm::immediate))
+       (setq m (sb-c::tn-value m)))
+     (setq m (fixnumize m))
+     (move r x)
+     (inst or r r)
+     (inst lea y #.(if (fboundp 'ea)
+                       `(sb-vm::ea m r)
+                       `(,(find-symbol "MAKE-EA" :sb-vm) :dword :disp m :base r)))
+     (inst cmov :l r y))))
+
+;; fast-mod
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defknown fast-mod (integer unsigned-byte) unsigned-byte
-    (movable foldable flushable)
+      (movable foldable flushable)
     :overwrite-fndb-silently t)
 
   (defoptimizer (fast-mod derive-type) ((integer modulus))
