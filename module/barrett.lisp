@@ -1,4 +1,4 @@
-(defpackage :cp/experimental/barrett
+(defpackage :cp/barrett
   (:use :cl)
   (:import-from #:sb-ext #:truly-the)
   (:import-from #:sb-c
@@ -11,9 +11,10 @@
                 #:lvar-value
                 #:give-up-ir1-transform
                 #:integer-type-numeric-bounds
-                #:define-vop)
+                #:define-vop
+                #:tn-offset)
   (:import-from #:sb-vm
-                #:move #:inst #:eax-offset #:edx-offset #:r11-offset
+                #:move #:inst #:rax-offset #:rdx-offset #:temp-reg-tn
                 #:any-reg #:control-stack #:unsigned-reg
                 #:positive-fixnum
                 #:fixnumize #:ea)
@@ -21,7 +22,7 @@
   (:import-from #:sb-int #:explicit-check #:constant-arg)
   (:export #:fast-mod #:%himod #:%lomod)
   (:documentation "Provides Barrett reduction."))
-(in-package :cp/experimental/barrett)
+(in-package :cp/barrett)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun derive-* (x y)
@@ -55,48 +56,48 @@
   (define-vop (fast-*-high62/fixnum)
     (:translate *-high62)
     (:policy :fast-safe)
-    (:args (x :scs (any-reg) :target eax)
+    (:args (x :scs (any-reg) :target rax)
            (y :scs (any-reg control-stack)))
     (:arg-types positive-fixnum positive-fixnum)
-    (:temporary (:sc any-reg :offset eax-offset
+    (:temporary (:sc any-reg :offset rax-offset
                  :from (:argument 0) :to :result)
-                eax)
-    (:temporary (:sc any-reg :offset edx-offset :target r
+                rax)
+    (:temporary (:sc any-reg :offset rdx-offset :target r
                  :from :eval :to :result)
-                edx)
+                rdx)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
     (:note "inline *-high62")
     (:vop-var vop)
     (:save-p :compute-only)
     (:generator 6
-                (move eax x)
-                (inst mul eax y)
-                (inst shl edx 1)
-                (move r edx)))
+                (move rax x)
+                (inst mul rax y)
+                (inst shl rdx 1)
+                (move r rdx)))
 
   (define-vop (fast-c-*-high62-/fixnum)
     (:translate *-high62)
     (:policy :fast-safe)
-    (:args (x :scs (any-reg) :target eax))
+    (:args (x :scs (any-reg) :target rax))
     (:info y)
     (:arg-types positive-fixnum (:constant (unsigned-byte 62)))
-    (:temporary (:sc any-reg :offset eax-offset
+    (:temporary (:sc any-reg :offset rax-offset
                  :from (:argument 0) :to :result)
-                eax)
-    (:temporary (:sc any-reg :offset edx-offset :target r
+                rax)
+    (:temporary (:sc any-reg :offset rdx-offset :target r
                  :from :eval :to :result)
-                edx)
+                rdx)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
     (:note "inline constant *-high62")
     (:vop-var vop)
     (:save-p :compute-only)
     (:generator 6
-                (move eax x)
-                (inst mul eax (sb-c:register-inline-constant :qword y))
-                (inst shl edx 1)
-                (move r edx)))
+                (move rax x)
+                (inst mul rax (sb-c:register-inline-constant :qword y))
+                (inst shl rdx 1)
+                (move r rdx)))
 
   (defun *-high62 (x y)
     (declare (explicit-check))
@@ -118,8 +119,9 @@
     (:args (x :scs (any-reg) :target r))
     (:info m)
     (:arg-types positive-fixnum (:constant (unsigned-byte 31)))
-    (:temporary (:sc any-reg :from :eval :to :result ;; :offset r11-offset
-                     )
+    (:temporary (:sc any-reg :from :eval :to :result
+                     ;; FIXME: hack to avoid collision of X and Y
+                     :offset #.(tn-offset temp-reg-tn))
                 y)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
@@ -129,6 +131,7 @@
      4
      ;; maybe verbose
      (assert (gpr-tn-p x))
+     (assert (not (sb-c:location= x y)))
      (when (sb-c:tn-p m)
        (assert (sb-c:sc-is m sb-vm::immediate))
        (setq m (sb-c::tn-value m)))
@@ -156,16 +159,16 @@
     (:args (x :scs (any-reg) :target r))
     (:info m)
     (:arg-types fixnum (:constant (unsigned-byte 31)))
-    (:temporary (:sc any-reg :from :eval :to :result ;; :offset r11-offset
-                     )
-                y)
+    (:temporary (:sc any-reg :from :eval :to :result :offset #.(tn-offset temp-reg-tn)) y)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
     (:note "inline constant %lomod")
     (:vop-var vop)
     (:generator
      4
+     ;; maybe verbose
      (assert (gpr-tn-p x))
+     (assert (not (sb-c:location= x y)))
      (when (sb-c:tn-p m)
        (assert (sb-c:sc-is m sb-vm::immediate))
        (setq m (sb-c::tn-value m)))
