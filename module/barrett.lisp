@@ -93,9 +93,9 @@
     (:note "inline constant *-high62")
     (:vop-var vop)
     (:save-p :compute-only)
-    (:generator 6
+    (:generator 5
                 (move rax x)
-                (inst mul rax (sb-c:register-inline-constant :qword y))
+                (inst mul rax (sb-c:register-inline-constant :qword (fixnumize y)))
                 (inst shl rdx 1)
                 (move r rdx)))
 
