@@ -76,28 +76,29 @@
                 (inst shl rdx 1)
                 (move r rdx)))
 
-  (define-vop (fast-c-*-high62-/fixnum)
-    (:translate *-high62)
-    (:policy :fast-safe)
-    (:args (x :scs (any-reg) :target rax))
-    (:info y)
-    (:arg-types positive-fixnum (:constant (unsigned-byte 62)))
-    (:temporary (:sc any-reg :offset rax-offset
-                 :from (:argument 0) :to :result)
-                rax)
-    (:temporary (:sc any-reg :offset rdx-offset :target r
-                 :from :eval :to :result)
-                rdx)
-    (:results (r :scs (any-reg)))
-    (:result-types positive-fixnum)
-    (:note "inline constant *-high62")
-    (:vop-var vop)
-    (:save-p :compute-only)
-    (:generator 5
-                (move rax x)
-                (inst mul rax (sb-c:register-inline-constant :qword (fixnumize y)))
-                (inst shl rdx 1)
-                (move r rdx)))
+  ;; NOTE: I'm not using it for now because registered constant is slower
+  ;; (define-vop (fast-c-*-high62-/fixnum)
+  ;;   (:translate *-high62)
+  ;;   (:policy :fast-safe)
+  ;;   (:args (x :scs (any-reg) :target rax))
+  ;;   (:info y)
+  ;;   (:arg-types positive-fixnum (:constant (unsigned-byte 62)))
+  ;;   (:temporary (:sc any-reg :offset rax-offset
+  ;;                :from (:argument 0) :to :result)
+  ;;               rax)
+  ;;   (:temporary (:sc any-reg :offset rdx-offset :target r
+  ;;                :from :eval :to :result)
+  ;;               rdx)
+  ;;   (:results (r :scs (any-reg)))
+  ;;   (:result-types positive-fixnum)
+  ;;   (:note "inline constant *-high62")
+  ;;   (:vop-var vop)
+  ;;   (:save-p :compute-only)
+  ;;   (:generator 5
+  ;;               (move rax x)
+  ;;               (inst mul rax (sb-c:register-inline-constant :qword (fixnumize y)))
+  ;;               (inst shl rdx 1)
+  ;;               (move r rdx)))
 
   (defun *-high62 (x y)
     (declare (explicit-check))
