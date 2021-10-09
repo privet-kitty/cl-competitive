@@ -3,10 +3,11 @@
   (:export #:mod-log))
 (in-package :cp/mod-log)
 
-(declaim (ftype (function * (values (or null (integer 0 #.most-positive-fixnum)) &optional)) mod-log))
+(declaim (ftype (function * (values (or null (integer 0 #.most-positive-fixnum)) &optional))
+                mod-log))
 (defun mod-log (x y modulus &key from-zero)
-  "Returns the smallest positive (or non-negative, when FROM-ZERO is true)
-integer k that satiefies x^k = y mod p. Returns NIL if it is infeasible."
+  "Returns the least positive (or non-negative, when FROM-ZERO is true) integer
+k such that x^k = y mod p. Returns NIL if it is infeasible."
   (declare (optimize (speed 3))
            (integer x y)
            ((integer 1 #.most-positive-fixnum) modulus))
@@ -19,7 +20,7 @@ integer k that satiefies x^k = y mod p. Returns NIL if it is infeasible."
       (return-from mod-log 0))
     (if (= g 1)
         ;; coprime case
-        (let* (;; smallest integer equal to or larger than sqrt(p)
+        (let* (;; least integer equal to or greater than sqrt(p)
                (m (+ 1 (isqrt (- modulus 1))))
                (x^m (loop for i below m
                           for res of-type (integer 0 #.most-positive-fixnum) = x
@@ -33,7 +34,7 @@ integer k that satiefies x^k = y mod p. Returns NIL if it is infeasible."
                 for res of-type (integer 0 #.most-positive-fixnum) = y
                 then (mod (* res x) modulus)
                 do (setf (gethash res table) j))
-          ;; Finds i and j that satisfy (x^m)^i = yx^j and returns m*i-j
+          ;; Finds i and j such that (x^m)^i = yx^j, and returns m*i-j
           (loop for i from 1 to m
                 for x^m^i of-type (integer 0 #.most-positive-fixnum) = x^m
                 then (mod (* x^m^i x^m) modulus)
