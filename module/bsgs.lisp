@@ -26,12 +26,13 @@
 
 (declaim (inline bsgs)
          (ftype (function * (values (or null uint) &optional)) bsgs))
-(defun bsgs (f applier composer initial-value max-exp &key (test #'eql) (rhs initial-value) from-zero)
-  "Finds the least positive (or non-negative, if FROM-ZERO is true) integer k
-such that F^k(A) = A. Time complexity is O(sqrt(MAX-EXP)).
+(defun bsgs (f applier composer initial-value max-exp
+             &key (test #'eql) (rhs initial-value) from-zero)
+  "Finds the least positive integer k such that F^k(A) = A. Time complexity is
+O(sqrt(MAX-EXP)).
 
 NOTE: This function also accepts input of type F^k(A) = B, but in this case the
-result is not necessarily correct. (E.g. discrete logarithm problem. Please use
+result is not necessarily correct. (E.g. discrete logarithm problem; please use
 cp/mod-log instead.)
 
 F is transform, which is usually not a function but a matrix or a scalar. 
@@ -47,7 +48,7 @@ MAX-EXP is the size of the space."
          (value initial-value)
          (prev-value initial-value)
          (rvalue rhs))
-    ;; baby-step
+    ;; baby step
     (dotimes (i bsize)
       (when (and (or from-zero (> i 0))
                  (funcall test value rhs))
@@ -59,7 +60,7 @@ MAX-EXP is the size of the space."
     (setf (aref fs 1) f)
     (loop for i from 2 to bsize
           do (setf (aref fs i) (funcall composer (aref fs (- i 1)) f)))
-    ;; giant-step
+    ;; giant step
     (let* ((f-gs (power f bsize composer)))
       (loop for i from 1 to (ceiling max-exp bsize)
             do ;; heuristic for A != B input
