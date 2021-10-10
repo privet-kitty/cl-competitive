@@ -1,6 +1,6 @@
 (defpackage :cp/bsgs
   (:use :cl)
-  (:export #:bsgs))
+  (:export #:bsgs-action))
 (in-package :cp/bsgs)
 
 ;; NOTE: incomplete
@@ -26,10 +26,9 @@
                  exponent (ash exponent -1))
         finally (return res)))
 
-(declaim (inline bsgs)
-         (ftype (function * (values (or null uint) &optional)) bsgs))
-(defun bsgs (f action op initial-value max
-             &key (test #'eql) (rhs initial-value) from-zero)
+(declaim (inline bsgs-action)
+         (ftype (function * (values (or null uint) &optional)) bsgs-action))
+(defun bsgs-action (f action op initial-value max &key (test #'eql))
   "Finds the least positive integer k such that F^k * A = A, where * is a left
 action. Time complexity is O(sqrt(MAX)).
 
@@ -39,22 +38,24 @@ cp/mod-log instead.)
 
 Let S be a semigroup. F is an element of S. ACTION is a two-variable function
 that expresses *. OP is a monoid operation on S, i.e., S \times S -> S.
-INITIAL-VALUE is A. RHS is B. MAX is the upper bound of k."
+INITIAL-VALUE is A. MAX is the upper bound of k."
   (declare ((integer 1 #.most-positive-fixnum) max))
   (let* ((bsize (+ 1 (isqrt (- max 1))))
          (table (make-hash-table :size bsize :test test))
          (fs (make-array (+ 1 bsize) :element-type t))
          (value initial-value)
-         (prev-value initial-value)
-         (rvalue rhs))
+         (prev-value initial-value))
     ;; baby step
     (dotimes (i bsize)
-      (when (and (or from-zero (> i 0))
-                 (funcall test value rhs))
-        (return-from bsgs i))
-      (setf (gethash rvalue table) i
-            value (funcall action f value)
-            rvalue (funcall action f rvalue)))
+      (when (and (> i 0) (funcall test value initial-value))
+        (return-from bsgs-action i))
+      ;; NOTE: This function can terminate if a cycle is found, but this clause
+      ;; could make it rather slower, because access to hash-table can be a
+      ;; bottleneck.
+      ;; (when (gethash rvalue table)
+      ;;   (return-from bsgs-action))
+      (setf (gethash value table) i
+            value (funcall action f value)))
     ;; build FS
     (setf (aref fs 1) f)
     (loop for i from 2 to bsize
@@ -63,21 +64,42 @@ INITIAL-VALUE is A. RHS is B. MAX is the upper bound of k."
     (let* ((f-gs (power f bsize op)))
       (loop for i from 1 to (ceiling max bsize)
             do ;; heuristic for A != B input
-               (when (funcall test value rhs)
-                 (return-from bsgs (* i bsize)))
+               (when (funcall test value initial-value)
+                 (return-from bsgs-action (* i bsize)))
                (multiple-value-bind (j present-p) (gethash value table)
                  (declare ((or null (integer 0 #.most-positive-fixnum)) j))
                  (when present-p
                    (let* ((lhs (funcall action (aref fs (- bsize j)) prev-value)))
-                     (when (funcall test lhs rhs)
-                       (return-from bsgs (- (* i bsize) j))))))
+                     (when (funcall test lhs initial-value)
+                       (return-from bsgs-action (- (* i bsize) j))))))
                (setq prev-value value
                      value (funcall action f-gs value))))))
 
-;; Example usage for discrete logarithm: x^k = y (mod M)
-;; (not always correct)
-;; (bsgs x
-;;       (lambda (x y) (mod (* x y) m))
-;;       (lambda (x y) (mod (* x y) m))
-;;       (mod 1 m) m
-;;       :rhs y)
+(declaim (ftype (function * (values (or null uint) &optional)) %bsgs-cycle-length))
+(defun %bsgs-cycle-length (f action op initial-value max &key (test #'eql))
+  "Finds the cycle length of the sequence x, F*x, (F^2)*x, ... in expected
+O(sqrt(MAX)) time.
+
+Let S be a semigroup. F is an element of S. ACTION is a two-variable function
+that expresses *. OP is a monoid operation on S, i.e., S \times S -> S.
+INITIAL-VALUE is x. MAX is the upper bound of the element order."
+  (declare ((integer 1 #.most-positive-fixnum) max))
+  (let* ((bsize (+ 1 (isqrt (- max 1))))
+         (table (make-hash-table :size bsize :test test))
+         (f^n (power f max op))
+         (value (funcall action f^n initial-value)))
+    ;; baby step
+    (dotimes (i bsize)
+      (let ((prev (gethash value table)))
+        (declare ((or null uint) prev))
+        (when prev
+          (return-from %bsgs-cycle-length (- i prev))))
+      (setf (gethash value table) i
+            value (funcall action f value)))
+    ;; giant step
+    (loop with f-gs = (power f bsize op)
+          for i from 1 to (ceiling max bsize)
+          for j of-type (or null uint) = (gethash value table)
+          when j
+          do (return-from %bsgs-cycle-length (- (* i bsize) j))
+          do (setq value (funcall action f-gs value)))))
