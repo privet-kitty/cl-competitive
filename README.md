@@ -77,6 +77,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [binsort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binsort.lisp) bin sort; counting sort
 - [map-permutations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/map-permutations.lisp) permutation and combination
 - [next-permutation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/next-permutation.lisp) next permutation w.r.t. lexicographical order
+- [inversion-sequence.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inversion-sequence.lisp) inversion sequence of permutation
 - [mo.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mo.lisp) Mo's algorithm
 - [inverse-table.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/inverse-table.lisp) inverse lookup table of vector
 - [adjacent-duplicates.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/adjacent-duplicates.lisp) deletion of adjacent duplicates
