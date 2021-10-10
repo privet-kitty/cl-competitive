@@ -3,6 +3,8 @@
   (:export #:bsgs))
 (in-package :cp/bsgs)
 
+;; NOTE: incomplete
+
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
 (defconstant +identity+
@@ -26,23 +28,20 @@
 
 (declaim (inline bsgs)
          (ftype (function * (values (or null uint) &optional)) bsgs))
-(defun bsgs (f applier composer initial-value max-exp
+(defun bsgs (f action op initial-value max
              &key (test #'eql) (rhs initial-value) from-zero)
-  "Finds the least positive integer k such that F^k(A) = A. Time complexity is
-O(sqrt(MAX-EXP)).
+  "Finds the least positive integer k such that F^k * A = A, where * is a left
+action. Time complexity is O(sqrt(MAX)).
 
-NOTE: This function also accepts input of type F^k(A) = B, but in this case the
+NOTE: This function also accepts input of type F^k * A = B, but in this case the
 result is not necessarily correct. (E.g. discrete logarithm problem; please use
 cp/mod-log instead.)
 
-F is transform, which is usually not a function but a matrix or a scalar. 
-APPLIER is a function that takes transform f and its argument x, and returns f(x).
-COMPOSER composes two transforms.
-INITIAL-VALUE is A.
-RHS is B.
-MAX-EXP is the size of the space."
-  (declare ((integer 1 #.most-positive-fixnum) max-exp))
-  (let* ((bsize (+ 1 (isqrt (- max-exp 1))))
+Let S be a semigroup. F is an element of S. ACTION is a two-variable function
+that expresses *. OP is a monoid operation on S, i.e., S \times S -> S.
+INITIAL-VALUE is A. RHS is B. MAX is the upper bound of k."
+  (declare ((integer 1 #.most-positive-fixnum) max))
+  (let* ((bsize (+ 1 (isqrt (- max 1))))
          (table (make-hash-table :size bsize :test test))
          (fs (make-array (+ 1 bsize) :element-type t))
          (value initial-value)
@@ -54,26 +53,26 @@ MAX-EXP is the size of the space."
                  (funcall test value rhs))
         (return-from bsgs i))
       (setf (gethash rvalue table) i
-            value (funcall applier f value)
-            rvalue (funcall applier f rvalue)))
+            value (funcall action f value)
+            rvalue (funcall action f rvalue)))
     ;; build FS
     (setf (aref fs 1) f)
     (loop for i from 2 to bsize
-          do (setf (aref fs i) (funcall composer (aref fs (- i 1)) f)))
+          do (setf (aref fs i) (funcall op (aref fs (- i 1)) f)))
     ;; giant step
-    (let* ((f-gs (power f bsize composer)))
-      (loop for i from 1 to (ceiling max-exp bsize)
+    (let* ((f-gs (power f bsize op)))
+      (loop for i from 1 to (ceiling max bsize)
             do ;; heuristic for A != B input
                (when (funcall test value rhs)
                  (return-from bsgs (* i bsize)))
                (multiple-value-bind (j present-p) (gethash value table)
                  (declare ((or null (integer 0 #.most-positive-fixnum)) j))
                  (when present-p
-                   (let* ((lhs (funcall applier (aref fs (- bsize j)) prev-value)))
+                   (let* ((lhs (funcall action (aref fs (- bsize j)) prev-value)))
                      (when (funcall test lhs rhs)
                        (return-from bsgs (- (* i bsize) j))))))
                (setq prev-value value
-                     value (funcall applier f-gs value))))))
+                     value (funcall action f-gs value))))))
 
 ;; Example usage for discrete logarithm: x^k = y (mod M)
 ;; (not always correct)
