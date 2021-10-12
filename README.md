@@ -100,6 +100,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [ext-gcd.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/ext-gcd.lisp) extended euclidean algorithm
 - [mod-inverse.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-inverse.lisp) modular inverse
 - [mod-log.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-log.lisp) modular logarithm
+- [bsgs.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bsgs.lisp) baby-step giant-step algorithm for discrete logarithm problem on (semi)group
 - [bezout.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bezout.lisp) Bezout equation
 - [mod-linear-algebra.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-linear-algebra.lisp) modular linear algebra
 - [power.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/power.lisp) exponentiation over an arbitrary monoid

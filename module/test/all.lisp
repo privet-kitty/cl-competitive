@@ -24,6 +24,7 @@
         '(:import-from :cp/test/biset) '(:use))
   (:import-from :cp/test/bit-basher)
   (:import-from :cp/test/bounded-partition-number)
+  (:import-from :cp/test/bsgs)
   (:import-from :cp/test/buffered-read-line)
   (:import-from :cp/test/ceil-quotients)
   (:import-from :cp/test/crt)
