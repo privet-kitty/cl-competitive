@@ -1,5 +1,5 @@
 (defpackage :cp/bsgs
-  (:use :cl :cp/gemm)
+  (:use :cl)
   (:export #:bsgs-group #:bsgs-semigroup #:bsgs-semigroup-cycle
            #:%cycle-length #:%cycle-start #:make-fbase)
   (:documentation
