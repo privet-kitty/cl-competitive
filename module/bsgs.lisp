@@ -11,8 +11,6 @@ problem in a semigroup.
 C. Monico. Semirings and semigroup actions in public-key cryptography."))
 (in-package :cp/bsgs)
 
-;; NOTE: incomplete
-
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
 (defconstant +identity+
