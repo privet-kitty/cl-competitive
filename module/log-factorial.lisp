@@ -1,10 +1,8 @@
-;;;
-;;; Compute a well approximated value of log(n!) by asymtotic expansion
-;;;
-
 (defpackage :cp/log-factorial
   (:use :cl)
-  (:export #:log-factorial #:log-binomial))
+  (:export #:log-factorial #:log-binomial)
+  (:documentation "Provides approximate computation of log(n!) by asymptotic
+expansion."))
 (in-package :cp/log-factorial)
 
 (defparameter *bernoulli*

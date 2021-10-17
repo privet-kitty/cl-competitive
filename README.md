@@ -153,7 +153,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [topological-sort.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/topological-sort.lisp) topological sort on DAG
 - [find-cycle.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/find-cycle.lisp) (explicit) cycle detection
 - [euler-tour.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/euler-tour.lisp) Euler tour of tree
-- [scc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/scc.lisp) strongly connected component of directed graph (Tarjan's algorithm); 2-SAT
+- [scc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/scc.lisp) strongly connected component of directed graph (Tarjan's algorithm)
+- [2sat.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2sat.lisp) 2SAT solver
 - [2cc.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2cc.lisp) two-edge connected component of undirected graph
 - [tree-centroid.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/tree-centroid.lisp) centroid decomposition of tree
 - [chordal-graph.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/chordal-graph.lisp) recognition of graph chordality (maximum cardinality search); perfect elimination order
