@@ -1,7 +1,8 @@
 (defpackage :cp/floor-quotients
   (:use :cl)
   (:export #:make-fquot-manager #:fquot-length #:fquot-n #:fquot-short-p #:fquot-fsqrt
-           #:fquot-index #:fquot-get #:enum-fdivisors #:map-fdivisors))
+           #:fquot-divindex #:fquot-divget #:fquot-divindex-from-quot
+           #:enum-fdivisors #:map-fdivisors))
 (in-package :cp/floor-quotients)
 
 ;; TODO: more tests and docs
@@ -23,8 +24,8 @@
          (length (- (* 2 fsqrt) (if short-p 1 0))))
     (%make-fquot-manager :n n :length length :short-p short-p :fsqrt fsqrt)))
 
-(declaim (inline fquot-index))
-(defun fquot-index (fquot x)
+(declaim (inline fquot-divindex))
+(defun fquot-divindex (fquot x)
   "Returns the position of x on the sequence of representive divisors."
   (declare ((integer 1 #.most-positive-fixnum) x))
   (if (<= x (fquot-fsqrt fquot))
@@ -32,8 +33,8 @@
       (- (fquot-length fquot)
          (floor (fquot-n fquot) x))))
 
-(declaim (inline fquot-get))
-(defun fquot-get (fquot i)
+(declaim (inline fquot-divget))
+(defun fquot-divget (fquot i)
   "Returns the i-th element of the sequence of representative divisors."
   (declare ((integer 0 #.most-positive-fixnum) i))
   (let ((length (fquot-length fquot)))
@@ -42,6 +43,15 @@
         (+ i 1)
         (let ((rev-i (- length i)))
           (+ 1 (floor (fquot-n fquot) (+ rev-i 1)))))))
+
+(declaim (inline fquot-divindex-from-quot))
+(defun fquot-divindex-from-quot (fquot x)
+  (declare ((integer 0 #.most-positive-fixnum) x))
+  (if (zerop x)
+      (fquot-length fquot)
+      (let ((div (floor (fquot-n fquot) x)))
+        (assert (= x (floor (fquot-n fquot) div)))
+        (fquot-divindex fquot div))))
 
 (declaim (inline %calc-length))
 (defun %calc-length (x)
