@@ -13,6 +13,10 @@ C. Monico. Semirings and semigroup actions in public-key cryptography."))
 
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
+(declaim (inline %power-of-two-ceiling))
+(defun %power-of-two-ceiling (x)
+  (ash 1 (integer-length (- x 1))))
+
 (defconstant +identity+
   (if (boundp '+identity+)
       (symbol-value '+identity+)
@@ -176,7 +180,7 @@ log(N)M) time.
 TODO:
 We can do this in O(sqrt(N)log(N)T) time per query with some preprocessing."
   (declare ((integer 1 #.most-positive-fixnum) max))
-  (let* ((fbase-len (integer-length (sb-int:power-of-two-ceiling max))) ; FIXME: too large?
+  (let* ((fbase-len (integer-length (%power-of-two-ceiling max))) ; FIXME: too large?
          (fbase (make-fbase f op fbase-len))
          (cycle-length (%cycle-length fbase f action op x max :test test))
          (fcycle (%power-with-base fbase op cycle-length))
@@ -224,7 +228,7 @@ We can do this in O(sqrt(N)log(N)T) time per query with some preprocessing."
   "Finds the least positive integer k such that F^k * X = X, where * is
 a left action."
   (declare ((integer 1 #.most-positive-fixnum) max))
-  (let* ((fbase-len (integer-length (sb-int:power-of-two-ceiling max))) ; FIXME: too large?
+  (let* ((fbase-len (integer-length (%power-of-two-ceiling max))) ; FIXME: too large?
          (fbase (make-fbase f op fbase-len))
          (cycle-length (%cycle-length fbase f action op x max :test test)))
     (when (funcall test x (%action-with-base fbase action cycle-length x))
