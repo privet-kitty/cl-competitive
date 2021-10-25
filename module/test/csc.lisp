@@ -5,6 +5,14 @@
 (in-package :cp/test/csc)
 (in-suite base-suite)
 
+(test coo
+  (let ((coo (make-coo 2 3)))
+    (coo-insert! coo 0 0 1d0)
+    (coo-insert! coo 10 20 1d0)
+    (is (= 11 (coo-m coo)))
+    (is (= 21 (coo-n coo)))
+    (signals error (coo-insert! coo 100 200 1d0 t))))
+
 (test csc/constructor
   (let ((*test-dribble* nil))
     (dotimes (m 10)

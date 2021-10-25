@@ -20,8 +20,8 @@
                 (:copier nil)
                 (:predicate nil))
   "Stores a sparse matrix with coordinate list representation (aka COO
-format). Note that you can increase M and N after construction, but cannot
-decrease them."
+format). Note that M and N are automatically adjusted when you COO-INSERT! to an
+out-of-bounds position, but you cannot decrease them."
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
   (nz nil :type (mod #.array-dimension-limit))
@@ -51,12 +51,20 @@ decrease them."
             (aref values pos)))
     res))
 
-(defun coo-insert! (coo row col value)
-  "Destructively executes an assignment operation: COO[ROW][COL] := VALUE."
+(define-modify-macro maxf (new-value) max)
+
+(defun coo-insert! (coo row col value &optional fixed-size)
+  "Destructively executes an assignment operation: COO[ROW][COL] := VALUE. If
+FIXED-SIZE is NIL, the height and width of COO are automatically adjusted when
+ROW or COL are out of bounds."
   (declare (optimize (speed 3))
            ((mod #.array-dimension-limit) row col))
-  (assert (and (< row (coo-m coo))
-               (< col (coo-n coo))))
+  (if fixed-size
+      (assert (and (< row (coo-m coo))
+                   (< col (coo-n coo))))
+      (progn
+        (maxf (coo-m coo) (+ 1 row))
+        (maxf (coo-n coo) (+ 1 col))))
   (symbol-macrolet ((rows (coo-rows coo))
                     (cols (coo-cols coo))
                     (values (coo-values coo))
