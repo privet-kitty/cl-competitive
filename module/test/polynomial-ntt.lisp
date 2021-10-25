@@ -106,3 +106,9 @@
           do (loop for i from 1 below len
                    do (setf (aref vector i) (random +ntt-mod+)))
              (is (equalp vector (poly-log (poly-exp vector)))))))
+
+(test poly-power/hand
+  (is (equalp #(1 3) (poly-power #(1 1) 3)))
+  (is (equalp #(1 3 3 1 0) (poly-power #(1 1) 3 5)))
+  (is (equalp #() (poly-power #(1 1) 3 0)))
+  (is (equalp #(0 0 0 1 3 3 1 0 0 0) (poly-power #(0 1 1) 3 10))))

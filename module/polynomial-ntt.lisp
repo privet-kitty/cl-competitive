@@ -2,7 +2,7 @@
   (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
-           #:poly-differentiate! #:poly-integrate #:poly-log #:poly-exp))
+           #:poly-differentiate! #:poly-integrate #:poly-log #:poly-exp #:poly-power))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
@@ -393,3 +393,35 @@ be zero."
              (setf (aref log 0) (mod (+ 1 (aref log 0)) +ntt-mod+)
                    res (%adjust (poly-multiply res log) new-len)))
     (%adjust res result-length)))
+
+(declaim (ftype (function * (values ntt-vector &optional)) poly-power))
+(defun poly-power (poly exp &optional result-length)
+  (declare (optimize (speed 3))
+           (vector poly)
+           ((integer 0 #.most-positive-fixnum) exp)
+           ((or null (mod #.array-dimension-limit)) result-length))
+  (let* ((poly (coerce poly 'ntt-vector))
+         (result-length (or result-length (length poly)))
+         (init-pos (position 0 poly :test-not #'eql)))
+    (when (or (null init-pos)
+              (zerop result-length)
+              (> (* init-pos exp) result-length))
+      (return-from poly-power
+        (make-array result-length :element-type 'ntt-int :initial-element 0)))
+    (let ((tmp (subseq poly init-pos)))
+      (let ((inv (mod-inverse (aref poly init-pos) +ntt-mod+)))
+        (dotimes (i (length tmp))
+          (setf (aref tmp i) (mod (* (aref tmp i) inv) +ntt-mod+))))
+      (setq tmp (poly-log tmp result-length))
+      (let ((exp (mod exp +ntt-mod+)))
+        (dotimes (i (length tmp))
+          (setf (aref tmp i) (mod (* (aref tmp i) exp) +ntt-mod+)))
+        (setq tmp (poly-exp tmp result-length)))
+      (let ((power (mod-power (aref poly init-pos) exp +ntt-mod+)))
+        (dotimes (i (length tmp))
+          (setf (aref tmp i) (mod (* (aref tmp i) power) +ntt-mod+))))
+      (if (zerop init-pos)
+          tmp
+          (let ((res (make-array result-length :element-type 'ntt-int :initial-element 0)))
+            (replace res tmp :start1 (min (length res) (* init-pos exp)))
+            res)))))
