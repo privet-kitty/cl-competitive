@@ -65,7 +65,7 @@ https://github.com/atcoder/ac-library/tree/master/atcoder"))
 (declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
 (defun %adjust-array (vector length)
   "This function always copies VECTOR. (ANSI CL doesn't state whether
-CL:ADJUST-ARRAY should copy the array or not.)"
+CL:ADJUST-ARRAY should copy the given array or not.)"
   (declare (optimize (speed 3))
            (vector vector)
            ((mod #.array-dimension-limit) length))
@@ -209,7 +209,7 @@ CL:ADJUST-ARRAY should copy the array or not.)"
              (dotimes (i required-len)
                (setf (aref vector1 i)
                      (mod (* (aref vector1 i) (aref vector2 i)) ,modulus)))
-             (adjust-array (,inverse-ntt vector1 t) mul-len)))))))
+             (subseq (,inverse-ntt vector1 t) 0 mul-len)))))))
 
 (defconstant +ntt-mod+ 998244353)
 
