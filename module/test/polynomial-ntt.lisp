@@ -92,3 +92,17 @@
   (signals division-by-zero (bostan-mori 10 #(2) #()))
   (signals division-by-zero (bostan-mori 10 #(2) #(0)))
   (signals division-by-zero (bostan-mori 10 #() #())))
+
+(test poly-exp/hand
+  (is (equalp #(1 1 499122179 166374064 291154613) (poly-exp #(0 1 2 3 4))))
+  (is (equalp #(1) (poly-exp #(0))))
+  (is (equalp #() (poly-exp #()))))
+
+(test poly-exp/random
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
+    (loop for len from 1 to 200
+          for vector = (make-array len :element-type 'ntt-int :initial-element 0)
+          do (loop for i from 1 below len
+                   do (setf (aref vector i) (random +ntt-mod+)))
+             (is (equalp vector (poly-log (poly-exp vector)))))))
