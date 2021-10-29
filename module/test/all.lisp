@@ -59,6 +59,7 @@
   (:import-from :cp/test/floor-quotients)
   (:import-from :cp/test/functional-graph)
   (:import-from :cp/test/ext-gcd)
+  (:import-from :cp/test/eulerian-polynomial)
   (:import-from :cp/test/f2)
   (:import-from :cp/test/farey)
   (:import-from :cp/test/farey-next)
