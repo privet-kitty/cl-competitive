@@ -9,7 +9,7 @@ Reference:
 http://www.kurims.kyoto-u.ac.jp/~ooura/fftman/ftmn2_12.html#sec2_1_2"))
 (in-package :cp/fft-real)
 
-(deftype fft-float () 'double-float)
+(deftype fft-float (&optional (low '*) (high '*)) `(double-float ,low ,high))
 (deftype fft-vector () '(simple-array fft-float (*)))
 
 (declaim (inline power2-p))
@@ -151,9 +151,9 @@ http://www.kurims.kyoto-u.ac.jp/~ooura/fftman/ftmn2_12.html#sec2_1_2"))
   f)
 
 (defun %pointwise-mult! (vector1 vector2 result)
-  (declare (optimize (speed 3) (safety 0))
+  (declare (optimize (speed 3))
            (fft-vector vector1 vector2 result))
-  (let ((n (length result)))
+  (let ((n (length vector1)))
     (unless (zerop n)
       (incf (aref result 0)
             (* (aref vector1 0) (aref vector2 0)))
