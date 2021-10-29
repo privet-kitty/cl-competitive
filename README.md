@@ -108,6 +108,8 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [binom-mod-small.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/binom-mod-small.lisp) binomial coefficient modulo small number
 - [partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/partition-number.lisp) partition number
 - [bounded-partition-number.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/bounded-partition-number.lisp) partition number with upper-bound
+- [perfect-kth-powers.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/perfect-kth-powers.lisp) sequence of perfect powers
+- [eulerian-polynomial.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eulerian-polynomial.lisp) Eulerian polynomial
 - [mod-operations.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/mod-operations.lisp) modular arithmetic
 - [lagrange-interpolation.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/lagrange-interpolation.lisp) Lagrange interpolation
 - [eratosthenes.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/eratosthenes.lisp) enumeration of primes; prime factorization
@@ -178,7 +180,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [welzl.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/welzl.lisp) smallest circle problem (Welzl's algorithm)
 - [convex-hull.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/convex-hull.lisp) 2D convex hull (monotone chain algorithm)
 
-### Pattern matching
+### String
 - [rolling-hash31.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash31.lisp) 31-bit rolling hash
 - [rolling-hash62.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/rolling-hash62.lisp) 62-bit rolling hash
 - [2d-rolling-hash.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/2d-rolling-hash.lisp) 2D 32-bit rolling hash
