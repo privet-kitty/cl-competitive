@@ -150,6 +150,26 @@ http://www.kurims.kyoto-u.ac.jp/~ooura/fftman/ftmn2_12.html#sec2_1_2"))
         (setf (aref f i) (* (aref f i) scale)))))
   f)
 
+(defun %pointwise-mult! (vector1 vector2 result)
+  (declare (optimize (speed 3) (safety 0))
+           (fft-vector vector1 vector2 result))
+  (let ((n (length result)))
+    (unless (zerop n)
+      (incf (aref result 0)
+            (* (aref vector1 0) (aref vector2 0)))
+      (incf (aref result (ash n -1))
+            (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1)))))
+    (loop for i from 1 below (ash n -1)
+          for value1 of-type fft-float =
+             (- (* (aref vector1 i) (aref vector2 i))
+                (* (aref vector1 (- n i)) (aref vector2 (- n i))))
+          for value2 of-type fft-float =
+             (+ (* (aref vector1 i) (aref vector2 (- n i)))
+                (* (aref vector1 (- n i)) (aref vector2 i)))
+          do (setf (aref result i) value1
+                   (aref result (- n i)) value2))
+    result))
+
 (declaim (inline convolve!))
 (defun convolve! (vector1 vector2 &optional result-vector)
   "Returns the convolution of two vectors VECTOR1 and VECTOR2. A new vector is
@@ -165,20 +185,7 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
     (dft! vector1)
     (dft! vector2)
     (let ((result (or result-vector (make-array n :element-type 'fft-float))))
-      (unless (zerop n)
-        (incf (aref result 0)
-              (* (aref vector1 0) (aref vector2 0)))
-        (incf (aref result (ash n -1))
-              (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1)))))
-      (loop for i from 1 below (ash n -1)
-            for value1 of-type fft-float =
-               (- (* (aref vector1 i) (aref vector2 i))
-                  (* (aref vector1 (- n i)) (aref vector2 (- n i))))
-            for value2 of-type fft-float =
-               (+ (* (aref vector1 i) (aref vector2 (- n i)))
-                  (* (aref vector1 (- n i)) (aref vector2 i)))
-            do (setf (aref result i) value1
-                     (aref result (- n i)) value2))
+      (%pointwise-mult! vector1 vector2 result)
       (inverse-dft! result))))
 
 ;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
@@ -211,17 +218,5 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
            (result (make-array n :element-type 'fft-float)))
       (declare ((mod #.array-dimension-limit) mul-len)
                (fft-vector vector1 vector2))
-      (incf (aref result 0)
-            (* (aref vector1 0) (aref vector2 0)))
-      (incf (aref result (ash n -1))
-            (* (aref vector1 (ash n -1)) (aref vector2 (ash n -1))))
-      (loop for i from 1 below (ash n -1)
-            for value1 of-type fft-float =
-               (- (* (aref vector1 i) (aref vector2 i))
-                  (* (aref vector1 (- n i)) (aref vector2 (- n i))))
-            for value2 of-type fft-float =
-               (+ (* (aref vector1 i) (aref vector2 (- n i)))
-                  (* (aref vector1 (- n i)) (aref vector2 i)))
-            do (setf (aref result i) value1
-                     (aref result (- n i)) value2))
+      (%pointwise-mult! vector1 vector2 result)
       (adjust-array (inverse-dft! result) mul-len))))
