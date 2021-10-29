@@ -1,7 +1,7 @@
 (defpackage :cp/binom-mod-prime
-  (:use :cl)
+  (:use :cl :cp/static-mod)
   (:export #:binom #:perm #:multinomial #:stirling2 #:catalan #:multichoose
-           #:+binom-mod+ #:*fact* #:*fact-inv* #:*inv*)
+           #:*fact* #:*fact-inv* #:*inv*)
   (:documentation
    "Provides tables of factorials, inverses, inverses ot factorials etc.
 modulo prime.
@@ -12,11 +12,7 @@ query: O(1)
 (in-package :cp/binom-mod-prime)
 
 ;; TODO: non-global handling
-
 (defconstant +binom-size+ 510000)
-(defconstant +binom-mod+ (if (boundp 'cl-user::+mod+)
-                             (symbol-value 'cl-user::+mod+)
-                             998244353))
 
 (declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 (sb-ext:define-load-time-global *fact*
@@ -37,14 +33,14 @@ query: O(1)
         (aref *fact-inv* 1) 1
         (aref *inv* 1) 1)
   (loop for i from 2 below +binom-size+
-        do (setf (aref *fact* i) (mod (* i (aref *fact* (- i 1))) +binom-mod+)
-                 (aref *inv* i) (- +binom-mod+
-                                   (mod (* (aref *inv* (rem +binom-mod+ i))
-                                           (floor +binom-mod+ i))
-                                        +binom-mod+))
+        do (setf (aref *fact* i) (mod (* i (aref *fact* (- i 1))) +mod+)
+                 (aref *inv* i) (- +mod+
+                                   (mod (* (aref *inv* (rem +mod+ i))
+                                           (floor +mod+ i))
+                                        +mod+))
                  (aref *fact-inv* i) (mod (* (aref *inv* i)
                                              (aref *fact-inv* (- i 1)))
-                                          +binom-mod+))))
+                                          +mod+))))
 
 (initialize-binom)
 
@@ -54,15 +50,15 @@ query: O(1)
   (if (or (< n k) (< n 0) (< k 0))
       0
       (mod (* (aref *fact* n)
-              (mod (* (aref *fact-inv* k) (aref *fact-inv* (- n k))) +binom-mod+))
-           +binom-mod+)))
+              (mod (* (aref *fact-inv* k) (aref *fact-inv* (- n k))) +mod+))
+           +mod+)))
 
 (declaim (inline perm))
 (defun perm (n k)
   "Returns nPk, the number of k-permutations of n things without repetition."
   (if (or (< n k) (< n 0) (< k 0))
       0
-      (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +binom-mod+)))
+      (mod (* (aref *fact* n) (aref *fact-inv* (- n k))) +mod+)))
 
 (declaim (inline multichoose))
 (defun multichoose (n k)
@@ -80,18 +76,18 @@ MOST-POSITIVE-FIXNUM. (multinomial) returns 1."
     (dolist (k ks)
       (incf sum k)
       (setq result
-            (mod (* result (aref *fact-inv* k)) +binom-mod+)))
-    (mod (* result (aref *fact* sum)) +binom-mod+)))
+            (mod (* result (aref *fact-inv* k)) +mod+)))
+    (mod (* result (aref *fact* sum)) +mod+)))
 
 (define-compiler-macro multinomial (&rest args)
   (case (length args)
-    ((0 1) (mod 1 +binom-mod+))
+    ((0 1) (mod 1 +mod+))
     (otherwise
-     `(mod (* ,(reduce (lambda (x y) `(mod (* ,x ,y) +binom-mod+))
+     `(mod (* ,(reduce (lambda (x y) `(mod (* ,x ,y) +mod+))
                        args
                        :key (lambda (x) `(aref *fact-inv* ,x)))
               (aref *fact* (+ ,@args)))
-           +binom-mod+))))
+           +mod+))))
 
 (declaim (inline stirling2))
 (defun stirling2 (n k)
@@ -103,22 +99,22 @@ O(klog(n))."
              (loop with res of-type (integer 0 #.most-positive-fixnum) = 1
                    while (> exp 0)
                    when (oddp exp)
-                   do (setq res (mod (* res base) +binom-mod+))
-                   do (setq base (mod (* base base) +binom-mod+)
+                   do (setq res (mod (* res base) +mod+))
+                   do (setq base (mod (* base base) +mod+)
                             exp (ash exp -1))
                    finally (return res))))
     (loop with result of-type fixnum = 0
           for i from 0 to k
-          for delta = (mod (* (binom k i) (mod-power i n)) +binom-mod+)
+          for delta = (mod (* (binom k i) (mod-power i n)) +mod+)
           when (evenp (- k i))
           do (incf result delta)
-             (when (>= result +binom-mod+)
-               (decf result +binom-mod+))
+             (when (>= result +mod+)
+               (decf result +mod+))
           else
           do (decf result delta)
              (when (< result 0)
-               (incf result +binom-mod+))
-          finally (return (mod (* result (aref *fact-inv* k)) +binom-mod+)))))
+               (incf result +mod+))
+          finally (return (mod (* result (aref *fact-inv* k)) +mod+)))))
 
 (declaim (inline catalan))
 (defun catalan (n)
@@ -127,5 +123,5 @@ O(klog(n))."
   (mod (* (aref *fact* (* 2 n))
           (mod (* (aref *fact-inv* (+ n 1))
                   (aref *fact-inv* n))
-               +binom-mod+))
-       +binom-mod+))
+               +mod+))
+       +mod+))

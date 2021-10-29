@@ -1,5 +1,5 @@
 (defpackage :cp/test/polynomial-ntt
-  (:use :cl :fiveam :cp/ntt :cp/polynomial-ntt)
+  (:use :cl :fiveam :cp/ntt :cp/polynomial-ntt :cp/static-mod)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-polynomial #:poly-value))
 (in-package :cp/test/polynomial-ntt)
@@ -21,7 +21,7 @@
 (defun make-random-polynomial (degree)
   (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))
     (dotimes (i degree res)
-      (setf (aref res i) (random +ntt-mod+)))
+      (setf (aref res i) (random +mod+)))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (adjust-array res end))))
 
@@ -47,7 +47,7 @@
               (is (equalp q (poly-mod poly1 poly2))))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))
-               (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +ntt-mod+)) points))
+               (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +mod+)) points))
                (res2 (multipoint-eval poly1 points)))
           (is (equalp res1 res2)))))))
 
@@ -76,11 +76,11 @@
   (is (equal (cons 0 (loop for a0 = 0 then a1
                            and a1 = 1 then (+ a0 a1)
                            repeat 100
-                           collect (mod a1 +ntt-mod+)))
+                           collect (mod a1 +mod+)))
              (loop for i to 100
                    collect (bostan-mori i
                                         #(0 1)
-                                        (vector 1 (- +ntt-mod+ 1) (- +ntt-mod+ 1))))))
+                                        (vector 1 (- +mod+ 1) (- +mod+ 1))))))
   ;; constant
   (is (equal (cons 2 (loop repeat 100 collect 0))
              (loop for i to 100
@@ -104,7 +104,7 @@
     (loop for len from 1 to 200
           for vector = (make-array len :element-type 'ntt-int :initial-element 0)
           do (loop for i from 1 below len
-                   do (setf (aref vector i) (random +ntt-mod+)))
+                   do (setf (aref vector i) (random +mod+)))
              (is (equalp vector (poly-log (poly-exp vector)))))))
 
 (test poly-power/hand

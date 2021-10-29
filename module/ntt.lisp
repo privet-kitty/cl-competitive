@@ -1,6 +1,6 @@
 (defpackage :cp/ntt
   (:use :cl :cp/mod-inverse)
-  (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector #:+ntt-mod+)
+  (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector)
   (:documentation
    "Provides fast number theoretic transform.
 
@@ -211,8 +211,6 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
                      (mod (* (aref vector1 i) (aref vector2 i)) ,modulus)))
              (subseq (,inverse-ntt vector1 t) 0 mul-len)))))))
 
-(defconstant +ntt-mod+ 998244353)
-
 #+(or)
-(define-ntt +ntt-mod+)
+(define-ntt +mod+)
 

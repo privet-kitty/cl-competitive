@@ -1,14 +1,14 @@
 (defpackage :cp/test/ntt
-  (:use :cl :fiveam :cp/ntt :cp/mod-polynomial)
+  (:use :cl :fiveam :cp/ntt :cp/mod-polynomial :cp/static-mod)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/ntt #:%calc-generator))
 (in-package :cp/test/ntt)
 (in-suite base-suite)
 
-(define-ntt +ntt-mod+)
+(define-ntt +mod+)
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant +ntt-mod2+ 1012924417))
-(define-ntt +ntt-mod2+
+  (defconstant +mod2+ 1012924417))
+(define-ntt +mod2+
   :ntt ntt2
   :inverse-ntt inverse-ntt2
   :convolve convolve2)
@@ -52,15 +52,15 @@
       (dotimes (_ 500)
         (let* ((len1 (random max-len state))
                (len2 (random max-len state))
-               (poly1 (make-random-polynomial len1 state +ntt-mod+))
-               (poly2 (make-random-polynomial len2 state +ntt-mod+)))
-          (is (equalp (poly-mult poly1 poly2 +ntt-mod+)
+               (poly1 (make-random-polynomial len1 state +mod+))
+               (poly2 (make-random-polynomial len2 state +mod+)))
+          (is (equalp (poly-mult poly1 poly2 +mod+)
                       (convolve poly1 poly2))))))
     (dolist (max-len '(10 128))
       (dotimes (_ 500)
         (let* ((len1 (random max-len state))
                (len2 (random max-len state))
-               (poly1 (make-random-polynomial len1 state +ntt-mod2+))
-               (poly2 (make-random-polynomial len2 state +ntt-mod2+)))
-          (is (equalp (poly-mult poly1 poly2 +ntt-mod2+)
+               (poly1 (make-random-polynomial len1 state +mod2+))
+               (poly2 (make-random-polynomial len2 state +mod2+)))
+          (is (equalp (poly-mult poly1 poly2 +mod2+)
                       (convolve2 poly1 poly2))))))))

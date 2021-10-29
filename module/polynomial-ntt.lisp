@@ -1,5 +1,5 @@
 (defpackage :cp/polynomial-ntt
-  (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power)
+  (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power :cp/static-mod)
   (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
            #:poly-differentiate! #:poly-integrate #:poly-log #:poly-exp #:poly-power))
@@ -7,7 +7,7 @@
 
 ;; TODO: integrate with cp/polynomial
 
-(define-ntt +ntt-mod+
+(define-ntt +mod+
   :convolve poly-multiply)
 
 (declaim (inline %adjust))
@@ -39,7 +39,7 @@
 ;;              :operands (list poly)))
 ;;     (let ((res (make-array 1
 ;;                            :element-type 'ntt-int
-;;                            :initial-element (mod-inverse (aref poly 0) +ntt-mod+)))
+;;                            :initial-element (mod-inverse (aref poly 0) +mod+)))
 ;;           (result-length (or result-length n)))
 ;;       (declare (ntt-vector res))
 ;;       (loop for i of-type ntt-int = 1 then (ash i 1)
@@ -51,9 +51,9 @@
 ;;                (dotimes (j (* 2 i))
 ;;                  (setf (aref res j)
 ;;                        (mod (the ntt-int
-;;                                  (+ (mod (* 2 (aref res j)) +ntt-mod+)
-;;                                     (if (>= j decr-len) 0 (- +ntt-mod+ (aref decr j)))))
-;;                             +ntt-mod+))))
+;;                                  (+ (mod (* 2 (aref res j)) +mod+)
+;;                                     (if (>= j decr-len) 0 (- +mod+ (aref decr j)))))
+;;                             +mod+))))
 ;;       (%adjust res result-length))))
 
 ;; Reference: https://opt-cp.com/fps-fast-algorithms/
@@ -73,7 +73,7 @@
     (let* ((result-length (or result-length n))
            (res (make-array 1
                             :element-type 'ntt-int
-                            :initial-element (mod-inverse (aref poly 0) +ntt-mod+))))
+                            :initial-element (mod-inverse (aref poly 0) +mod+))))
       (declare (ntt-vector res))
       (loop for i of-type ntt-int = 1 then (ash i 1)
             while (< i result-length)
@@ -86,19 +86,19 @@
                (ntt! f)
                (ntt! g)
                (dotimes (j (* 2 i))
-                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
+                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +mod+)))
                (inverse-ntt! f)
                (replace f f :start1 0 :end1 i :start2 i :end2 (* 2 i))
                (fill f 0 :start i :end (* 2 i))
                (ntt! f)
                (dotimes (j (* 2 i))
-                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +ntt-mod+)))
+                 (setf (aref f j) (mod (* (aref g j) (aref f j)) +mod+)))
                (inverse-ntt! f)
-               (let ((inv-len (mod-inverse (* 2 i) +ntt-mod+)))
-                 (setq inv-len (mod (* inv-len (- +ntt-mod+ inv-len))
-                                    +ntt-mod+))
+               (let ((inv-len (mod-inverse (* 2 i) +mod+)))
+                 (setq inv-len (mod (* inv-len (- +mod+ inv-len))
+                                    +mod+))
                  (dotimes (j i)
-                   (setf (aref f j) (mod (* inv-len (aref f j)) +ntt-mod+)))
+                   (setf (aref f j) (mod (* inv-len (aref f j)) +mod+)))
                  (setq res (%adjust res (* 2 i)))
                  (replace res f :start1 i)))
       (%adjust res result-length))))
@@ -133,7 +133,7 @@
       (let ((value (- (aref res i) (aref poly2 i))))
         (setf (aref res i)
               (if (< value 0)
-                  (+ value +ntt-mod+)
+                  (+ value +mod+)
                   value))))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (%adjust res end))))
@@ -148,7 +148,7 @@
          (res (make-array len :element-type 'ntt-int :initial-element 0)))
     (replace res poly1)
     (dotimes (i (length poly2))
-      (setf (aref res i) (mod (+ (aref res i) (aref poly2 i)) +ntt-mod+)))
+      (setf (aref res i) (mod (+ (aref res i) (aref poly2 i)) +mod+)))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (%adjust res end))))
 
@@ -199,7 +199,7 @@
                  (declare ((mod #.array-dimension-limit) l r pos))
                  (if (= (- r l) 1)
                      (let ((lin (make-array 2 :element-type 'ntt-int)))
-                       (setf (aref lin 0) (- +ntt-mod+ (aref points l)) ;; NOTE: non-zero
+                       (setf (aref lin 0) (- +mod+ (aref points l)) ;; NOTE: non-zero
                              (aref lin 1) 1)
                        (setf (aref table pos) lin))
                      (let ((mid (ash (+ l r) -1)))
@@ -237,7 +237,7 @@ https://codeforces.com/blog/entry/83532"
   (when (zerop (length poly))
     (return-from chirp-z (make-array length :element-type 'ntt-int :initial-element 0)))
   (let* ((poly (coerce poly 'ntt-vector))
-         (binv (mod-inverse base +ntt-mod+))
+         (binv (mod-inverse base +mod+))
          (n (length poly))
          (m (max length n))
          (n+m (+ n m))
@@ -246,18 +246,18 @@ https://codeforces.com/blog/entry/83532"
     (declare (ntt-int n m n+m))
     (dotimes (i n)
       (setf (aref cs i) (mod (* (aref poly (- n 1 i))
-                                (mod-power binv (ash (* (- n 1 i) (- n 2 i)) -1) +ntt-mod+))
-                             +ntt-mod+)))
+                                (mod-power binv (ash (* (- n 1 i) (- n 2 i)) -1) +mod+))
+                             +mod+)))
     (dotimes (i n+m)
-      (setf (aref ds i) (mod-power base (ash (* i (- i 1)) -1) +ntt-mod+)))
+      (setf (aref ds i) (mod-power base (ash (* i (- i 1)) -1) +mod+)))
     (let ((result (subseq (poly-multiply cs ds)
                           (- n 1)
                           (+ (- n 1) length))))
       (dotimes (i length)
         (setf (aref result i)
               (mod (* (aref result i)
-                      (mod-power binv (ash (* i (- i 1)) -1) +ntt-mod+))
-                   +ntt-mod+)))
+                      (mod-power binv (ash (* i (- i 1)) -1) +mod+))
+                   +mod+)))
       result)))
 
 (declaim (ftype (function * (values ntt-int &optional)) bostan-mori))
@@ -287,7 +287,7 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
                      do (setf (aref res i)
                               (if (zerop (aref res i))
                                   0
-                                  (- +ntt-mod+ (aref res i)))))
+                                  (- +mod+ (aref res i)))))
                res)))
     (let ((num (coerce num 'ntt-vector))
           (denom (coerce denom 'ntt-vector)))
@@ -308,8 +308,8 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
             finally (return (rem (* (if (zerop (length num))
                                         0
                                         (aref num 0))
-                                    (mod-inverse (aref denom 0) +ntt-mod+))
-                                 +ntt-mod+))))))
+                                    (mod-inverse (aref denom 0) +mod+))
+                                 +mod+))))))
 
 (declaim (inline poly-differentiate!))
 (defun poly-differentiate! (p)
@@ -321,7 +321,7 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
     (dotimes (i (- (length p) 1))
       (declare (ntt-int i))
       (setf (aref p i)
-            (mod (* (aref p (+ i 1)) (+ i 1)) +ntt-mod+)))
+            (mod (* (aref p (+ i 1)) (+ i 1)) +mod+)))
     (let ((end (+ 1 (or (position 0 p :from-end t :end (- (length p) 1) :test-not #'eql)
                         -1))))
       (subseq p 0 end))))
@@ -338,9 +338,9 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
       (loop with inv of-type ntt-vector = (%adjust *inv* new-size)
             for x from old-size below new-size
             do (setf (aref inv x)
-                     (- +ntt-mod+
-                        (mod (* (aref inv (rem +ntt-mod+ x)) (floor +ntt-mod+ x))
-                             +ntt-mod+)))
+                     (- +mod+
+                        (mod (* (aref inv (rem +mod+ x)) (floor +mod+ x))
+                             +mod+)))
             finally (setq *inv* inv)))))
 
 (declaim (inline poly-integrate))
@@ -358,7 +358,7 @@ be zero."
       (dotimes (i n)
         (setf (aref result (+ i 1))
               (mod (* (aref p i) (aref inv (+ i 1)))
-                   +ntt-mod+)))
+                   +mod+)))
       result)))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-log))
@@ -389,8 +389,8 @@ be zero."
           do (loop for i from 0 below (min new-len (length poly))
                    do (setf (aref log i)
                             (mod (- (aref poly i) (aref log i))
-                                 +ntt-mod+)))
-             (setf (aref log 0) (mod (+ 1 (aref log 0)) +ntt-mod+)
+                                 +mod+)))
+             (setf (aref log 0) (mod (+ 1 (aref log 0)) +mod+)
                    res (%adjust (poly-multiply res log) new-len)))
     (%adjust res result-length)))
 
@@ -409,17 +409,17 @@ be zero."
       (return-from poly-power
         (make-array result-length :element-type 'ntt-int :initial-element 0)))
     (let ((tmp (subseq poly init-pos)))
-      (let ((inv (mod-inverse (aref poly init-pos) +ntt-mod+)))
+      (let ((inv (mod-inverse (aref poly init-pos) +mod+)))
         (dotimes (i (length tmp))
-          (setf (aref tmp i) (mod (* (aref tmp i) inv) +ntt-mod+))))
+          (setf (aref tmp i) (mod (* (aref tmp i) inv) +mod+))))
       (setq tmp (poly-log tmp result-length))
-      (let ((exp (mod exp +ntt-mod+)))
+      (let ((exp (mod exp +mod+)))
         (dotimes (i (length tmp))
-          (setf (aref tmp i) (mod (* (aref tmp i) exp) +ntt-mod+)))
+          (setf (aref tmp i) (mod (* (aref tmp i) exp) +mod+)))
         (setq tmp (poly-exp tmp result-length)))
-      (let ((power (mod-power (aref poly init-pos) exp +ntt-mod+)))
+      (let ((power (mod-power (aref poly init-pos) exp +mod+)))
         (dotimes (i (length tmp))
-          (setf (aref tmp i) (mod (* (aref tmp i) power) +ntt-mod+))))
+          (setf (aref tmp i) (mod (* (aref tmp i) power) +mod+))))
       (if (zerop init-pos)
           tmp
           (let ((res (make-array result-length :element-type 'ntt-int :initial-element 0)))

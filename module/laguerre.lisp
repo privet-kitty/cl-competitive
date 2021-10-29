@@ -1,5 +1,5 @@
 (defpackage :cp/laguerre
-  (:use :cl :cp/binom-mod-prime)
+  (:use :cl :cp/binom-mod-prime :cp/static-mod)
   (:export #:glaguerre))
 (in-package :cp/laguerre)
 
@@ -14,7 +14,7 @@ polynomials. 2016."
         (res (make-array (+ n 1) :element-type '(unsigned-byte 31) :initial-element 0)))
     (labels ((mod* (x y)
                (declare ((unsigned-byte 31) x y))
-               (mod (* x y) +binom-mod+)))
+               (mod (* x y) +mod+)))
       (dotimes (k (length res))
         (let ((val (mod* (mod* (mod* (binom n k)
                                      (aref *fact* (- n k)))
@@ -23,5 +23,5 @@ polynomials. 2016."
           (setf (aref res k)
                 (if (evenp k)
                     val
-                    (mod (- val) +binom-mod+)))))
+                    (mod (- val) +mod+)))))
       res)))
