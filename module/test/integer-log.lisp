@@ -59,7 +59,7 @@
 
 
 (test log-ceil/random
-  (let ((*num-trials* 1000))
+  (let ((*test-dribble* nil))
     (for-all ((base (gen-integer :min 2))
               (x (gen-integer :min 1)))
       (let ((log (log-ceil x base)))
