@@ -1,5 +1,5 @@
 (defpackage :cp/test/binom-mod-prime
-  (:use :cl :fiveam :cp/binom-mod-prime)
+  (:use :cl :fiveam :cp/binom-mod-prime :cp/mod-binomial)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/binom-mod-prime)
 (in-suite base-suite)
@@ -10,7 +10,7 @@
   (is (= 0 (binom 1 3)))
   (is (= 1 (binom 0 0)))
   (is (= 10 (binom 5 2)))
-  (is (= 962556519 (binom 1000 400))))
+  (is (= (mod-binomial 1000 400 +binom-mod+) (binom 1000 400))))
 
 (test catalan
   (is (= 1 (catalan 0)))

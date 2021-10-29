@@ -16,7 +16,7 @@ query: O(1)
 (defconstant +binom-size+ 510000)
 (defconstant +binom-mod+ (if (boundp 'cl-user::+mod+)
                              (symbol-value 'cl-user::+mod+)
-                             #.(+ (expt 10 9) 7)))
+                             998244353))
 
 (declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
 (sb-ext:define-load-time-global *fact*
