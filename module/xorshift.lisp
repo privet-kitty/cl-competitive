@@ -5,31 +5,34 @@
 efficiency."))
 (in-package :cp/xorshift)
 
-(declaim ((simple-array (unsigned-byte 64) (1)) *state*))
-(sb-ext:defglobal *state*
-  (make-array 1 :element-type '(unsigned-byte 64) :initial-element 88172645463325252))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (assert (= 64 sb-vm:n-word-bits)))
 
+(declaim ((unsigned-byte 64) *state*))
+(sb-ext:defglobal *state* (ash 88172645463325252 -1))
+
+;; TODO: investigate the safety of this weird hack
 (declaim (inline xorshift))
 (defun xorshift (arg)
   "Returns an integer within [0, ARG). Note that this RNG is not strictly
-uniform because of modulo bias."
+uniform due to modulo bias."
   (declare (optimize (speed 3))
            ((integer 1 #.(ash 1 64)) arg))
   (locally (declare (optimize (safety 0)))
-    (let* ((state *state*)
-           (x (aref state 0)))
+    (let* ((x (sb-kernel:get-lisp-obj-address *state*)))
       (declare ((unsigned-byte 64) x))
       (setq x (ldb (byte 64 0) (logxor x (ash x 7))))
       (setq x (ldb (byte 64 0) (logxor x (ash x -9))))
-      (mod (setf (aref state 0) x) arg))))
+      (setq *state* (sb-kernel:%make-lisp-obj x))
+      (mod x arg))))
 
 (defconstant +skip-count+ 50) ; FIXME: this is not based on any evidence
 
 (defun xorshift-seed! (seed &optional (skip +skip-count+))
   (declare (optimize (speed 3))
-           ((integer 1 (#.(ash 1 64))) seed)
+           ((integer 1 #.most-positive-fixnum) seed) ; avoid trouble
            ((integer 0 #.most-positive-fixnum) skip))
-  (setf (aref *state* 0) seed)
+  (setq *state* seed)
   (dotimes (_ skip)
     (xorshift 1)))
 
