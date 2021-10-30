@@ -1,4 +1,4 @@
-(defpackage :cp/mod128
+(defpackage :cp/int128
   (:use :cl)
   (:import-from #:sb-c
                 #:deftransform
@@ -17,7 +17,7 @@
   (:import-from #:sb-kernel #:specifier-type)
   (:export #:*128)
   (:documentation "Provides modular multiplication of 64-bit integers."))
-(in-package :cp/mod128)
+(in-package :cp/int128)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun derive-mod (modulus)
