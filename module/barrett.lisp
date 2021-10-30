@@ -175,6 +175,8 @@
        (setq m (sb-c::tn-value m)))
      (setq m (fixnumize m))
      (move r x)
+     ;; TODO: this instruction is rarely necessary because %LOMOD tends to be
+     ;; called right after subtraction.
      (inst or r r)
      (inst lea y #.(if (fboundp 'ea)
                        `(sb-vm::ea m r)
