@@ -17,6 +17,7 @@ C. Monico. Semirings and semigroup actions in public-key cryptography."))
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
 
+;; embedded identity
 (defconstant +identity+
   (if (boundp '+identity+)
       (symbol-value '+identity+)
@@ -220,7 +221,8 @@ We can do this in O(sqrt(N)log(N)T) time per query with some preprocessing."
                     finally (incf diff))))
           (let* ((c (- max-c diff))
                  (res (- (* mp gen-exp) (* (+ b c) cycle-length))))
-            (when (and (>= res 0) (funcall test y (%action-with-base fbase action res x)))
+            (when (and (>= res 0)
+                       (funcall test y (%action-with-base fbase action res x)))
               (return-from bsgs-semigroup (values res cycle-start cycle-length))))))
       (fail))))
 
