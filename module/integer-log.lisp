@@ -53,5 +53,4 @@
 (defun decimal-length (x)
   "Special case (decimal-length 0) == 1."
   (declare (uint x))
-  (let ((lo (aref *lo* (integer-length x))))
-    (+ lo (if (> x (aref *hi-power10* lo)) 2 1))))
+  (+ 1 (log10-floor x)))
