@@ -1,7 +1,7 @@
 (defpackage :cp/mod-convolve
   (:use :cl :cp/fft-real)
   (:export #:mod-convolve)
-  (:import-from :cp/fft-real #:%adjust-array #:%pointwise-mult!))
+  (:import-from :cp/fft-real #:%adjust-array))
 (in-package :cp/mod-convolve)
 
 (deftype uint () '(unsigned-byte 31))
@@ -53,7 +53,7 @@
       (labels ((proc! (v1 v2)
                  (declare (fft-vector v1 v2))
                  (fill tmp (coerce 0 'fft-float))
-                 (%pointwise-mult! v1 v2 tmp)
+                 (pointwise-prod! v1 v2 tmp)
                  (inverse-dft! tmp))
                (mod+ (x y) (mod (+ x y) modulus))
                (%round (x)

@@ -1,6 +1,6 @@
 (defpackage :cp/fft-real
   (:use :cl)
-  (:export #:fft-float #:fft-vector #:ensure-fft-base!
+  (:export #:fft-float #:fft-vector #:ensure-fft-base! #:pointwise-prod!
            #:dft! #:inverse-dft! #:convolve! #:convolve)
   (:documentation
    "Provides real FFT.
@@ -150,7 +150,7 @@ http://www.kurims.kyoto-u.ac.jp/~ooura/fftman/ftmn2_12.html#sec2_1_2"))
         (setf (aref f i) (* (aref f i) scale)))))
   f)
 
-(defun %pointwise-mult! (vector1 vector2 result)
+(defun pointwise-prod! (vector1 vector2 result)
   (declare (optimize (speed 3))
            (fft-vector vector1 vector2 result))
   (let ((n (length vector1)))
@@ -185,7 +185,7 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
     (dft! vector1)
     (dft! vector2)
     (let ((result (or result-vector (make-array n :element-type 'fft-float))))
-      (%pointwise-mult! vector1 vector2 result)
+      (pointwise-prod! vector1 vector2 result)
       (inverse-dft! result))))
 
 ;; KLUDGE: This function depends on SBCL's behaviour. That is, ADJUST-ARRAY
@@ -218,5 +218,5 @@ and VECTOR2. (They can be restored by INVERSE-DFT!.)"
            (result (make-array n :element-type 'fft-float)))
       (declare ((mod #.array-dimension-limit) mul-len)
                (fft-vector vector1 vector2))
-      (%pointwise-mult! vector1 vector2 result)
+      (pointwise-prod! vector1 vector2 result)
       (adjust-array (inverse-dft! result) mul-len))))
