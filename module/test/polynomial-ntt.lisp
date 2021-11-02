@@ -34,7 +34,7 @@
              (poly2 (make-random-polynomial len2)))
         ;; inverse
         (when (find-if #'plusp poly1)
-          (let ((res (poly-multiply poly1 (poly-inverse poly1))))
+          (let ((res (poly-prod poly1 (poly-inverse poly1))))
             (is (= 1 (aref res 0)))
             (loop for i from 1 below len1
                   do (is (zerop (aref res i))))))
@@ -43,7 +43,7 @@
           (handler-bind ((division-by-zero (lambda (c) (declare (ignorable c))
                                              (return-from continue))))
             (let* ((p (poly-floor poly1 poly2))
-                   (q (poly-sub poly1 (poly-multiply poly2 p))))
+                   (q (poly-sub poly1 (poly-prod poly2 p))))
               (is (equalp q (poly-mod poly1 poly2))))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))

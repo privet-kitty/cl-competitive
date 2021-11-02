@@ -23,7 +23,7 @@ ascent). Note that the 0-th eulerian polynomial is 1 by definition."
                       +mod+)))
         (setf (aref poly1 k)
               (if (evenp k) val (mod (- val) +mod+)))))
-    (let ((res (adjust-array (poly-multiply poly1 poly2) n))
+    (let ((res (adjust-array (poly-prod poly1 poly2) n))
           (coef (aref *fact* (+ n 1))))
       (declare (ntt-vector res))
       (dotimes (i len)

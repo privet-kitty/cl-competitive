@@ -1,6 +1,6 @@
 (defpackage :cp/polynomial-ntt
   (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power :cp/static-mod)
-  (:export #:poly-multiply #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
+  (:export #:poly-prod #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
            #:poly-differentiate! #:poly-integrate #:poly-log #:poly-exp #:poly-power))
 (in-package :cp/polynomial-ntt)
@@ -8,7 +8,7 @@
 ;; TODO: integrate with cp/polynomial
 
 (define-ntt +mod+
-  :convolve poly-multiply)
+  :convolve poly-prod)
 
 (declaim (inline %adjust))
 (defun %adjust (vector size)
@@ -44,8 +44,8 @@
 ;;       (declare (ntt-vector res))
 ;;       (loop for i of-type ntt-int = 1 then (ash i 1)
 ;;             while (< i result-length)
-;;             for decr = (poly-multiply (poly-multiply res res)
-;;                                       (subseq poly 0 (min (length poly) (* 2 i))))
+;;             for decr = (poly-prod (poly-prod res res)
+;;                                   (subseq poly 0 (min (length poly) (* 2 i))))
 ;;             for decr-len = (length decr)
 ;;             do (setq res (%adjust res (* 2 i) :initial-element 0))
 ;;                (dotimes (j (* 2 i))
@@ -116,7 +116,7 @@
     (setq poly1 (nreverse (subseq poly1 0 len1))
           poly2 (nreverse (subseq poly2 0 len2)))
     (let* ((res-len (+ 1 (- len1 len2)))
-           (res (%adjust (poly-multiply poly1 (poly-inverse poly2 res-len))
+           (res (%adjust (poly-prod poly1 (poly-inverse poly2 res-len))
                          res-len)))
       (nreverse res))))
 
@@ -160,7 +160,7 @@
         (poly2 (coerce poly2 'ntt-vector)))
     (when (loop for x across poly1 always (zerop x))
       (return-from poly-mod (make-array 0 :element-type 'ntt-int)))
-    (let* ((res (poly-sub poly1 (poly-multiply (poly-floor poly1 poly2) poly2)))
+    (let* ((res (poly-sub poly1 (poly-prod (poly-floor poly1 poly2) poly2)))
            (end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (subseq res 0 end))))
 
@@ -179,7 +179,7 @@
           do (loop for i of-type (mod #.array-dimension-limit) from 0 by (* width 2)
                    while (< (+ i width) n)
                    do (setf (aref dp i)
-                            (poly-multiply (aref dp i) (aref dp (+ i width))))))
+                            (poly-prod (aref dp i) (aref dp (+ i width))))))
     (coerce (the vector (aref dp 0)) 'ntt-vector)))
 
 (declaim (ftype (function * (values ntt-vector &optional)) multipoint-eval))
@@ -206,8 +206,8 @@
                        (%build l mid (+ 1 (* pos 2)))
                        (%build mid r (+ 2 (* pos 2)))
                        (setf (aref table pos)
-                             (poly-multiply (aref table (+ 1 (* pos 2)))
-                                            (aref table (+ 2 (* pos 2)))))))))
+                             (poly-prod (aref table (+ 1 (* pos 2)))
+                                        (aref table (+ 2 (* pos 2)))))))))
         (%build 0 len 0))
       (labels ((%eval (poly l r pos)
                  (declare ((mod #.array-dimension-limit) l r pos))
@@ -250,7 +250,7 @@ https://codeforces.com/blog/entry/83532"
                              +mod+)))
     (dotimes (i n+m)
       (setf (aref ds i) (mod-power base (ash (* i (- i 1)) -1) +mod+)))
-    (let ((result (subseq (poly-multiply cs ds)
+    (let ((result (subseq (poly-prod cs ds)
                           (- n 1)
                           (+ (- n 1) length))))
       (dotimes (i length)
@@ -298,12 +298,12 @@ https://qiita.com/ryuhe1/items/da5acbcce4ac1911f47 (Japanese)"
                :operation 'bostan-mori))
       (loop while (> index 0)
             for denom- = (negate denom)
-            for u = (poly-multiply num denom-)
+            for u = (poly-prod num denom-)
             when (evenp index)
             do (setq num (even u))
             else
             do (setq num (odd u))
-            do (setq denom (even (poly-multiply denom denom-))
+            do (setq denom (even (poly-prod denom denom-))
                      index (ash index -1))
             finally (return (rem (* (if (zerop (length num))
                                         0
@@ -369,8 +369,8 @@ be zero."
   (let* ((poly (coerce poly 'ntt-vector))
          (result-length (or result-length (length poly))))
     (assert (= 1 (aref poly 0)))
-    (let ((res (poly-integrate (%adjust (poly-multiply (poly-differentiate! (copy-seq poly))
-                                                       (poly-inverse poly result-length))
+    (let ((res (poly-integrate (%adjust (poly-prod (poly-differentiate! (copy-seq poly))
+                                                   (poly-inverse poly result-length))
                                         (- result-length 1)))))
       (%adjust res result-length))))
 
@@ -391,7 +391,7 @@ be zero."
                             (mod (- (aref poly i) (aref log i))
                                  +mod+)))
              (setf (aref log 0) (mod (+ 1 (aref log 0)) +mod+)
-                   res (%adjust (poly-multiply res log) new-len)))
+                   res (%adjust (poly-prod res log) new-len)))
     (%adjust res result-length)))
 
 (declaim (ftype (function * (values ntt-vector &optional)) poly-power))
