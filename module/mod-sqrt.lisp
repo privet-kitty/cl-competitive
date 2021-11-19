@@ -1,0 +1,40 @@
+(defpackage :cp/mod-sqrt
+  (:use :cl :cp/mod-power :cp/mod-inverse :cp/tzcount)
+  (:export #:mod-sqrt)
+  (:documentation "Provides Tonelli-Shanks algorithm for finding a modular
+square root."))
+(in-package :cp/mod-sqrt)
+
+(defconstant +nbits+ 62)
+(deftype uint () '(integer 0 #.(- (ash 1 +nbits+) 1)))
+
+(declaim (inline mod-sqrt))
+(defun mod-sqrt (a mod)
+  "Returns a modular square root of A if it exists; otherwise returns NIL. MOD
+must be prime."
+  (declare (uint a)
+           ((and (integer 1) uint) mod))
+  (let ((a (mod a mod)))
+    (when (or (< a 2) (= mod 2))
+      (return-from mod-sqrt a))
+    ;; Euler's criterion
+    (unless (= 1 (mod-power a (ash (- mod 1) -1) mod))
+      (return-from mod-sqrt))
+    (let* ((b (loop for b = (+ 1 (random (- mod 1)))
+                    while (= 1 (mod-power b (ash (- mod 1) -1) mod))
+                    finally (return b)))
+           (init-shift (tzcount (- mod 1)))
+           (q (ash (- mod 1) (- init-shift)))
+           (x (mod-power a (ash (+ q 1) -1) mod))
+           (b (mod-power b q mod))
+           (/a (mod-inverse a mod))
+           (shift 2))
+      (declare ((mod #.+nbits+) shift init-shift)
+               (uint b q x /a))
+      (loop until (= a (mod (* x x) mod))
+            for error = (mod (* /a (mod (* x x) mod)) mod)
+            unless (= 1 (mod-power error (ash 1 (- init-shift shift)) mod))
+            do (setq x (mod (* x b) mod))
+            do (setq b (mod (* b b) mod))
+               (incf shift)
+            finally (return x)))))

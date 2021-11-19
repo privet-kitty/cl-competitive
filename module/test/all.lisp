@@ -118,6 +118,7 @@
   (:import-from :cp/test/mod-polynomial)
   (:import-from :cp/test/mod-power)
   (:import-from :cp/test/mod-sparse-polynomial)
+  (:import-from :cp/test/mod-sqrt)
   (:import-from :cp/test/mod-polynomial)
   (:import-from :cp/test/mod-operations)
   (:import-from :cp/test/moebius-table)
