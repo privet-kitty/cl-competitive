@@ -112,3 +112,12 @@
   (is (equalp #(1 3 3 1 0) (poly-power #(1 1) 3 5)))
   (is (equalp #() (poly-power #(1 1) 3 0)))
   (is (equalp #(0 0 0 1 3 3 1 0 0 0) (poly-power #(0 1 1) 3 10))))
+
+(test poly-sqrt/catalan
+  (let* ((seq #(1 1 2 5 14 42 132 429 1430 4862 16796 58786 208012 742900 2674440 9694845))
+         (seq2 (map 'ntt-vector
+                    (lambda (x) (mod (* x (/ (+ +mod+ 1) 2)) +mod+))
+                    (subseq (poly-sub #(1)
+                                      (poly-sqrt #(1 #.(- +mod+ 4)) (+ 1 (length seq))))
+                            1))))
+    (is (equalp seq seq2))))

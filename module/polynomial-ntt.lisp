@@ -1,8 +1,9 @@
 (defpackage :cp/polynomial-ntt
-  (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power :cp/static-mod)
+  (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power :cp/mod-sqrt :cp/static-mod)
   (:export #:poly-prod #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
-           #:poly-differentiate! #:poly-integrate #:poly-log #:poly-exp #:poly-power))
+           #:poly-differentiate! #:poly-integrate
+           #:poly-log #:poly-exp #:poly-power #:poly-sqrt))
 (in-package :cp/polynomial-ntt)
 
 ;; TODO: integrate with cp/polynomial
@@ -425,3 +426,49 @@ be zero."
           (let ((res (make-array result-length :element-type 'ntt-int :initial-element 0)))
             (replace res tmp :start1 (min (length res) (* init-pos exp)))
             res)))))
+
+(defconstant +/2+ (ash (+ +mod+ 1) -1))
+
+(declaim (ftype (function * (values (or null ntt-vector) &optional)) poly-sqrt))
+(defun poly-sqrt (poly &optional result-length)
+  (declare (optimize (speed 3))
+           (vector poly)
+           ((or null (mod #.array-dimension-limit)) result-length))
+  (let* ((result-length (or result-length (length poly)))
+         (poly (coerce poly 'ntt-vector)))
+    (labels ((return-zero ()
+               (return-from poly-sqrt
+                 (make-array result-length :element-type 'ntt-int :initial-element 0))))
+      (when (zerop (length poly))
+        (return-zero))
+      (if (zerop (aref poly 0))
+          (let ((i (position 0 poly :test-not #'=)))
+            (unless i
+              (return-zero))
+            (when (oddp i)
+              (return-from poly-sqrt))
+            (when (<= result-length (ash i -1))
+              (return-zero))
+            (let ((tmp-res (poly-sqrt (subseq poly i) (- result-length (ash i -1)))))
+              (unless tmp-res
+                (return-from poly-sqrt))
+              (let ((res (make-array result-length :element-type 'ntt-int :initial-element 0)))
+                (replace res tmp-res :start1 (ash i -1))
+                res)))
+          (let ((sqrt (mod-sqrt (aref poly 0) +mod+)))
+            (unless sqrt
+              (return-from poly-sqrt))
+            (assert (= (aref poly 0) (mod (* sqrt sqrt) +mod+)))
+            (let ((res (make-array 1 :element-type 'ntt-int :initial-element sqrt)))
+              (loop for len of-type (mod #.array-dimension-limit) = 1 then (ash len 1)
+                    while (< len result-length)
+                    do (let* ((next-len (ash len 1))
+                              (tmp (poly-prod (poly-inverse res next-len)
+                                              (%adjust poly next-len))))
+                         (declare ((mod #.array-dimension-limit) next-len))
+                         (setq res (%adjust res next-len))
+                         (dotimes (i next-len)
+                           (setf (aref res i)
+                                 (mod (* +/2+ (mod (+ (aref res i) (aref tmp i)) +mod+))
+                                      +mod+)))))
+              (%adjust res result-length)))))))
