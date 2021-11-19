@@ -5,14 +5,14 @@
 square root."))
 (in-package :cp/mod-sqrt)
 
-(defconstant +nbits+ 62)
+(defconstant +nbits+ 31)
 (deftype uint () '(integer 0 #.(- (ash 1 +nbits+) 1)))
 
 (declaim (inline mod-sqrt))
 (defun mod-sqrt (a mod)
   "Returns a modular square root of A if it exists; otherwise returns NIL. MOD
 must be prime."
-  (declare (uint a)
+  (declare ((integer 1) a)
            ((and (integer 1) uint) mod))
   (let ((a (mod a mod)))
     (when (or (< a 2) (= mod 2))
