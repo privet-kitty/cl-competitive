@@ -12,7 +12,7 @@ square root."))
 (defun mod-sqrt (a mod)
   "Returns a modular square root of A if it exists; otherwise returns NIL. MOD
 must be prime."
-  (declare ((integer 1) a)
+  (declare ((integer 0) a)
            ((and (integer 1) uint) mod))
   (let ((a (mod a mod)))
     (when (or (< a 2) (= mod 2))
