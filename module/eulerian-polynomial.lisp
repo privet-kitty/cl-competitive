@@ -1,6 +1,6 @@
 (defpackage :cp/eulerian-polynomial
   (:use :cl
-   :cp/ntt :cp/polynomial-ntt :cp/perfect-kth-powers :cp/binom-mod-prime :cp/static-mod)
+   :cp/ntt :cp/fps :cp/perfect-kth-powers :cp/binom-mod-prime :cp/static-mod)
   (:export #:make-eulerian-polynomial #:make-eulerian-polynomial*))
 (in-package :cp/eulerian-polynomial)
 

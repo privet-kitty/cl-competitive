@@ -1,8 +1,8 @@
-(defpackage :cp/test/polynomial-ntt
-  (:use :cl :fiveam :cp/ntt :cp/polynomial-ntt :cp/static-mod)
+(defpackage :cp/test/fps
+  (:use :cl :fiveam :cp/ntt :cp/fps :cp/static-mod)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-polynomial #:poly-value))
-(in-package :cp/test/polynomial-ntt)
+(in-package :cp/test/fps)
 (in-suite base-suite)
 
 (test poly-inverse/hand
@@ -25,7 +25,7 @@
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
       (adjust-array res end))))
 
-(test polynomial-ntt/random
+(test fps/random
   (let ((*test-dribble* nil))
     (dotimes (_ 1000)
       (let* ((len1 (random 20))

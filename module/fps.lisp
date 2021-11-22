@@ -1,10 +1,10 @@
-(defpackage :cp/polynomial-ntt
+(defpackage :cp/fps
   (:use :cl :cp/ntt :cp/mod-inverse :cp/mod-power :cp/mod-sqrt :cp/static-mod)
   (:export #:poly-prod #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
            #:poly-differentiate! #:poly-integrate
            #:poly-log #:poly-exp #:poly-power #:poly-sqrt))
-(in-package :cp/polynomial-ntt)
+(in-package :cp/fps)
 
 ;; TODO: integrate with cp/polynomial
 
