@@ -190,7 +190,7 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
            (when (or (zerop len1) (zerop len2))
              (return-from ,convolve (make-array 0 :element-type 'ntt-int)))
            ;; naive convolution
-           (when (<= (min len1 len2) 64)
+           (when (<= (min len1 len2) 32)
              (let ((res (make-array mul-len :element-type 'ntt-int :initial-element 0)))
                (declare (optimize (speed 3) (safety 0)))
                (dotimes (d mul-len)
