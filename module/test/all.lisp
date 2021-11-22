@@ -191,6 +191,7 @@
   (:import-from :cp/test/two-phase-simplex)
   (:import-from :cp/test/tzcount)
   (:import-from :cp/test/undoable-disjoint-set)
+  (:import-from :cp/test/unlabeled-counting)
   (:import-from :cp/test/warshall-floyd)
   (:import-from :cp/test/wavelet-matrix)
   (:import-from :cp/test/welzl)

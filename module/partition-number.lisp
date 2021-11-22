@@ -37,10 +37,12 @@ k)."
 (declaim (ftype (function * (values (simple-array (unsigned-byte 31) (*)) &optional))
                 make-partition-number-sequence))
 (defun make-partition-number-sequence (sup-n modulus)
-  (declare ((mod #.array-dimension-limit) sup-n)
+  (declare (optimize (speed 3))
+           ((mod #.array-dimension-limit) sup-n)
            ((unsigned-byte 31) modulus))
   (let ((res (make-array sup-n :element-type '(unsigned-byte 31) :initial-element 0)))
-    (setf (aref res 0) 1)
+    (when (> sup-n 0)
+      (setf (aref res 0) 1))
     (loop for n from 1 below sup-n
           for value of-type fixnum = 0
           for sqrt = (isqrt (+ 1 (* 24 n)))
