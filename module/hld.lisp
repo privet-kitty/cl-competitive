@@ -1,16 +1,15 @@
-(defpackage :cp/hl-decomposition
+(defpackage :cp/hld
   (:use :cl)
-  (:export #:hl-decomposition #:make-hl-decomposition #:hl-decomposition-p
+  (:export #:hld #:make-hld #:hld-p
            #:two-vertices-disconnected-error
            #:%hld-preords #:%hld-parents #:%hld-heads #:%hld-graph #:%hld-sizes
            #:hld-map-path #:hld-map-path-edge #:hld-get-lca)
   (:documentation "Provides heavy-light decomposition."))
-(in-package :cp/hl-decomposition)
+(in-package :cp/hld)
 
-(defstruct (hl-decomposition (:constructor %make-hl-decomposition
-                                 (graph sizes parents preords heads))
-                             (:conc-name %hld-)
-                             (:copier nil))
+(defstruct (hld (:constructor %make-hld (graph sizes parents preords heads))
+                (:conc-name %hld-)
+                (:copier nil))
   (graph nil :type (simple-array list (*)))
   (sizes nil :type (simple-array fixnum (*)))
   (parents nil :type (simple-array fixnum (*)))
@@ -19,7 +18,7 @@
   ;; heads of heavy paths
   (heads nil :type (simple-array fixnum (*))))
 
-(defun make-hl-decomposition (graph &key (roots 0) (key #'identity))
+(defun make-hld (graph &key (roots 0) (key #'identity))
   (declare (function key)
            (vector graph))
   (let* ((n (length graph))
@@ -76,7 +75,7 @@
         (dfs-size root -1)
         (setf (aref heads root) root)
         (dfs-hld root -1))
-      (%make-hl-decomposition graph sizes parents preords heads))))
+      (%make-hld graph sizes parents preords heads))))
 
 (define-condition two-vertices-disconnected-error (error)
   ((hld :initarg :hld :accessor two-vertices-disconnected-error-hld)

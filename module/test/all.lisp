@@ -80,7 +80,7 @@
   (:import-from :cp/test/geometry)
   (:import-from :cp/test/gray-code)
   (:import-from :cp/test/hackenbush)
-  (:import-from :cp/test/hl-decomposition)
+  (:import-from :cp/test/hld)
   (:import-from :cp/test/hopcroft-karp)
   (:import-from :cp/test/implicit-treap)
   (:import-from :cp/test/incremental-lp)
