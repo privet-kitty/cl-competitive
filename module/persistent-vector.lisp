@@ -1,11 +1,8 @@
-;;;
-;;; Fully persistent vector
-;;; (implemented with perfect m-ary tree)
-;;;
-
 (defpackage :cp/persistent-vector
   (:use :cl)
-  (:export #:persistent-vector #:pv-assoc #:pv-ref))
+  (:export #:persistent-vector #:pv-assoc #:pv-ref)
+  (:documentation "Provides fully persistent vector implemented with perfect
+m-ary tree."))
 (in-package :cp/persistent-vector)
 
 ;; TODO:
@@ -18,6 +15,17 @@
   (defconstant +log+ 16)
   (defconstant +default-value+ 0))
 
+(defun test (vector)
+  (declare (optimize (speed 3) (safety 0))
+           ((simple-vector 16) vector))
+  (let ((res (make-array 16 :element-type t)))
+    (macrolet ((unrolled-copy (n)
+                 `(progn
+                    ,@(loop for i below n
+                            collect `(setf (aref res ,i) (aref vector ,i))))))
+      (unrolled-copy 16)
+      res)))
+
 (declaim (inline %make-persistent-vector))
 (defstruct (persistent-vector (:constructor %make-persistent-vector ())
                               (:conc-name %pv-)
@@ -29,7 +37,8 @@
 (defun pv-assoc (pvector index value)
   "Returns a new persistent vector whose value at INDEX is modified to
 VALUE. PVECTOR can be null."
-  (declare ((or null persistent-vector) pvector)
+  (declare (optimize (speed 3))
+           ((or null persistent-vector) pvector)
            ((integer 0 #.most-positive-fixnum) index))
   (labels ((recur (pvector index)
              (declare ((or (eql #.+default-value+) persistent-vector) pvector)
@@ -53,7 +62,8 @@ VALUE. PVECTOR can be null."
   "Returns a value at INDEX.
 
 NOTE: currently unbound (or out-of-bound) value is zero."
-  (declare ((or null persistent-vector) pvector))
+  (declare (optimize (speed 3))
+           ((or null persistent-vector) pvector))
   (labels ((recur (pvector index)
              (declare ((or (eql #.+default-value+) persistent-vector) pvector)
                       ((integer 0 #.most-positive-fixnum) index))

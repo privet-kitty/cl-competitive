@@ -1,14 +1,12 @@
-;;;
-;;; Mo's algorithm for paths on a tree with weighted vertex
-;;;
-;;; Reference:
-;;; https://ei1333.hateblo.jp/entry/2017/09/11/211011 (Japanese)
-;;;
-
 (defpackage :cp/mo-tree
   (:use :cl)
   (:export #:mo-tree #:mo-tree-p #:make-mo-tree #:mo-tree-get-lca
-           #:mo-tree-get-current #:mo-tree-process2))
+           #:mo-tree-get-current #:mo-tree-process2)
+  (:documentation "Provides Mo's algorithm for paths on a tree with weighted
+vertex.
+
+Reference:
+https://ei1333.hateblo.jp/entry/2017/09/11/211011 (Japanese)"))
 (in-package :cp/mo-tree)
 
 ;; not tested
