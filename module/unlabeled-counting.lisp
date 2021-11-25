@@ -1,5 +1,5 @@
 (defpackage :cp/unlabeled-counting
-  (:use :cl :cp/binom-mod-prime :cp/fps :cp/ntt :cp/static-mod :cp/zeta-integer)
+  (:use :cl :cp/binom-mod-prime :cp/fps :cp/ntt :cp/static-mod)
   (:export #:unlabeled-deck-to-hand #:unlabeled-hand-to-deck))
 (in-package :cp/unlabeled-counting)
 
@@ -11,8 +11,12 @@
 (declaim (ftype (function * (values ntt-vector &optional))
                 unlabeled-deck-to-hand))
 (defun unlabeled-deck-to-hand (deck)
-  "Converts an unlabeled deck enumerator to the (1-variable) hand
-enumerator.
+  "Converts an unlabeled deck enumerator to the hand enumerator:
+
+Let D(x) and H(x) be the OGF of the sequences (d_i) and (h_i), respectively. Let
+us assume that the following equality holds between D(x) and H(x): D(x) =
+\prod_i (1-x^i)^(-d_i). This function converts (d_i) to (h_i) in O(nlog(n))
+time.
 
 NOTE:
 - hand[0] = 1.
@@ -26,16 +30,21 @@ NOTE:
     (loop for i from 1 below n
           for d = (aref deck i)
           do (loop for j from 1 to (floor (- n 1) i)
-                   for pos of-type (mod #.array-dimension-limit) = (* i j)
-                   do (setf (aref dp pos)
-                            (mod (+ (* d (aref *inv* j)) (aref dp pos))
+                   for ij of-type (mod #.array-dimension-limit) = (* i j)
+                   do (setf (aref dp ij)
+                            (mod (+ (* d (aref *inv* j)) (aref dp ij))
                                  +mod+))))
     (poly-exp dp)))
 
 (declaim (ftype (function * (values ntt-vector &optional))
                 unlabeled-hand-to-deck))
 (defun unlabeled-hand-to-deck (hand)
-  "Converts an unlabeld hand enumerator to the deck enumerator.
+  "Converts an unlabeled hand enumerator to the deck enumerator:
+
+Let D(x) and H(x) be the OGF of the sequences (d_i) and (h_i), respectively. Let
+us assume that the following equality holds between D(x) and H(x): D(x) =
+\prod_i (1-x^i)^(-d_i). This function converts (h_i) to (d_i) in O(nlog(n))
+time.
 
 NOTE:
 - hand[0] must be 1.
@@ -44,34 +53,15 @@ NOTE:
            (vector hand))
   (let* ((hand (coerce hand 'ntt-vector))
          (n (length hand))
-         (dp (make-array n :element-type 'ntt-int :initial-element 0)))
+         (dp (poly-log hand)))
     (declare (ntt-int n))
     (when (> n 0)
       (assert (= (mod 1 +mod+) (aref hand 0))))
-    (dotimes (i n)
-      (setf (aref dp i) (mod (* (aref hand i) i) +mod+)))
-    (labels ((recur (l r)
-               (declare ((mod #.array-dimension-limit) l r))
-               (when (< (+ l 1) r)
-                 (let ((mid (ash (+ l r) -1)))
-                   (recur l mid)
-                   (let* ((poly1 (subseq hand 0 (- r l)))
-                          (poly2 (subseq dp l mid))
-                          (prod (poly-prod poly1 poly2)))
-                     (loop for i from mid below r
-                           do (setf (aref dp i)
-                                    (mod (- (aref dp i)
-                                            (aref prod (- i l)))
-                                         +mod+))))
-                   (recur mid r)))))
-      (recur 0 n))
-    (inverse-divisor-transform!
-     dp
-     (lambda (x y)
-       (declare (ntt-int x y))
-       (mod (- x y) +mod+))
-     nil)
     (loop for i from 1 below n
-          do (setf (aref dp i)
-                   (mod (* (aref dp i) (aref *inv* i)) +mod+)))
+          for h = (aref dp i)
+          do (loop for j from 2 to (floor (- n 1) i)
+                   for ij of-type (mod #.array-dimension-limit) = (* i j)
+                   do (setf (aref dp ij)
+                            (mod (- (aref dp ij) (* h (aref *inv* j)))
+                                 +mod+))))
     dp))
