@@ -3,11 +3,6 @@
   (:export #:unlabeled-deck-to-hand #:unlabeled-hand-to-deck))
 (in-package :cp/unlabeled-counting)
 
-(declaim (inline %power-of-two-ceiling))
-(defun %power-of-two-ceiling (x)
-  (declare (ntt-int x))
-  (ash 1 (integer-length (- x 1))))
-
 (declaim (ftype (function * (values ntt-vector &optional))
                 unlabeled-deck-to-hand))
 (defun unlabeled-deck-to-hand (deck)
@@ -51,6 +46,8 @@ NOTE:
 - deck[0] = 0."
   (declare (optimize (speed 3))
            (vector hand))
+  (when (zerop (length hand))
+    (return-from unlabeled-hand-to-deck (make-array 0 :element-type 'ntt-int)))
   (let* ((hand (coerce hand 'ntt-vector))
          (n (length hand))
          (dp (poly-log hand)))
