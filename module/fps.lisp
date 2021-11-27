@@ -48,7 +48,7 @@
 ;;             for decr = (poly-prod (poly-prod res res)
 ;;                                   (subseq poly 0 (min (length poly) (* 2 i))))
 ;;             for decr-len = (length decr)
-;;             do (setq res (%adjust res (* 2 i) :initial-element 0))
+;;             do (setq res (%adjust res (* 2 i)))
 ;;                (dotimes (j (* 2 i))
 ;;                  (setf (aref res j)
 ;;                        (mod (the ntt-int
