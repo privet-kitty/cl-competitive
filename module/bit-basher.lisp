@@ -1,7 +1,7 @@
 (defpackage :cp/bit-basher
   (:use :cl)
   (:export #:bit-not! #:bit-fill! #:bit-count #:bit-lshift #:bit-rshift #:bit-shift
-           #:bit-succ #:bit-pred #:bit-first #:bit-last)
+           #:bit-next #:bit-prev #:bit-first #:bit-last)
   (:import-from #:sb-kernel #:%vector-raw-bits)
   (:documentation "Provides several operations on bit vector that are not
 included in the standard."))
@@ -183,7 +183,7 @@ and is contrary to the `visual' direction: i.e. (bit-rshift #*1011000 2) |->
   (declare ((unsigned-byte 64) x))
   (- (integer-length (ldb (byte 64 0) (logand x (- x)))) 1))
 
-(defun bit-succ (bit-vector index)
+(defun bit-next (bit-vector index)
   "Returns the position of the next set bit after INDEX if it exists; otherwise
 returns NIL."
   (declare (optimize (speed 3))
@@ -192,7 +192,7 @@ returns NIL."
   (assert (< index (length bit-vector)))
   (labels ((%return (x)
              (when (< x (length bit-vector))
-               (return-from bit-succ x))))
+               (return-from bit-next x))))
     (multiple-value-bind (i/64 i%64) (floor index 64)
       (let ((bits (%vector-raw-bits bit-vector i/64)))
         (setf (ldb (byte (+ 1 i%64) 0) bits) 0)
@@ -204,8 +204,8 @@ returns NIL."
             do (%return (+ (* bi 64) (the (integer 0) (%tzcount bits))))))))
 
 (declaim (ftype (function * (values (or null (mod #.array-dimension-limit)) &optional))
-                bit-pred))
-(defun bit-pred (bit-vector index)
+                bit-prev))
+(defun bit-prev (bit-vector index)
   "Returns the position of the previous set bit before INDEX if it exists;
 otherwise returns NIL."
   (declare (optimize (speed 3))
@@ -215,7 +215,7 @@ otherwise returns NIL."
   (multiple-value-bind (i/64 i%64) (floor index 64)
     (let ((bits (ldb (byte i%64 0) (%vector-raw-bits bit-vector i/64))))
       (unless (zerop bits)
-        (return-from bit-pred (+ (* i/64 64) (integer-length bits) -1))))
+        (return-from bit-prev (+ (* i/64 64) (integer-length bits) -1))))
     (loop for bi from (- i/64 1) downto 0
           for bits of-type (unsigned-byte 64) = (%vector-raw-bits bit-vector bi)
           unless (zerop bits)
