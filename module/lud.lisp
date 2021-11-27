@@ -1,5 +1,5 @@
 (defpackage :cp/lud
-  (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/iterset #:cp/rdtscp #:cp/extend-vector)
+  (:use :cl :cp/csc #:cp/movable-binary-heap #:cp/bit-basher #:cp/rdtscp #:cp/extend-vector)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:export #:lud #:lud-eta #:lu-factor
            #:lud-lower #:lud-upper #:lud-tlower #:lud-tupper #:lud-diagu
@@ -550,7 +550,7 @@ when it is infeasible."
            (vector-nz (sparse-vector-nz y))
            (vector-indices (sparse-vector-indices y))
            (vector-values (sparse-vector-values y))
-           (tree (make-iterset))
+           (bitset (make-array (lud-m lud) :element-type 'bit :initial-element 0))
            ;; vector values sorted w.r.t. the order of LU decomposition
            (tmp-values *sparse-solve-values*)
            (tmp-tags *sparse-solve-tags*)
@@ -559,8 +559,8 @@ when it is infeasible."
                (ivec tmp-tags vector-indices))
       (labels ((add-to-tmp (lu-pos value)
                  (setf (aref tmp-values lu-pos) value
-                       (aref tmp-tags lu-pos) tag)
-                 (iterset-insert tree lu-pos)))
+                       (aref tmp-tags lu-pos) tag
+                       (aref bitset lu-pos) 1)))
         (let ((irowperm (lud-irowperm lud)))
           (dotimes (k vector-nz)
             (let ((lu-pos (aref irowperm (aref vector-indices k))))
@@ -570,9 +570,9 @@ when it is infeasible."
                (lower-colstarts (csc-colstarts lower))
                (lower-rows (csc-rows lower))
                (lower-values (csc-values lower))
-               (node (iterset-first tree)))
-          (loop while (and node (< (node-key node) rank))
-                for lu-pos = (node-key node)
+               (lu-pos (bit-first bitset)))
+          (declare ((or null (mod #.array-dimension-limit)) lu-pos))
+          (loop while (and lu-pos (< lu-pos rank))
                 for beta of-type csc-float = (aref tmp-values lu-pos)
                 for start = (aref lower-colstarts lu-pos)
                 for end = (aref lower-colstarts (+ lu-pos 1))
@@ -581,7 +581,7 @@ when it is infeasible."
                          unless (= (aref tmp-tags row) tag)
                          do (add-to-tmp row +zero+)
                          do (decf (aref tmp-values row) (* (aref lower-values k) beta)))
-                   (setq node (node-next node))))
+                   (setq lu-pos (bit-next bitset lu-pos))))
         ;; fill free variable
         ;; y := U^(-1)y
         (let* ((upper (lud-upper lud))
@@ -589,13 +589,11 @@ when it is infeasible."
                (upper-rows (csc-rows upper))
                (upper-values (csc-values upper))
                (diagu (lud-diagu lud))
-               (node (iterset-last tree)))
-          (loop while (and node (>= (node-key node) rank))
-                for lu-pos = (node-key node)
+               (lu-pos (bit-last bitset)))
+          (loop while (and lu-pos (>= lu-pos rank))
                 do (setf (aref tmp-values lu-pos) +zero+)
-                   (setq node (node-prev node)))
-          (loop while node
-                for lu-pos = (node-key node)
+                   (setq lu-pos (bit-prev bitset lu-pos)))
+          (loop while lu-pos
                 for beta of-type csc-float = (/ (aref tmp-values lu-pos) (aref diagu lu-pos))
                 for start = (aref upper-colstarts lu-pos)
                 for end = (aref upper-colstarts (+ lu-pos 1))
@@ -605,19 +603,18 @@ when it is infeasible."
                          do (add-to-tmp row +zero+)
                          do (decf (aref tmp-values row) (* (aref upper-values k) beta)))
                    (setf (aref tmp-values lu-pos) beta)
-                   (setq node (node-prev node)))))
+                   (setq lu-pos (bit-prev bitset lu-pos)))))
       ;; update y
       (let ((nz 0)
-            (node (iterset-first tree))
+            (lu-pos (bit-first bitset))
             (colperm (lud-colperm lud)))
         (declare ((mod #.array-dimension-limit) nz))
-        (loop while node
-              for lu-pos = (node-key node)
+        (loop while lu-pos
               when (> (abs (aref tmp-values lu-pos)) +eps+)
               do (vector-set* vector-values nz (aref tmp-values lu-pos))
                  (vector-set* vector-indices nz (aref colperm lu-pos))
                  (incf nz)
-              do (setq node (node-next node)))
+              do (setq lu-pos (bit-next bitset lu-pos)))
         (setf (sparse-vector-nz y) nz
               (sparse-vector-indices y) vector-indices
               (sparse-vector-values y) vector-values))
@@ -638,7 +635,7 @@ when it is infeasible."
            (vector-nz (sparse-vector-nz y))
            (vector-indices (sparse-vector-indices y))
            (vector-values (sparse-vector-values y))
-           (tree (make-iterset))
+           (bitset (make-array (lud-m lud) :element-type 'bit :initial-element 0))
            ;; vector values sorted w.r.t. the order of LU decomposition
            (tmp-values *sparse-solve-values*)
            (tmp-tags *sparse-solve-tags*)
@@ -647,8 +644,8 @@ when it is infeasible."
                (ivec tmp-tags vector-indices))
       (labels ((add-to-tmp (lu-pos value)
                  (setf (aref tmp-values lu-pos) value
-                       (aref tmp-tags lu-pos) tag)
-                 (iterset-insert tree lu-pos)))
+                       (aref tmp-tags lu-pos) tag
+                       (aref bitset lu-pos) 1)))
         (let ((icolperm (lud-icolperm lud)))
           (dotimes (k vector-nz)
             (let ((lu-pos (aref icolperm (aref vector-indices k))))
@@ -659,9 +656,9 @@ when it is infeasible."
                (tupper-rows (csc-rows tupper))
                (tupper-values (csc-values tupper))
                (diagu (lud-diagu lud))
-               (node (iterset-first tree)))
-          (loop while (and node (< (node-key node) rank))
-                for lu-pos = (node-key node)
+               (lu-pos (bit-first bitset)))
+          (declare ((or null (mod #.array-dimension-limit)) lu-pos))
+          (loop while (and lu-pos (< lu-pos rank))
                 for beta of-type csc-float = (/ (aref tmp-values lu-pos) (aref diagu lu-pos))
                 for start = (aref tupper-colstarts lu-pos)
                 for end = (aref tupper-colstarts (+ 1 lu-pos))
@@ -671,20 +668,18 @@ when it is infeasible."
                          do (add-to-tmp row +zero+)
                          do (decf (aref tmp-values row) (* (aref tupper-values k) beta)))
                    (setf (aref tmp-values lu-pos) beta)
-                   (setq node (node-next node))))
+                   (setq lu-pos (bit-next bitset lu-pos))))
         ;; fill free varaiable
         ;; y := L^(-T)y
         (let* ((tlower (lud-tlower lud))
                (tlower-colstarts (csc-colstarts tlower))
                (tlower-rows (csc-rows tlower))
                (tlower-values (csc-values tlower))
-               (node (iterset-last tree)))
-          (loop while (and node (>= (node-key node) rank))
-                for lu-pos = (node-key node)
+               (lu-pos (bit-last bitset)))
+          (loop while (and lu-pos (>= lu-pos rank))
                 do (setf (aref tmp-values lu-pos) +zero+)
-                   (setq node (node-prev node)))
-          (loop while node
-                for lu-pos = (node-key node)
+                   (setq lu-pos (bit-prev bitset lu-pos)))
+          (loop while lu-pos
                 for beta of-type csc-float = (aref tmp-values lu-pos)
                 for start = (aref tlower-colstarts lu-pos)
                 for end = (aref tlower-colstarts (+ lu-pos 1))
@@ -693,24 +688,22 @@ when it is infeasible."
                          unless (= (aref tmp-tags row) tag)
                          do (add-to-tmp row +zero+)
                          do (decf (aref tmp-values row) (* (aref tlower-values k) beta)))
-                   (setq node (node-prev node)))))
+                   (setq lu-pos (bit-prev bitset lu-pos)))))
       ;; update y
       (let ((nz 0)
-            (node (iterset-first tree))
+            (lu-pos (bit-first bitset))
             (rowperm (lud-rowperm lud)))
         (declare ((mod #.array-dimension-limit) nz))
-        (loop while node
-              for lu-pos = (node-key node)
+        (loop while lu-pos
               when (> (abs (aref tmp-values lu-pos)) +eps+)
               do (vector-set* vector-values nz (aref tmp-values lu-pos))
                  (vector-set* vector-indices nz (aref rowperm lu-pos))
                  (incf nz)
-              do (setq node (node-next node)))
+              do (setq lu-pos (bit-next bitset lu-pos)))
         (setf (sparse-vector-nz y) nz
               (sparse-vector-indices y) vector-indices
               (sparse-vector-values y) vector-values))
       (incf *sparse-solve-tag*)
-      ;; #>y
       y)))
 
 (declaim ((integer 0 #.most-positive-fixnum) *refactor-threshold*))
