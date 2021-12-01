@@ -113,4 +113,4 @@
               (let ((res (make-array result-length :element-type 'mint :initial-element 0)))
                 (replace res tmp-res :start1 (ash i -1))
                 res)))
-          (%poly-sqrt poly result-length)))))
+          (%fps-sqrt poly result-length)))))
