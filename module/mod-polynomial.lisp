@@ -1,6 +1,7 @@
 (defpackage :cp/mod-polynomial
   (:use :cl :cp/mod-inverse)
-  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-div #:poly-div! #:poly-power
+  (:export #:poly-value #:poly-mult #:poly-floor! #:poly-mod! #:poly-div #:poly-div!
+           #:poly-mod-power
            #:poly-differentiate! #:poly-integrate #:poly-shift! #:poly-scale!)
   (:documentation "Provides fundamental operations to polynomials over Z/nZ."))
 (in-package :cp/mod-polynomial)
@@ -148,7 +149,7 @@ O((deg(P)-deg(DIVISOR))deg(DIVISOR))."
     (let ((end (+ 1 (or (position 0 p :from-end t :test-not #'eql) -1))))
       (adjust-array p end))))
 
-(defun poly-power (p exponent divisor modulus)
+(defun poly-mod-power (p exponent divisor modulus)
   "Returns P to the power of EXPONENT modulo DIVISOR."
   (declare (vector p divisor)
            ((integer 0 #.most-positive-fixnum) exponent)

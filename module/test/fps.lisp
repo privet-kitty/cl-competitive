@@ -26,7 +26,8 @@
       (adjust-array res end))))
 
 (test fps/random
-  (let ((*test-dribble* nil))
+  (let ((*test-dribble* nil)
+        (*random-state* (sb-ext:seed-random-state 0)))
     (dotimes (_ 1000)
       (let* ((len1 (random 20))
              (len2 (random 20))
@@ -45,6 +46,12 @@
             (let* ((p (poly-floor poly1 poly2))
                    (q (poly-sub poly1 (poly-prod poly2 p))))
               (is (equalp q (poly-mod poly1 poly2))))))
+        ;; power
+        (when (find-if #'plusp poly2)
+          (let* ((exp (random 20))
+                 (res1 (poly-mod-power poly1 exp poly2))
+                 (res2 (cp/mod-polynomial:poly-mod-power poly1 exp poly2 +mod+)))
+            (is (equalp res1 res2))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))
                (res1 (map 'mint-vector (lambda (x) (poly-value poly1 x +mod+)) points))

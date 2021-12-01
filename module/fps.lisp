@@ -3,7 +3,7 @@
   (:export #:poly-prod #:poly-inverse #:poly-floor #:poly-mod #:poly-sub #:poly-add
            #:multipoint-eval #:poly-total-prod #:chirp-z #:bostan-mori
            #:poly-differentiate! #:poly-integrate
-           #:poly-log #:poly-exp #:poly-power))
+           #:poly-log #:poly-exp #:poly-power #:poly-mod-power))
 (in-package :cp/fps)
 
 ;; TODO: integrate with cp/polynomial
@@ -12,19 +12,21 @@
   :convolve poly-prod)
 
 (declaim (inline %adjust))
-(defun %adjust (vector size)
+(defun %adjust (vector size &optional ensure-copy)
   (declare (mint-vector vector))
-  (if (or (null size) (= size (length vector)))
+  (if (and (or (null size) (= size (length vector)))
+           (not ensure-copy))
       vector
       (let ((res (make-array size :element-type 'mint :initial-element 0)))
         (replace res vector)
         res)))
 
-(declaim (inline %canonize))
-(defun %canonize (vector)
+(declaim (inline %canonize)
+         (ftype (function * (values mint-vector &optional)) %canonize))
+(defun %canonize (vector &optional ensure-copy)
   (declare (mint-vector vector))
   (let ((end (+ 1 (or (position 0 vector :from-end t :test-not #'eql) -1))))
-    (%adjust vector end)))
+    (%adjust vector end ensure-copy)))
 
 (declaim (inline %power-of-two-ceiling))
 (defun %power-of-two-ceiling (x)
@@ -148,7 +150,7 @@
          (poly2 (coerce poly2 'mint-vector))
          (len1 (+ 1 (or (position 0 poly1 :from-end t :test-not #'eql) -1)))
          (len2 (+ 1 (or (position 0 poly2 :from-end t :test-not #'eql) -1))))
-    (when (> len2 len1)
+    (when (< len1 len2)
       (return-from poly-floor (make-array 0 :element-type 'mint)))
     (let* ((res-len (+ 1 (- len1 len2)))
            (poly1 (subseq (nreverse (subseq poly1 0 len1))
@@ -168,6 +170,35 @@
       (return-from poly-mod (make-array 0 :element-type 'mint)))
     (let* ((res (poly-sub poly1 (poly-prod (poly-floor poly1 poly2) poly2))))
       (%canonize res))))
+
+(defun poly-mod-power (base exp divisor)
+  (declare (optimize (speed 3))
+           (vector base divisor)
+           ((integer 0) exp))
+  (let* ((base (%canonize (coerce base 'mint-vector) t))
+         (divisor (%canonize (coerce divisor 'mint-vector) t))
+         (max-res-len (max (+ 1 (- (length base) (length divisor)))
+                           (length divisor)))
+         (dinv (poly-inverse (reverse divisor) max-res-len))
+         (res (make-array 1 :element-type 'mint :initial-element 1)))
+    (labels
+        ((%floor (p)
+           (if (< (length p) (length divisor))
+               (make-array 0 :element-type 'mint :initial-element 0)
+               (let ((res-len (+ 1 (- (length p) (length divisor)))))
+                 (assert (<= res-len (length dinv)))
+                 (nreverse (%adjust (poly-prod (%adjust (reverse p) res-len)
+                                               (%adjust dinv (min res-len (length dinv))))
+                                    res-len)))))
+         (%mod (p)
+           (%canonize (poly-sub p (poly-prod (%floor p) divisor)))))
+      (setq base (%mod base))
+      (loop until (zerop exp)
+            when (oddp exp)
+            do (setq res (%mod (poly-prod res base)))
+            do (setq base (%mod (poly-prod base base)))
+               (setq exp (ash exp -1)))
+      res)))
 
 (declaim (ftype (function * (values mint-vector &optional)) poly-total-prod))
 (defun poly-total-prod (polys)
