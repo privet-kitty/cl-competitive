@@ -218,7 +218,7 @@
               (is (= (bit-count target l r)
                      (count 1 target :start l :end r))))))))))
 
-(test bit-succ/random
+(test bit-next/random
   (let ((*test-dribble* nil)
         (*random-state* (sb-ext:seed-random-state 0)))
     (loop for len from 1 to 200 by 3
@@ -227,28 +227,28 @@
                  (dotimes (i len)
                    (when (< (random 1d0) density)
                      (setf (aref vector i) 1)))
-                 ;; bit-succ
+                 ;; bit-next
                  (dotimes (i len)
                    (let* ((pos (random len))
-                          (succ (bit-succ vector pos)))
+                          (next (bit-next vector pos)))
                      (incf pos)
                      (loop while (and (< pos len)
                                       (zerop (aref vector pos)))
                            do (incf pos))
                      (when (= pos len)
                        (setq pos nil))
-                     (is (eql pos succ))))
-                 ;; bit-pred
+                     (is (eql pos next))))
+                 ;; bit-prev
                  (dotimes (i len)
                    (let* ((pos (random len))
-                          (pred (bit-pred vector pos)))
+                          (prev (bit-prev vector pos)))
                      (decf pos)
                      (loop while (and (>= pos 0)
                                       (zerop (aref vector pos)))
                            do (decf pos))
                      (when (< pos 0)
                        (setq pos nil))
-                     (is (eql pos pred))))
+                     (is (eql pos prev))))
                  ;; bit-first
                  (let* ((pos1 (position 1 vector))
                         (pos2 (bit-first vector)))
