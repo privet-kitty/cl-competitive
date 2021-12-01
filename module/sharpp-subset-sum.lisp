@@ -5,7 +5,7 @@
 
 ;; not tested
 
-(declaim (ftype (function * (values ntt-vector &optional)) sharpp-subset-sum))
+(declaim (ftype (function * (values mint-vector &optional)) sharpp-subset-sum))
 (defun sharpp-subset-sum (deck)
   "Converts a deck enumerator to the hand enumerator w.r.t. #P subset sum
 problem:
@@ -20,10 +20,10 @@ NOTE:
 - d_0 must be 0."
   (declare (optimize (speed 3))
            (vector deck))
-  (let* ((deck (coerce deck 'ntt-vector))
+  (let* ((deck (coerce deck 'mint-vector))
          (n (length deck))
-         (dp (make-array n :element-type 'ntt-int :initial-element 0)))
-    (declare (ntt-int n))
+         (dp (make-array n :element-type 'mint :initial-element 0)))
+    (declare (mint n))
     (loop for i from 1 below n
           for d = (aref deck i)
           do (loop for j from 1 to (floor (- n 1) i)
@@ -35,7 +35,7 @@ NOTE:
                                  +mod+))))
     (poly-exp dp)))
 
-(declaim (ftype (function * (values ntt-vector &optional))
+(declaim (ftype (function * (values mint-vector &optional))
                 inverse-sharpp-subset-sum))
 (defun inverse-sharpp-subset-sum (hand)
   "Converts a hand enumerator to the deck enumerator w.r.t. #P subset sum
@@ -52,11 +52,11 @@ NOTE:
   (declare (optimize (speed 3))
            (vector hand))
   (when (zerop (length hand))
-    (return-from inverse-sharpp-subset-sum (make-array 0 :element-type 'ntt-int)))
-  (let* ((hand (coerce hand 'ntt-vector))
+    (return-from inverse-sharpp-subset-sum (make-array 0 :element-type 'mint)))
+  (let* ((hand (coerce hand 'mint-vector))
          (n (length hand))
          (dp (poly-log hand)))
-    (declare (ntt-int n))
+    (declare (mint n))
     (when (> n 0)
       (assert (= (mod 1 +mod+) (aref hand 0))))
     (loop for i from 1 below n

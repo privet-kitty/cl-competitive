@@ -1,5 +1,5 @@
 (defpackage :cp/test/fps
-  (:use :cl :fiveam :cp/ntt :cp/fps :cp/static-mod)
+  (:use :cl :fiveam :cp/ntt :cp/fps :cp/static-mod :cp/fps-sqrt)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-polynomial #:poly-value))
 (in-package :cp/test/fps)
@@ -19,7 +19,7 @@
   (is (equalp #(1) (poly-total-prod #(#(1))))))
 
 (defun make-random-polynomial (degree)
-  (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))
+  (let ((res (make-array degree :element-type 'mint :initial-element 0)))
     (dotimes (i degree res)
       (setf (aref res i) (random +mod+)))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))
@@ -47,7 +47,7 @@
               (is (equalp q (poly-mod poly1 poly2))))))
         ;; multipoint eval.
         (let* ((points (make-random-polynomial (ash 1 (random 7))))
-               (res1 (map 'ntt-vector (lambda (x) (poly-value poly1 x +mod+)) points))
+               (res1 (map 'mint-vector (lambda (x) (poly-value poly1 x +mod+)) points))
                (res2 (multipoint-eval poly1 points)))
           (is (equalp res1 res2)))))))
 
@@ -102,7 +102,7 @@
   (let ((*test-dribble* nil)
         (*random-state* (sb-ext:seed-random-state 0)))
     (loop for len from 1 to 200
-          for vector = (make-array len :element-type 'ntt-int :initial-element 0)
+          for vector = (make-array len :element-type 'mint :initial-element 0)
           do (loop for i from 1 below len
                    do (setf (aref vector i) (random +mod+)))
              (is (equalp vector (poly-log (poly-exp vector)))))))
@@ -113,11 +113,11 @@
   (is (equalp #() (poly-power #(1 1) 3 0)))
   (is (equalp #(0 0 0 1 3 3 1 0 0 0) (poly-power #(0 1 1) 3 10))))
 
-(test poly-sqrt/catalan
+(test fps-sqrt/catalan
   (let* ((seq #(1 1 2 5 14 42 132 429 1430 4862 16796 58786 208012 742900 2674440 9694845))
-         (seq2 (map 'ntt-vector
+         (seq2 (map 'mint-vector
                     (lambda (x) (mod (* x (/ (+ +mod+ 1) 2)) +mod+))
                     (subseq (poly-sub #(1)
-                                      (poly-sqrt #(1 #.(- +mod+ 4)) (+ 1 (length seq))))
+                                      (fps-sqrt #(1 #.(- +mod+ 4)) (+ 1 (length seq))))
                             1))))
     (is (equalp seq seq2))))

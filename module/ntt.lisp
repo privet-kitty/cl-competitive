@@ -1,6 +1,6 @@
 (defpackage :cp/ntt
-  (:use :cl :cp/mod-inverse)
-  (:export #:define-ntt #:check-ntt-vector #:ntt-int #:ntt-vector)
+  (:use :cl #:cp/mod-inverse #:cp/static-mod)
+  (:export #:define-ntt #:check-ntt-vector)
   (:documentation
    "Provides fast number theoretic transform.
 
@@ -9,18 +9,15 @@ https://github.com/ei1333/library/blob/master/math/fft/number-theoretic-transfor
 https://github.com/atcoder/ac-library/tree/master/atcoder"))
 (in-package :cp/ntt)
 
-(deftype ntt-int () '(unsigned-byte 31))
-(deftype ntt-vector () '(simple-array ntt-int (*)))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (declaim (inline %tzcount))
   (defun %tzcount (x)
     "Returns the number of the trailing zero bits. Note that (%TZCOUNT 0) = -1."
     (- (integer-length (logand x (- x))) 1))
   (defun %mod-power (base exp modulus)
-    (declare (ntt-int base exp modulus))
+    (declare (mint base exp modulus))
     (let ((res 1))
-      (declare (ntt-int res))
+      (declare (mint res))
       (loop while (> exp 0)
             when (oddp exp)
             do (setq res (mod (* res base) modulus))
@@ -31,7 +28,7 @@ https://github.com/atcoder/ac-library/tree/master/atcoder"))
     (%mod-power x (- modulus 2) modulus))
   (defun %calc-generator (modulus)
     "MODULUS must be prime."
-    (declare (ntt-int modulus))
+    (declare (mint modulus))
     (assert (>= modulus 2))
     (case modulus
       (2 1)
@@ -40,14 +37,14 @@ https://github.com/atcoder/ac-library/tree/master/atcoder"))
       (754974721 11)
       (998244353 3)
       (otherwise
-       (let ((divs (make-array 20 :element-type 'ntt-int :initial-element 0))
+       (let ((divs (make-array 20 :element-type 'mint :initial-element 0))
              (end 1)
              (x (floor (- modulus 1) 2)))
          (declare ((integer 0 #.most-positive-fixnum) x))
          (setf (aref divs 0) 2)
          (loop while (evenp x)
                do (setq x (floor x 2)))
-         (loop for i of-type ntt-int from 3 by 2
+         (loop for i of-type mint from 3 by 2
                while (<= (* i i) x)
                when (zerop (mod x i))
                do (setf (aref divs end) i)
@@ -57,22 +54,22 @@ https://github.com/atcoder/ac-library/tree/master/atcoder"))
          (when (> x 1)
            (setf (aref divs end) x)
            (incf end))
-         (loop for g of-type ntt-int from 2
+         (loop for g of-type mint from 2
                do (dotimes (i end (return-from %calc-generator g))
                     (when (= 1 (%mod-power g (floor (- modulus 1) (aref divs i)) modulus))
                       (return)))))))))
 
-(declaim (ftype (function * (values ntt-vector &optional)) %adjust-array))
+(declaim (ftype (function * (values mint-vector &optional)) %adjust-array))
 (defun %adjust-array (vector length)
   "This function always copies VECTOR. (ANSI CL doesn't state whether
 CL:ADJUST-ARRAY should copy the given array or not.)"
   (declare (optimize (speed 3))
            (vector vector)
            ((mod #.array-dimension-limit) length))
-  (let ((vector (coerce vector 'ntt-vector)))
+  (let ((vector (coerce vector 'mint-vector)))
     (if (= (length vector) length)
         (copy-seq vector)
-        (let ((res (make-array length :element-type 'ntt-int :initial-element 0)))
+        (let ((res (make-array length :element-type 'mint :initial-element 0)))
           (replace res vector)
           res))))
 
@@ -81,7 +78,7 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
            (vector vector))
   (let ((len (length vector)))
     (assert (and (zerop (logand len (- len 1))) ; power of two
-                 (typep len 'ntt-int)))))
+                 (typep len 'mint)))))
 
 (defmacro define-ntt (modulus &key ntt inverse-ntt convolve &environment env)
   (assert (constantp modulus env))
@@ -94,13 +91,13 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
          (base-size (%tzcount (- modulus 1)))
          (root (%calc-generator modulus))
          (modulus (sb-int:constant-form-value modulus env)))
-    (declare (ntt-int modulus))
+    (declare (mint modulus))
     `(progn
-       (declaim (ntt-vector ,ntt-base ,ntt-inv-base))
+       (declaim (mint-vector ,ntt-base ,ntt-inv-base))
        (sb-ext:define-load-time-global ,ntt-base
-         (make-array ,base-size :element-type 'ntt-int))
+         (make-array ,base-size :element-type 'mint))
        (sb-ext:define-load-time-global ,ntt-inv-base
-         (make-array ,base-size :element-type 'ntt-int))
+         (make-array ,base-size :element-type 'mint))
        (dotimes (i ,base-size)
          (setf (aref ,ntt-base i)
                (mod (- (%mod-power ,root (ash (- ,modulus 1) (- (+ i 2))) ,modulus))
@@ -108,27 +105,27 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
                (aref ,ntt-inv-base i)
                (%mod-inverse (aref ,ntt-base i) ,modulus)))
 
-       (declaim (ftype (function * (values ntt-vector &optional)) ,ntt))
+       (declaim (ftype (function * (values mint-vector &optional)) ,ntt))
        (defun ,ntt (vector)
          (declare (optimize (speed 3) (safety 0))
                   (vector vector))
          (check-ntt-vector vector)
          (labels ((mod* (x y) (mod (* x y) ,modulus))
                   (mod+ (x y) (mod (+ x y) ,modulus))
-                  (mod- (x y) (mod+ x (the ntt-int (- ,modulus y)))))
+                  (mod- (x y) (mod+ x (the mint (- ,modulus y)))))
            (declare (inline mod* mod+ mod-))
-           (let* ((vector (coerce vector 'ntt-vector))
+           (let* ((vector (coerce vector 'mint-vector))
                   (len (length vector))
                   (base ,ntt-base))
-             (declare (ntt-vector vector base)
-                      (ntt-int len))
+             (declare (mint-vector vector base)
+                      (mint len))
              (when (<= len 1)
                (return-from ,ntt vector))
-             (loop for m of-type ntt-int = (ash len -1) then (ash m -1)
+             (loop for m of-type mint = (ash len -1) then (ash m -1)
                    while (> m 0)
-                   for w of-type ntt-int = 1
-                   for k of-type ntt-int = 0
-                   do (loop for s of-type ntt-int from 0 below len by (* 2 m)
+                   for w of-type mint = 1
+                   for k of-type mint = 0
+                   do (loop for s of-type mint from 0 below len by (* 2 m)
                             do (loop for i from s below (+ s m)
                                      for j from (+ s m)
                                      for x = (aref vector i)
@@ -139,27 +136,27 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
                                (setq w (mod* w (aref base (%tzcount k))))))
              vector)))
 
-       (declaim (ftype (function * (values ntt-vector &optional)) ,inverse-ntt))
+       (declaim (ftype (function * (values mint-vector &optional)) ,inverse-ntt))
        (defun ,inverse-ntt (vector &optional inverse)
          (declare (optimize (speed 3) (safety 0))
                   (vector vector))
          (check-ntt-vector vector)
          (labels ((mod* (x y) (mod (* x y) ,modulus))
                   (mod+ (x y) (mod (+ x y) ,modulus))
-                  (mod- (x y) (mod+ x (the ntt-int (- ,modulus y)))))
+                  (mod- (x y) (mod+ x (the mint (- ,modulus y)))))
            (declare (inline mod* mod+ mod-))
-           (let* ((vector (coerce vector 'ntt-vector))
+           (let* ((vector (coerce vector 'mint-vector))
                   (len (length vector))
                   (base ,ntt-inv-base))
-             (declare (ntt-vector vector base)
-                      (ntt-int len))
+             (declare (mint-vector vector base)
+                      (mint len))
              (when (<= len 1)
                (return-from ,inverse-ntt vector))
-             (loop for m of-type ntt-int = 1 then (ash m 1)
+             (loop for m of-type mint = 1 then (ash m 1)
                    while (< m len)
-                   for w of-type ntt-int = 1
-                   for k of-type ntt-int = 0
-                   do (loop for s of-type ntt-int from 0 below len by (* 2 m)
+                   for w of-type mint = 1
+                   for k of-type mint = 0
+                   do (loop for s of-type mint from 0 below len by (* 2 m)
                             do (loop for i from s below (+ s m)
                                      for j from (+ s m)
                                      for x = (aref vector i)
@@ -174,7 +171,7 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
                    (setf (aref vector i) (mod* inv-len (aref vector i))))))
              vector)))
 
-       (declaim (ftype (function * (values ntt-vector &optional)) ,convolve))
+       (declaim (ftype (function * (values mint-vector &optional)) ,convolve))
        (defun ,convolve (vector1 vector2)
          (declare (optimize (speed 3))
                   (vector vector1 vector2))
@@ -182,19 +179,19 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
                 (len1 (length vector1))
                 (len2 (length vector2))
                 (mul-len (max 0 (- (+ len1 len2) 1)))
-                (vector1 (coerce vector1 'ntt-vector))
-                (vector2 (if auto-p vector1 (coerce vector2 'ntt-vector))))
-           (declare (ntt-vector vector1 vector2)
+                (vector1 (coerce vector1 'mint-vector))
+                (vector2 (if auto-p vector1 (coerce vector2 'mint-vector))))
+           (declare (mint-vector vector1 vector2)
                     ((mod #.array-dimension-limit) mul-len))
            (when (or (zerop len1) (zerop len2))
-             (return-from ,convolve (make-array 0 :element-type 'ntt-int)))
+             (return-from ,convolve (make-array 0 :element-type 'mint)))
            ;; naive convolution
            (when (<= (min len1 len2) 32)
-             (let ((res (make-array mul-len :element-type 'ntt-int :initial-element 0)))
+             (let ((res (make-array mul-len :element-type 'mint :initial-element 0)))
                (declare (optimize (speed 3) (safety 0)))
                (dotimes (d mul-len)
                  ;; 0 <= i <= deg1, 0 <= j <= deg2
-                 (loop with coef of-type ntt-int = 0
+                 (loop with coef of-type mint = 0
                        for i from (max 0 (- d (- len2 1))) to (min d (- len1 1))
                        for j = (- d i)
                        do (setq coef (mod (+ coef (* (aref vector1 i) (aref vector2 j)))

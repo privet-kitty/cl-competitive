@@ -3,7 +3,7 @@
   (:export #:unlabeled-deck-to-hand #:unlabeled-hand-to-deck))
 (in-package :cp/unlabeled-counting)
 
-(declaim (ftype (function * (values ntt-vector &optional))
+(declaim (ftype (function * (values mint-vector &optional))
                 unlabeled-deck-to-hand))
 (defun unlabeled-deck-to-hand (deck)
   "Converts an unlabeled deck enumerator to the hand enumerator:
@@ -18,10 +18,10 @@ NOTE:
 - deck[0] is ignored and can be any number."
   (declare (optimize (speed 3))
            (vector deck))
-  (let* ((deck (coerce deck 'ntt-vector))
+  (let* ((deck (coerce deck 'mint-vector))
          (n (length deck))
-         (dp (make-array n :element-type 'ntt-int :initial-element 0)))
-    (declare (ntt-int n))
+         (dp (make-array n :element-type 'mint :initial-element 0)))
+    (declare (mint n))
     (loop for i from 1 below n
           for d = (aref deck i)
           do (loop for j from 1 to (floor (- n 1) i)
@@ -31,7 +31,7 @@ NOTE:
                                  +mod+))))
     (poly-exp dp)))
 
-(declaim (ftype (function * (values ntt-vector &optional))
+(declaim (ftype (function * (values mint-vector &optional))
                 unlabeled-hand-to-deck))
 (defun unlabeled-hand-to-deck (hand)
   "Converts an unlabeled hand enumerator to the deck enumerator:
@@ -47,11 +47,11 @@ NOTE:
   (declare (optimize (speed 3))
            (vector hand))
   (when (zerop (length hand))
-    (return-from unlabeled-hand-to-deck (make-array 0 :element-type 'ntt-int)))
-  (let* ((hand (coerce hand 'ntt-vector))
+    (return-from unlabeled-hand-to-deck (make-array 0 :element-type 'mint)))
+  (let* ((hand (coerce hand 'mint-vector))
          (n (length hand))
          (dp (poly-log hand)))
-    (declare (ntt-int n))
+    (declare (mint n))
     (when (> n 0)
       (assert (= (mod 1 +mod+) (aref hand 0))))
     (loop for i from 1 below n

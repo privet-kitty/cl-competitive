@@ -14,15 +14,15 @@ query: O(1)
 ;; TODO: non-global handling
 (defconstant +binom-size+ 510000)
 
-(declaim ((simple-array (unsigned-byte 31) (*)) *fact* *fact-inv* *inv*))
+(declaim (mint-vector *fact* *fact-inv* *inv*))
 (sb-ext:define-load-time-global *fact*
-  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  (make-array +binom-size+ :element-type 'mint)
   "table of factorials")
 (sb-ext:define-load-time-global *fact-inv*
-  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  (make-array +binom-size+ :element-type 'mint)
   "table of inverses of factorials")
 (sb-ext:define-load-time-global *inv*
-  (make-array +binom-size+ :element-type '(unsigned-byte 31))
+  (make-array +binom-size+ :element-type 'mint)
   "table of inverses of non-negative integers")
 
 (defun initialize-binom ()

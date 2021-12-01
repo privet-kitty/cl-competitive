@@ -20,7 +20,7 @@
               (convolve #(5 998244350 1) #(998244344 998244351 1)))))
 
 (defun make-random-polynomial (degree state modulus)
-  (let ((res (make-array degree :element-type 'ntt-int :initial-element 0)))
+  (let ((res (make-array degree :element-type 'mint :initial-element 0)))
     (dotimes (i degree res)
       (setf (aref res i) (random modulus state)))
     (let ((end (+ 1 (or (position 0 res :from-end t :test-not #'eql) -1))))

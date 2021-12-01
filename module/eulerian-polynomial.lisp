@@ -13,9 +13,9 @@ ascent). Note that the 0-th eulerian polynomial is 1 by definition."
            (vector minfactor-table))
   (when (zerop n)
     (return-from make-eulerian-polynomial
-      (make-array 1 :element-type 'ntt-int :initial-element 1)))
+      (make-array 1 :element-type 'mint :initial-element 1)))
   (let* ((len (ceiling n 2))
-         (poly1 (make-array len :element-type 'ntt-int :initial-element 0))
+         (poly1 (make-array len :element-type 'mint :initial-element 0))
          (poly2 (subseq (make-perfect-kth-powers minfactor-table (+ len 1) n +mod+) 1)))
     (dotimes (k len)
       (let ((val (mod (* (aref *fact-inv* k)
@@ -25,7 +25,7 @@ ascent). Note that the 0-th eulerian polynomial is 1 by definition."
               (if (evenp k) val (mod (- val) +mod+)))))
     (let ((res (adjust-array (poly-prod poly1 poly2) n))
           (coef (aref *fact* (+ n 1))))
-      (declare (ntt-vector res))
+      (declare (mint-vector res))
       (dotimes (i len)
         (setf (aref res i) (mod (* (aref res i) coef) +mod+)))
       (loop for i from len below n
@@ -43,7 +43,7 @@ with FPS of n-th powers and assume 0^0 = 1."
            ((mod #.array-dimension-limit) n)
            (vector minfactor-table))
   (if (= n 0)
-      (make-array 1 :element-type 'ntt-int :initial-element 1)
-      (concatenate '(simple-array ntt-int (*))
+      (make-array 1 :element-type 'mint :initial-element 1)
+      (concatenate 'mint-vector
                    #(0)
                    (make-eulerian-polynomial n minfactor-table))))
