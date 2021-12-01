@@ -178,13 +178,12 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
        (defun ,convolve (vector1 vector2)
          (declare (optimize (speed 3))
                   (vector vector1 vector2))
-         ;; TODO: if (EQ VECTOR1 VECTOR2) holds, the number of FFTs can be
-         ;; reduced.
-         (let* ((len1 (length vector1))
+         (let* ((auto-p (eq vector1 vector2))
+                (len1 (length vector1))
                 (len2 (length vector2))
                 (mul-len (max 0 (- (+ len1 len2) 1)))
                 (vector1 (coerce vector1 'ntt-vector))
-                (vector2 (coerce vector2 'ntt-vector)))
+                (vector2 (if auto-p vector1 (coerce vector2 'ntt-vector))))
            (declare (ntt-vector vector1 vector2)
                     ((mod #.array-dimension-limit) mul-len))
            (when (or (zerop len1) (zerop len2))
@@ -205,7 +204,9 @@ CL:ADJUST-ARRAY should copy the given array or not.)"
            (let* (;; power of two ceiling
                   (required-len (ash 1 (integer-length (max 0 (- mul-len 1)))))
                   (vector1 (,ntt (%adjust-array vector1 required-len)))
-                  (vector2 (,ntt (%adjust-array vector2 required-len))))
+                  (vector2 (if auto-p
+                               vector1
+                               (,ntt (%adjust-array vector2 required-len)))))
              (dotimes (i required-len)
                (setf (aref vector1 i)
                      (mod (* (aref vector1 i) (aref vector2 i)) ,modulus)))
