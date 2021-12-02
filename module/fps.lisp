@@ -171,6 +171,7 @@
     (let* ((res (poly-sub poly1 (poly-prod (poly-floor poly1 poly2) poly2))))
       (%canonize res))))
 
+(declaim (ftype (function * (values mint-vector &optional)) poly-mod-power))
 (defun poly-mod-power (base exp divisor)
   (declare (optimize (speed 3))
            (vector base divisor)
