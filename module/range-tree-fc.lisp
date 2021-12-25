@@ -167,6 +167,8 @@ coordinates are allowed.) E.g. (-1, 3), (-1, 4), (-1, 7) (0, 1) (0, 3) (2,
                 (setq left mid)
                 (setq ok mid)))))))
 
+(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+                rt-count))
 (defun rt-count (range-tree x1 y1 x2 y2)
   "Returns the number of the nodes within the rectangle [x1, x2)*[y1, y2). A
 part or all of these coordinates can be NIL; then they are regarded as the
