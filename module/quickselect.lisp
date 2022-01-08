@@ -2,14 +2,14 @@
   (:use :cl)
   (:export #:quickselect!)
   (:documentation
-   "Provides selection algorithm, an algorithm for finding k-th smallest (or
-largest) number in a vector. Time complexity is expected O(Nlog(N))."))
+   "Provides selection algorithm, i.e., an algorithm to find the k-th least (or
+greatest) element in a vector. Time complexity is expected O(Nlog(N))."))
 (in-package :cp/quickselect)
 
 (declaim (inline %hoare-partition!))
 (defun %hoare-partition! (vector l r pivot-idx order)
   "Destructively rearranges VECTOR[L, R] and returns an index i: All the
-elements smaller than VECTOR[PIVOT-IDX] are moved to the front of i and those
+elements less than VECTOR[PIVOT-IDX] are moved to the front of i and those
 larger behind i. Note that this function deals with the **closed** interval [L,
 R]."
   (declare (vector vector)
@@ -46,8 +46,11 @@ R]."
 
 (declaim (inline quickselect!))
 (defun quickselect! (vector order i &optional (start 0) end)
-  "Returns the (0-based) i-th smallest element of VECTOR (if order is #'<, for
-example). Destructively modifies VECTOR.
+  "Returns the (0-based) i-th least element of VECTOR (if order is #'<, for
+example). VECTOR is destructively modified as follows: VECTOR[START],
+VECTOR[START+1], ..., VECTOR[START+i] are equal to or less than VECTOR[START+i],
+and VECTOR[START+i], VECTOR[START+i+1], ..., VECTOR[END-1] are equal to or
+greater than VECTOR[START]+i.
 
 ORDER := strict order"
   (declare (vector vector)
