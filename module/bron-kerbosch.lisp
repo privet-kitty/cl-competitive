@@ -28,7 +28,7 @@ neighbors of vertex i."
     (declare ((integer 0 #.+nbits+) n)
              (uint result-set result-size))
     (labels ((recur (r p x)
-               (declare ((integer 0 #.most-positive-fixnum) r p x))
+               (declare (uint r p x))
                (if (zerop p)
                    (when (zerop x)
                      (let ((size (logcount r)))
