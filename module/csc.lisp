@@ -20,8 +20,8 @@
                 (:copier nil)
                 (:predicate nil))
   "Stores a sparse matrix with coordinate list representation (aka COO
-format). Note that M and N are automatically adjusted when you COO-INSERT! to an
-out-of-bounds position, but you cannot decrease them."
+format). Note that M and N are automatically increased when you COO-INSERT! to
+an out-of-bounds position, but you cannot decrease them."
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
   (nz nil :type (mod #.array-dimension-limit))

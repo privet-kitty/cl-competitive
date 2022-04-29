@@ -9,9 +9,10 @@
            #:correct-x-basic! #:correct-y-nonbasic!
            #:dictionary-basics #:dictionary-nonbasics #:dictionary-basic-flag
            #:dictionary-add-basic
-           #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!)
+           #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!
+           #:*max-number-of-pivotting*)
   (:documentation
-   "Provides two kinds of simplex method for sparse LP:
+   "Provides two kinds of simplex method for sparse instance of LP:
 
 - two-phase (dual-then-primal) simplex method using Dantzig's pivot rule;
 - parametric self-dual simplex method.
@@ -19,7 +20,7 @@
 Usage procedure:
 1. MAKE-SPARSE-LP
 2. SLP-DUAL-PRIMAL!, SLP-SELF-DUAL!, SLP-DUAL!, or SLP-PRIMAL!
-3. SRARSE-LP-RESTORE
+3. SLP-RESTORE
 
 Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
@@ -60,8 +61,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 
 (defconstant +nan+ most-positive-fixnum)
 (defun make-dictionary (m n basics)
-  "BASICS[i] = column number of the constraints matrix (of size m * (n + m))
-which is currently basic.
+  "BASICS is a vector of column numbers of the constraints matrix (of size m
+* (n + m)) which is currently basic.
 
 0, 1, 2, ....., n-1, n, n+1, ..., n+m-1
 |- non-slack vars -| |-- slack vars --|
@@ -181,6 +182,13 @@ which is currently basic.
             (sparse-vector-nz res) nz)
       (incf *tmp-tag*)
       res)))
+
+(deftype lp-status ()
+  "- UNBOUNDED: primal is unbounded;
+- INFEASIBLE: primal is infeasible;
+- DUAL-INFEASIBLE: dual is infeasible (primal can be either unbounded or infeasible);
+- NOT-SOLVED: not solved yet."
+  '(member :optimal :unbounded :infeasible :dual-infeasible :not-solved))
 
 (defstruct (sparse-lp (:constructor %make-sparse-lp)
                       (:conc-name slp-))
@@ -348,10 +356,16 @@ the current dictionary is not feasible.)"
                   res index)))))
     res))
 
+(declaim ((integer 0 #.most-positive-fixnum) *max-number-of-pivotting*))
+(defparameter *max-number-of-pivotting* most-positive-fixnum)
+
+(declaim (ftype (function * (values lp-status (integer 0 #.most-positive-fixnum) &optional))
+                slp-primal! slp-dual! slp-dual-primal! slp-self-dual!))
+
 (defun slp-primal! (sparse-lp)
-  "Applies primal simplex method to SPARSE-LP and returns the terminal state:
-:optimal or :unbounded. Note that this function doesn't check if the initial
-dictionary is primal feasible."
+  "Applies primal simplex method to SPARSE-LP, and returns the terminal state
+and the number of pivotting: Note that this function doesn't check if the
+initial dictionary is primal feasible."
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
@@ -376,11 +390,11 @@ dictionary is primal feasible."
                       (tmp-values (sparse-vector-values tmp))
                       (tmp-indices (sparse-vector-indices tmp))
                       (tmp-nz (sparse-vector-nz tmp)))
-      (loop
+      (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
         (let* ((col-in (pick-negative y-nonbasic)))
           (unless col-in
-            (return :optimal))
+            (return (values :optimal n-pivot)))
           ;; dx_B := B^(-1)Ne_j (j = col-in)
           (let ((acolstarts (csc-colstarts mat))
                 (arows (csc-rows mat))
@@ -395,7 +409,7 @@ dictionary is primal feasible."
           ;; find leaving column
           (let ((col-out (ratio-test x-basic dx)))
             (unless col-out
-              (return :unbounded))
+              (return (values :unbounded n-pivot)))
             ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
             (setf (aref tmp-values 0) (- +one+)
                   (aref tmp-indices 0) col-out
@@ -433,8 +447,8 @@ dictionary is primal feasible."
                 (setq lude (refactor mat basics))))))))))
 
 (defun slp-dual! (sparse-lp)
-  "Applies dual simplex method to SPARSE-LP and returns the terminal state:
-:optimal or :infeasible. Note that this function doesn't check if the initial
+  "Applies dual simplex method to SPARSE-LP, and returns the terminal state and
+the number of pivotting. Note that this function doesn't check if the initial
 dictionary is dual feasible."
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
@@ -460,11 +474,11 @@ dictionary is dual feasible."
                       (tmp-values (sparse-vector-values tmp))
                       (tmp-indices (sparse-vector-indices tmp))
                       (tmp-nz (sparse-vector-nz tmp)))
-      (loop
+      (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find leaving column
         (let ((col-out (pick-negative x-basic)))
           (unless col-out
-            (return :optimal))
+            (return (values :optimal n-pivot)))
           ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
           (setf (aref tmp-values 0) (- +one+)
                 (aref tmp-indices 0) col-out
@@ -474,7 +488,7 @@ dictionary is dual feasible."
           ;; find entering column
           (let ((col-in (ratio-test y-nonbasic dy)))
             (unless col-in
-              (return :infeasible))
+              (return (values :infeasible n-pivot)))
             ;; dx_B := B^(-1)Ne_j (j = col-in)
             (let ((acolstarts (csc-colstarts mat))
                   (arows (csc-rows mat))
@@ -525,17 +539,18 @@ dictionary is dual feasible."
          (nonbasics (dictionary-nonbasics dictionary))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (c (slp-c sparse-lp)))
-    ;; Set all the coefficiets of objective to negative values.
+    ;; Set all the coefficients of the objective to negative values.
     (dotimes (j n)
       (let ((col (aref nonbasics j)))
         (setf (aref y-nonbasic j)
               (+ (max (if (< col n) (aref c col) +zero+) +one+)
                  (random +one+)))))
-    (let ((state-dual (slp-dual! sparse-lp)))
+    (multiple-value-bind (status1 n-pivot1) (slp-dual! sparse-lp)
       (correct-y-nonbasic! sparse-lp)
-      (unless (eql state-dual :optimal)
-        (return-from slp-dual-primal! state-dual))
-      (slp-primal! sparse-lp))))
+      (unless (eql status1 :optimal)
+        (return-from slp-dual-primal! (values status1 n-pivot1)))
+      (multiple-value-bind (status2 n-pivot2) (slp-primal! sparse-lp)
+        (values status2 (+ n-pivot1 n-pivot2))))))
 
 ;;;
 ;;; self-dual simplex method
@@ -561,8 +576,7 @@ dictionary is dual feasible."
     res))
 
 (defun slp-self-dual! (sparse-lp)
-  "Applies self-dual simplex method to SPARSE-LP and returns the terminal state:
-:optimal, :infeasible, or :dual-infeasible.
+  "Applies self-dual simplex method to SPARSE-LP, and returns the terminal state and the number of pivotting.
 
 Note that this function could return either :infeasible or :dual-infeasible for
 a both infeasible instance. (It is not even deterministic.)"
@@ -608,7 +622,7 @@ a both infeasible instance. (It is not even deterministic.)"
       (map-into y-params
                 (lambda (x) (+ (random +one+) (sqrt (the (double-float #.+zero+) x))))
                 y-params)
-      (loop
+      (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         (let ((mu +neg-inf+)
               col-in
               col-out)
@@ -624,7 +638,7 @@ a both infeasible instance. (It is not even deterministic.)"
                     col-out i
                     col-in nil)))
           (when (<= mu +eps-middle+)
-            (return :optimal))
+            (return (values :optimal n-pivot)))
           (assert (or (and col-in (not col-out))
                       (and (not col-in) col-out)))
           (if col-out
@@ -637,7 +651,7 @@ a both infeasible instance. (It is not even deterministic.)"
                 (tmat-times-vec! tmat tmp basic-flag dy)
                 (setq col-in (self-dual-ratio-test y-nonbasic dy mu y-params))
                 (unless col-in
-                  (return :infeasible))
+                  (return (values :infeasible n-pivot)))
                 ;; dx_B := B^(-1)Ne_j where j is entering column
                 (let* ((j (aref nonbasics col-in))
                        (colstarts (csc-colstarts mat))
@@ -666,7 +680,7 @@ a both infeasible instance. (It is not even deterministic.)"
                 (sparse-solve! lude dx)
                 (setq col-out (self-dual-ratio-test x-basic dx mu x-params))
                 (unless col-out
-                  (return :dual-infeasible))
+                  (return (values :dual-infeasible n-pivot)))
                 ;; dy_N := -(B^(-1)N)^T e_i where i is leaving column
                 (setf (aref tmp-values 0) (- +one+)
                       (aref tmp-indices 0) col-out
