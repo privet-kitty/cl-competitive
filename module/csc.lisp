@@ -16,15 +16,17 @@
 (defconstant +zero+ (coerce 0 'csc-float))
 (defconstant +one+ (coerce 1 'csc-float))
 
+(deftype index () '(mod #.array-dimension-limit))
+
 (defstruct (coo (:constructor %make-coo (m n nz rows cols values))
                 (:copier nil)
                 (:predicate nil))
   "Stores a sparse matrix with coordinate list representation (aka COO
 format). Note that M and N are automatically increased when you COO-INSERT! to
 an out-of-bounds position, but you cannot decrease them."
-  (m nil :type (mod #.array-dimension-limit))
-  (n nil :type (mod #.array-dimension-limit))
-  (nz nil :type (mod #.array-dimension-limit))
+  (m nil :type index)
+  (n nil :type index)
+  (nz nil :type index)
   (rows nil :type (simple-array fixnum (*)))
   (cols nil :type (simple-array fixnum (*)))
   (values nil :type (simple-array csc-float (*))))
@@ -58,7 +60,7 @@ an out-of-bounds position, but you cannot decrease them."
 FIXED-SIZE is NIL, the height and width of COO are automatically adjusted when
 ROW or COL are out of bounds."
   (declare (optimize (speed 3))
-           ((mod #.array-dimension-limit) row col))
+           (index row col))
   (if fixed-size
       (assert (and (< row (coo-m coo))
                    (< col (coo-n coo))))
@@ -70,7 +72,7 @@ ROW or COL are out of bounds."
                     (values (coo-values coo))
                     (nz (coo-nz coo)))
     (when (= nz (length rows))
-      (let ((new-size (max 1 (the (mod #.array-dimension-limit) (* 2 nz)))))
+      (let ((new-size (max 1 (the index (* 2 nz)))))
         (setq rows (adjust-array rows new-size)
               cols (adjust-array cols new-size)
               values (adjust-array values new-size))))
@@ -86,9 +88,9 @@ ROW or COL are out of bounds."
   "Stores a sparse matrix with compressed sparse column representation (aka CSC
 format). Note that you can increase M after construction, but cannot decrease it
 or change N."
-  (m nil :type (mod #.array-dimension-limit))
-  (n nil :type (mod #.array-dimension-limit))
-  (nz nil :type (mod #.array-dimension-limit))
+  (m nil :type index)
+  (n nil :type index)
+  (nz nil :type index)
   (colstarts nil :type (simple-array fixnum (*)))
   (rows nil :type (simple-array fixnum (*)))
   (values nil :type (simple-array csc-float (*))))
@@ -117,13 +119,13 @@ or change N."
   (declare (optimize (speed 3))
            ((array * (* *)) array))
   (destructuring-bind (m n) (array-dimensions array)
-    (declare ((mod #.array-dimension-limit) m n))
+    (declare (index m n))
     (let* ((colstarts (make-array (+ n 1) :element-type 'fixnum))
            (nz (count +zero+ (sb-ext:array-storage-vector array) :test-not #'=))
            (rows (make-array nz :element-type 'fixnum))
            (values (make-array nz :element-type 'csc-float))
            (end 0))
-      (declare ((mod #.array-dimension-limit) end))
+      (declare (index end))
       (dotimes (col n)
         (setf (aref colstarts col) end)
         (dotimes (row m)
@@ -155,7 +157,7 @@ contains it."
                                            (< (aref cols i1) (aref cols i2)))))))
          (nz 0))
     (declare ((simple-array fixnum (*)) indices)
-             ((mod #.array-dimension-limit) nz))
+             (index nz))
     ;; drop duplicate elements
     (dotimes (i* (length indices))
       (let ((i (aref indices i*)))
@@ -171,7 +173,7 @@ contains it."
           (csc-values (make-array nz :element-type 'csc-float))
           (end 0)
           (prev-col -1))
-      (declare ((mod #.array-dimension-limit) end)
+      (declare (index end)
                ((integer -1 (#.array-dimension-limit)) prev-col))
       (dotimes (i* nz)
         (let* ((i (aref indices i*))
@@ -244,7 +246,7 @@ contains it."
     (dotimes (j n)
       (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
             for row = (aref rows k)
-            for new-pos = (+ (aref new-colstarts row) (aref tmp row))
+            for new-pos of-type index = (+ (aref new-colstarts row) (aref tmp row))
             do (incf (aref tmp row))
                (setf (aref new-rows new-pos) j
                      (aref new-values new-pos) (aref values k))))
@@ -252,7 +254,7 @@ contains it."
 
 ;; TODO: Should we store the intended dimension of vector?
 (defstruct (sparse-vector (:constructor %make-sparse-vector (nz values indices)))
-  (nz nil :type (mod #.array-dimension-limit))
+  (nz nil :type index)
   (values nil :type (simple-array csc-float (*)))
   (indices nil :type (simple-array fixnum (*))))
 
@@ -268,7 +270,7 @@ contains it."
          (values (make-array nz :element-type 'csc-float))
          (indices (make-array nz :element-type 'fixnum))
          (end 0))
-    (declare ((mod #.array-dimension-limit) end))
+    (declare (index end))
     (dotimes (i (length vector))
       (unless (zerop (aref vector i))
         (setf (aref values end) (aref vector i)
