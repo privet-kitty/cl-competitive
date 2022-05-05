@@ -24,7 +24,7 @@ Usage procedure:
 3. SLP-RESTORE
 
 Reference:
-Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
+Robert J. Vanderbei, Linear Programming: Foundations and Extensions, 5th edition."))
 (in-package :cp/sparse-simplex)
 
 (defconstant +eps-large+ (coerce 1d-8 'csc-float))
@@ -34,6 +34,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
 (defconstant +neg-inf+ most-negative-double-float)
 
 (defun add-slack! (a)
+  "Add slack variables to matrix A to transform Ax <= b to [A I][x^t z^t]^t =
+b. The dimensions of matrix is changed from m * n to m * (n + m)."
   (declare (optimize (speed 3))
            (csc a))
   (symbol-macrolet ((m (csc-m a))
@@ -61,26 +63,24 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (basic-flag nil :type (simple-array fixnum (*))))
 
 (defconstant +nan+ most-positive-fixnum)
-(defun make-dictionary (m n basics &optional (extend-p t))
+(defun make-dictionary (m n basics)
   "BASICS is a vector of column numbers of the constraints matrix which is
-currently basic. The assumed dimensions of the matrix is m * (n + m) if EXTEND-P
-is true, and m * n if not.
+currently basic.
 
-0, 1, 2, ....., n-1, n, n+1, ..., n+m-1
-|- non-slack vars -| |-- slack vars --|
+0, 1, 2, ....., n-m-1, n-m, n-m+1, ..., n-1
+|-- non-slack vars --| |--- slack vars ---|
 "
   (declare (optimize (speed 3))
            (vector basics)
            ((mod #.array-dimension-limit) m n))
   (assert (= m (length basics)))
+  (assert (<= m n))
   (let* ((basics (if (typep basics '(simple-array fixnum (*)))
                      (copy-seq basics)
                      (coerce basics '(simple-array fixnum (*)))))
-         (basic-flag (make-array (if extend-p (+ n m) n)
-                                 :element-type 'fixnum
-                                 :initial-element +nan+))
-         (nonbasics (make-array (if extend-p n (- n m))
-                                :element-type 'fixnum)))
+         (basic-flag (make-array n :element-type 'fixnum
+                                   :initial-element +nan+))
+         (nonbasics (make-array (- n m) :element-type 'fixnum)))
     (declare ((simple-array fixnum (*)) basics))
     (dotimes (i m)
       (let ((col (aref basics i)))
@@ -91,24 +91,7 @@ is true, and m * n if not.
           (setf (aref nonbasics j) col
                 (aref basic-flag col) (lognot j))
           (incf j))))
-    (%make-dictionary :m m :n (if extend-p n (- n m))
-                      :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
-
-(defun dictionary-add-basic! (dictionary)
-  (symbol-macrolet ((basics (dictionary-basics dictionary))
-                    (basic-flag (dictionary-basic-flag dictionary))
-                    (m (dictionary-m dictionary))
-                    (n (dictionary-n dictionary)))
-    (when (< (length basics) (+ m 1))
-      (setq basics (adjust-array basics (* 2 (+ m 1)))))
-    (when (< (length basic-flag) (+ n m 1))
-      (setq basic-flag (adjust-array basic-flag (* 2 (+ n m 1)))))
-    (let ((new-col (+ m n)))
-      (declare ((mod #.array-dimension-limit) new-col))
-      (setf (aref basics m) new-col
-            (aref basic-flag new-col) m)
-      (incf m)
-      new-col)))
+    (%make-dictionary :m m :n n :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
 
 (defun dictionary-swap! (dictionary col-out col-in)
   (declare (optimize (speed 3))
@@ -240,7 +223,7 @@ is true, and m * n if not.
       (let* ((tmp (tmat-times-vec! tmat tmp basic-flag))
              (tmp-values (sparse-vector-values tmp))
              (tmp-indices (sparse-vector-indices tmp)))
-        (dotimes (j n)
+        (dotimes (j (- n m))
           (setf (aref y-nonbasic j) (- (aref c (aref nonbasics j)))))
         (dotimes (k (sparse-vector-nz tmp))
           (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
@@ -262,26 +245,26 @@ Note that A is modified when ADD-SLACK is true."
            (csc a)
            ((simple-array csc-float (*)) b c))
   (let* ((m (csc-m a))
-         (n (if add-slack (csc-n a) (- (csc-n a) (csc-m a)))))
+         (n (if add-slack (+ (csc-n a) m) (csc-n a))))
+    (declare ((integer 0 #.most-positive-fixnum) n))
     (assert (= m (length b)))
     (when add-slack
       (setq a (add-slack! a)))
     ;; Add coefficients for basic variables
-    (unless (= (length c) (+ m n))
-      (assert (= n (length c)))
-      (setq c (adjust-array c (the (mod #.array-dimension-limit) (+ n m))
-                            :initial-element +zero+)))
+    (unless (= (length c) n)
+      (assert (= (- n m) (length c)))
+      (setq c (adjust-array c n :initial-element +zero+)))
     (let* ((x-basic (make-array m :element-type 'csc-float))
-           (y-nonbasic (make-array n :element-type 'csc-float))
+           (y-nonbasic (make-array (- n m) :element-type 'csc-float))
            (dictionary (or dictionary
                            (let ((basics (make-array m :element-type 'fixnum)))
                              (dotimes (i m)
-                               (setf (aref basics i) (+ n i)))
+                               (setf (aref basics i) (+ (- n m) i)))
                              (make-dictionary m n basics))))
            (basics (dictionary-basics dictionary))
            (a-transposed (csc-transpose a)))
       (unless supplied-p
-        (dotimes (j n)
+        (dotimes (j (- n m))
           (setf (aref y-nonbasic j) (- (aref c j)))))
       (dotimes (i m)
         (setf (aref x-basic i) (aref b i)))
@@ -311,9 +294,8 @@ Note that A is modified when ADD-SLACK is true."
 
 (defun slp-restore (sparse-lp)
   "Restores the current solution of LP and returns five values: objective value,
-primal solution, dual solution, values of primal slack variables, and values of
-dual slack variables. (Note that they are not necessarily feasible solutions if
-the current dictionary is not feasible.)"
+primal solution, dual solution. (Note that they are not necessarily feasible
+solutions if the current dictionary is not feasible.)"
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
@@ -323,17 +305,14 @@ the current dictionary is not feasible.)"
          (dictionary (slp-dictionary sparse-lp))
          (basics (dictionary-basics dictionary))
          (nonbasics (dictionary-nonbasics dictionary))
-         (x (make-array (+ n m) :element-type 'csc-float :initial-element +zero+))
-         (y (make-array (+ n m) :element-type 'csc-float :initial-element +zero+)))
+         (x (make-array n :element-type 'csc-float :initial-element +zero+))
+         (y (make-array n :element-type 'csc-float :initial-element +zero+)))
     (dotimes (i m)
       (setf (aref x (aref basics i)) (aref x-basic i)))
-    (dotimes (i n)
+    (dotimes (i (- n m))
       (setf (aref y (aref nonbasics i)) (aref y-nonbasic i)))
     (values (+ (slp-obj-offset sparse-lp) (dot* c x-basic basics))
-            (subseq x 0 n)
-            (subseq y n)
-            (subseq x n)
-            (subseq y 0 n))))
+            x y)))
 
 (defun pick-negative (vector)
   (declare (optimize (speed 3))
@@ -385,7 +364,7 @@ initial dictionary is primal feasible."
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
-         (dy (make-sparse-vector n))
+         (dy (make-sparse-vector (- n m)))
          (tmp (make-sparse-vector m)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
@@ -469,7 +448,7 @@ dictionary is dual feasible."
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
-         (dy (make-sparse-vector n))
+         (dy (make-sparse-vector (- n m)))
          (tmp (make-sparse-vector m)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
@@ -541,16 +520,17 @@ dictionary is dual feasible."
   "Applies two-phase simplex method to SPARSE-LP and returns the terminal state:
 :optimal, :unbounded, or :infeasible. "
   (declare (optimize (speed 3)))
-  (let* ((n (slp-n sparse-lp))
+  (let* ((m (slp-m sparse-lp))
+         (n (slp-n sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
          (nonbasics (dictionary-nonbasics dictionary))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (c (slp-c sparse-lp)))
     ;; Set all the coefficients of the objective to negative values.
-    (dotimes (j n)
+    (dotimes (j (- n m))
       (let ((col (aref nonbasics j)))
         (setf (aref y-nonbasic j)
-              (+ (max (if (< col n) (aref c col) +zero+) +one+)
+              (+ (max (aref c col) +one+)
                  (random +one+)))))
     (multiple-value-bind (status1 n-pivot1) (slp-dual! sparse-lp)
       (correct-y-nonbasic! sparse-lp)
@@ -599,10 +579,10 @@ a both infeasible instance. (It is not even deterministic.)"
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
-         (dy (make-sparse-vector n))
+         (dy (make-sparse-vector (- n m)))
          (tmp (make-sparse-vector m))
          (x-params (make-array m :element-type 'csc-float :initial-element +zero+))
-         (y-params (make-array n :element-type 'csc-float :initial-element +zero+)))
+         (y-params (make-array (- n m) :element-type 'csc-float :initial-element +zero+)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
@@ -615,14 +595,14 @@ a both infeasible instance. (It is not even deterministic.)"
                       (tmp-nz (sparse-vector-nz tmp)))
       ;; FIXME: make it for arbitrary initial dictionary
       ;; initialize parameters for x and y
-      (dotimes (j n)
-        (let ((colstarts (csc-colstarts mat))
-              (rows (csc-rows mat))
-              (values (csc-values mat)))
-          (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
-                for a2 of-type csc-float = (expt (aref values k) 2)
-                do (incf (aref x-params (aref rows k)) a2)
-                   (incf (aref y-params j) a2))))
+      ;; (dotimes (j n)
+      ;;   (let ((colstarts (csc-colstarts mat))
+      ;;         (rows (csc-rows mat))
+      ;;         (values (csc-values mat)))
+      ;;     (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+      ;;           for a2 of-type csc-float = (expt (aref values k) 2)
+      ;;           do (incf (aref x-params (aref rows k)) a2)
+      ;;              (incf (aref y-params j) a2))))
       (map-into x-params
                 (lambda (x) (+ (random +one+) (sqrt (the (double-float #.+zero+) x))))
                 x-params)
@@ -633,7 +613,7 @@ a both infeasible instance. (It is not even deterministic.)"
         (let ((mu +neg-inf+)
               col-in
               col-out)
-          (dotimes (j n)
+          (dotimes (j (- n m))
             (when (and (> (aref y-params j) +eps-small+)
                        (< mu (/ (- (aref y-nonbasic j)) (aref y-params j))))
               (setq mu (/ (- (aref y-nonbasic j)) (aref y-params j))
