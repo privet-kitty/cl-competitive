@@ -36,14 +36,6 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (rowperm nil :type (simple-array fixnum (*)))
   (irowperm nil :type (simple-array fixnum (*))))
 
-(defmacro vector-set* (vector index new-element)
-  (let ((i (gensym))
-        (elm (gensym)))
-    `(let ((,i ,index)
-           (,elm ,new-element))
-       (extend-vectorf ,vector (+ 1 ,i))
-       (setf (aref ,vector ,i) ,elm))))
-
 (deftype ivec () '(simple-array fixnum (*)))
 (deftype fvec () '(simple-array csc-float (*)))
 

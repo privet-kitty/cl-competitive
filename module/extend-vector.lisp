@@ -1,6 +1,6 @@
 (defpackage :cp/extend-vector
   (:use :cl)
-  (:export #:extend-vector #:extend-vectorf))
+  (:export #:extend-vector #:extend-vectorf #:vector-set*))
 (in-package :cp/extend-vector)
 
 (declaim (inline %power-of-two-ceiling))
@@ -31,3 +31,12 @@
             (extend-vector vector new-size)
             (extend-vector vector new-size initial-element))
         vector)))
+
+(defmacro vector-set* (vector index new-element)
+  (let ((i (gensym))
+        (elm (gensym)))
+    ;; TODO: use setf-expander
+    `(let ((,i ,index)
+           (,elm ,new-element))
+       (extend-vectorf ,vector (+ 1 ,i))
+       (setf (aref ,vector ,i) ,elm))))

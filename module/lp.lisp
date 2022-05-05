@@ -145,10 +145,9 @@ implementation reasons.)"))
                  (get-row problem))))
       (symbol-macrolet ((nvar (lp-problem-nvar problem))
                         (variables (lp-problem-variables problem)))
-        (unless (< nvar (length variables))
-          (extend-vectorf variables (ash nvar 1)))
-        (prog1 (setf (aref variables nvar)
-                     (%make-lp-var :lo lo :up up :column column :row row :name name))
+        (prog1
+            (vector-set* variables nvar
+                         (%make-lp-var :lo lo :up up :column column :row row :name name))
           (incf nvar))))))
 
 (declaim (inline make-linear-expr))
@@ -165,11 +164,8 @@ implementation reasons.)"))
   (symbol-macrolet ((nz (linear-expr-nz linear-expr))
                     (coefs (linear-expr-coefs linear-expr))
                     (vars (linear-expr-vars linear-expr)))
-    (unless (< nz (length coefs))
-      (extend-vectorf coefs (ash nz 1))
-      (extend-vectorf vars (ash nz 1)))
-    (setf (aref vars nz) var
-          (aref coefs nz) coef)
+    (vector-set* vars nz var)
+    (vector-set* coefs nz coef)
     (incf nz)
     linear-expr))
 
@@ -188,13 +184,12 @@ implementation reasons.)"))
               (t (values nil nil)))
       (symbol-macrolet ((nconstr (lp-problem-nconstr problem))
                         (constraints (lp-problem-constraints problem)))
-        (unless (< nconstr (length constraints))
-          (extend-vectorf constraints (ash nconstr 1)))
-        (prog1 (setf (aref constraints nconstr)
-                     (%make-lp-constraint
-                      :lo lo :up up
-                      :row row :column column
-                      :expr linear-expr))
+        (prog1
+            (vector-set* constraints nconstr
+                         (%make-lp-constraint
+                          :lo lo :up up
+                          :row row :column column
+                          :expr linear-expr))
           (incf nconstr))))))
 
 (declaim (inline %power-of-two-ceiling))
@@ -361,8 +356,8 @@ form (max. cx Ax <= b, x >= 0)."
           (lp-problem-last-basis problem) (dictionary-basics (slp-dictionary slp)))
     (setf (values (lp-problem-obj-value problem)
                   (lp-problem-primal-sol problem)
-                  (lp-problem-primal-slack problem)
                   (lp-problem-dual-sol problem)
+                  (lp-problem-primal-slack problem)
                   (lp-problem-dual-slack problem))
           (slp-restore slp))
     status))
