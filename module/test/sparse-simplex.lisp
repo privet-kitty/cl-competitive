@@ -135,7 +135,9 @@
 
 (test sparse-two-phase-simplex/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
-        (*test-dribble* nil))
+        (*test-dribble* nil)
+        (singular 0)
+        (nonsingular 0))
     (labels
         ((proc ()
            (dolist (dim '((2 . 3) (10 . 10) (1 . 1) (10 . 3) (3 . 10)))
@@ -170,13 +172,17 @@
                           (csc (make-csc-from-array mat))
                           (csc-self (make-csc-from-array mat))
                           (csc-dual (make-csc-from-array mat-dual))
-                          (lp (let* ((dictionary (make-dictionary m n basics))
+                          (lp (let* ((dictionary (make-dictionary m (+ m n) basics))
                                      (lp (make-sparse-lp csc b c :dictionary dictionary)))
                                 (if (= m (lud-rank (lud-eta-lud (slp-lude lp))))
-                                    lp
-                                    (make-sparse-lp csc b c :add-slack nil))))
+                                    (progn
+                                      (incf nonsingular)
+                                      lp)
+                                    (progn
+                                      (incf singular)
+                                      (make-sparse-lp csc b c :add-slack nil)))))
                           (lp-dual (make-sparse-lp csc-dual c- b-))
-                          (lp-self (let* ((dictionary (make-dictionary m n basics))
+                          (lp-self (let* ((dictionary (make-dictionary m (+ m n) basics))
                                           (lp (make-sparse-lp csc-self b c
                                                               :dictionary dictionary)))
                                      (if (= m (lud-rank (lud-eta-lud (slp-lude lp))))
@@ -206,7 +212,9 @@
         (proc))
       (let ((*refactor-threshold* 200)
             (*refactor-by-time* nil))
-        (proc)))))
+        (proc)
+        (is (> singular 1000))
+        (is (> nonsingular 1000))))))
 
 (defun test* ()
   (let ((m 5)
@@ -236,17 +244,16 @@
                (basics (choose cols m))
                (csc (make-csc-from-coo coo))
                (csc-dual (make-csc-from-coo coo-dual))
-               (lp (make-sparse-lp csc b c :dictionary (make-dictionary m n basics)))
+               (lp (make-sparse-lp csc b c :dictionary (make-dictionary m (+ m n) basics)))
                (rank (lud-rank (lud-eta-lud (slp-lude lp)))))
           (when (= m rank)
             (let ((result (slp-dual-primal! lp)))
               (when (eql result :optimal)
                 (incf count)
-                (multiple-value-bind (obj prim dual prim-slack dual-slack)
-                    (slp-restore lp)
+                (multiple-value-bind (obj prim dual) (slp-restore lp)
                   ;; check primal
-                  (let ((lhs (csc-gemv csc prim))
-                        (obj2 (loop for x across prim
+                  (let ((lhs (csc-gemv csc (subseq prim 0 n)))
+                        (obj2 (loop for x across (subseq prim 0 n)
                                     for coef across c
                                     sum (* x coef))))
                     (dotimes (i (length prim-slack))
