@@ -3,14 +3,15 @@
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lud #:vector-set* #:extend-vectorf)
   (:use :cl)
-  (:export #:make-dictionary #:make-sparse-lp #:slp-restore
+  (:export #:make-dictionary #:sparse-lp #:make-sparse-lp #:slp-restore
            #:slp-lude #:slp-m #:slp-n #:slp-dictionary
            #:slp-mat #:slp-tmat #:slp-b #:slp-c #:slp-x-basic #:slp-y-nonbasic
            #:correct-x-basic! #:correct-y-nonbasic!
            #:dictionary-basics #:dictionary-nonbasics #:dictionary-basic-flag
            #:dictionary-add-basic
            #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!
-           #:*max-number-of-pivotting*)
+           #:*max-number-of-pivotting*
+           #:lp-status)
   (:documentation
    "Provides two kinds of simplex method for sparse instance of LP:
 
@@ -60,9 +61,10 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (basic-flag nil :type (simple-array fixnum (*))))
 
 (defconstant +nan+ most-positive-fixnum)
-(defun make-dictionary (m n basics)
-  "BASICS is a vector of column numbers of the constraints matrix (of size m
-* (n + m)) which is currently basic.
+(defun make-dictionary (m n basics &optional (extend-p t))
+  "BASICS is a vector of column numbers of the constraints matrix which is
+currently basic. The assumed dimensions of the matrix is m * (n + m) if EXTEND-P
+is true, and m * n if not.
 
 0, 1, 2, ....., n-1, n, n+1, ..., n+m-1
 |- non-slack vars -| |-- slack vars --|
@@ -74,8 +76,11 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (let* ((basics (if (typep basics '(simple-array fixnum (*)))
                      (copy-seq basics)
                      (coerce basics '(simple-array fixnum (*)))))
-         (basic-flag (make-array (+ n m) :element-type 'fixnum :initial-element +nan+))
-         (nonbasics (make-array n :element-type 'fixnum)))
+         (basic-flag (make-array (if extend-p (+ n m) n)
+                                 :element-type 'fixnum
+                                 :initial-element +nan+))
+         (nonbasics (make-array (if extend-p n (- n m))
+                                :element-type 'fixnum)))
     (declare ((simple-array fixnum (*)) basics))
     (dotimes (i m)
       (let ((col (aref basics i)))
@@ -86,7 +91,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
           (setf (aref nonbasics j) col
                 (aref basic-flag col) (lognot j))
           (incf j))))
-    (%make-dictionary :m m :n n :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
+    (%make-dictionary :m m :n (if extend-p n (- n m))
+                      :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
 
 (defun dictionary-add-basic! (dictionary)
   (symbol-macrolet ((basics (dictionary-basics dictionary))
@@ -201,7 +207,8 @@ Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition
   (x-basic nil :type (simple-array csc-float (*)))
   (y-nonbasic nil :type (simple-array csc-float (*)))
   (dictionary nil :type dictionary)
-  (lude nil :type lud-eta))
+  (lude nil :type lud-eta)
+  (obj-offset +zero+ :type csc-float))
 
 (defun correct-x-basic! (lude x-basic)
   (assert (zerop (lud-eta-count lude)))
@@ -322,7 +329,7 @@ the current dictionary is not feasible.)"
       (setf (aref x (aref basics i)) (aref x-basic i)))
     (dotimes (i n)
       (setf (aref y (aref nonbasics i)) (aref y-nonbasic i)))
-    (values (dot* c x-basic basics)
+    (values (+ (slp-obj-offset sparse-lp) (dot* c x-basic basics))
             (subseq x 0 n)
             (subseq y n)
             (subseq x n)
