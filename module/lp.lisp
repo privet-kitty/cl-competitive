@@ -87,9 +87,7 @@ implementation reasons.)"))
   (status :not-solved :type lp-status)
   (obj-value +zero+ :type csc-float)
   (primal-sol nil :type (or null (simple-array csc-float (*))))
-  (primal-slack nil :type (or null (simple-array csc-float (*))))
-  (dual-sol nil :type (or null (simple-array csc-float (*))))
-  (dual-slack nil :type (or null (simple-array csc-float (*)))))
+  (dual-sol nil :type (or null (simple-array csc-float (*)))))
 
 (defmethod print-object ((lp-problem lp-problem) stream)
   (if *print-escape*
@@ -324,7 +322,7 @@ form (max. cx Ax <= b, x >= 0)."
              (n (lp-problem-n problem))
              (slack-cols (lp-problem-slack-cols problem))
              ;; TODO: warm-start
-             (dictionary (make-dictionary m n slack-cols nil))
+             (dictionary (make-dictionary m n slack-cols))
              (x-basic (make-array m :element-type 'csc-float))
              (y-nonbasic (make-array n :element-type 'csc-float))
              (basics (dictionary-basics dictionary))
@@ -356,9 +354,7 @@ form (max. cx Ax <= b, x >= 0)."
           (lp-problem-last-basis problem) (dictionary-basics (slp-dictionary slp)))
     (setf (values (lp-problem-obj-value problem)
                   (lp-problem-primal-sol problem)
-                  (lp-problem-dual-sol problem)
-                  (lp-problem-primal-slack problem)
-                  (lp-problem-dual-slack problem))
+                  (lp-problem-dual-sol problem))
           (slp-restore slp))
     status))
 
@@ -382,4 +378,6 @@ form (max. cx Ax <= b, x >= 0)."
     (multiple-value-bind (a b) (to-standard-ab problem)
       (multiple-value-bind (c obj-offset) (to-standard-c problem)
         (let ((status (problem-solve problem #'slp-self-dual!)))
-          status)))))
+          (values status
+                  (lp-problem-obj-value problem)
+                  (lp-problem-primal-sol problem)))))))

@@ -295,7 +295,16 @@ Note that A is modified when ADD-SLACK is true."
 (defun slp-restore (sparse-lp)
   "Restores the current solution of LP and returns five values: objective value,
 primal solution, dual solution. (Note that they are not necessarily feasible
-solutions if the current dictionary is not feasible.)"
+solutions if the current dictionary is not feasible.)
+
+Structure of primal solution:
+0, 1, 2, ......, n-m+1, n-m, n-m+1, ....., n-1
+|-- primal solution --| |--- slack values ---|
+
+Structure of dual solution:
+0, 1, 2, ......, n-m+1, n-m, n-m+1, ....., n-1
+|--- slack values ---| |--- dual solution ---|
+"
   (declare (optimize (speed 3)))
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))

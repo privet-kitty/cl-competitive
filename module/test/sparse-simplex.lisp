@@ -256,24 +256,20 @@
                         (obj2 (loop for x across (subseq prim 0 n)
                                     for coef across c
                                     sum (* x coef))))
-                    (dotimes (i (length prim-slack))
-                      (incf (aref lhs i) (aref prim-slack i)))
+                    (dotimes (i m)
+                      (incf (aref lhs i) (aref prim (+ n i))))
                     (assert (nearly= 1d-5 obj obj2))
                     (assert (nearly-equalp 1d-8 lhs b))
                     (assert (loop for x across prim
-                                  always (>= x -1d-5)))
-                    (assert (loop for x across prim-slack
                                   always (>= x -1d-5))))
-                  (let ((lhs (csc-gemv csc-dual dual))
-                        (obj2 (loop for y across dual
+                  (let ((lhs (csc-gemv csc-dual (subseq dual n)))
+                        (obj2 (loop for y across (subseq dual n)
                                     for coef across b-
                                     sum (* y coef))))
-                    (dotimes (i (length dual-slack))
-                      (incf (aref lhs i) (aref dual-slack i)))
+                    (dotimes (i n)
+                      (incf (aref lhs i) (aref dual i)))
                     (assert (nearly= 1d-8 obj (- obj2)))
                     (assert (nearly-equalp 1d-8 lhs c-))
                     (assert (loop for x across dual
-                                  always (>= x -1d-8)))
-                    (assert (loop for x across dual-slack
                                   always (>= x -1d-8)))))))))))
     count))
