@@ -3,9 +3,11 @@
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:import-from :cp/sparse-simplex #:%make-sparse-lp)
   (:export #:lp-var #:new-lp-var
-           #:linear-expr #:make-linear-expr #:linear-expr-add-var
+           #:linear-expr #:linear-expr-add-var
            #:lp-constraint #:new-lp-constr
-           #:lp-problem #:make-lp-problem #:lp-problem-objective #:lp-problem-sense)
+           #:lp-problem #:make-lp-problem #:lp-problem-objective #:lp-problem-sense
+           #:lp-problem-obj-value #:lp-problem-status
+           #:lp-problem-value #:lp-problem-solve)
   (:documentation "Provides modelling tools for general form LP.
 
 Condition that you can warm-start the LP solver:
@@ -76,7 +78,7 @@ implementation reasons.)"))
   (sense 1 :type (integer -1 1)) ; maximize: 1, minimize: -1
   (m 0 :type index) ; number of rows
   (n 0 :type index) ; number of columns
-  (objective (make-linear-expr) :type linear-expr)
+  (objective (linear-expr) :type linear-expr)
   (nconstr 0 :type index)
   (constraints (make-array 1 :element-type t :initial-element nil) :type simple-vector)
   (nvar 0 :type index)
@@ -148,8 +150,8 @@ implementation reasons.)"))
                          (%make-lp-var :lo lo :up up :column column :row row :name name))
           (incf nvar))))))
 
-(declaim (inline make-linear-expr))
-(defun make-linear-expr (&optional coefs vars)
+(declaim (inline linear-expr))
+(defun linear-expr (&optional coefs vars)
   (declare (sequence coefs vars))
   (assert (= (length coefs) (length vars)))
   (let ((nz (or (position nil coefs) (length coefs))))
@@ -197,12 +199,9 @@ implementation reasons.)"))
 (declaim (ftype (function * (values csc-float &optional)) var-offset))
 (defun var-offset (var)
   (declare (optimize (speed 3)))
-  (let ((lo (lp-var-lo var))
-        (up (lp-var-up var)))
-    (cond ((and lo up) lo)
-          (lo lo)
-          (up up)
-          (t +zero+))))
+  (or (lp-var-lo var)
+      (lp-var-up var)
+      +zero+))
 
 (declaim (ftype (function * (values csc (simple-array csc-float (*)) &optional))
                 to-standard-ab))
@@ -314,7 +313,7 @@ form (max. cx Ax <= b, x >= 0)."
       (setq obj-offset (- obj-offset)))
     (values c obj-offset)))
 
-(defun problem-slp (problem)
+(defun lp-problem-slp (problem)
   (declare (optimize (speed 3)))
   (multiple-value-bind (a b) (to-standard-ab problem)
     (multiple-value-bind (c obj-offset) (to-standard-c problem)
@@ -327,12 +326,9 @@ form (max. cx Ax <= b, x >= 0)."
              (y-nonbasic (make-array n :element-type 'csc-float))
              (basics (dictionary-basics dictionary))
              (a-transposed (csc-transpose a)))
-        (dotimes (j n)
-          (setf (aref y-nonbasic j) (- (aref c j))))
+        (assert (= (length slack-cols) m))
         (dotimes (i m)
           (setf (aref x-basic i) (aref b i)))
-        (print problem)
-        (print dictionary)
         (let* ((lude (refactor a basics))
                (slp (%make-sparse-lp :m m :n n
                                      :mat a :tmat a-transposed
@@ -346,9 +342,9 @@ form (max. cx Ax <= b, x >= 0)."
           (correct-y-nonbasic! slp)
           slp)))))
 
-(defun problem-solve (problem solver)
+(defun lp-problem-solve (problem solver)
   (declare ((function (sparse-lp) (values lp-status)) solver))
-  (let* ((slp (problem-slp problem))
+  (let* ((slp (lp-problem-slp problem))
          (status (funcall solver slp)))
     (setf (lp-problem-status problem) status
           (lp-problem-last-basis problem) (dictionary-basics (slp-dictionary slp)))
@@ -356,28 +352,44 @@ form (max. cx Ax <= b, x >= 0)."
                   (lp-problem-primal-sol problem)
                   (lp-problem-dual-sol problem))
           (slp-restore slp))
+    (setf (lp-problem-obj-value problem)
+          (* (lp-problem-sense problem)
+             (lp-problem-obj-value problem)))
     status))
+
+(defun lp-problem-value (problem var)
+  (declare (optimize (speed 3)))
+  (let ((lo (lp-var-lo var))
+        (up (lp-var-up var))
+        (sol (lp-problem-primal-sol problem))
+        (column (lp-var-column var)))
+    (cond ((and lo up)
+           (+ (aref sol (car column)) lo))
+          (lo (+ (aref sol column) lo))
+          (up (- up (aref sol column)))
+          (t (- (aref sol (car column)) (aref sol (cdr column)))))))
 
 
 (defun test ()
-  (let* ((problem (make-lp-problem))
+  (let* ((problem (make-lp-problem :sense -1))
          (xs (vector (new-lp-var problem -2d0 nil "x1")
                      (new-lp-var problem 0d0 6d0 "x2")))
          (constr (vector (new-lp-constr problem
-                                        (make-linear-expr '(-1d0 1d0) xs)
+                                        (linear-expr '(-1d0 1d0) xs)
                                         1d0 5d0)
                          (new-lp-constr problem
-                                        (make-linear-expr '(-3d0 2d0) xs)
+                                        (linear-expr '(-3d0 2d0) xs)
                                         2d0 10d0)
                          (new-lp-constr problem
-                                        (make-linear-expr '(2d0 -1d0) xs)
+                                        (linear-expr '(2d0 -1d0) xs)
                                         nil 0d0))))
     (setf (lp-problem-objective problem)
-          (make-linear-expr '(3d0 -1d0) xs))
+          (linear-expr '(3d0 -1d0) xs))
     (princ problem)
     (multiple-value-bind (a b) (to-standard-ab problem)
       (multiple-value-bind (c obj-offset) (to-standard-c problem)
         (let ((status (problem-solve problem #'slp-self-dual!)))
           (values status
                   (lp-problem-obj-value problem)
-                  (lp-problem-primal-sol problem)))))))
+                  (lp-problem-primal-sol problem)
+                  (map 'list (lambda (v) (problem-value problem v)) xs)))))))
