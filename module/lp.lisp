@@ -64,7 +64,7 @@
             (up (lp-constraint-up lp-constraint))
             (expr (lp-constraint-expr lp-constraint)))
         (when lo
-          (format stream " ~A <=" lo))
+          (format stream " ~A <= " lo))
         (write expr :stream stream)
         (when up
           (format stream " <= ~A" up)))))
