@@ -8,12 +8,7 @@
            #:lp-problem #:make-lp-problem #:lp-problem-objective #:lp-problem-sense
            #:lp-problem-obj-value #:lp-problem-status
            #:lp-problem-value #:lp-problem-solve)
-  (:documentation "Provides modelling tools for general form LP.
-
-Condition that you can warm-start the LP solver:
-- No values appearing in the LP are not changed from (to) a finite real number
-to (from) an infinity. (This is not a theoretical limitation, but due to
-implementation reasons.)"))
+  (:documentation "Provides modelling tools for general form LP."))
 (in-package :cp/lp)
 
 (deftype index () '(mod #.array-dimension-limit))
@@ -315,7 +310,7 @@ form (max. cx Ax <= b, x >= 0)."
 
 (defun lp-problem-slp (problem &optional warm-start)
   (declare (optimize (speed 3))
-           ((or null (eql t) vector)))
+           ((or null (eql t) vector) warm-start))
   (multiple-value-bind (a b) (to-standard-ab problem)
     (multiple-value-bind (c obj-offset) (to-standard-c problem)
       (let* ((m (lp-problem-m problem))
@@ -354,7 +349,12 @@ form (max. cx Ax <= b, x >= 0)."
           slp)))))
 
 (defun lp-problem-solve (problem solver &optional warm-start)
-  (declare ((function (sparse-lp) (values lp-status)) solver))
+  "Condition that you can warm-start the LP solver:
+- No values appearing in the LP are not changed from (to) a finite real number
+to (from) an infinity. (This is not a theoretical limitation, but due to
+implementation reasons.)"
+  (declare ((function (sparse-lp) (values lp-status)) solver)
+           ((or null (eql t) vector) warm-start))
   (let* ((slp (lp-problem-slp problem warm-start))
          (status (funcall solver slp)))
     (setf (lp-problem-status problem) status
