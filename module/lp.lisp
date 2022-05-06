@@ -2,7 +2,7 @@
   (:use :cl :cp/csc :cp/extend-vector :cp/lud :cp/sparse-simplex)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
   (:import-from :cp/sparse-simplex #:%make-sparse-lp)
-  (:export #:lp-var #:new-lp-var
+  (:export #:lp-var #:new-lp-var #:lp-var-lo #:lp-var-up #:lp-var-name
            #:linear-expr #:linear-expr-add-var
            #:lp-constraint #:new-lp-constr
            #:lp-problem #:make-lp-problem #:lp-problem-objective #:lp-problem-sense
