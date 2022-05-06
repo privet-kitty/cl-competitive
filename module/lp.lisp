@@ -313,23 +313,34 @@ form (max. cx Ax <= b, x >= 0)."
       (setq obj-offset (- obj-offset)))
     (values c obj-offset)))
 
-(defun lp-problem-slp (problem)
-  (declare (optimize (speed 3)))
+(defun lp-problem-slp (problem &optional warm-start)
+  (declare (optimize (speed 3))
+           ((or null (eql t) vector)))
   (multiple-value-bind (a b) (to-standard-ab problem)
     (multiple-value-bind (c obj-offset) (to-standard-c problem)
       (let* ((m (lp-problem-m problem))
              (n (lp-problem-n problem))
              (slack-cols (lp-problem-slack-cols problem))
              ;; TODO: warm-start
-             (dictionary (make-dictionary m n slack-cols))
+             (basis (case warm-start
+                      ((nil) slack-cols)
+                      ((t) (let ((last-basis (lp-problem-last-basis problem))
+                                 (new-basis (copy-seq slack-cols)))
+                             (assert last-basis)
+                             (replace new-basis last-basis)
+                             new-basis))
+                      (otherwise
+                       (let ((new-basis (copy-seq slack-cols)))
+                         (replace new-basis warm-start)
+                         new-basis))))
+             (dictionary (make-dictionary m n basis))
              (x-basic (make-array m :element-type 'csc-float))
              (y-nonbasic (make-array n :element-type 'csc-float))
-             (basics (dictionary-basics dictionary))
              (a-transposed (csc-transpose a)))
         (assert (= (length slack-cols) m))
         (dotimes (i m)
           (setf (aref x-basic i) (aref b i)))
-        (let* ((lude (refactor a basics))
+        (let* ((lude (refactor a basis))
                (slp (%make-sparse-lp :m m :n n
                                      :mat a :tmat a-transposed
                                      :b b :c c
@@ -342,9 +353,9 @@ form (max. cx Ax <= b, x >= 0)."
           (correct-y-nonbasic! slp)
           slp)))))
 
-(defun lp-problem-solve (problem solver)
+(defun lp-problem-solve (problem solver &optional warm-start)
   (declare ((function (sparse-lp) (values lp-status)) solver))
-  (let* ((slp (lp-problem-slp problem))
+  (let* ((slp (lp-problem-slp problem warm-start))
          (status (funcall solver slp)))
     (setf (lp-problem-status problem) status
           (lp-problem-last-basis problem) (dictionary-basics (slp-dictionary slp)))
