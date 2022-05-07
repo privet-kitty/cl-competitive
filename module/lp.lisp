@@ -399,8 +399,8 @@ implementation reasons.)"
     (princ problem)
     (multiple-value-bind (a b) (to-standard-ab problem)
       (multiple-value-bind (c obj-offset) (to-standard-c problem)
-        (let ((status (problem-solve problem #'slp-self-dual!)))
+        (let ((status (lp-problem-solve problem #'slp-self-dual!)))
           (values status
                   (lp-problem-obj-value problem)
                   (lp-problem-primal-sol problem)
-                  (map 'list (lambda (v) (problem-value problem v)) xs)))))))
+                  (map 'list (lambda (v) (lp-problem-value problem v)) xs)))))))
