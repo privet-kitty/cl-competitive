@@ -17,13 +17,14 @@
          (res (make-sparse-vector 5))
          (basic-flag (coerce '(-1 -2 -4 -5 0 -3) '(simple-array fixnum (*))))
          (dense (make-array-from-sparse-vector
-                 (tmat-times-vec! tmat vec basic-flag res))))
+                 (tmat-times-vec! tmat vec basic-flag nil res))))
     (is (nearly-equalp 1d-8 #(0d0 12d0 299d0 22d0 32d0) dense)))
   (is (equalp #()
               (make-array-from-sparse-vector
                (tmat-times-vec! (make-csc-from-array #2a())
                                 (make-sparse-vector 0)
                                 (make-array 0 :element-type 'fixnum)
+                                nil
                                 (make-sparse-vector 0))))))
 
 (test slp-primal!
