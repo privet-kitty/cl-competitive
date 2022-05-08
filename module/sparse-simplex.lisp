@@ -118,12 +118,13 @@ currently basic.
 (defparameter *tmp-tag* 1)
 (defparameter *tmp-rows* (make-array +initial-size+ :element-type 'fixnum))
 
-(defun tmat-times-vec! (tmat vec basic-flag &optional res)
+(defun tmat-times-vec! (tmat vec basic-flag &optional pivot-index res)
   (declare (optimize (speed 3))
            (csc tmat)
            (sparse-vector vec)
            ((or null sparse-vector) res)
-           ((simple-array fixnum (*)) basic-flag))
+           ((simple-array fixnum (*)) basic-flag)
+           ((or null (mod #.array-dimension-limit)) pivot-index))
   (let ((m (csc-m tmat)))
     (extend-vectorf *tmp-values* m)
     (extend-vectorf *tmp-tags* m)
@@ -138,7 +139,6 @@ currently basic.
         (tmat-colstarts (csc-colstarts tmat))
         (tmat-rows (csc-rows tmat))
         (end 0))
-    (declare ((mod #.array-dimension-limit)))
     (dotimes (k1 (sparse-vector-nz vec))
       (let ((col (aref vector-indices k1)))
         (loop for k2 from (aref tmat-colstarts col) below (aref tmat-colstarts (+ col 1))
@@ -161,10 +161,19 @@ currently basic.
       (extend-vectorf res-values end)
       (extend-vectorf res-indices end)
       (dotimes (k end)
-        (let ((row (aref tmp-rows k)))
-          (when (> (abs (aref tmp-values row)) +eps-large+)
+        (let* ((row (aref tmp-rows k))
+               (index (lognot (aref basic-flag row))))
+          ;; In Vanderbei's code the vector components are compared with 1e-8,
+          ;; but it appears to be too large to avoid contradiction with the
+          ;; decision of an entering column, i.e., in the implementation of
+          ;; simplex method below, COL-IN could vanish in this function. I
+          ;; artificially avoid that by taking COL-IN as an argument, but maybe
+          ;; we should instead choose less EPS here, e.g. 1e-14 as in LU
+          ;; factorization in CP/LUD.
+          (when (or (eql index pivot-index)
+                    (> (abs (aref tmp-values row)) +eps-large+))
             (setf (aref res-values nz) (aref tmp-values row)
-                  (aref res-indices nz) (lognot (aref basic-flag row))
+                  (aref res-indices nz) index
                   nz (+ nz 1)))))
       (setf (sparse-vector-values res) res-values
             (sparse-vector-indices res) res-indices
@@ -410,7 +419,7 @@ initial dictionary is primal feasible."
                   (aref tmp-indices 0) col-out
                   tmp-nz 1)
             (sparse-solve-transposed! lude tmp)
-            (tmat-times-vec! tmat tmp basic-flag dy)
+            (tmat-times-vec! tmat tmp basic-flag col-in dy)
             ;; t := x_i/dx_i
             ;; s := y_j/dy_j
             (let ((rate-t (loop for k below dx-nz
@@ -479,7 +488,7 @@ dictionary is dual feasible."
                 (aref tmp-indices 0) col-out
                 tmp-nz 1)
           (sparse-solve-transposed! lude tmp)
-          (tmat-times-vec! tmat tmp basic-flag dy)
+          (tmat-times-vec! tmat tmp basic-flag nil dy)
           ;; find entering column
           (let ((col-in (ratio-test y-nonbasic dy)))
             (unless col-in
@@ -644,7 +653,7 @@ a both infeasible instance. (It is not even deterministic.)"
                       (aref tmp-indices 0) col-out
                       tmp-nz 1)
                 (sparse-solve-transposed! lude tmp)
-                (tmat-times-vec! tmat tmp basic-flag dy)
+                (tmat-times-vec! tmat tmp basic-flag col-in dy)
                 (setq col-in (self-dual-ratio-test y-nonbasic dy mu y-params))
                 (unless col-in
                   (return (values :infeasible n-pivot)))
@@ -682,7 +691,7 @@ a both infeasible instance. (It is not even deterministic.)"
                       (aref tmp-indices 0) col-out
                       tmp-nz 1)
                 (sparse-solve-transposed! lude tmp)
-                (tmat-times-vec! tmat tmp basic-flag dy)))
+                (tmat-times-vec! tmat tmp basic-flag col-in dy)))
           ;; t := x_i/dx_i
           ;; tparam := xparam_i/dx_i
           ;; s := y_j/dy_j
