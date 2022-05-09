@@ -7,7 +7,7 @@
            #:slp-lude #:slp-m #:slp-n #:slp-dictionary
            #:slp-mat #:slp-tmat #:slp-b #:slp-c #:slp-x-basic #:slp-y-nonbasic
            #:correct-x-basic! #:correct-y-nonbasic!
-           #:dictionary-basics #:dictionary-nonbasics #:dictionary-basic-flag
+           #:dictionary-basis #:dictionary-nonbasis #:dictionary-basic-flag
            #:dictionary-add-basic
            #:slp-primal! #:slp-dual! #:slp-dual-primal! #:slp-self-dual!
            #:*max-number-of-pivotting*
@@ -58,51 +58,51 @@ b. The dimensions of matrix is changed from m * n to m * (n + m)."
 (defstruct (dictionary (:constructor %make-dictionary))
   (m nil :type (mod #.array-dimension-limit))
   (n nil :type (mod #.array-dimension-limit))
-  (basics nil :type (simple-array fixnum (*)))
-  (nonbasics nil :type (simple-array fixnum (*)))
+  (basis nil :type (simple-array fixnum (*)))
+  (nonbasis nil :type (simple-array fixnum (*)))
   (basic-flag nil :type (simple-array fixnum (*))))
 
 (defconstant +nan+ most-positive-fixnum)
-(defun make-dictionary (m n basics)
-  "BASICS is a vector of column numbers of the constraints matrix which is
+(defun make-dictionary (m n basis)
+  "BASIS is a vector of column numbers of the constraints matrix which is
 currently basic.
 
 0, 1, 2, ....., n-m-1, n-m, n-m+1, ..., n-1
 |-- non-slack vars --| |--- slack vars ---|
 "
   (declare (optimize (speed 3))
-           (vector basics)
+           (vector basis)
            ((mod #.array-dimension-limit) m n))
-  (assert (= m (length basics)))
+  (assert (= m (length basis)))
   (assert (<= m n))
-  (let* ((basics (if (typep basics '(simple-array fixnum (*)))
-                     (copy-seq basics)
-                     (coerce basics '(simple-array fixnum (*)))))
+  (let* ((basis (if (typep basis '(simple-array fixnum (*)))
+                     (copy-seq basis)
+                     (coerce basis '(simple-array fixnum (*)))))
          (basic-flag (make-array n :element-type 'fixnum
                                    :initial-element +nan+))
-         (nonbasics (make-array (- n m) :element-type 'fixnum)))
-    (declare ((simple-array fixnum (*)) basics))
+         (nonbasis (make-array (- n m) :element-type 'fixnum)))
+    (declare ((simple-array fixnum (*)) basis))
     (dotimes (i m)
-      (let ((col (aref basics i)))
+      (let ((col (aref basis i)))
         (setf (aref basic-flag col) i)))
     (let ((j 0))
       (dotimes (col (length basic-flag))
         (when (= (aref basic-flag col) +nan+)
-          (setf (aref nonbasics j) col
+          (setf (aref nonbasis j) col
                 (aref basic-flag col) (lognot j))
           (incf j))))
-    (%make-dictionary :m m :n n :basics basics :nonbasics nonbasics :basic-flag basic-flag)))
+    (%make-dictionary :m m :n n :basis basis :nonbasis nonbasis :basic-flag basic-flag)))
 
 (defun dictionary-swap! (dictionary col-out col-in)
   (declare (optimize (speed 3))
            ((mod #.array-dimension-limit) col-out col-in))
-  (let* ((basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+  (let* ((basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (basic-flag (dictionary-basic-flag dictionary))
-         (i (aref basics col-out))
-         (j (aref nonbasics col-in)))
-    (setf (aref basics col-out) j
-          (aref nonbasics col-in) i
+         (i (aref basis col-out))
+         (j (aref nonbasis col-in)))
+    (setf (aref basis col-out) j
+          (aref nonbasis col-in) i
           (aref basic-flag i) (lognot col-in)
           (aref basic-flag j) col-out))
   dictionary)
@@ -215,15 +215,15 @@ currently basic.
          (c (slp-c sparse-lp))
          (tmp (make-sparse-vector m))
          (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (basic-flag (dictionary-basic-flag dictionary))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (tmp-values (sparse-vector-values tmp))
          (tmp-indices (sparse-vector-indices tmp)))
     (symbol-macrolet ((tmp-nz (sparse-vector-nz tmp)))
       (dotimes (i m)
-        (let ((coef (aref c (aref basics i))))
+        (let ((coef (aref c (aref basis i))))
           (when (> (abs coef) +eps-large+)
             (setf (aref tmp-values tmp-nz) coef
                   (aref tmp-indices tmp-nz) i)
@@ -233,7 +233,7 @@ currently basic.
              (tmp-values (sparse-vector-values tmp))
              (tmp-indices (sparse-vector-indices tmp)))
         (dotimes (j (- n m))
-          (setf (aref y-nonbasic j) (- (aref c (aref nonbasics j)))))
+          (setf (aref y-nonbasic j) (- (aref c (aref nonbasis j)))))
         (dotimes (k (sparse-vector-nz tmp))
           (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
     sparse-lp))
@@ -266,18 +266,18 @@ Note that A is modified when ADD-SLACK is true."
     (let* ((x-basic (make-array m :element-type 'csc-float))
            (y-nonbasic (make-array (- n m) :element-type 'csc-float))
            (dictionary (or dictionary
-                           (let ((basics (make-array m :element-type 'fixnum)))
+                           (let ((basis (make-array m :element-type 'fixnum)))
                              (dotimes (i m)
-                               (setf (aref basics i) (+ (- n m) i)))
-                             (make-dictionary m n basics))))
-           (basics (dictionary-basics dictionary))
+                               (setf (aref basis i) (+ (- n m) i)))
+                             (make-dictionary m n basis))))
+           (basis (dictionary-basis dictionary))
            (a-transposed (csc-transpose a)))
       (unless supplied-p
         (dotimes (j (- n m))
           (setf (aref y-nonbasic j) (- (aref c j)))))
       (dotimes (i m)
         (setf (aref x-basic i) (aref b i)))
-      (let* ((lude (refactor a basics))
+      (let* ((lude (refactor a basis))
              (slp (%make-sparse-lp :m m :n n
                                    :mat a :tmat a-transposed
                                    :b b :c c
@@ -291,14 +291,14 @@ Note that A is modified when ADD-SLACK is true."
         slp))))
 
 (declaim (ftype (function * (values csc-float &optional)) dot*))
-(defun dot* (coefs x-basic basics)
+(defun dot* (coefs x-basic basis)
   (declare (optimize (speed 3))
            ((simple-array csc-float (*)) coefs x-basic)
-           ((simple-array fixnum (*)) basics))
+           ((simple-array fixnum (*)) basis))
   (let ((res +zero+))
     (declare (csc-float res))
     (dotimes (i (length x-basic))
-      (incf res (* (aref coefs (aref basics i)) (aref x-basic i))))
+      (incf res (* (aref coefs (aref basis i)) (aref x-basic i))))
     res))
 
 (defun slp-restore (sparse-lp)
@@ -321,15 +321,15 @@ Structure of dual solution:
          (x-basic (slp-x-basic sparse-lp))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (x (make-array n :element-type 'csc-float :initial-element +zero+))
          (y (make-array n :element-type 'csc-float :initial-element +zero+)))
     (dotimes (i m)
-      (setf (aref x (aref basics i)) (aref x-basic i)))
+      (setf (aref x (aref basis i)) (aref x-basic i)))
     (dotimes (i (- n m))
-      (setf (aref y (aref nonbasics i)) (aref y-nonbasic i)))
-    (values (+ (slp-obj-offset sparse-lp) (dot* c x-basic basics))
+      (setf (aref y (aref nonbasis i)) (aref y-nonbasic i)))
+    (values (+ (slp-obj-offset sparse-lp) (dot* c x-basic basis))
             x y)))
 
 (defun pick-negative (vector)
@@ -376,8 +376,8 @@ initial dictionary is primal feasible."
          (x-basic (slp-x-basic sparse-lp))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (basic-flag (dictionary-basic-flag dictionary))
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
@@ -403,7 +403,7 @@ initial dictionary is primal feasible."
           (let ((acolstarts (csc-colstarts mat))
                 (arows (csc-rows mat))
                 (avalues (csc-values mat))
-                (j (aref nonbasics col-in)))
+                (j (aref nonbasis col-in)))
             (loop for i from 0
                   for k from (aref acolstarts j) below (aref acolstarts (+ j 1))
                   do (setf (aref dx-values i) (aref avalues k)
@@ -448,7 +448,7 @@ initial dictionary is primal feasible."
               (dictionary-swap! dictionary col-out col-in)
               (add-eta! lude col-out dx)
               (when (refactor-p lude col-out)
-                (setq lude (refactor mat basics))))))))))
+                (setq lude (refactor mat basis))))))))))
 
 (defun slp-dual! (sparse-lp)
   "Applies dual simplex method to SPARSE-LP, and returns the terminal state and
@@ -460,8 +460,8 @@ dictionary is dual feasible."
          (x-basic (slp-x-basic sparse-lp))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (basic-flag (dictionary-basic-flag dictionary))
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
@@ -497,7 +497,7 @@ dictionary is dual feasible."
             (let ((acolstarts (csc-colstarts mat))
                   (arows (csc-rows mat))
                   (avalues (csc-values mat))
-                  (j (aref nonbasics col-in)))
+                  (j (aref nonbasis col-in)))
               (loop for i from 0
                     for k from (aref acolstarts j) below (aref acolstarts (+ j 1))
                     do (setf (aref dx-values i) (aref avalues k)
@@ -532,7 +532,7 @@ dictionary is dual feasible."
               (dictionary-swap! dictionary col-out col-in)
               (add-eta! lude col-out dx)
               (when (refactor-p lude col-out)
-                (setq lude (refactor mat basics))))))))))
+                (setq lude (refactor mat basis))))))))))
 
 (defun slp-dual-primal! (sparse-lp)
   "Applies two-phase simplex method to SPARSE-LP and returns the terminal state:
@@ -541,12 +541,12 @@ dictionary is dual feasible."
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (c (slp-c sparse-lp)))
     ;; Set all the coefficients of the objective to negative values.
     (dotimes (j (- n m))
-      (let ((col (aref nonbasics j)))
+      (let ((col (aref nonbasis j)))
         (setf (aref y-nonbasic j)
               (+ (max (aref c col) +one+)
                  (random +one+)))))
@@ -591,8 +591,8 @@ a both infeasible instance. (It is not even deterministic.)"
          (x-basic (slp-x-basic sparse-lp))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
-         (basics (dictionary-basics dictionary))
-         (nonbasics (dictionary-nonbasics dictionary))
+         (basis (dictionary-basis dictionary))
+         (nonbasis (dictionary-nonbasis dictionary))
          (basic-flag (dictionary-basic-flag dictionary))
          (mat (slp-mat sparse-lp))
          (tmat (slp-tmat sparse-lp))
@@ -658,7 +658,7 @@ a both infeasible instance. (It is not even deterministic.)"
                 (unless col-in
                   (return (values :infeasible n-pivot)))
                 ;; dx_B := B^(-1)Ne_j where j is entering column
-                (let* ((j (aref nonbasics col-in))
+                (let* ((j (aref nonbasis col-in))
                        (colstarts (csc-colstarts mat))
                        (rows (csc-rows mat))
                        (values (csc-values mat))
@@ -671,7 +671,7 @@ a both infeasible instance. (It is not even deterministic.)"
                   (setq dx-nz (- end start))
                   (sparse-solve! lude dx)))
               ;; dx_B := B^(-1)Ne_j where j is entering column
-              (let* ((j (aref nonbasics col-in))
+              (let* ((j (aref nonbasis col-in))
                      (colstarts (csc-colstarts mat))
                      (rows (csc-rows mat))
                      (values (csc-values mat))
@@ -732,4 +732,4 @@ a both infeasible instance. (It is not even deterministic.)"
               (dictionary-swap! dictionary col-out col-in)
               (add-eta! lude col-out dx)
               (when (refactor-p lude col-out)
-                (setq lude (refactor mat basics))))))))))
+                (setq lude (refactor mat basis))))))))))

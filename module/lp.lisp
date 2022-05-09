@@ -358,7 +358,7 @@ implementation reasons.)"
   (let* ((slp (lp-problem-slp problem warm-start))
          (status (funcall solver slp)))
     (setf (lp-problem-status problem) status
-          (lp-problem-last-basis problem) (dictionary-basics (slp-dictionary slp)))
+          (lp-problem-last-basis problem) (dictionary-basis (slp-dictionary slp)))
     (setf (values (lp-problem-obj-value problem)
                   (lp-problem-primal-sol problem)
                   (lp-problem-dual-sol problem))
