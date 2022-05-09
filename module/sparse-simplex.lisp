@@ -1,5 +1,5 @@
 (defpackage :cp/sparse-simplex
-  (:use :cl :cp/csc :cp/lud)
+  (:use :cl :cp/csc :cp/lud :cp/bit-basher)
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lud #:vector-set* #:extend-vectorf)
   (:use :cl)
@@ -333,6 +333,7 @@ Structure of dual solution:
             x y)))
 
 (defun pick-negative (vector)
+  "Dantzig rule"
   (declare (optimize (speed 3))
            ((simple-array csc-float (*)) vector))
   (let ((min (- +eps-small+))
@@ -342,6 +343,54 @@ Structure of dual solution:
         (setq min (aref vector i)
               res i)))
     res))
+
+(define-modify-macro xorf (value) logxor)
+
+(defun primal-nested-dantzig! (vector nested-set nonbasis basic-flag)
+  (declare (optimize (speed 3))
+           ((simple-array csc-float (*)) vector)
+           ((simple-array fixnum (*)) nonbasis basic-flag)
+           (simple-bit-vector nested-set))
+  (let ((min (- +eps-small+))
+        res*)
+    (labels ((%search ()
+               (loop for col = (bit-first nested-set) then (bit-next nested-set col)
+                     while col
+                     for col* = (lognot (aref basic-flag col))
+                     when (< (aref vector col*) min)
+                     do (setq min (aref vector col*)
+                              res* col*))))
+      (%search)
+      (unless res*
+        (loop for col across nonbasis
+              do (xorf (aref nested-set col) 1))
+        (%search))
+      (when res*
+        (setf (aref nested-set (aref nonbasis res*)) 0))
+      res*)))
+
+(defun dual-nested-dantzig! (vector nested-set basis basic-flag)
+  (declare (optimize (speed 3))
+           ((simple-array csc-float (*)) vector)
+           ((simple-array fixnum (*)) basis basic-flag)
+           (simple-bit-vector nested-set))
+  (let ((min (- +eps-small+))
+        res*)
+    (labels ((%search ()
+               (loop for col = (bit-first nested-set) then (bit-next nested-set col)
+                     while col
+                     for col* = (aref basic-flag col)
+                     when (< (aref vector col*) min)
+                     do (setq min (aref vector col*)
+                              res* col*))))
+      (%search)
+      (unless res*
+        (loop for col across basis
+              do (xorf (aref nested-set col) 1))
+        (%search))
+      (when res*
+        (setf (aref nested-set (aref basis res*)) 0))
+      res*)))
 
 (defun ratio-test (x dx)
   (declare (optimize (speed 3))
@@ -358,6 +407,14 @@ Structure of dual solution:
           (when (< rate min)
             (setq min rate
                   res index)))))
+    res))
+
+(defun make-nested-set (length cols)
+  (declare (optimize (speed 3))
+           ((simple-array fixnum (*)) cols))
+  (let ((res (make-array length :element-type 'bit :initial-element 0)))
+    (loop for col across cols
+          do (setf (aref res col) 1))
     res))
 
 (declaim ((integer 0 #.most-positive-fixnum) *max-number-of-pivotting*))
@@ -383,7 +440,8 @@ initial dictionary is primal feasible."
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
          (dy (make-sparse-vector (- n m)))
-         (tmp (make-sparse-vector m)))
+         (tmp (make-sparse-vector m))
+         (nonbasic-nested-set (make-nested-set n nonbasis)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
@@ -396,7 +454,8 @@ initial dictionary is primal feasible."
                       (tmp-nz (sparse-vector-nz tmp)))
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
-        (let* ((col-in (pick-negative y-nonbasic)))
+        (let* ((col-in (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
+                                               nonbasis basic-flag)))
           (unless col-in
             (return (values :optimal n-pivot)))
           ;; dx_B := B^(-1)Ne_j (j = col-in)
@@ -467,7 +526,8 @@ dictionary is dual feasible."
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
          (dy (make-sparse-vector (- n m)))
-         (tmp (make-sparse-vector m)))
+         (tmp (make-sparse-vector m))
+         (basic-nested-set (make-nested-set n basis)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
@@ -480,7 +540,7 @@ dictionary is dual feasible."
                       (tmp-nz (sparse-vector-nz tmp)))
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find leaving column
-        (let ((col-out (pick-negative x-basic)))
+        (let ((col-out (dual-nested-dantzig! x-basic basic-nested-set basis basic-flag)))
           (unless col-out
             (return (values :optimal n-pivot)))
           ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
