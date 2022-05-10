@@ -493,14 +493,10 @@ initial dictionary is primal feasible."
                   (nth-value 1 (tmat-times-vec! tmat tmp basic-flag col-in dy)))
             ;; t := x_i/dx_i
             ;; s := y_j/dy_j
-            (let ((rate-t (progn
-                            (assert (= (aref dx-indices col-out-on-dx) col-out))
-                            (/ (aref x-basic col-out)
-                               (aref dx-values col-out-on-dx))))
-                  (rate-s (progn
-                            (assert (= (aref dy-indices col-in-on-dy) col-in))
-                            (/ (aref y-nonbasic col-in)
-                               (aref dy-values col-in-on-dy)))))
+            (let ((rate-t (/ (aref x-basic col-out)
+                             (aref dx-values col-out-on-dx)))
+                  (rate-s (/ (aref y-nonbasic col-in)
+                             (aref dy-values col-in-on-dy))))
               ;; y_N := y_N - s dy_N
               ;; y_i := s
               ;; x_B := x_B - t dx_B
@@ -578,15 +574,15 @@ dictionary is dual feasible."
             (sparse-solve! lude dx)
             ;; t := x_i/dx_i
             ;; s := y_j/dy_j
-            (let ((rate-t (loop for k below dx-nz
-                                when (= (aref dx-indices k) col-out)
-                                do (return (/ (aref x-basic col-out)
-                                              (aref dx-values k)))
-                                finally (error "Huh?")))
-                  (rate-s (progn
-                            (assert (= (aref dy-indices col-in-on-dy) col-in))
-                            (/ (aref y-nonbasic col-in)
-                               (aref dy-values col-in-on-dy)))))
+            (let ((rate-t
+                    ;; TODO: follow the position of col-out when sparse-solving DX
+                    (loop for k below dx-nz
+                          when (= (aref dx-indices k) col-out)
+                          do (return (/ (aref x-basic col-out)
+                                        (aref dx-values k)))
+                          finally (error "Huh?")))
+                  (rate-s (/ (aref y-nonbasic col-in)
+                             (aref dy-values col-in-on-dy))))
               ;; y_N := y_N - s dy_N
               ;; y_i := s
               ;; x_B := x_B - t dx_B
