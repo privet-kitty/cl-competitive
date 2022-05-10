@@ -461,8 +461,11 @@ initial dictionary is primal feasible."
                       (tmp-nz (sparse-vector-nz tmp)))
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
-        (let* ((col-in (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
-                                               nonbasis basic-flag))
+        (let* ((col-in
+                 (pick-negative y-nonbasic)
+                 ;; (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
+                 ;;                         nonbasis basic-flag)
+                 )
                col-in-on-dy)
           (unless col-in
             (return (values :optimal n-pivot)))
@@ -547,7 +550,9 @@ dictionary is dual feasible."
                       (tmp-nz (sparse-vector-nz tmp)))
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find leaving column
-        (let ((col-out (dual-nested-dantzig! x-basic basic-nested-set basis basic-flag)))
+        (let ((col-out (pick-negative x-basic)
+                       ;; (dual-nested-dantzig! x-basic basic-nested-set basis basic-flag)
+                       ))
           (unless col-out
             (return (values :optimal n-pivot)))
           ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
