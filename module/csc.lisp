@@ -12,7 +12,7 @@
   (:documentation "Provides some representations of a sparse matrix."))
 (in-package :cp/csc)
 
-(deftype csc-float () 'double-float)
+(deftype csc-float () 'rational)
 (defconstant +zero+ (coerce 0 'csc-float))
 (defconstant +one+ (coerce 1 'csc-float))
 

@@ -15,8 +15,8 @@ Reference:
 Robert J. Vanderbei. Linear Programming: Foundations and Extensions. 5th edition."))
 (in-package :cp/lud)
 
-(defconstant +eps+ (coerce 1d-14 'csc-float))
-(defconstant +epsnum+ (coerce 1d-9 'csc-float))
+(defconstant +eps+ 0)
+(defconstant +epsnum+ 0)
 
 (defstruct (lud (:conc-name lud-))
   (m nil :type (mod #.array-dimension-limit))
