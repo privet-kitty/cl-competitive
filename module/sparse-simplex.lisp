@@ -118,13 +118,13 @@ currently basic.
 (defparameter *tmp-tag* 1)
 (defparameter *tmp-rows* (make-array +initial-size+ :element-type 'fixnum))
 
-(defun tmat-times-vec! (tmat vec basic-flag &optional pivot-index res)
+(defun tmat-times-vec! (tmat vec basic-flag &optional target-index res)
   (declare (optimize (speed 3))
            (csc tmat)
            (sparse-vector vec)
            ((or null sparse-vector) res)
            ((simple-array fixnum (*)) basic-flag)
-           ((or null (mod #.array-dimension-limit)) pivot-index))
+           ((or null (mod #.array-dimension-limit)) target-index))
   (let ((m (csc-m tmat)))
     (extend-vectorf *tmp-values* m)
     (extend-vectorf *tmp-tags* m)
@@ -154,7 +154,8 @@ currently basic.
     (let* ((res (or res (make-sparse-vector end)))
            (res-values (sparse-vector-values res))
            (res-indices (sparse-vector-indices res))
-           (nz 0))
+           (nz 0)
+           target-index-pos)
       (declare ((simple-array csc-float (*)) res-values)
                ((simple-array fixnum (*)) res-indices)
                ((mod #.array-dimension-limit) nz))
@@ -170,8 +171,10 @@ currently basic.
           ;; artificially avoid that by taking COL-IN as an argument, but maybe
           ;; we should instead choose less EPS here, e.g. 1e-14 as in LU
           ;; factorization in CP/LUD.
-          (when (or (eql index pivot-index)
+          (when (or (eql index target-index)
                     (> (abs (aref tmp-values row)) +eps-large+))
+            (when (eql index target-index)
+              (setq target-index-pos nz))
             (setf (aref res-values nz) (aref tmp-values row)
                   (aref res-indices nz) index
                   nz (+ nz 1)))))
@@ -179,7 +182,9 @@ currently basic.
             (sparse-vector-indices res) res-indices
             (sparse-vector-nz res) nz)
       (incf *tmp-tag*)
-      res)))
+      (when target-index
+        (assert target-index-pos))
+      (values res target-index-pos))))
 
 (deftype lp-status ()
   "- UNBOUNDED: primal is unbounded;
@@ -399,15 +404,17 @@ Structure of dual solution:
   (let ((min +inf+)
         (dx-indices (sparse-vector-indices dx))
         (dx-values (sparse-vector-values dx))
-        res)
+        res
+        res-pos)
     (dotimes (k (sparse-vector-nz dx))
       (when (> (aref dx-values k) +eps-large+)
         (let* ((index (aref dx-indices k))
                (rate (/ (aref x index) (aref dx-values k))))
           (when (< rate min)
             (setq min rate
-                  res index)))))
-    res))
+                  res index
+                  res-pos k)))))
+    (values res res-pos)))
 
 (defun make-nested-set (length cols)
   (declare (optimize (speed 3))
@@ -455,7 +462,8 @@ initial dictionary is primal feasible."
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
         (let* ((col-in (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
-                                               nonbasis basic-flag)))
+                                               nonbasis basic-flag))
+               col-in-on-dy)
           (unless col-in
             (return (values :optimal n-pivot)))
           ;; dx_B := B^(-1)Ne_j (j = col-in)
@@ -470,7 +478,7 @@ initial dictionary is primal feasible."
                   finally (setq dx-nz i)))
           (sparse-solve! lude dx)
           ;; find leaving column
-          (let ((col-out (ratio-test x-basic dx)))
+          (multiple-value-bind (col-out col-out-on-dx) (ratio-test x-basic dx)
             (unless col-out
               (return (values :unbounded n-pivot)))
             ;; dy_N := -(B^(-1)N)^Te_i (i = col-out)
@@ -478,19 +486,18 @@ initial dictionary is primal feasible."
                   (aref tmp-indices 0) col-out
                   tmp-nz 1)
             (sparse-solve-transposed! lude tmp)
-            (tmat-times-vec! tmat tmp basic-flag col-in dy)
+            (setq col-in-on-dy
+                  (nth-value 1 (tmat-times-vec! tmat tmp basic-flag col-in dy)))
             ;; t := x_i/dx_i
             ;; s := y_j/dy_j
-            (let ((rate-t (loop for k below dx-nz
-                                when (= (aref dx-indices k) col-out)
-                                do (return (/ (aref x-basic col-out)
-                                              (aref dx-values k)))
-                                finally (error "Huh?")))
-                  (rate-s (loop for k below dy-nz
-                                when (= (aref dy-indices k) col-in)
-                                do (return (/ (aref y-nonbasic col-in)
-                                              (aref dy-values k)))
-                                finally (error "Huh?"))))
+            (let ((rate-t (progn
+                            (assert (= (aref dx-indices col-out-on-dx) col-out))
+                            (/ (aref x-basic col-out)
+                               (aref dx-values col-out-on-dx))))
+                  (rate-s (progn
+                            (assert (= (aref dy-indices col-in-on-dy) col-in))
+                            (/ (aref y-nonbasic col-in)
+                               (aref dy-values col-in-on-dy)))))
               ;; y_N := y_N - s dy_N
               ;; y_i := s
               ;; x_B := x_B - t dx_B
@@ -550,7 +557,7 @@ dictionary is dual feasible."
           (sparse-solve-transposed! lude tmp)
           (tmat-times-vec! tmat tmp basic-flag nil dy)
           ;; find entering column
-          (let ((col-in (ratio-test y-nonbasic dy)))
+          (multiple-value-bind (col-in col-in-on-dy) (ratio-test y-nonbasic dy)
             (unless col-in
               (return (values :infeasible n-pivot)))
             ;; dx_B := B^(-1)Ne_j (j = col-in)
@@ -571,11 +578,10 @@ dictionary is dual feasible."
                                 do (return (/ (aref x-basic col-out)
                                               (aref dx-values k)))
                                 finally (error "Huh?")))
-                  (rate-s (loop for k below dy-nz
-                                when (= (aref dy-indices k) col-in)
-                                do (return (/ (aref y-nonbasic col-in)
-                                              (aref dy-values k)))
-                                finally (error "Huh?"))))
+                  (rate-s (progn
+                            (assert (= (aref dy-indices col-in-on-dy) col-in))
+                            (/ (aref y-nonbasic col-in)
+                               (aref dy-values col-in-on-dy)))))
               ;; y_N := y_N - s dy_N
               ;; y_i := s
               ;; x_B := x_B - t dx_B
