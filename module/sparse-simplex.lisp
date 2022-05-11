@@ -205,7 +205,8 @@ currently basic.
   (y-nonbasic nil :type (simple-array csc-float (*)))
   (dictionary nil :type dictionary)
   (lude nil :type lud-eta)
-  (obj-offset +zero+ :type csc-float))
+  (obj-offset +zero+ :type csc-float)
+  (colmax nil :type (simple-array csc-float (*))))
 
 (defun correct-x-basic! (lude x-basic)
   (assert (zerop (lud-eta-count lude)))
@@ -242,6 +243,21 @@ currently basic.
         (dotimes (k (sparse-vector-nz tmp))
           (incf (aref y-nonbasic (aref tmp-indices k)) (aref tmp-values k)))))
     sparse-lp))
+
+(define-modify-macro maxf (value) max)
+
+(defun make-colmax (a)
+  (declare (optimize (speed 3))
+           (csc a))
+  (let* ((n (csc-n a))
+         (res (make-array n :element-type 'csc-float :initial-element +zero+))
+         (colstarts (csc-colstarts a))
+         (values (csc-values a)))
+    (declare ((simple-array csc-float (*)) values res))
+    (dotimes (j n)
+      (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+            do (maxf (aref res j) (abs (aref values k)))))
+    res))
 
 (defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
@@ -289,7 +305,8 @@ Note that A is modified when ADD-SLACK is true."
                                    :x-basic x-basic
                                    :y-nonbasic y-nonbasic
                                    :dictionary dictionary
-                                   :lude lude)))
+                                   :lude lude
+                                   :colmax (make-colmax a))))
         (when supplied-p
           (correct-x-basic! lude x-basic)
           (correct-y-nonbasic! slp))
@@ -350,6 +367,20 @@ Structure of dual solution:
     res))
 
 (define-modify-macro xorf (value) logxor)
+
+(defun primal-largest-distance (vector nonbasis colmax)
+  (let ((minnum (- +eps-small+))
+        (mindenom +one+)
+        res)
+    (dotimes (i (length vector))
+      (let* ((col (aref nonbasis i))
+             (num (aref vector i))
+             (denom (aref colmax col)))
+        (when (< (* num mindenom) (* minnum denom))
+          (setq minnum num
+                mindenom denom
+                res i))))
+    res))
 
 (defun primal-nested-dantzig! (vector nested-set nonbasis basic-flag)
   (declare (optimize (speed 3))
@@ -462,7 +493,8 @@ initial dictionary is primal feasible."
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
         (let* ((col-in
-                 (pick-negative y-nonbasic)
+                 (primal-largest-distance y-nonbasic nonbasis (slp-colmax sparse-lp))
+                 ;; (pick-negative y-nonbasic)
                  ;; (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
                  ;;                         nonbasis basic-flag)
                  )
