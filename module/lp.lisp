@@ -329,7 +329,7 @@ form (max. cx Ax <= b, x >= 0)."
                          new-basis))))
              (dictionary (make-dictionary m n basis))
              (x-basic (make-array m :element-type 'csc-float))
-             (y-nonbasic (make-array n :element-type 'csc-float))
+             (y-nonbasic (make-array (- n m) :element-type 'csc-float))
              (a-transposed (csc-transpose a)))
         (assert (= (length slack-cols) m))
         (dotimes (i m)
