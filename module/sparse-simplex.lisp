@@ -493,8 +493,8 @@ initial dictionary is primal feasible."
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
         (let* ((col-in
-                 (primal-largest-distance y-nonbasic nonbasis (slp-colmax sparse-lp))
-                 ;; (pick-negative y-nonbasic)
+                 ;; (primal-largest-distance y-nonbasic nonbasis (slp-colmax sparse-lp))
+                 (pick-negative y-nonbasic)
                  ;; (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
                  ;;                         nonbasis basic-flag)
                  )
