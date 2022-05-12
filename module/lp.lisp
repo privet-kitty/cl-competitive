@@ -1,7 +1,7 @@
 (defpackage :cp/lp
   (:use :cl :cp/csc :cp/extend-vector :cp/lud :cp/sparse-simplex)
   (:import-from :cp/csc #:csc-float #:+zero+ #:+one+)
-  (:import-from :cp/sparse-simplex #:%make-sparse-lp #:make-colmax)
+  (:import-from :cp/sparse-simplex #:%make-sparse-lp)
   (:export #:lp-var #:new-lp-var #:lp-var-lo #:lp-var-up #:lp-var-name
            #:linear-expr #:linear-expr-add-var
            #:lp-constraint #:new-lp-constr
@@ -342,8 +342,7 @@ form (max. cx Ax <= b, x >= 0)."
                                      :y-nonbasic y-nonbasic
                                      :dictionary dictionary
                                      :lude lude
-                                     :obj-offset obj-offset
-                                     :colmax (make-colmax a))))
+                                     :obj-offset obj-offset)))
           (correct-x-basic! lude x-basic)
           (correct-y-nonbasic! slp)
           slp)))))

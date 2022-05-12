@@ -79,6 +79,36 @@
         (is (loop for x across dual
                   always (>= x -1d-8)))))))
 
+;; original sol
+;; 17.0d0
+;; #(2.0d0 0.0d0 1.0d0 0.0d0 0.0d0 0.0d0)
+;; #(0.0d0 5.0d0 0.0d0 1.9999999999999998d0 1.0d0 4.0d0)
+;; scaled sol
+;; 8.5d0
+;; #(1.0d0 0.0d0 0.25d0 0.0d0 0.0d0 0.0d0)
+;; #(0.0d0 5.0d0 0.0d0 2.0d0 2.0d0 8.0d0)
+
+(defun proc ()
+  (let* ((mat (make-array '(2 4) :element-type 'double-float
+                                 :initial-contents '((2d0 1d0 1d0 3d0) (1d0 3d0 1d0 2d0))))
+         (b (make-array 2 :element-type 'double-float :initial-contents '(5d0 3d0)))
+         (c (make-array 4 :element-type 'double-float :initial-contents '(6d0 8d0 5d0 9d0)))
+         (a (make-csc-from-array mat))
+         (slp (make-sparse-lp a b c :scale-p t)))
+    (slp-primal! slp)
+    (slp-restore slp)))
+
+(defun proc2 ()
+  (let* ((a (make-csc-from-array #2A((0.5d0 0.25d0 0.25d0 0.75d0)
+                                     (0.25d0 0.75d0 0.25d0 0.5d0))))
+         (b (coerce #(1.25d0 0.75d0) '(simple-array double-float (*))))
+         (c (coerce #(6.0d0 8.0d0 5.0d0 9.0d0)
+                    '(simple-array double-float (*))))
+         (slp (make-sparse-lp a b c :add-slack t :scale-p nil)))
+    (slp-primal! slp)
+    (print slp)
+    (slp-restore slp)))
+
 (test sparse-one-phase-simplex/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))

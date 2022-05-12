@@ -1,5 +1,5 @@
 (defpackage :cp/sparse-simplex
-  (:use :cl :cp/csc :cp/lud :cp/bit-basher)
+  (:use :cl :cp/csc :cp/lud :cp/bit-basher :cp/two-exponent)
   (:import-from :cp/csc #:+zero+ #:+one+ #:csc-float)
   (:import-from :cp/lud #:vector-set* #:extend-vectorf)
   (:use :cl)
@@ -206,7 +206,8 @@ currently basic.
   (dictionary nil :type dictionary)
   (lude nil :type lud-eta)
   (obj-offset +zero+ :type csc-float)
-  (colmax nil :type (simple-array csc-float (*))))
+  (rowscales nil :type (or null (simple-array csc-float (*))))
+  (colscales nil :type (or null (simple-array csc-float (*)))))
 
 (defun correct-x-basic! (lude x-basic)
   (assert (zerop (lud-eta-count lude)))
@@ -245,21 +246,49 @@ currently basic.
     sparse-lp))
 
 (define-modify-macro maxf (value) max)
+(define-modify-macro mulf (value) *)
+(define-modify-macro divf (value) /)
 
-(defun make-colmax (a)
+(defun scale-with-equilibrium! (a b c)
   (declare (optimize (speed 3))
-           (csc a))
-  (let* ((n (csc-n a))
-         (res (make-array n :element-type 'csc-float :initial-element +zero+))
+           (csc a)
+           ((simple-array csc-float (*)) b c))
+  (let* ((m (csc-m a))
+         (n (csc-n a))
+         (rowmaxs (make-array m :element-type 'csc-float :initial-element +zero+))
+         (colmaxs (make-array n :element-type 'csc-float :initial-element +zero+))
+         (rowscales (make-array m :element-type 'csc-float :initial-element +zero+))
+         (colscales (make-array n :element-type 'csc-float :initial-element +zero+))
+         (nz (csc-nz a))
          (colstarts (csc-colstarts a))
+         (rows (csc-rows a))
          (values (csc-values a)))
-    (declare ((simple-array csc-float (*)) values res))
+    ;; scaling w.r.t. row
+    (dotimes (k nz)
+      (let ((i (aref rows k)))
+        (maxf (aref rowmaxs i) (abs (aref values k)))))
+    (dotimes (i m)
+      (setf (aref rowscales i) (expt (* 2 +one+) (- (calc-two-exp (aref rowmaxs i))))))
+    (dotimes (k nz)
+      (let ((i (aref rows k)))
+        (mulf (aref values k) (aref rowscales i))))
+    (dotimes (i m)
+      (mulf (aref b i) (aref rowscales i)))
+    ;; scaling w.r.t. col
     (dotimes (j n)
       (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
-            do (maxf (aref res j) (abs (aref values k)))))
-    res))
+            do (maxf (aref colmaxs j) (abs (aref values k)))))
+    (dotimes (j n)
+      (setf (aref colscales j) (expt (* 2 +one+) (- (calc-two-exp (aref colmaxs j))))))
+    (dotimes (j n)
+      (let ((scale (aref colscales j)))
+        (loop for k from (aref colstarts j) below (aref colstarts (+ j 1))
+              do (mulf (aref values k) scale))))
+    (dotimes (j n)
+      (mulf (aref c j) (aref colscales j)))
+    (values rowscales colscales)))
 
-(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p))
+(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p) (scale-p t))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
 
@@ -270,12 +299,14 @@ directly, just disable ADD-SLACK.
 You can set DICTIONARY to an arbitrary initial dictionary, but please note that
 the consequence is undefined when it is rank-deficient.
 
-Note that A is modified when ADD-SLACK is true."
+Note that A is modified when ADD-SLACK or SCALE-P is true, and that B and C are
+modified when SCALE-P is true."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
   (let* ((m (csc-m a))
-         (n (if add-slack (+ (csc-n a) m) (csc-n a))))
+         (n (if add-slack (+ (csc-n a) m) (csc-n a)))
+         rowscales colscales)
     (declare ((integer 0 #.most-positive-fixnum) n))
     (assert (= m (length b)))
     (when add-slack
@@ -284,6 +315,9 @@ Note that A is modified when ADD-SLACK is true."
     (unless (= (length c) n)
       (assert (= (- n m) (length c)))
       (setq c (adjust-array c n :initial-element +zero+)))
+    (when scale-p
+      (multiple-value-setq (rowscales colscales)
+        (scale-with-equilibrium! a b c)))
     (let* ((x-basic (make-array m :element-type 'csc-float))
            (y-nonbasic (make-array (- n m) :element-type 'csc-float))
            (dictionary (or dictionary
@@ -306,7 +340,8 @@ Note that A is modified when ADD-SLACK is true."
                                    :y-nonbasic y-nonbasic
                                    :dictionary dictionary
                                    :lude lude
-                                   :colmax (make-colmax a))))
+                                   :rowscales rowscales
+                                   :colscales colscales)))
         (when supplied-p
           (correct-x-basic! lude x-basic)
           (correct-y-nonbasic! slp))
@@ -340,6 +375,8 @@ Structure of dual solution:
   (let* ((m (slp-m sparse-lp))
          (n (slp-n sparse-lp))
          (c (slp-c sparse-lp))
+         (rowscales (slp-rowscales sparse-lp))
+         (colscales (slp-colscales sparse-lp))
          (x-basic (slp-x-basic sparse-lp))
          (y-nonbasic (slp-y-nonbasic sparse-lp))
          (dictionary (slp-dictionary sparse-lp))
@@ -347,10 +384,21 @@ Structure of dual solution:
          (nonbasis (dictionary-nonbasis dictionary))
          (x (make-array n :element-type 'csc-float :initial-element +zero+))
          (y (make-array n :element-type 'csc-float :initial-element +zero+)))
-    (dotimes (i m)
-      (setf (aref x (aref basis i)) (aref x-basic i)))
-    (dotimes (i (- n m))
-      (setf (aref y (aref nonbasis i)) (aref y-nonbasic i)))
+    (if (and rowscales colscales)
+        (progn
+          (dotimes (i m)
+            (let ((col (aref basis i)))
+              (setf (aref x col) (* (/ (aref x-basic i)
+                                       (aref rowscales i))
+                                    (aref colscales col)))))
+          (dotimes (i (- n m))
+            (let ((col (aref nonbasis i)))
+              (setf (aref y col) (/ (aref y-nonbasic i) (aref colscales col))))))
+        (progn
+          (dotimes (i m)
+            (setf (aref x (aref basis i)) (aref x-basic i)))
+          (dotimes (i (- n m))
+            (setf (aref y (aref nonbasis i)) (aref y-nonbasic i)))))
     (values (+ (slp-obj-offset sparse-lp) (dot* c x-basic basis))
             x y)))
 
@@ -367,20 +415,6 @@ Structure of dual solution:
     res))
 
 (define-modify-macro xorf (value) logxor)
-
-(defun primal-largest-distance (vector nonbasis colmax)
-  (let ((minnum (- +eps-small+))
-        (mindenom +one+)
-        res)
-    (dotimes (i (length vector))
-      (let* ((col (aref nonbasis i))
-             (num (aref vector i))
-             (denom (aref colmax col)))
-        (when (< (* num mindenom) (* minnum denom))
-          (setq minnum num
-                mindenom denom
-                res i))))
-    res))
 
 (defun primal-nested-dantzig! (vector nested-set nonbasis basic-flag)
   (declare (optimize (speed 3))
@@ -493,7 +527,6 @@ initial dictionary is primal feasible."
       (dotimes (n-pivot *max-number-of-pivotting* (values :not-solved n-pivot))
         ;; find entering column
         (let* ((col-in
-                 ;; (primal-largest-distance y-nonbasic nonbasis (slp-colmax sparse-lp))
                  (pick-negative y-nonbasic)
                  ;; (primal-nested-dantzig! y-nonbasic nonbasic-nested-set
                  ;;                         nonbasis basic-flag)
