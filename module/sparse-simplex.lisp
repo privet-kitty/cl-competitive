@@ -288,7 +288,7 @@ currently basic.
       (mulf (aref c j) (aref colscales j)))
     (values rowscales colscales)))
 
-(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p) (scale-p t))
+(defun make-sparse-lp (a b c &key (add-slack t) (dictionary nil supplied-p) (scale-p nil))
   "Creates SPARSE-LP from a sparse matrix, which has the standard form: maximize
 c'x subject to Ax <= b, x >= 0.
 
@@ -300,7 +300,9 @@ You can set DICTIONARY to an arbitrary initial dictionary, but please note that
 the consequence is undefined when it is rank-deficient.
 
 Note that A is modified when ADD-SLACK or SCALE-P is true, and that B and C are
-modified when SCALE-P is true."
+modified when SCALE-P is true.
+
+NOTE: Implementation of SCALE-P is unfinished."
   (declare (optimize (speed 3))
            (csc a)
            ((simple-array csc-float (*)) b c))
@@ -388,8 +390,8 @@ Structure of dual solution:
         (progn
           (dotimes (i m)
             (let ((col (aref basis i)))
-              (setf (aref x col) (* (/ (aref x-basic i)
-                                       (aref rowscales i))
+              (setf (aref x col) (/ (aref x-basic i)
+                                    (aref rowscales i)
                                     (aref colscales col)))))
           (dotimes (i (- n m))
             (let ((col (aref nonbasis i)))
@@ -512,8 +514,7 @@ initial dictionary is primal feasible."
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
          (dy (make-sparse-vector (- n m)))
-         (tmp (make-sparse-vector m))
-         (nonbasic-nested-set (make-nested-set n nonbasis)))
+         (tmp (make-sparse-vector m)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
@@ -597,8 +598,7 @@ dictionary is dual feasible."
          (tmat (slp-tmat sparse-lp))
          (dx (make-sparse-vector m))
          (dy (make-sparse-vector (- n m)))
-         (tmp (make-sparse-vector m))
-         (basic-nested-set (make-nested-set n basis)))
+         (tmp (make-sparse-vector m)))
     (symbol-macrolet ((lude (slp-lude sparse-lp))
                       (dx-values (sparse-vector-values dx))
                       (dx-indices (sparse-vector-indices dx))
