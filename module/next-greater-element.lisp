@@ -15,8 +15,9 @@ elements. The empty place is filled with NONE. Below are examples of ORDER:
 >=: next less or equal
 
 If FROM-END is true, this function deals with previous greater or less elements
-instead. Note that order the arguments of ORDER are in ascending order of
-position. (In other words, it is always consistent with the visual order.)"
+instead. The arguments passed to ORDER are in ascending order of position
+regardless of FROM-END. (In other words, it is always consistent with the visual
+order.)"
   (declare (vector vector)
            (fixnum none))
   (let* ((n (length vector))
