@@ -3,6 +3,7 @@
   (:import-from :sb-c #:defoptimizer #:defknown #:movable #:foldable #:flushable
                 #:derive-type #:lvar-type #:integer-type-numeric-bounds #:make-numeric-type
                 #:make-values-type)
+  (:import-from :sb-kernel #:%fun-lambda-list)
   (:export #:ext-gcd)
   (:documentation "Provides extended euclidean algorithm (aka Blankinship algorithm).
 
@@ -23,7 +24,9 @@ https://topcoder-g-hatena-ne-jp.jag-icpc.org/spaghetti_source/20130126/"))
                     (let ((max (max (abs lo1) (abs hi1) (abs lo2) (abs hi2))))
                       (make-numeric-type :class 'integer :low `(,(- max)) :high `(,max)))
                     (make-numeric-type :class 'integer))))
-          (make-values-type :required (list type type)))))))
+          (if (member '&optional (%fun-lambda-list #'make-values-type))
+              (make-values-type (list type type))
+              (make-values-type :required (list type type))))))))
 
 (defun %ext-gcd (a b)
   (declare (optimize (speed 3) (safety 0))
