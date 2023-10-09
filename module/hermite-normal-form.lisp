@@ -1,8 +1,8 @@
 (defpackage :cp/hermite-normal-form
   (:use :cl)
-  (:import-from #:cp/ext-gcd #:ext-gcd)
+  (:import-from :cp/ext-gcd #:ext-gcd)
   (:export #:hnf! #:hnf-p)
-  (:documentation "Provides a polynomial algorithm for Hermite normal form."))
+  (:documentation "Provides an algorithm to compute the Hermite normal form."))
 (in-package :cp/hermite-normal-form)
 
 ;; TODO: It would be better to have U as a sequence of operations than to have
@@ -18,9 +18,10 @@ NOTE: A must have full row rank. Otherwise the behaviour is undefined.
 Although U is not unique, this function is deterministic: i.e. it returns the
 same U for the same A.
 
-Time complexity is O(mn^2), when the O(mn) runs of extended Euclidean algorithm
-is ignored. If you don't need the unimodular matrix, this can be reduced to
-O(m^2n).
+This algorithm requires O(mn^2) arithmetic operations as well as O(mn) runs of
+extended Euclidean algorithm. If you don't need the unimodular matrix, this can
+be reduced to O(m^2n). It doesn't mean that this is a polynomial algorithm,
+however. For details, please see the reference.
 
 Reference:
 Jünger et al. 50 Years of Integer Programming 1958-2008. p.511."
