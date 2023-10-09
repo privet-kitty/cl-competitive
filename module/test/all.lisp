@@ -80,6 +80,7 @@
   (:import-from :cp/test/geometry)
   (:import-from :cp/test/gray-code)
   (:import-from :cp/test/hackenbush)
+  (:import-from :cp/test/hermite-normal-form)
   (:import-from :cp/test/hld)
   (:import-from :cp/test/hopcroft-karp)
   (:import-from :cp/test/implicit-treap)
