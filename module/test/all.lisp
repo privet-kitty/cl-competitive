@@ -37,6 +37,7 @@
   (:import-from :cp/test/convex-hull)
   (:import-from :cp/test/convex-hull-trick)
   (:import-from :cp/test/convolution-ntt)
+  (:import-from :cp/test/copy-array)
   (:import-from :cp/test/count-set-bit-at)
   (:import-from :cp/test/csc)
   (:import-from :cp/test/cumulative-sum)
