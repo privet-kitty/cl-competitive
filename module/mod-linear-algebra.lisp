@@ -139,8 +139,9 @@ returns NIL otherwise. This function destructively modifies MATRIX."
 
 (declaim (inline mod-solve-linear-system))
 (defun mod-solve-linear-system (matrix vector modulus)
-  "Solves Ax ≡ b and returns a root vector if it exists. Otherwise it returns
-NIL. In addition, this function returns the rank of A as the second value."
+  "Solves Ax ≡ b and returns a feasible solution if it exists. Otherwise it
+returns NIL. In addition, this function returns the rank of A as the second
+value."
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (assert (= m (length vector)))

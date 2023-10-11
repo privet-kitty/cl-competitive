@@ -14,7 +14,8 @@
                 echelon!))
 (defun echelon! (matrix &optional extended)
   "Destructively transforms MATRIX to the row echelon form by Gaussian
-elimination and returns the rank as the second value."
+elimination. Returns the rank and the index vector of the linearly independent
+columns."
   (declare (optimize (speed 3))
            ((simple-array gauss-jordan-float (* *)) matrix))
   (labels ((%zerop (x) (< (abs x) +eps+)))
@@ -48,8 +49,9 @@ elimination and returns the rank as the second value."
 
 (declaim (inline solve-linear-system))
 (defun solve-linear-system (matrix vector)
-  "Solves Ax = b and returns a root vector if it exists. Otherwise it returns
-NIL. In addition, this function returns the rank of A as the second value."
+  "Solves Ax = b and returns a feasible solution if it exists. Otherwise it
+returns NIL. In addition, this function returns the rank of A as the second
+value."
   (declare (vector vector))
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
