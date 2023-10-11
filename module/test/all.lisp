@@ -7,6 +7,7 @@
   (:import-from :cp/test/2sat)
   (:import-from :cp/test/segment-tree)
   (:import-from :cp/test/adjacent-duplicates)
+  (:import-from :cp/test/bareiss)
   (:import-from :cp/test/barrett)
   (:import-from :cp/test/bezout)
   (:import-from :cp/test/binary-heap)
