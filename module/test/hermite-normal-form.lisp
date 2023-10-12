@@ -64,8 +64,8 @@
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     ;; Numbers that appear in the computation should be within fixnum because of
-    ;; the Hadamard bound: sqrt(50^2 * 8)^8 ~ 1.6e17 < 4.6e18 ~ 2^62
-    (dolist (magnitute '(5 50))
+    ;; the Hadamard bound: sqrt(76^2 * 8)^8 ~ 4.56e18 < 4.61e18 ~ 2^62
+    (dolist (magnitute '(5 76))
       (loop with trial = 0
             for m = (+ 1 (random 8))
             for n = (+ 1 (random 8))
