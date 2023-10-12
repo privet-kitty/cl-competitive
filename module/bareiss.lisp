@@ -14,7 +14,11 @@ matrix determinant."))
 (defun bareiss! (matrix)
   "Receives a m * n integer matrix such that m <= n, and returns its determinant,
 rank, and a vector of linearly independent columns that were used to compute
-determinant."
+determinant.
+
+This function requires O(m^2n) arithmetic operations, but note that the integers
+that appear in the computation can be as large as the determinant (or the
+Hadamard bound, equivalently)."
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((integer 0 (#.array-dimension-limit)) m n))
     (assert (<= m n))
