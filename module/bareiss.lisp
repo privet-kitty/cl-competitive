@@ -34,7 +34,7 @@ Hadamard bound, equivalently)."
               do (return-from bareiss!
                    (values 0 k (subseq cols 0 k)))
               do (let ((nz-row (loop for i from k below m
-                                     unless (zerop (aref matrix i (+ k offset)))
+                                     unless (zerop (the integer (aref matrix i (+ k offset))))
                                      do (return i))))
                    (when nz-row
                      (unless (= k nz-row)
@@ -45,13 +45,15 @@ Hadamard bound, equivalently)."
                      (return)))
                  (incf offset))
         (let ((diag (aref matrix k (+ k offset))))
+          (declare (integer diag))
           (loop
             for i from (+ k 1) below m
             do (loop
                  for j from (+ k offset 1) below n
                  do (setf (aref matrix i j)
-                          (floor (- (* (aref matrix i j) diag)
-                                    (* (aref matrix i (+ k offset)) (aref matrix k j)))
+                          (floor (- (* (the integer (aref matrix i j)) diag)
+                                    (* (the integer (aref matrix i (+ k offset)))
+                                       (the integer (aref matrix k j))))
                                  prev-diag))))
           (setq prev-diag diag)))
       (values (* sign prev-diag) m cols))))
