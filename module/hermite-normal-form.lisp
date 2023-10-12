@@ -28,9 +28,9 @@ Although U is not unique, this function is deterministic: i.e. it returns the
 same U for the same A.
 
 This algorithm requires O(mn^2) arithmetic operations as well as O(mn) extended
-Euclidean algorithm operations. If you don't need the unimodular matrix, this
-can be reduced to O(m^2n). However, that does NOT necessarily mean that this is
-a polynomial algorithm because the size of the numbers that appear in the
+Euclidean algorithm operations. (Potentially this can be reduced to O(m^2n), if
+you don't need the unimodular matrix.) However, it does NOT mean that this is a
+polynomial algorithm, because the size of the numbers that appear in the
 computation may grow exponentially. For details, please see the reference."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
