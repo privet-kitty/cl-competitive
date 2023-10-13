@@ -13,6 +13,14 @@ Jünger et al. 50 Years of Integer Programming 1958-2008. p.511.
 ;; TODO: It would be better to have U as a sequence of operations than to have
 ;; it as an n * n matrix, especially when n is large.
 
+(declaim (inline %ref))
+(defun %ref (array i j)
+  (the integer (aref array i j)))
+
+(declaim (inline (setf %ref)))
+(defun (setf %ref) (new-value array i j)
+  (setf (the integer (aref array i j)) new-value))
+
 (declaim (inline hnf!))
 (defun hnf! (matrix)
   "Returns the hermite normal form H of the given m * n matrix A such that m <= n,
@@ -40,41 +48,41 @@ computation may grow exponentially. For details, please see the reference."
       (dotimes (i n)
         (setf (aref u i i) 1))
       (dotimes (i m)
-        (loop with hi = (aref matrix i i)
+        (loop with hi = (%ref matrix i i)
               for j from (+ i 1) below n
-              for hj = (aref matrix i j)
-              unless (zerop (aref matrix i j))
-              do (multiple-value-bind (x y) (ext-gcd (aref matrix i i) (aref matrix i j))
-                   (let* ((g (+ (* x (aref matrix i i)) (* y (aref matrix i j))))
-                          (hi/g (floor (aref matrix i i) g))
-                          (-hj/g (- (floor (aref matrix i j) g))))
+              for hj = (%ref matrix i j)
+              unless (zerop (%ref matrix i j))
+              do (multiple-value-bind (x y) (ext-gcd (%ref matrix i i) (%ref matrix i j))
+                   (let* ((g (+ (* x (%ref matrix i i)) (* y (%ref matrix i j))))
+                          (hi/g (floor (%ref matrix i i) g))
+                          (-hj/g (- (floor (%ref matrix i j) g))))
                      ;; A_{k, j} = 0 for all k < i
                      (loop for k from i below m
-                           for value-i = (+ (* (aref matrix k i) x)
-                                            (* (aref matrix k j) y))
-                           for value-j = (+ (* (aref matrix k i) -hj/g)
-                                            (* (aref matrix k j) hi/g))
+                           for value-i = (+ (* (%ref matrix k i) x)
+                                            (* (%ref matrix k j) y))
+                           for value-j = (+ (* (%ref matrix k i) -hj/g)
+                                            (* (%ref matrix k j) hi/g))
                            do (setf (aref matrix k i) value-i
                                     (aref matrix k j) value-j))
                      (loop for k below n
-                           for value-i = (+ (* (aref u k i) x)
-                                            (* (aref u k j) y))
-                           for value-j = (+ (* (aref u k i) -hj/g)
-                                            (* (aref u k j) hi/g))
+                           for value-i = (+ (* (%ref u k i) x)
+                                            (* (%ref u k j) y))
+                           for value-j = (+ (* (%ref u k i) -hj/g)
+                                            (* (%ref u k j) hi/g))
                            do (setf (aref u k i) value-i
                                     (aref u k j) value-j)))))
-        (when (< (aref matrix i i) 0)
+        (when (< (%ref matrix i i) 0)
           (dotimes (k m)
-            (setf (aref matrix k i) (- (aref matrix k i))))
+            (setf (aref matrix k i) (- (%ref matrix k i))))
           (dotimes (k n)
-            (setf (aref u k i) (- (aref u k i)))))
+            (setf (aref u k i) (- (%ref u k i)))))
         (dotimes (j i)
-          (let ((q (floor (aref matrix i j) (aref matrix i i))))
+          (let ((q (floor (%ref matrix i j) (%ref matrix i i))))
             ;; A_{k, i} = 0 for all k < i
             (loop for k from i below m
-                  do (decf (aref matrix k j) (* q (aref matrix k i))))
+                  do (decf (%ref matrix k j) (* q (%ref matrix k i))))
             (dotimes (k n)
-              (decf (aref u k j) (* q (aref u k i)))))))
+              (decf (%ref u k j) (* q (%ref u k i)))))))
       (values matrix u))))
 
 (declaim (inline %hnf-fast!))
@@ -102,22 +110,22 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
         (dotimes (i m)
           (setf (aref ext i (+ n i)) det))
         (dotimes (i m)
-          (loop with hi = (aref ext i i)
+          (loop with hi = (%ref ext i i)
                 for j from (+ i 1) below (+ n m)
-                for hj = (aref ext i j)
-                unless (zerop (the integer (aref ext i j)))
-                do (multiple-value-bind (x y) (ext-gcd (aref ext i i) (aref ext i j))
-                     (let* ((g (+ (* x (the integer (aref ext i i)))
-                                  (* y (the integer (aref ext i j)))))
-                            (hi/g (floor (the integer (aref ext i i)) g))
-                            (-hj/g (- (floor (the integer (aref ext i j)) g))))
+                for hj = (%ref ext i j)
+                unless (zerop (%ref ext i j))
+                do (multiple-value-bind (x y) (ext-gcd (%ref ext i i) (%ref ext i j))
+                     (let* ((g (+ (* x (%ref ext i i))
+                                  (* y (%ref ext i j))))
+                            (hi/g (floor (%ref ext i i) g))
+                            (-hj/g (- (floor (%ref ext i j) g))))
                        ;; A_{k, i} = 0 for all k < i.
                        ;; mod D can't be applied to j = n + i case.
                        (setf (aref ext i i) (if (= j (+ n i)) g (mod g det))
                              (aref ext i j) 0)
                        (loop for k from (+ i 1) below m
-                             for value-i-old of-type integer = (aref ext k i)
-                             for value-j-old of-type integer = (aref ext k j)
+                             for value-i-old = (%ref ext k i)
+                             for value-j-old = (%ref ext k j)
                              for value-i-new = (mod (+ (* value-i-old x)
                                                        (* value-j-old y))
                                                     det)
@@ -127,15 +135,12 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
                              do (setf (aref ext k i) value-i-new
                                       (aref ext k j) value-j-new)))))
           (dotimes (j i)
-            (let ((q (floor (the integer (aref ext i j))
-                            (the integer (aref ext i i)))))
+            (let ((q (floor (%ref ext i j) (%ref ext i i))))
               ;; A_{k, i} = 0 for all k < i
-              (decf (the integer (aref ext i j))
-                    (* q (the integer (aref ext i i))))
+              (decf (%ref ext i j) (* q (%ref ext i i)))
               (loop for k from (+ i 1) below m
                     do (setf (aref ext k j)
-                             (mod (- (the integer (aref ext k j))
-                                     (* q (the integer (aref ext k i))))
+                             (mod (- (%ref ext k j) (* q (%ref ext k i)))
                                   det)))))))
       (adjust-array ext (list m n)))))
 
@@ -149,9 +154,9 @@ Note that currently this function assumes that MATRIX has full row rank."
     (declare ((integer 0 (#.array-dimension-limit)) m n))
     (assert (<= m n))
     (loop for i below m
-          for diag-elm = (aref matrix i i)
+          for diag-elm = (%ref matrix i i)
           always (and (> diag-elm 0)
                       (loop for j below i
-                            always (< -1 (aref matrix i j) diag-elm))
+                            always (< -1 (%ref matrix i j) diag-elm))
                       (loop for j from (+ i 1) below n
-                            always (zerop (aref matrix i j)))))))
+                            always (zerop (%ref matrix i j)))))))

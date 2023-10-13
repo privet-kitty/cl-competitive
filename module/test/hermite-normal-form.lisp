@@ -101,3 +101,22 @@
                  (let ((h (%hnf-fast! mat)))
                    (hnf-p h))
                  (incf trial))))))
+
+(defun hnf-single (mag size)
+  (declare (optimize (speed 3))
+           ((unsigned-byte 31) size mag))
+  (let ((*random-state* (sb-ext:seed-random-state 0)))
+    (loop with trial of-type fixnum = 0
+          for m = size
+          for n = size
+          until (=  trial 1)
+          do (let ((mat (make-array (list m n) :element-type t :initial-element 0)))
+               (dotimes (i m)
+                 (dotimes (j n)
+                   (setf (aref mat i j) (- (random (* 2 mag)) mag))))
+               (let ((rank (calc-rank mat)))
+                 (declare (fixnum rank))
+                 (when (= rank m)
+                   (let ((h (%hnf-fast! mat)))
+                     (hnf-p h))
+                   (incf trial)))))))
