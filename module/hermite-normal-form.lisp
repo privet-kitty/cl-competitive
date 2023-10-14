@@ -42,7 +42,7 @@ polynomial algorithm, because the size of the numbers that appear in the
 computation may grow exponentially. For details, please see the reference."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
-    (declare ((integer 0 (#.array-dimension-limit)) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
     (let ((u (make-array (list n n) :element-type (array-element-type matrix) :initial-element 0)))
       (dotimes (i n)
@@ -98,7 +98,7 @@ well as O(mn) extended Euclidean algorithm operations on numbers up to about the
 size of the determinant of (some m linearly independent columns of) MATRIX."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
-    (declare ((integer 0 (#.array-dimension-limit)) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
     (let ((ext (make-array (list m (+ n m)) :element-type (array-element-type matrix) :initial-element 0)))
       (dotimes (i m)
@@ -151,7 +151,7 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
 Note that currently this function assumes that MATRIX has full row rank."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
-    (declare ((integer 0 (#.array-dimension-limit)) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
     (loop for i below m
           for diag-elm = (%ref matrix i i)

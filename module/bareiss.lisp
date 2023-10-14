@@ -20,14 +20,14 @@ This function requires O(m^2n) arithmetic operations, but note that the integers
 that appear in the computation can be as large as the determinant (or the
 Hadamard bound, equivalently)."
   (destructuring-bind (m n) (array-dimensions matrix)
-    (declare ((integer 0 (#.array-dimension-limit)) m n))
+    (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
     (let ((prev-diag 1)
           (cols (make-array m :element-type '(integer 0 #.most-positive-fixnum)))
           (offset 0)
           (sign 1))
       (declare ((integer -1 1) sign)
-               ((integer 0 (#.array-dimension-limit)) offset)
+               ((mod #.array-dimension-limit) offset)
                (integer prev-diag))
       (dotimes (k m)
         (loop when (= (+ k offset) n)
