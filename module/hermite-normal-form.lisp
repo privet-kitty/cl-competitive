@@ -1,6 +1,5 @@
 (defpackage :cp/hermite-normal-form
-  (:use :cl)
-  (:import-from :cp/ext-gcd #:ext-gcd)
+  (:use :cl :cp/ext-gcd :cp/bareiss)
   (:import-from :cp/bareiss #:bareiss!)
   (:export #:hnf! #:%hnf-fast! #:hnf-p)
   (:documentation "Provides an algorithm to compute the Hermite normal form.
@@ -119,8 +118,8 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
                                   (* y (%ref ext i j))))
                             (hi/g (floor (%ref ext i i) g))
                             (-hj/g (- (floor (%ref ext i j) g))))
-                       ;; A_{k, i} = 0 for all k < i.
-                       ;; mod D can't be applied to j = n + i case.
+                       ;; 1. A_{k, i} = 0 for all k < i.
+                       ;; 2. mod D can't be applied to the j = n + i case.
                        (setf (aref ext i i) (if (= j (+ n i)) g (mod g det))
                              (aref ext i j) 0)
                        (loop for k from (+ i 1) below m
