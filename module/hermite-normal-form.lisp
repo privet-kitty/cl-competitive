@@ -1,13 +1,22 @@
 (defpackage :cp/hermite-normal-form
   (:use :cl :cp/ext-gcd :cp/bareiss)
   (:import-from :cp/bareiss #:bareiss!)
-  (:export #:hnf! #:%hnf-fast! #:hnf-p)
+  (:export #:hnf! #:%hnf-fast! #:hnf-p
+           #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt!
+           #:gram-schmidt-rank #:gram-schmidt-matrix #:gram-schmidt-det2
+           #:gram-schmidt-basis-rows #:gram-schmidt-row-magnifiers)
   (:documentation "Provides an algorithm to compute the Hermite normal form.
 
 Reference:
-Jünger et al. 50 Years of Integer Programming 1958-2008. p.511.
+- Jünger et al. 50 Years of Integer Programming 1958-2008. p.511.
+- Ulfar Erlingsson, Erich Kaltofen, David Musser. Generic Gram-Schmidt
+  Orthogonalization by Exact Division.
+- Daniele Micciancio. Lattice Algorithms and Applications. (lecture
+  note) https://cseweb.ucsd.edu/classes/sp14/cse206A-a/lec4.pdf
 "))
 (in-package :cp/hermite-normal-form)
+
+;; **WORK IN PROGRESS**
 
 ;; TODO: It would be better to have U as a sequence of operations than to have
 ;; it as an n * n matrix, especially when n is large.
@@ -84,9 +93,90 @@ computation may grow exponentially. For details, please see the reference."
               (decf (%ref u k j) (* q (%ref u k i)))))))
       (values matrix u))))
 
+(declaim (inline %div))
+(defun %div (x y)
+  (declare (integer x y))
+  (multiple-value-bind (quot rem) (floor x y)
+    (assert (zerop rem))
+    quot))
+
+;; TODO: restore the representation of a dependent vector by a linear combination
+;; of the preceding rows
+;; TODO: decrease the magnitute of the numbers that appear in the computation
+(defstruct gram-schmidt
+  "Let the Gram-Schmidt basis of vectors a_1, ..., a_m (which is given as the row
+vectors of an m * n matrix) be b_1, ..., b_k. This structure stores the
+`integerized' orthogonal vectors b'_1, ..., b'_k such that b'_i = D_i * b_i for
+some integer scalar D_i."
+  ;; MATRIX[row] := integerized orthogonalized vector of the original row vector
+  ;; if it is contained in BASIS-ROWS, otherwise a zero vector.
+  (matrix nil :type (array * (* *)))
+  (rank nil :type (mod #.array-dimension-limit))
+  ;; the squared determinant of the lattice spanned by the basis 
+  (det2 nil :type integer)
+  ;; row indices of the basis (in ascending order)
+  (basis-rows nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
+  ;; This array holds an integer constant multiplied by each row of MATRIX in
+  ;; order to avoid rational representation.
+  (row-magnifiers nil :type simple-vector))
+
+(defun %gram-schmidt! (matrix)
+  "Applies the Gram-Schmidt algotithm to the each **row** of the given integer matrix."
+  (declare ((array * (* *)) matrix))
+  (destructuring-bind (m n) (array-dimensions matrix)
+    (declare ((mod #.array-dimension-limit) m n))
+    (let* ((max-dim (min m n))
+           (basis-rows (make-array max-dim :element-type '(integer 0 #.most-positive-fixnum)))
+           (basis-end 0)
+           (l2s (make-array max-dim :element-type (array-element-type matrix)))
+           (det2s (make-array (+ 1 max-dim) :element-type (array-element-type matrix)))
+           (tmp-vector (make-array n :element-type (array-element-type matrix)))
+           (row-magnifiers (make-array m :element-type t)))
+      (setf (aref det2s 0) 1)
+      (dotimes (row m)
+        (setf (aref row-magnifiers row) (aref det2s basis-end))
+        (dotimes (col n)
+          (setf (aref tmp-vector col) (%ref matrix row col)))
+        (dotimes (j basis-end)
+          (let* ((j-row (aref basis-rows j))
+                 (det2 (aref det2s j))
+                 (next-det2 (aref det2s (+ j 1)))
+                 (coef (%div (* (loop for col below n
+                                      sum (* (%ref matrix row col)
+                                             (%ref matrix j-row col))
+                                      of-type integer)
+                                next-det2
+                                det2)
+                             (aref l2s j))))
+            (declare (integer det2 next-det2))
+            (dotimes (col n)
+              (setf (aref tmp-vector col)
+                    (%div (- (* next-det2 (the integer (aref tmp-vector col)))
+                             (* coef (%ref matrix j-row col)))
+                          det2)))))
+        ;; branches depending on independency
+        (if (every #'zerop tmp-vector)
+            (dotimes (col n)
+              (setf (%ref matrix row col) 0))
+            (let* ((new-l2 (loop for col below n
+                                 sum (expt (the integer (aref tmp-vector col)) 2)
+                                 of-type integer))
+                   (new-det2 (%div new-l2 (aref det2s basis-end))))
+              (setf (aref l2s basis-end) new-l2
+                    (aref det2s (+ 1 basis-end)) new-det2
+                    (aref basis-rows basis-end) row)
+              (dotimes (col n)
+                (setf (aref matrix row col) (aref tmp-vector col)))
+              (incf basis-end))))
+      (make-gram-schmidt :matrix matrix
+                         :rank basis-end
+                         :det2 (aref det2s basis-end)
+                         :basis-rows (adjust-array basis-rows basis-end)
+                         :row-magnifiers row-magnifiers))))
+
 (declaim (inline %hnf-fast!))
 (defun %hnf-fast! (matrix)
-  "Returns the hermite normal form H of the given m * n matrix such that m <=
+  "Returns the Hermite normal form H of the given m * n matrix such that m <=
 n. This function destructively modified MATRIX.
 
 NOTE: The given matrix must have full row rank. Otherwise the behaviour is
