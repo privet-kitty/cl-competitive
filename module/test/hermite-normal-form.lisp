@@ -15,20 +15,20 @@
           (setf (aref tmp i j) (aref mat i j))))
       (nth-value 1 (mod-echelon! tmp #.(+ 7 (expt 10 9)))))))
 
-(test hnf!/hand
-  (declare (notinline hnf!))
+(test hnf-naive!/hand
+  (declare (notinline hnf-naive!))
   (let ((mat #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3))))
-    (multiple-value-bind (h u) (hnf! (copy-array mat))
+    (multiple-value-bind (h u) (hnf-naive! (copy-array mat))
       (is (equalp h #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3))))
       (is (equalp (gemm #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)) u) h))))
-  (multiple-value-bind (h u) (hnf! (copy-array #2a()))
+  (multiple-value-bind (h u) (hnf-naive! (copy-array #2a()))
     (is (equalp h #2a()))
     (is (equalp u #2a())))
-  (multiple-value-bind (h u) (hnf! (make-array '(0 2) :element-type 'fixnum))
+  (multiple-value-bind (h u) (hnf-naive! (make-array '(0 2) :element-type 'fixnum))
     (is (equalp h (make-array '(0 2) :element-type 'fixnum)))
     (is (equalp u #2a((1 0) (0 1))))))
 
-(test hnf!/random
+(test hnf-naive!/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (magnitute '(5 50))
@@ -44,8 +44,8 @@
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
                  (let ((rank (calc-rank mat)))
                    (when (= rank m)
-                     (multiple-value-bind (h1 u1) (hnf! (copy-array mat))
-                       (let ((h2 (%hnf-fast! (copy-array mat))))
+                     (multiple-value-bind (h1 u1) (hnf-naive! (copy-array mat))
+                       (let ((h2 (%hnf-full-rank! (copy-array mat))))
                          (is (equalp h1 (gemm mat u1)))
                          (is (equalp h1 h2))
                          (is (hnf-p h1))))
@@ -53,16 +53,17 @@
 
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
-(test %hnf-fast!/hand
-  (declare (notinline %hnf-fast!))
+(test %hnf-full-rank!/hand
+  (declare (notinline %hnf-full-rank!))
   (let* ((mat #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)))
-         (h (%hnf-fast! (copy-array mat))))
+         (h (%hnf-full-rank! (copy-array mat))))
     (is (equalp h #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3)))))
-  (is (equalp (%hnf-fast! (copy-array #2a())) #2a()))
-  (is (equalp (%hnf-fast! (make-array '(0 2) :element-type 'fixnum))
+  (is (equalp (%hnf-full-rank! (copy-array #2a())) #2a()))
+  (is (equalp (%hnf-full-rank! (make-array '(0 2) :element-type 'fixnum))
               (make-array '(0 2) :element-type 'fixnum))))
 
 (test %gram-schmidt!/hand
+  (declare (notinline %gram-schmidt!))
   ;; zero-size case
   (is (equalp (%gram-schmidt! (make-array '(0 0)))
               (make-gram-schmidt :matrix #2a()
@@ -192,7 +193,7 @@
                                        'simple-vector)))
                          (is (equalp restored-vector target-vector)))))))))))
 
-(test %hnf-fast!/random
+(test %hnf-full-rank!/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     ;; Numbers that appear in the computation should be within fixnum because of
@@ -210,7 +211,7 @@
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
                  (let ((rank (calc-rank mat)))
                    (when (= rank m)
-                     (let ((h (finishes (%hnf-fast! mat))))
+                     (let ((h (finishes (%hnf-full-rank! mat))))
                        (is (hnf-p h)))
                      (incf trial))))))))
 
@@ -230,7 +231,7 @@
              (let ((rank (calc-rank mat)))
                (declare (fixnum rank))
                (when (= rank m)
-                 (let ((h (%hnf-fast! mat)))
+                 (let ((h (%hnf-full-rank! mat)))
                    (hnf-p h))
                  (incf trial))))))
 
@@ -249,6 +250,6 @@
                (let ((rank (calc-rank mat)))
                  (declare (fixnum rank))
                  (when (= rank m)
-                   (let ((h (%hnf-fast! mat)))
+                   (let ((h (%hnf-full-rank! mat)))
                      (hnf-p h))
                    (incf trial)))))))

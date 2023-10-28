@@ -1,7 +1,7 @@
 (defpackage :cp/hermite-normal-form
   (:use :cl :cp/ext-gcd :cp/bareiss)
   (:import-from :cp/bareiss #:bareiss!)
-  (:export #:hnf! #:%hnf-fast! #:hnf-p
+  (:export #:hnf-naive! #:%hnf-full-rank! #:hnf! #:hnf-p
            #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt!
            #:gram-schmidt-matrix #:gram-schmidt-coefs #:gram-schmidt-rank #:gram-schmidt-det2
            #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers)
@@ -30,8 +30,8 @@ Reference:
 (defun (setf %ref) (new-value array i j)
   (setf (the integer (aref array i j)) new-value))
 
-(declaim (inline hnf!))
-(defun hnf! (matrix)
+(declaim (inline hnf-naive!))
+(defun hnf-naive! (matrix)
   "Returns the hermite normal form H of the given m * n matrix A such that m <= n,
 and returns the unimodular matrix U such that AU = H as the second value. This
 function destructively modifies MATRIX.
@@ -130,7 +130,8 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
   (row-multipliers nil :type (simple-array * (*))))
 
 (defun %gram-schmidt! (matrix)
-  "Applies the Gram-Schmidt algotithm to the each **row** of the given integer matrix."
+  "Applies the Gram-Schmidt algotithm to the each **row** of the given integer
+matrix. This function destructively modifies MATRIX."
   (declare ((array * (* *)) matrix))
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
@@ -201,10 +202,10 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
                          :basis-rows (adjust-array basis-rows basis-end)
                          :row-multipliers row-multipliers))))
 
-(declaim (inline %hnf-fast!))
-(defun %hnf-fast! (matrix)
+(declaim (inline %hnf-full-rank!))
+(defun %hnf-full-rank! (matrix)
   "Returns the Hermite normal form H of the given m * n matrix such that m <=
-n. This function destructively modified MATRIX.
+n. This function destructively modifies MATRIX.
 
 NOTE: The given matrix must have full row rank. Otherwise the behaviour is
 undefined.
