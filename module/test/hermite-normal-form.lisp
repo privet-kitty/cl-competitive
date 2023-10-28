@@ -63,61 +63,70 @@
               (make-array '(0 2) :element-type 'fixnum))))
 
 (test %gram-schmidt!/hand
-  ;; zero-size
+  ;; zero-size case
   (is (equalp (%gram-schmidt! (make-array '(0 0)))
               (make-gram-schmidt :matrix #2a()
+                                 :coefs #2a()
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #())))
   (is (equalp (%gram-schmidt! (make-array '(0 3)))
               (make-gram-schmidt :matrix (make-array '(0 3))
+                                 :coefs #2a()
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #())))
   (is (equalp (%gram-schmidt! (make-array '(2 0)))
               (make-gram-schmidt :matrix (make-array '(2 0))
+                                 :coefs #2a(() ())
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #(1 1))))
-  ;; one-size
+  ;; one-size case
   (is (equalp (%gram-schmidt! (copy-array #2a((0 0 0))))
               (make-gram-schmidt :matrix #2a((0 0 0))
+                                 :coefs #2a(())
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #(1))))
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1))))
               (make-gram-schmidt :matrix #2a((3 1))
+                                 :coefs #2a((1))
                                  :rank 1
                                  :det2 10
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1))))
   (is (equalp (%gram-schmidt! (copy-array #2a((4) (0) (1))))
               (make-gram-schmidt :matrix #2a((4) (0) (0))
+                                 :coefs #2a((1) (0) (4))
                                  :rank 1
                                  :det2 16
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1 16 16))))
-  ;; https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+  ;; example from https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1) (2 2))))
               (make-gram-schmidt :matrix #2a((3 1) (-4 12))
+                                 :coefs #2a((1 0) (-8 10)) ; (-4, 12) = -8(3, 1)+10(2, 2)
                                  :rank 2
                                  :det2 16
                                  :basis-rows (coerce #(0 1) '(simple-array uint (*)))
                                  :row-multipliers #(1 10))))
-  ;; dependent
+  ;; linearly dependent case
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1 2) (9 3 6))))
               (make-gram-schmidt :matrix #2a((3 1 2) (0 0 0))
+                                 :coefs #2a((1) (42))
                                  :rank 1
                                  :det2 14
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1 14))))
-  ;; row full rank
+  ;; row full rank case
   (is (equalp (%gram-schmidt! (copy-array #2a((1 1 1) (1 -1 2))))
               (make-gram-schmidt :matrix #2a((1 1 1) (1 -5 4))
+                                 :coefs #2a((1 0) (-2 3))
                                  :rank 2
                                  :det2 14
                                  :basis-rows (coerce #(0 1) '(simple-array uint (*)))
@@ -131,37 +140,57 @@
       (loop repeat 20000
             for m = (+ 1 (random 8))
             for n = (+ 1 (random 8))
-            do (let ((mat (make-array (list m n) :element-type t :initial-element 0)))
+            do (let ((orig-mat (make-array (list m n) :element-type t :initial-element 0)))
                  (dotimes (i m)
                    (dotimes (j n)
-                     (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
-                 (let* ((res (%gram-schmidt! (copy-array mat)))
+                     (setf (aref orig-mat i j) (- (random (* 2 magnitute)) magnitute))))
+                 (let* ((res (%gram-schmidt! (copy-array orig-mat)))
                         (rank (gram-schmidt-rank res))
                         (basis-rows (gram-schmidt-basis-rows res))
                         (gram-mat (gram-schmidt-matrix res))
+                        (coefs (gram-schmidt-coefs res))
                         (det2 (gram-schmidt-det2 res))
                         (row-multipliers (gram-schmidt-row-multipliers res)))
                    (is (= rank (length basis-rows)))
-                   ;; orthogonality
+                   ;; check the orthogonality
                    (dotimes (i rank)
                      (let ((i-row (aref basis-rows i)))
                        (loop for j from (+ i 1) below rank
                              for j-row = (aref basis-rows j)
-                             do (is (zerop (loop for k below (array-dimension mat 1)
+                             do (is (zerop (loop for k below (array-dimension orig-mat 1)
                                                  sum (* (aref gram-mat i-row k)
                                                         (aref gram-mat j-row k))
                                                  of-type integer))))))
-                   ;; squared determinant of lattice
+                   ;; check the consistency of the squared determinant of the lattice
                    (is (= det2
                           (loop with prod of-type integer = 1
                                 for i below rank
                                 for i-row = (aref basis-rows i)
                                 do (setq prod
                                          (* prod
-                                            (/ (loop for k below (array-dimension mat 1)
+                                            (/ (loop for k below (array-dimension orig-mat 1)
                                                      sum (expt (aref gram-mat i-row k) 2))
                                                (expt (aref row-multipliers i-row) 2))))
-                                finally (return prod))))))))))
+                                finally (return prod))))
+                   ;; restore original row vectors based on coefs
+                   (dotimes (row m)
+                     (let ((restored-vector (make-array n :element-type t :initial-element 0)))
+                       (dotimes (i rank)
+                         (let ((i-row (aref basis-rows i))
+                               (coef (aref coefs row i)))
+                           (unless (zerop coef)
+                             (dotimes (col n)
+                               (incf (aref restored-vector col)
+                                     (* coef (aref orig-mat i-row col)))))))
+                       (let ((target-vector
+                               (coerce (if (find row basis-rows)
+                                           (loop for col below n
+                                                 collect (aref gram-mat row col))
+                                           (loop with multiplier = (aref row-multipliers row)
+                                                 for col below n
+                                                 collect (* multiplier (aref orig-mat row col))))
+                                       'simple-vector)))
+                         (is (equalp restored-vector target-vector)))))))))))
 
 (test %hnf-fast!/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
