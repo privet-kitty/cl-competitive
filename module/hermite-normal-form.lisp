@@ -4,7 +4,7 @@
   (:export #:hnf! #:%hnf-fast! #:hnf-p
            #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt!
            #:gram-schmidt-rank #:gram-schmidt-matrix #:gram-schmidt-det2
-           #:gram-schmidt-basis-rows #:gram-schmidt-row-magnifiers)
+           #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers)
   (:documentation "Provides an algorithm to compute the Hermite normal form.
 
 Reference:
@@ -118,7 +118,7 @@ some integer scalar D_i."
   (basis-rows nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
   ;; This array holds an integer constant multiplied by each row of MATRIX in
   ;; order to avoid rational representation.
-  (row-magnifiers nil :type simple-vector))
+  (row-multipliers nil :type simple-vector))
 
 (defun %gram-schmidt! (matrix)
   "Applies the Gram-Schmidt algotithm to the each **row** of the given integer matrix."
@@ -131,10 +131,10 @@ some integer scalar D_i."
            (l2s (make-array max-dim :element-type (array-element-type matrix)))
            (det2s (make-array (+ 1 max-dim) :element-type (array-element-type matrix)))
            (tmp-vector (make-array n :element-type (array-element-type matrix)))
-           (row-magnifiers (make-array m :element-type t)))
+           (row-multipliers (make-array m :element-type t)))
       (setf (aref det2s 0) 1)
       (dotimes (row m)
-        (setf (aref row-magnifiers row) (aref det2s basis-end))
+        (setf (aref row-multipliers row) (aref det2s basis-end))
         (dotimes (col n)
           (setf (aref tmp-vector col) (%ref matrix row col)))
         (dotimes (j basis-end)
@@ -172,7 +172,7 @@ some integer scalar D_i."
                          :rank basis-end
                          :det2 (aref det2s basis-end)
                          :basis-rows (adjust-array basis-rows basis-end)
-                         :row-magnifiers row-magnifiers))))
+                         :row-multipliers row-multipliers))))
 
 (declaim (inline %hnf-fast!))
 (defun %hnf-fast! (matrix)

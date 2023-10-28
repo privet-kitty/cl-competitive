@@ -69,59 +69,59 @@
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
-                                 :row-magnifiers #())))
+                                 :row-multipliers #())))
   (is (equalp (%gram-schmidt! (make-array '(0 3)))
               (make-gram-schmidt :matrix (make-array '(0 3))
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
-                                 :row-magnifiers #())))
+                                 :row-multipliers #())))
   (is (equalp (%gram-schmidt! (make-array '(2 0)))
               (make-gram-schmidt :matrix (make-array '(2 0))
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
-                                 :row-magnifiers #(1 1))))
+                                 :row-multipliers #(1 1))))
   ;; one-size
   (is (equalp (%gram-schmidt! (copy-array #2a((0 0 0))))
               (make-gram-schmidt :matrix #2a((0 0 0))
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
-                                 :row-magnifiers #(1))))
+                                 :row-multipliers #(1))))
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1))))
               (make-gram-schmidt :matrix #2a((3 1))
                                  :rank 1
                                  :det2 10
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
-                                 :row-magnifiers #(1))))
+                                 :row-multipliers #(1))))
   (is (equalp (%gram-schmidt! (copy-array #2a((4) (0) (1))))
               (make-gram-schmidt :matrix #2a((4) (0) (0))
                                  :rank 1
                                  :det2 16
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
-                                 :row-magnifiers #(1 16 16))))
+                                 :row-multipliers #(1 16 16))))
   ;; https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1) (2 2))))
               (make-gram-schmidt :matrix #2a((3 1) (-4 12))
                                  :rank 2
                                  :det2 16
                                  :basis-rows (coerce #(0 1) '(simple-array uint (*)))
-                                 :row-magnifiers #(1 10))))
+                                 :row-multipliers #(1 10))))
   ;; dependent
   (is (equalp (%gram-schmidt! (copy-array #2a((3 1 2) (9 3 6))))
               (make-gram-schmidt :matrix #2a((3 1 2) (0 0 0))
                                  :rank 1
                                  :det2 14
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
-                                 :row-magnifiers #(1 14))))
+                                 :row-multipliers #(1 14))))
   ;; row full rank
   (is (equalp (%gram-schmidt! (copy-array #2a((1 1 1) (1 -1 2))))
               (make-gram-schmidt :matrix #2a((1 1 1) (1 -5 4))
                                  :rank 2
                                  :det2 14
                                  :basis-rows (coerce #(0 1) '(simple-array uint (*)))
-                                 :row-magnifiers #(1 3)))))
+                                 :row-multipliers #(1 3)))))
 
 ;; TODO: more effective test beyond just checking sanity
 (test %gram-schmidt!/random
@@ -140,7 +140,7 @@
                         (basis-rows (gram-schmidt-basis-rows res))
                         (gram-mat (gram-schmidt-matrix res))
                         (det2 (gram-schmidt-det2 res))
-                        (row-magnifiers (gram-schmidt-row-magnifiers res)))
+                        (row-multipliers (gram-schmidt-row-multipliers res)))
                    (is (= rank (length basis-rows)))
                    ;; orthogonality
                    (dotimes (i rank)
@@ -160,7 +160,7 @@
                                          (* prod
                                             (/ (loop for k below (array-dimension mat 1)
                                                      sum (expt (aref gram-mat i-row k) 2))
-                                               (expt (aref row-magnifiers i-row) 2))))
+                                               (expt (aref row-multipliers i-row) 2))))
                                 finally (return prod))))))))))
 
 (test %hnf-fast!/random
