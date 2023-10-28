@@ -2,8 +2,7 @@
   (:use :cl :fiveam :cp/hermite-normal-form)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-linear-algebra #:mod-echelon!)
-  (:import-from :cp/gemm #:gemm)
-  (:import-from :cp/copy-array #:copy-array))
+  (:import-from :cp/gemm #:gemm))
 (in-package :cp/test/hermite-normal-form)
 (in-suite base-suite)
 
@@ -15,20 +14,19 @@
           (setf (aref tmp i j) (aref mat i j))))
       (nth-value 1 (mod-echelon! tmp #.(+ 7 (expt 10 9)))))))
 
-(test hnf-naive!/hand
-  (declare (notinline hnf-naive!))
-  (let ((mat #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3))))
-    (multiple-value-bind (h u) (hnf-naive! (copy-array mat))
-      (is (equalp h #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3))))
-      (is (equalp (gemm #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)) u) h))))
-  (multiple-value-bind (h u) (hnf-naive! (copy-array #2a()))
+(test hnf-naive/hand
+  (declare (notinline hnf-naive))
+  (multiple-value-bind (h u) (hnf-naive #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)))
+    (is (equalp h #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3))))
+    (is (equalp (gemm #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)) u) h)))
+  (multiple-value-bind (h u) (hnf-naive #2a())
     (is (equalp h #2a()))
     (is (equalp u #2a())))
-  (multiple-value-bind (h u) (hnf-naive! (make-array '(0 2) :element-type 'fixnum))
+  (multiple-value-bind (h u) (hnf-naive (make-array '(0 2) :element-type 'fixnum))
     (is (equalp h (make-array '(0 2) :element-type 'fixnum)))
     (is (equalp u #2a((1 0) (0 1))))))
 
-(test hnf-naive!/random
+(test hnf-naive/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (magnitute '(5 50))
@@ -44,8 +42,8 @@
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
                  (let ((rank (calc-rank mat)))
                    (when (= rank m)
-                     (multiple-value-bind (h1 u1) (hnf-naive! (copy-array mat))
-                       (let ((h2 (%hnf-full-rank! (copy-array mat))))
+                     (multiple-value-bind (h1 u1) (hnf-naive mat)
+                       (let ((h2 (%hnf-full-rank mat)))
                          (is (equalp h1 (gemm mat u1)))
                          (is (equalp h1 h2))
                          (is (hnf-p h1))))
@@ -53,55 +51,54 @@
 
 (deftype uint () '(integer 0 #.most-positive-fixnum))
 
-(test %hnf-full-rank!/hand
-  (declare (notinline %hnf-full-rank!))
-  (let* ((mat #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)))
-         (h (%hnf-full-rank! (copy-array mat))))
-    (is (equalp h #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3)))))
-  (is (equalp (%hnf-full-rank! (copy-array #2a())) #2a()))
-  (is (equalp (%hnf-full-rank! (make-array '(0 2) :element-type 'fixnum))
+(test %hnf-full-rank/hand
+  (declare (notinline %hnf-full-rank))
+  (is (equalp (%hnf-full-rank #2a((5 0 0 0) (3 1 0 0) (1 0 19 0) (4 0 16 3)))
+              #2a((5 0 0 0) (0 1 0 0) (1 0 19 0) (1 0 1 3))))
+  (is (equalp (%hnf-full-rank #2a()) #2a()))
+  (is (equalp (%hnf-full-rank (make-array '(0 2) :element-type 'fixnum))
               (make-array '(0 2) :element-type 'fixnum))))
 
-(test %gram-schmidt!/hand
-  (declare (notinline %gram-schmidt!))
+(test %gram-schmidt/hand
+  (declare (notinline %gram-schmidt))
   ;; zero-size case
-  (is (equalp (%gram-schmidt! (make-array '(0 0)))
+  (is (equalp (%gram-schmidt #2a())
               (make-gram-schmidt :matrix #2a()
                                  :coefs #2a()
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #())))
-  (is (equalp (%gram-schmidt! (make-array '(0 3)))
+  (is (equalp (%gram-schmidt (make-array '(0 3)))
               (make-gram-schmidt :matrix (make-array '(0 3))
                                  :coefs #2a()
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #())))
-  (is (equalp (%gram-schmidt! (make-array '(2 0)))
-              (make-gram-schmidt :matrix (make-array '(2 0))
+  (is (equalp (%gram-schmidt #2a(() ()))
+              (make-gram-schmidt :matrix #2a(() ())
                                  :coefs #2a(() ())
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #(1 1))))
   ;; one-size case
-  (is (equalp (%gram-schmidt! (copy-array #2a((0 0 0))))
+  (is (equalp (%gram-schmidt #2a((0 0 0)))
               (make-gram-schmidt :matrix #2a((0 0 0))
                                  :coefs #2a(())
                                  :rank 0
                                  :det2 1
                                  :basis-rows (make-array 0 :element-type 'uint)
                                  :row-multipliers #(1))))
-  (is (equalp (%gram-schmidt! (copy-array #2a((3 1))))
+  (is (equalp (%gram-schmidt #2a((3 1)))
               (make-gram-schmidt :matrix #2a((3 1))
                                  :coefs #2a((1))
                                  :rank 1
                                  :det2 10
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1))))
-  (is (equalp (%gram-schmidt! (copy-array #2a((4) (0) (1))))
+  (is (equalp (%gram-schmidt #2a((4) (0) (1)))
               (make-gram-schmidt :matrix #2a((4) (0) (0))
                                  :coefs #2a((1) (0) (4))
                                  :rank 1
@@ -109,7 +106,7 @@
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1 16 16))))
   ;; example from https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-  (is (equalp (%gram-schmidt! (copy-array #2a((3 1) (2 2))))
+  (is (equalp (%gram-schmidt #2a((3 1) (2 2)))
               (make-gram-schmidt :matrix #2a((3 1) (-4 12))
                                  :coefs #2a((1 0) (-8 10)) ; (-4, 12) = -8(3, 1)+10(2, 2)
                                  :rank 2
@@ -117,7 +114,7 @@
                                  :basis-rows (coerce #(0 1) '(simple-array uint (*)))
                                  :row-multipliers #(1 10))))
   ;; linearly dependent case
-  (is (equalp (%gram-schmidt! (copy-array #2a((3 1 2) (9 3 6))))
+  (is (equalp (%gram-schmidt #2a((3 1 2) (9 3 6)))
               (make-gram-schmidt :matrix #2a((3 1 2) (0 0 0))
                                  :coefs #2a((1) (42))
                                  :rank 1
@@ -125,7 +122,7 @@
                                  :basis-rows (coerce #(0) '(simple-array uint (*)))
                                  :row-multipliers #(1 14))))
   ;; row full rank case
-  (is (equalp (%gram-schmidt! (copy-array #2a((1 1 1) (1 -1 2))))
+  (is (equalp (%gram-schmidt #2a((1 1 1) (1 -1 2)))
               (make-gram-schmidt :matrix #2a((1 1 1) (1 -5 4))
                                  :coefs #2a((1 0) (-2 3))
                                  :rank 2
@@ -134,7 +131,7 @@
                                  :row-multipliers #(1 3)))))
 
 ;; TODO: more effective test beyond just checking sanity
-(test %gram-schmidt!/random
+(test %gram-schmidt/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (magnitute '(5 76))
@@ -145,7 +142,7 @@
                  (dotimes (i m)
                    (dotimes (j n)
                      (setf (aref orig-mat i j) (- (random (* 2 magnitute)) magnitute))))
-                 (let* ((res (%gram-schmidt! (copy-array orig-mat)))
+                 (let* ((res (%gram-schmidt orig-mat))
                         (rank (gram-schmidt-rank res))
                         (basis-rows (gram-schmidt-basis-rows res))
                         (gram-mat (gram-schmidt-matrix res))
@@ -193,7 +190,7 @@
                                        'simple-vector)))
                          (is (equalp restored-vector target-vector)))))))))))
 
-(test %hnf-full-rank!/random
+(test %hnf-full-rank/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     ;; Numbers that appear in the computation should be within fixnum because of
@@ -211,7 +208,7 @@
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
                  (let ((rank (calc-rank mat)))
                    (when (= rank m)
-                     (let ((h (finishes (%hnf-full-rank! mat))))
+                     (let ((h (finishes (%hnf-full-rank mat))))
                        (is (hnf-p h)))
                      (incf trial))))))))
 
@@ -231,7 +228,7 @@
              (let ((rank (calc-rank mat)))
                (declare (fixnum rank))
                (when (= rank m)
-                 (let ((h (%hnf-full-rank! mat)))
+                 (let ((h (%hnf-full-rank mat)))
                    (hnf-p h))
                  (incf trial))))))
 
@@ -250,6 +247,6 @@
                (let ((rank (calc-rank mat)))
                  (declare (fixnum rank))
                  (when (= rank m)
-                   (let ((h (%hnf-full-rank! mat)))
+                   (let ((h (%hnf-full-rank mat)))
                      (hnf-p h))
                    (incf trial)))))))

@@ -1,8 +1,8 @@
 (defpackage :cp/hermite-normal-form
-  (:use :cl :cp/ext-gcd :cp/bareiss)
+  (:use :cl :cp/ext-gcd :cp/bareiss :cp/copy-array)
   (:import-from :cp/bareiss #:bareiss!)
-  (:export #:hnf-naive! #:%hnf-full-rank! #:hnf! #:hnf-p
-           #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt!
+  (:export #:hnf-naive #:%hnf-full-rank #:hnf #:hnf-p
+           #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt
            #:gram-schmidt-matrix #:gram-schmidt-coefs #:gram-schmidt-rank #:gram-schmidt-det2
            #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers)
   (:documentation "Provides an algorithm to compute the Hermite normal form.
@@ -30,11 +30,10 @@ Reference:
 (defun (setf %ref) (new-value array i j)
   (setf (the integer (aref array i j)) new-value))
 
-(declaim (inline hnf-naive!))
-(defun hnf-naive! (matrix)
+(declaim (inline hnf-naive))
+(defun hnf-naive (matrix)
   "Returns the hermite normal form H of the given m * n matrix A such that m <= n,
-and returns the unimodular matrix U such that AU = H as the second value. This
-function destructively modifies MATRIX.
+and returns the unimodular matrix U such that AU = H as the second value.
 
 Actually the returned H is the same object as MATRIX, but I don't recommend that
 you exploit this behaviour.
@@ -53,7 +52,8 @@ computation may grow exponentially. For details, please see the reference."
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
-    (let ((u (make-array (list n n) :element-type (array-element-type matrix) :initial-element 0)))
+    (let* ((matrix (copy-array matrix))
+           (u (make-array (list n n) :element-type (array-element-type matrix) :initial-element 0)))
       (dotimes (i n)
         (setf (aref u i i) 1))
       (dotimes (i m)
@@ -129,13 +129,18 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
   ;; one of the denominators of the rows.
   (row-multipliers nil :type (simple-array * (*))))
 
-(defun %gram-schmidt! (matrix)
+(defun %gram-schmidt (matrix)
   "Applies the Gram-Schmidt algotithm to the each **row** of the given integer
-matrix. This function destructively modifies MATRIX."
+matrix.
+
+This is a polynomial algorithm that requires O(m^2n) arithmetic operations on
+numbers up to about a constant multiple of the lattice determinant given by row
+vectors of MATRIX."
   (declare ((array * (* *)) matrix))
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
-    (let* ((max-dim (min m n))
+    (let* ((matrix (copy-array matrix))
+           (max-dim (min m n))
            (coefs (make-array (list m max-dim)
                               :element-type (array-element-type matrix)
                               :initial-element 0))
@@ -202,22 +207,24 @@ matrix. This function destructively modifies MATRIX."
                          :basis-rows (adjust-array basis-rows basis-end)
                          :row-multipliers row-multipliers))))
 
-(declaim (inline %hnf-full-rank!))
-(defun %hnf-full-rank! (matrix)
-  "Returns the Hermite normal form H of the given m * n matrix such that m <=
-n. This function destructively modifies MATRIX.
+(declaim (inline %hnf-full-rank))
+(defun %hnf-full-rank (matrix)
+  "Returns the Hermite normal form H of the given m * n matrix such that m <= n.
 
 NOTE: The given matrix must have full row rank. Otherwise the behaviour is
 undefined.
 
-This is a polynomial algorithm that requires O(mn^2) arithmetic operations as
+This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about the
 size of the determinant of (some m linearly independent columns of) MATRIX."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
-    (let ((ext (make-array (list m (+ n m)) :element-type (array-element-type matrix) :initial-element 0)))
+    (let ((matrix (copy-array matrix))
+          (ext (make-array (list m (+ n m))
+                           :element-type (array-element-type matrix)
+                           :initial-element 0)))
       (dotimes (i m)
         (dotimes (j n)
           (setf (aref ext i j) (aref matrix i j))))
@@ -260,6 +267,20 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
                              (mod (- (%ref ext k j) (* q (%ref ext k i)))
                                   det)))))))
       (adjust-array ext (list m n)))))
+
+(defun hnf (matrix)
+  "Returns the Hermite normal form H of the given (not necessarily full row rank) m
+* n matrix.
+
+This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
+well as O(mn) extended Euclidean algorithm operations on numbers up to about a
+constant multiple of the lattice determinant given by some row or column vectors
+of MATRIX."
+  (declare ((array * (* *)) matrix))
+  (destructuring-bind  (m n) (array-dimensions matrix)
+    (declare ((mod #.array-dimension-limit) m n))
+    ;; work in progress
+    ))
 
 (declaim (inline hnf-p))
 (defun hnf-p (matrix)
