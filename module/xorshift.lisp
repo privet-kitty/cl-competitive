@@ -58,4 +58,5 @@ uniform due to modulo bias."
 
 (declaim (inline randf))
 (defun randf (l r)
-  (+ l (* (- r l) (randprob))))
+  (let ((rand (randprob)))
+    (+ (* l (- 1 rand)) (* r rand))))
