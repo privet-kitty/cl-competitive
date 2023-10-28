@@ -1,8 +1,8 @@
 (defpackage :cp/bareiss
   (:use :cl)
   (:export #:bareiss!)
-  (:documentation "Provides Bareiss algorithm, a fraction-free polynomial algorithm for computing
-matrix determinant."))
+  (:documentation "Provides Bareiss algorithm, a fraction-free polynomial algorithm
+for computing matrix determinant."))
 (in-package :cp/bareiss)
 
 (declaim (ftype (function * (values integer
@@ -12,7 +12,7 @@ matrix determinant."))
                 bareiss!)
          (inline bareiss!))
 (defun bareiss! (matrix)
-  "Receives a m * n integer matrix such that m <= n, and returns its determinant,
+  "Receives an m * n integer matrix such that m <= n, and returns its determinant,
 rank, and a vector of linearly independent columns that were used to compute
 determinant.
 
