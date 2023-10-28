@@ -19,8 +19,8 @@ Reference:
 
 ;; **WORK IN PROGRESS**
 
-;; TODO: It would be better to have U as a sequence of operations than to have
-;; it as an n * n matrix, especially when n is large.
+;; TODO: It would be better to have the unimodular matrix as a sequence of
+;; operations than to have it as an n * n matrix, especially when n is large.
 
 (declaim (inline %ref))
 (defun %ref (array i j)
