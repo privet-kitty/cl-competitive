@@ -1,11 +1,13 @@
 (defpackage :cp/hermite-normal-form
   (:use :cl :cp/ext-gcd :cp/bareiss :cp/copy-array)
   (:import-from :cp/bareiss #:bareiss!)
-  (:export #:hnf-naive #:%hnf-full-rank #:hnf #:hnf-p
+  (:export #:hnf-p #:hnf-naive #:%hnf-full-rank #:hnf #:make-hnf
+           #:hnf-matrix #:hnf-unimodular-matrix #:hnf-gram-schmidt
            #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt
            #:gram-schmidt-matrix #:gram-schmidt-coefs #:gram-schmidt-rank #:gram-schmidt-det2
            #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers)
-  (:documentation "Provides an algorithm to compute the Hermite normal form.
+  (:documentation "Provides an algorithm to compute the column-style (i.e. lower triangular)
+Hermite normal form.
 
 Reference:
 - Friedrich Eisenbrand, Integer Programming and Algorithmic Geometry of Numbers,
@@ -19,9 +21,6 @@ Reference:
 
 ;; **WORK IN PROGRESS**
 
-;; TODO: It would be better to have the unimodular matrix as a sequence of
-;; operations than to have it as an n * n matrix, especially when n is large.
-
 (declaim (inline %ref))
 (defun %ref (array i j)
   (the integer (aref array i j)))
@@ -30,9 +29,18 @@ Reference:
 (defun (setf %ref) (new-value array i j)
   (setf (the integer (aref array i j)) new-value))
 
+;; FIXME: This is just for validating this implementation. I will discard it
+;; when I believe this module is stable.
+(declaim (inline %div))
+(defun %div (x y)
+  (declare (integer x y))
+  (multiple-value-bind (quot rem) (floor x y)
+    (assert (zerop rem))
+    quot))
+
 (declaim (inline hnf-naive))
 (defun hnf-naive (matrix)
-  "Returns the hermite normal form H of the given m * n matrix A such that m <= n,
+  "Returns the Hermite normal form H of the given m * n matrix A such that m <= n,
 and returns the unimodular matrix U such that AU = H as the second value.
 
 Actually the returned H is the same object as MATRIX, but I don't recommend that
@@ -40,14 +48,11 @@ you exploit this behaviour.
 
 NOTE: A must have full row rank. Otherwise the behaviour is undefined.
 
-Although U is not unique, this function is deterministic: i.e. it returns the
-same U for the same A.
-
 This algorithm requires O(mn^2) arithmetic operations as well as O(mn) extended
 Euclidean algorithm operations. (Potentially this can be reduced to O(m^2n), if
 you don't need the unimodular matrix.) However, it does NOT mean that this is a
 polynomial algorithm, because the size of the numbers that appear in the
-computation may grow exponentially. For details, please see the reference."
+computation may grow exponentially. For details, please see the reference above."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
@@ -63,8 +68,8 @@ computation may grow exponentially. For details, please see the reference."
               unless (zerop (%ref matrix i j))
               do (multiple-value-bind (x y) (ext-gcd (%ref matrix i i) (%ref matrix i j))
                    (let* ((g (+ (* x (%ref matrix i i)) (* y (%ref matrix i j))))
-                          (hi/g (floor (%ref matrix i i) g))
-                          (-hj/g (- (floor (%ref matrix i j) g))))
+                          (hi/g (%div (%ref matrix i i) g))
+                          (-hj/g (- (%div (%ref matrix i j) g))))
                      ;; A_{k, j} = 0 for all k < i
                      (loop for k from i below m
                            for value-i = (+ (* (%ref matrix k i) x)
@@ -93,13 +98,6 @@ computation may grow exponentially. For details, please see the reference."
             (dotimes (k n)
               (decf (%ref u k j) (* q (%ref u k i)))))))
       (values matrix u))))
-
-(declaim (inline %div))
-(defun %div (x y)
-  (declare (integer x y))
-  (multiple-value-bind (quot rem) (floor x y)
-    (assert (zerop rem))
-    quot))
 
 ;; TODO: Can I further decrease the magnitute of the numbers that appear in the
 ;; computation?
@@ -241,8 +239,8 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
                 do (multiple-value-bind (x y) (ext-gcd (%ref ext i i) (%ref ext i j))
                      (let* ((g (+ (* x (%ref ext i i))
                                   (* y (%ref ext i j))))
-                            (hi/g (floor (%ref ext i i) g))
-                            (-hj/g (- (floor (%ref ext i j) g))))
+                            (hi/g (%div (%ref ext i i) g))
+                            (-hj/g (- (%div (%ref ext i j) g))))
                        ;; 1. A_{k, i} = 0 for all k < i.
                        ;; 2. mod D can't be applied to the j = n + i case.
                        (setf (aref ext i i) (if (= j (+ n i)) g (mod g det))
@@ -268,9 +266,17 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
                                   det)))))))
       (adjust-array ext (list m n)))))
 
+(defstruct (hnf (:predicate nil))
+  ;; m * n column-style Hermite normal form 
+  (matrix nil :type (array * (* *)))
+  ;; n * n unimodular matrix such that (original matrix) * (unimodular matrix) = HNF
+  (unimodular-matrix nil :type (or null (array * (* *))))
+  ;; artifact obtained during applying the Gram-Schmidt process to the given matrix 
+  (gram-schmidt nil :type gram-schmidt))
+
+;; TODO: compute the unimodular matrix
 (defun hnf (matrix)
-  "Returns the Hermite normal form H of the given (not necessarily full row rank) m
-* n matrix.
+  "Computes the Hermite normal form H of the given m * n matrix.
 
 This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about a
@@ -279,12 +285,50 @@ of MATRIX."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
-    ;; work in progress
-    ))
+    (let* ((gram-schmidt (%gram-schmidt matrix))
+           (basis-rows (gram-schmidt-basis-rows gram-schmidt))
+           (rank (gram-schmidt-rank gram-schmidt))
+           (full-rank-submatrix (make-array (list rank n) :element-type (array-element-type matrix))))
+      (dotimes (i rank)
+        (let ((i-row (aref basis-rows i)))
+          (dotimes (col n)
+            (setf (aref full-rank-submatrix i col)
+                  (aref matrix i-row col)))))
+      (let ((sub-hnf (%hnf-full-rank full-rank-submatrix))
+            (hnf (make-array (list m n)
+                             :element-type (array-element-type matrix)
+                             :initial-element 0))
+            (coefs (gram-schmidt-coefs gram-schmidt))
+            (row-magnifiers (gram-schmidt-row-multipliers gram-schmidt))
+            (restored-vector (make-array n :element-type (array-element-type matrix)))
+            (last-basis-index -1))
+        (declare ((integer -1 #.array-dimension-limit) last-basis-index))
+        (dotimes (row m)
+          (let ((basis-index (position row basis-rows)))
+            (if basis-index
+                (progn
+                  (setq last-basis-index basis-index)
+                  (dotimes (col (+ 1 basis-index))
+                    (setf (aref hnf row col) (aref sub-hnf basis-index col))))
+                (progn
+                  (fill restored-vector 0)
+                  (dotimes (i (+ last-basis-index 1))
+                    (let ((coef (aref coefs row i)))
+                      (declare (integer coef))
+                      (dotimes (col (+ i 1))
+                        (incf (the integer (aref restored-vector col))
+                              (* coef (%ref sub-hnf i col))))))
+                  (dotimes (col (+ last-basis-index 1))
+                    (setf (aref hnf row col)
+                          (%div (aref restored-vector col)
+                                (aref row-magnifiers row))))))))
+        (make-hnf :matrix hnf :unimodular-matrix nil :gram-schmidt gram-schmidt)))))
 
+;; TODO: make it possible to deal with rank-deficient case
 (declaim (inline hnf-p))
 (defun hnf-p (matrix)
-  "Tests if MATRIX is in the Hermite normal form.
+  "Tests if MATRIX is in the column-style Hermite normal form (i.e. lower
+triangular matrix).
 
 Note that currently this function assumes that MATRIX has full row rank."
   (declare ((array * (* *)) matrix))
