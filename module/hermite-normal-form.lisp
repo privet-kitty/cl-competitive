@@ -134,7 +134,8 @@ matrix.
 This is a polynomial algorithm that requires O(m^2n) arithmetic operations on
 numbers up to about a constant multiple of the lattice determinant given by row
 vectors of MATRIX."
-  (declare ((array * (* *)) matrix))
+  (declare (optimize (speed 3))
+           ((array * (* *)) matrix))
   (destructuring-bind (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (let* ((matrix (copy-array matrix))
@@ -206,7 +207,6 @@ vectors of MATRIX."
                          :basis-rows (adjust-array basis-rows basis-end)
                          :row-multipliers row-multipliers))))
 
-(declaim (inline %hnf-full-rank))
 (defun %hnf-full-rank (matrix)
   "Returns the Hermite normal form H of the given m * n matrix such that m <= n.
 
@@ -216,7 +216,8 @@ undefined.
 This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about the
 size of the determinant of (some m linearly independent columns of) MATRIX."
-  (declare ((array * (* *)) matrix))
+  (declare (optimize (speed 3))
+           ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
@@ -283,7 +284,8 @@ This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about a
 constant multiple of the lattice determinant given by some row or column vectors
 of MATRIX."
-  (declare ((array * (* *)) matrix))
+  (declare (optimize (speed 3))
+           ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (let* ((gram-schmidt (%gram-schmidt matrix))
