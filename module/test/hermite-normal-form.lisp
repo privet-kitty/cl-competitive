@@ -256,8 +256,8 @@
         (*test-dribble* nil))
     (dolist (magnitute '(5 76))
       (loop for trial below 20000
-            for m = (+ 1 (random 3))
-            for n = (+ 1 (random 3))
+            for m = (+ 1 (random 8))
+            for n = (+ 1 (random 8))
             when (> m n)
             do (rotatef m n)
             do (let ((mat (make-array (list m n) :element-type t :initial-element 0)))
@@ -265,8 +265,31 @@
                    (dotimes (j n)
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
                  (let* ((hnf (hnf mat))
-                        (rank (gram-schmidt-rank (hnf-gram-schmidt hnf))))
-                   (is (eql rank (hnf-p (hnf-matrix hnf))))))))))
+                        (gram-schmidt (hnf-gram-schmidt hnf))
+                        (row-multipliers (gram-schmidt-row-multipliers gram-schmidt))
+                        (basis-rows (gram-schmidt-basis-rows gram-schmidt))
+                        (coefs (gram-schmidt-coefs gram-schmidt))
+                        (rank (gram-schmidt-rank gram-schmidt))
+                        (hnf-mat (hnf-matrix hnf)))
+                   (is (eql rank (hnf-p hnf-mat)))
+                   ;; restore non-pivot row vectors based on COEFS and the preceding rows
+                   (loop
+                     for row below m
+                     for restored-vector = (make-array n :element-type t :initial-element 0)
+                     unless (find row basis-rows)
+                     do (dotimes (i rank)
+                          (let ((i-row (aref basis-rows i))
+                                (coef (aref coefs row i)))
+                            (unless (zerop coef)
+                              (dotimes (col n)
+                                (incf (aref restored-vector col)
+                                      (* coef (aref hnf-mat i-row col)))))))
+                        (let ((target-vector
+                                (coerce (loop with multiplier = (aref row-multipliers row)
+                                              for col below n
+                                              collect (* multiplier (aref hnf-mat row col)))
+                                        'simple-vector)))
+                          (is (equalp restored-vector target-vector))))))))))
 
 (test hnf-p
   (declare (notinline hnf-p))
