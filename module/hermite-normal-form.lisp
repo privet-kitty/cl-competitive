@@ -168,19 +168,20 @@ vectors of MATRIX."
                                   det2)
                                (aref l2s i))))
             (declare (integer det2 next-det2))
-            ;; TODO: no need to check independency beyond MAX-DIM
-            (dotimes (col n)
-              (setf (aref ort-vector col)
-                    (%div (- (* next-det2 (the integer (aref ort-vector col)))
-                             (* mu-int (%ref matrix i-row col)))
-                          det2)))
+            (when (< basis-end max-dim) ; no need to check dependency beyond MAX-DIM
+              (dotimes (col n)
+                (setf (aref ort-vector col)
+                      (%div (- (* next-det2 (the integer (aref ort-vector col)))
+                               (* mu-int (%ref matrix i-row col)))
+                            det2))))
             (dotimes (j (min (+ 1 basis-end) max-dim))
               (setf (aref coef-vector j)
                     (%div (- (* next-det2 (the integer (aref coef-vector j)))
                              (* mu-int (%ref coefs i-row j)))
                           det2)))))
         ;; branches depending on linear independency
-        (if (every #'zerop ort-vector)
+        (if (or (>= basis-end max-dim)
+                (every #'zerop ort-vector))
             (progn
               (dotimes (col n)
                 (setf (%ref matrix row col) 0))
