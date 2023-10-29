@@ -324,21 +324,30 @@ of MATRIX."
                                 (aref row-magnifiers row))))))))
         (make-hnf :matrix hnf :unimodular-matrix nil :gram-schmidt gram-schmidt)))))
 
-;; TODO: make it possible to deal with rank-deficient case
 (declaim (inline hnf-p))
 (defun hnf-p (matrix)
   "Tests if MATRIX is in the column-style Hermite normal form (i.e. lower
-triangular matrix).
-
-Note that currently this function assumes that MATRIX has full row rank."
+triangular matrix), and if so, returns the row rank."
   (declare ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
-    (assert (<= m n))
-    (loop for i below m
-          for diag-elm = (%ref matrix i i)
-          always (and (> diag-elm 0)
-                      (loop for j below i
-                            always (< -1 (%ref matrix i j) diag-elm))
-                      (loop for j from (+ i 1) below n
-                            always (zerop (%ref matrix i j)))))))
+    (let ((prev-pivot-row -1)
+          (rank 0))
+      (declare ((mod #.array-dimension-limit) rank)
+               ((integer -1 (#.array-dimension-limit)) prev-pivot-row))
+      (dotimes (col n)
+        (let ((pivot-row (loop for row below m
+                               while (zerop (%ref matrix row col))
+                               finally (return row))))
+          (cond ((= m pivot-row))
+                ((< prev-pivot-row pivot-row)
+                 ;; check the row constraint
+                 (let ((pivot-elm (%ref matrix pivot-row col)))
+                   (unless (and (> pivot-elm 0)
+                                (loop for j below col
+                                      always (< -1 (%ref matrix pivot-row j) pivot-elm)))
+                     (return-from hnf-p))
+                   (incf rank)))
+                (t (return-from hnf-p)))
+          (setq prev-pivot-row pivot-row)))
+      rank)))
