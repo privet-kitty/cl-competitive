@@ -9,6 +9,7 @@
   (:export #:copy-array))
 (in-package :cp/copy-array)
 
+#+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defknown copy-array (array)
       array (flushable)
@@ -33,8 +34,8 @@
 
 NOTE: Currently this function can only deal with a simple-array."
   (declare (simple-array array))
-  (assert (and (null (array-displacement array))
-               (not (array-has-fill-pointer-p array))))
   (let ((new (make-array (array-dimensions array) :element-type (array-element-type array))))
-    (replace (sb-ext:array-storage-vector new) (sb-ext:array-storage-vector array))
+    #+sbcl (replace (sb-ext:array-storage-vector new) (sb-ext:array-storage-vector array))
+    #-sbcl (dotimes (i (array-total-size array))
+             (setf (row-major-aref new i) (row-major-aref array i)))
     new))
