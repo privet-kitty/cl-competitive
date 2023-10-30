@@ -132,7 +132,7 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
 matrix.
 
 This is a polynomial algorithm that requires O(m^2n) arithmetic operations on
-numbers up to about a constant multiple of the lattice determinant given by row
+numbers up to about a constant power of the lattice determinant given by row
 vectors of MATRIX."
   (declare (optimize (speed 3))
            ((array * (* *)) matrix))
@@ -282,8 +282,8 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
 
 This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about a
-constant multiple of the lattice determinant given by some row or column vectors
-of MATRIX."
+constant power of the lattice determinant given by some row or column vectors of
+MATRIX."
   (declare (optimize (speed 3))
            ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
