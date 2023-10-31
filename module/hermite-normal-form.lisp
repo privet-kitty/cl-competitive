@@ -131,9 +131,9 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
   "Applies the Gram-Schmidt algotithm to the each **row** of the given integer
 matrix.
 
-This is a polynomial algorithm that requires O(m^2n) arithmetic operations on
-numbers up to about a constant power of the lattice determinant given by row
-vectors of MATRIX."
+This is a polynomial algorithm that requires O(mn*min(m, n)) arithmetic
+operations on numbers up to about a constant power of the lattice determinant
+given by row vectors of MATRIX."
   (declare (optimize (speed 3))
            ((array * (* *)) matrix))
   (destructuring-bind (m n) (array-dimensions matrix)
