@@ -1,35 +1,108 @@
 (defpackage :cp/test/bareiss
-  (:use :cl :fiveam :cp/bareiss)
+  (:use :cl :fiveam :cp/bareiss :cp/copy-array)
   (:import-from :cp/test/base #:base-suite)
-  (:import-from :cp/copy-array #:copy-array)
   (:import-from :cp/mod-linear-algebra #:mod-echelon! #:mod-determinant!))
 (in-package :cp/test/bareiss)
 (in-suite base-suite)
 
 (defconstant +mod+ (+ 7 (expt 10 9)))
 
+(deftype uint () '(integer 0 #.most-positive-fixnum))
+
+(defun %bareiss (matrix &optional ext)
+  (bareiss! (copy-array matrix) (when ext (copy-array ext))))
+
 (test bareiss!/hand
-  (declare (notinline bareiss!))
-  (multiple-value-bind (det rank cols) (bareiss! (copy-array #2a()))
-    (is (= det 1))
-    (is (= rank 0))
-    (is (equalp cols #())))
-  (multiple-value-bind (det rank cols) (bareiss! (make-array '(0 2) :initial-element 0))
-    (is (= det 1))
-    (is (= rank 0))
-    (is (equalp cols #())))
-  (multiple-value-bind (det rank cols) (bareiss! #2a((1 1 0) (0 0 -2)))
-    (is (= det -2))
-    (is (= rank 2))
-    (is (equalp cols #(0 2))))
-  (multiple-value-bind (det rank cols) (bareiss! #2a((1 1 1) (0 0 0)))
-    (is (= det 0))
-    (is (= rank 1))
-    (is (equalp cols #(0)))))
+  ;; zero-size case
+  (is (equalp (%bareiss #2a())
+              (make-bareiss :matrix #2a()
+                            :ext nil
+                            :rank 0
+                            :det 1
+                            :cols (coerce #() '(simple-array uint (*))))))
+  (is (equalp (%bareiss (make-array '(0 2) :initial-element 0)
+                        (make-array '(0 3) :initial-element 0))
+              (make-bareiss :matrix (make-array '(0 2) :initial-element 0)
+                            :ext (make-array '(0 3) :initial-element 0)
+                            :rank 0
+                            :det 1
+                            :cols (coerce #() '(simple-array uint (*))))))
+  (is (equalp (%bareiss #2a(() ()) #2a((2) (3)))
+              (make-bareiss :matrix #2a(() ())
+                            :ext #2a((2) (3))
+                            :rank 0
+                            :det 1
+                            :cols (coerce #() '(simple-array uint (*))))))
+  ;; one-size case
+  (is (equalp (%bareiss #2a((0 0 0)) #2a((3)))
+              (make-bareiss :matrix #2a((0 0 0))
+                            :ext #2a((3))
+                            :rank 0
+                            :det 0
+                            :cols (coerce #() '(simple-array uint (*))))))
+  (is (equalp (%bareiss #2a((3 1)) #2a((4 5)))
+              (make-bareiss :matrix #2a((3 1))
+                            :ext #2a((4 5))
+                            :rank 1
+                            :det 3
+                            :cols (coerce #(0) '(simple-array uint (*))))))
+  (is (equalp (%bareiss #2a((4) (0) (0)) #2a((8 12) (0 0) (0 0)))
+              (make-bareiss :matrix #2a((4) (0) (0))
+                            :ext #2a((8 12) (0 0) (0 0))
+                            :rank 1
+                            :det 4
+                            :cols (coerce #(0) '(simple-array uint (*))))))
+  (is (equalp (%bareiss #2a((4) (0) (1)) #2a((8 12) (0 0) (2 3)))
+              (make-bareiss :matrix #2a((4) (0) (0))
+                            :ext #2a((8 12) (0 0) (0 0))
+                            :rank 1
+                            :det 4
+                            :cols (coerce #(0) '(simple-array uint (*))))))
+  (is (not (equalp (%bareiss #2a((4) (0) (1)) #2a((8 12) (0 0) (2 4)))
+                   (make-bareiss :matrix #2a((4) (0) (0))
+                                 :ext #2a((8 12) (0 0) (0 0))
+                                 :rank 1
+                                 :det 4
+                                 :cols (coerce #(0) '(simple-array uint (*)))))))
+  ;; example from https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+  (is (equalp (%bareiss #2a((3 1) (2 2)) #2a((5) (6)))
+              (make-bareiss :matrix #2a((3 1) (0 4))
+                            :ext #2a((5) (8))
+                            :rank 2
+                            :det 4
+                            :cols (coerce #(0 1) '(simple-array uint (*))))))
+  ;; example from https://ja.wikipedia.org/wiki/%E3%82%AC%E3%82%A6%E3%82%B9%E3%81%AE%E6%B6%88%E5%8E%BB%E6%B3%95
+  (is (equalp (%bareiss #2a((1 3 1) (1 1 -1) (3 11 5)) #2a((9) (1) (35)))
+              (make-bareiss :matrix #2a((1 3 1) (0 -2 -2) (0 0 0))
+                            :ext #2a((9) (-8) (0))
+                            :rank 2
+                            :det 0
+                            :cols (coerce #(0 1) '(simple-array uint (*))))))
+  ;; linearly dependent case
+  (is (equalp (%bareiss #2a((3 1 2) (9 3 6)) #2a((5) (15)))
+              (make-bareiss :matrix #2a((3 1 2) (0 0 0))
+                            :ext #2a((5) (0))
+                            :rank 1
+                            :det 0
+                            :cols (coerce #(0) '(simple-array uint (*))))))
+  ;; row full rank case
+  (is (equalp (%bareiss #2a((1 1 1) (1 -1 2)) #2a((5 8) (5 4)))
+              (make-bareiss :matrix #2a((1 1 1) (0 -2 1))
+                            :ext #2a((5 8) (0 -4))
+                            :rank 2
+                            :det -2
+                            :cols (coerce #(0 1) '(simple-array uint (*))))))
+  ;; column full rank case
+  (is (equalp (%bareiss #2a((1 1) (1 -1) (1 2)) #2a((3) (-1) (5)))
+              (make-bareiss :matrix #2a((1 1) (0 -2) (0 0))
+                            :ext #2a((3) (-4) (0))
+                            :rank 2
+                            :det -2
+                            :cols (coerce #(0 1) '(simple-array uint (*)))))))
 
 (defun calc-rank (mat)
   (declare (optimize (speed 3))
-           ((simple-array fixnum (* *)) mat))
+           ((simple-array * (* *)) mat))
   (destructuring-bind (m n) (array-dimensions  mat)
     (let ((tmp (make-array (list m n) :element-type '(unsigned-byte 31))))
       (dotimes (i m)
@@ -41,7 +114,8 @@
   (declare (optimize (speed 3))
            ((simple-array fixnum (* *)) mat)
            ((simple-array (integer 0 #.most-positive-fixnum) (*)) cols))
-  (let ((m (array-dimension mat 0)))
+  (destructuring-bind (m n) (array-dimensions mat)
+    (assert (<= m n))
     (unless (= m (length cols))
       (return-from calc-det 0))
     (let ((rec-mat (make-array (list m m) :element-type '(unsigned-byte 31))))
@@ -54,19 +128,25 @@
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (mag '(5 50))
-      (loop for trial below 50000
+      (loop for trial below 100000
             for m = (+ 1 (random 8))
             for n = (+ 1 (random 8))
-            when (> m n)
-            do (rotatef m n)
             do (let ((mat (make-array (list m n) :element-type 'fixnum)))
                  (dotimes (i m)
                    (dotimes (j n)
                      (setf (aref mat i j) (- (random (* 2 mag)) mag))))
-                 (multiple-value-bind (det rank cols) (bareiss! (copy-array mat))
+                 (let* ((bareiss (bareiss! (copy-array mat)))
+                        (det (bareiss-det bareiss))
+                        (rank (bareiss-rank bareiss))
+                        (cols (bareiss-cols bareiss))
+                        (trimat (bareiss-matrix bareiss)))
                    (is (= rank (calc-rank mat)))
-                   (is (= (mod det +mod+) (calc-det mat cols)))
-                   (is (= rank (length cols)))
-                   (if (= rank m)
+                   (when (<= m n)
+                     (is (= (mod det +mod+) (calc-det mat cols))))
+                   (if (= rank (min m n))
                        (is-false (zerop det))
-                       (is-true (zerop det)))))))))
+                       (is-true (zerop det)))
+                   ;; TODO: better test for column-full-rank case
+                   (is (= rank (length cols)))
+                   (dotimes (i (- rank 1))
+                     (is (< (aref cols i) (aref cols (+ i 1)))))))))))

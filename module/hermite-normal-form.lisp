@@ -1,6 +1,5 @@
 (defpackage :cp/hermite-normal-form
   (:use :cl :cp/ext-gcd :cp/bareiss :cp/copy-array)
-  (:import-from :cp/bareiss #:bareiss!)
   (:export #:hnf-p #:hnf-naive #:%hnf-full-rank #:hnf #:make-hnf
            #:hnf-matrix #:hnf-unimodular-matrix #:hnf-gram-schmidt
            #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt
@@ -228,9 +227,9 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
       (dotimes (i m)
         (dotimes (j n)
           (setf (aref ext i j) (aref matrix i j))))
-      (let ((det (multiple-value-bind (det rank) (bareiss! matrix)
-                   (assert (= rank m))
-                   (abs det))))
+      (let ((det (let ((bareiss (bareiss! matrix)))
+                   (assert (= (bareiss-rank bareiss) m))
+                   (abs (bareiss-det bareiss)))))
         (dotimes (i m)
           (setf (aref ext i (+ n i)) det))
         (dotimes (i m)
