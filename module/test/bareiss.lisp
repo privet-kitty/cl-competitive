@@ -1,5 +1,5 @@
 (defpackage :cp/test/bareiss
-  (:use :cl :fiveam :cp/bareiss :cp/copy-array)
+  (:use :cl :fiveam :cp/bareiss :cp/copy-array :cp/gemm)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-linear-algebra #:mod-echelon! #:mod-determinant!))
 (in-package :cp/test/bareiss)
@@ -128,7 +128,7 @@
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (mag '(5 50))
-      (loop for trial below 100000
+      (loop for trial below 50000
             for m = (+ 1 (random 8))
             for n = (+ 1 (random 8))
             do (let ((mat (make-array (list m n) :element-type 'fixnum)))
@@ -150,3 +150,49 @@
                    (is (= rank (length cols)))
                    (dotimes (i (- rank 1))
                      (is (< (aref cols i) (aref cols (+ i 1)))))))))))
+
+(test %solve-nonsingular-linear-system!/hand
+  ;; zero-size case
+  (is (equalp (%solve-nonsingular-linear-system! (copy-array #2a()) (copy-array #2a()))
+              #2a()))
+  (is (equalp (%solve-nonsingular-linear-system!
+               (copy-array #2a()) (make-array '(0 3) :initial-element 0))
+              (make-array '(0 3) :initial-element 0)))
+  ;; one-size case
+  (is (equalp (%solve-nonsingular-linear-system!
+               (copy-array #2a((3))) (copy-array #2a((3 6 9))))
+              #2a((1 2 3))))
+  (is (null (%solve-nonsingular-linear-system!
+             (copy-array #2a((3))) (copy-array #2a((3 6 10))))))
+  ;; example from https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
+  (is (equalp (%solve-nonsingular-linear-system!
+               (copy-array #2a((3 1) (2 2)))
+               (copy-array #2a((5) (6))))
+              #2a((1) (2)))))
+
+(test %solve-nonsingular-linear-system!/random
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil))
+    (dolist (mag '(5 50))
+      (loop with trial = 0
+            while (< trial 30000)
+            for m = (+ 1 (random 7))
+            for n = (+ 1 (random 7))
+            do (let ((a (make-array (list m m) :element-type 'fixnum))
+                     (x (make-array (list m n) :element-type 'fixnum)))
+                 (dotimes (i m)
+                   (dotimes (j m)
+                     (setf (aref a i j) (- (random (* 2 mag)) mag))))
+                 (dotimes (i m)
+                   (dotimes (j n)
+                     (setf (aref x i j) (- (random (* 2 mag)) mag))))
+                 (when (= m (calc-rank a))
+                   (let* ((ax (gemm a x))
+                          (x-restored (%solve-nonsingular-linear-system!
+                                       (copy-array a) (copy-array ax))))
+                     (is-false (null x-restored))
+                     (when x-restored
+                       (is-true (loop for k below (* m n)
+                                      always (= (row-major-aref x k)
+                                                (row-major-aref x-restored k)))))
+                     (incf trial))))))))

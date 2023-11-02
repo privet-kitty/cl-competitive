@@ -1,7 +1,8 @@
 (defpackage :cp/bareiss
   (:use :cl)
   (:export #:bareiss! #:bareiss #:make-bareiss #:bareiss-matrix
-           #:bareiss-ext #:bareiss-rank #:bareiss-det #:bareiss-cols)
+           #:bareiss-ext #:bareiss-rank #:bareiss-det #:bareiss-cols
+           #:%solve-nonsingular-linear-system!)
   (:documentation "Provides Bareiss algorithm, a fraction-free polynomial-time
 algorithm for Gaussian elimination."))
 (in-package :cp/bareiss)
@@ -97,6 +98,9 @@ Elimination. (1967)"
                   (unless (= k nz-row)
                     (dotimes (j n)
                       (rotatef (aref matrix k j) (aref matrix nz-row j)))
+                    (when ext
+                      (dotimes (j ext-n)
+                        (rotatef (aref ext k j) (aref ext nz-row j))))
                     (setq sign (- sign)))
                   (setf (aref cols k) target-col)
                   (return)))
@@ -118,3 +122,32 @@ Elimination. (1967)"
                                        prev-diag)))))
               (setq prev-diag diag))
             (incf target-col)))))))
+
+(defun %solve-nonsingular-linear-system! (a b)
+  "Given an m * m nonsingular matrix A and an m * n matrix B, this function returns
+the m * n (integer) matrix X such that AX = B if it exists. Otherwise it returns
+NIL.
+
+In addition, it returns the BAREISS sturucture of A as the second value."
+  (declare (optimize (speed 3))
+           ((array * (* *)) a b))
+  (destructuring-bind (m n) (array-dimensions b)
+    (declare ((mod #.array-dimension-limit) m n))
+    (assert (= m (array-dimension a 0) (array-dimension a 1)))
+    (let* ((bareiss (bareiss! a b))
+           (a-trans (bareiss-matrix bareiss))
+           (b-trans (bareiss-ext bareiss))
+           (res (make-array (list m n) :element-type (array-element-type a))))
+      (assert (= (bareiss-rank bareiss) m))
+      (loop for i from (- m 1) downto 0
+            do (dotimes (j n)
+                 (let ((val (%ref b-trans i j)))
+                   (declare (integer val))
+                   (loop for k from (+ i 1) below m
+                         do (decf val (* (%ref a-trans i k) (%ref res k j))))
+                   (multiple-value-bind (quot rem) (floor val (%ref a-trans i i))
+                     (unless (zerop rem)
+                       (return-from %solve-nonsingular-linear-system!
+                         (values nil bareiss)))
+                     (setf (aref res i j) quot)))))
+      (values res bareiss))))
