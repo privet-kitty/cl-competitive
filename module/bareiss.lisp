@@ -2,7 +2,7 @@
   (:use :cl)
   (:export #:bareiss! #:bareiss #:make-bareiss #:bareiss-matrix
            #:bareiss-ext #:bareiss-rank #:bareiss-det #:bareiss-cols
-           #:%solve-nonsingular-linear-system!)
+           #:solve-regular-linear-system!)
   (:documentation "Provides Bareiss algorithm, a fraction-free polynomial-time
 algorithm for Gaussian elimination."))
 (in-package :cp/bareiss)
@@ -123,7 +123,7 @@ Elimination. (1967)"
               (setq prev-diag diag))
             (incf target-col)))))))
 
-(defun %solve-nonsingular-linear-system! (a b)
+(defun solve-regular-linear-system! (a b)
   "Given an m * m nonsingular matrix A and an m * n matrix B, this function returns
 the m * n (integer) matrix X such that AX = B if it exists. Otherwise it returns
 NIL.
@@ -147,7 +147,7 @@ In addition, it returns the BAREISS sturucture of A as the second value."
                          do (decf val (* (%ref a-trans i k) (%ref res k j))))
                    (multiple-value-bind (quot rem) (floor val (%ref a-trans i i))
                      (unless (zerop rem)
-                       (return-from %solve-nonsingular-linear-system!
+                       (return-from solve-regular-linear-system!
                          (values nil bareiss)))
                      (setf (aref res i j) quot)))))
       (values res bareiss))))

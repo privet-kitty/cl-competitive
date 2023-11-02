@@ -151,26 +151,26 @@
                    (dotimes (i (- rank 1))
                      (is (< (aref cols i) (aref cols (+ i 1)))))))))))
 
-(test %solve-nonsingular-linear-system!/hand
+(test solve-regular-linear-system!/hand
   ;; zero-size case
-  (is (equalp (%solve-nonsingular-linear-system! (copy-array #2a()) (copy-array #2a()))
+  (is (equalp (solve-regular-linear-system! (copy-array #2a()) (copy-array #2a()))
               #2a()))
-  (is (equalp (%solve-nonsingular-linear-system!
+  (is (equalp (solve-regular-linear-system!
                (copy-array #2a()) (make-array '(0 3) :initial-element 0))
               (make-array '(0 3) :initial-element 0)))
   ;; one-size case
-  (is (equalp (%solve-nonsingular-linear-system!
+  (is (equalp (solve-regular-linear-system!
                (copy-array #2a((3))) (copy-array #2a((3 6 9))))
               #2a((1 2 3))))
-  (is (null (%solve-nonsingular-linear-system!
+  (is (null (solve-regular-linear-system!
              (copy-array #2a((3))) (copy-array #2a((3 6 10))))))
   ;; example from https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-  (is (equalp (%solve-nonsingular-linear-system!
+  (is (equalp (solve-regular-linear-system!
                (copy-array #2a((3 1) (2 2)))
                (copy-array #2a((5) (6))))
               #2a((1) (2)))))
 
-(test %solve-nonsingular-linear-system!/random
+(test solve-regular-linear-system!/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dolist (mag '(5 50))
@@ -188,7 +188,7 @@
                      (setf (aref x i j) (- (random (* 2 mag)) mag))))
                  (when (= m (calc-rank a))
                    (let* ((ax (gemm a x))
-                          (x-restored (%solve-nonsingular-linear-system!
+                          (x-restored (solve-regular-linear-system!
                                        (copy-array a) (copy-array ax))))
                      (is-false (null x-restored))
                      (when x-restored
