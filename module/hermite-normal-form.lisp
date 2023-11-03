@@ -209,6 +209,9 @@ given by row vectors of MATRIX."
 (defun %hnf-full-rank (matrix &optional det)
   "Returns the Hermite normal form H of the given m * n matrix such that m <= n.
 
+You can pass DET, the determinant of m linearly independent columns of
+MATRIX. If it isn't given, this function internally calculates it.
+
 NOTE: The given matrix must have full row rank. Otherwise the behaviour is
 undefined.
 
@@ -223,49 +226,49 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
     (assert (<= m n))
     (let ((ext (make-array (list m (+ n m))
                            :element-type (array-element-type matrix)
-                           :initial-element 0)))
+                           :initial-element 0))
+          (det (abs (or det
+                        (let ((bareiss (bareiss! (copy-array matrix))))
+                          (assert (= (bareiss-rank bareiss) m))
+                          (bareiss-det bareiss))))))
       (dotimes (i m)
         (dotimes (j n)
           (setf (aref ext i j) (aref matrix i j))))
-      (let ((det (or det
-                     (let ((bareiss (bareiss! (copy-array matrix))))
-                       (assert (= (bareiss-rank bareiss) m))
-                       (abs (bareiss-det bareiss))))))
-        (dotimes (i m)
-          (setf (aref ext i (+ n i)) det))
-        (dotimes (i m)
-          (loop with hi = (%ref ext i i)
-                for j from (+ i 1) below (+ n m)
-                for hj = (%ref ext i j)
-                unless (zerop (%ref ext i j))
-                do (multiple-value-bind (x y) (ext-gcd (%ref ext i i) (%ref ext i j))
-                     (let* ((g (+ (* x (%ref ext i i))
-                                  (* y (%ref ext i j))))
-                            (hi/g (%div (%ref ext i i) g))
-                            (-hj/g (- (%div (%ref ext i j) g))))
-                       ;; 1. A_{k, i} = 0 for all k < i.
-                       ;; 2. mod D can't be applied to the j = n + i case.
-                       (setf (aref ext i i) (if (= j (+ n i)) g (mod g det))
-                             (aref ext i j) 0)
-                       (loop for k from (+ i 1) below m
-                             for value-i-old = (%ref ext k i)
-                             for value-j-old = (%ref ext k j)
-                             for value-i-new = (mod (+ (* value-i-old x)
-                                                       (* value-j-old y))
-                                                    det)
-                             for value-j-new = (mod (+ (* value-i-old -hj/g)
-                                                       (* value-j-old hi/g))
-                                                    det)
-                             do (setf (aref ext k i) value-i-new
-                                      (aref ext k j) value-j-new)))))
-          (dotimes (j i)
-            (let ((q (floor (%ref ext i j) (%ref ext i i))))
-              ;; A_{k, i} = 0 for all k < i
-              (decf (%ref ext i j) (* q (%ref ext i i)))
-              (loop for k from (+ i 1) below m
-                    do (setf (aref ext k j)
-                             (mod (- (%ref ext k j) (* q (%ref ext k i)))
-                                  det)))))))
+      (dotimes (i m)
+        (setf (aref ext i (+ n i)) det))
+      (dotimes (i m)
+        (loop with hi = (%ref ext i i)
+              for j from (+ i 1) below (+ n m)
+              for hj = (%ref ext i j)
+              unless (zerop (%ref ext i j))
+              do (multiple-value-bind (x y) (ext-gcd (%ref ext i i) (%ref ext i j))
+                   (let* ((g (+ (* x (%ref ext i i))
+                                (* y (%ref ext i j))))
+                          (hi/g (%div (%ref ext i i) g))
+                          (-hj/g (- (%div (%ref ext i j) g))))
+                     ;; 1. A_{k, i} = 0 for all k < i.
+                     ;; 2. mod D can't be applied to the j = n + i case.
+                     (setf (aref ext i i) (if (= j (+ n i)) g (mod g det))
+                           (aref ext i j) 0)
+                     (loop for k from (+ i 1) below m
+                           for value-i-old = (%ref ext k i)
+                           for value-j-old = (%ref ext k j)
+                           for value-i-new = (mod (+ (* value-i-old x)
+                                                     (* value-j-old y))
+                                                  det)
+                           for value-j-new = (mod (+ (* value-i-old -hj/g)
+                                                     (* value-j-old hi/g))
+                                                  det)
+                           do (setf (aref ext k i) value-i-new
+                                    (aref ext k j) value-j-new)))))
+        (dotimes (j i)
+          (let ((q (floor (%ref ext i j) (%ref ext i i))))
+            ;; A_{k, i} = 0 for all k < i
+            (decf (%ref ext i j) (* q (%ref ext i i)))
+            (loop for k from (+ i 1) below m
+                  do (setf (aref ext k j)
+                           (mod (- (%ref ext k j) (* q (%ref ext k i)))
+                                det))))))
       (adjust-array ext (list m n)))))
 
 (defstruct (hnf (:predicate nil))
