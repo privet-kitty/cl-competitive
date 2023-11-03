@@ -1,5 +1,5 @@
 (defpackage :cp/test/hermite-normal-form
-  (:use :cl :fiveam :cp/hermite-normal-form)
+  (:use :cl :fiveam :cp/hermite-normal-form :cp/bareiss :cp/copy-array)
   (:import-from :cp/test/base #:base-suite)
   (:import-from :cp/mod-linear-algebra #:mod-echelon!)
   (:import-from :cp/gemm #:gemm))
@@ -57,6 +57,28 @@
   (is (equalp (%hnf-full-rank #2a()) #2a()))
   (is (equalp (%hnf-full-rank (make-array '(0 2) :element-type 'fixnum))
               (make-array '(0 2) :element-type 'fixnum))))
+
+(test %hnf-full-rank/random
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil))
+    ;; Numbers that appear in the computation should be within fixnum because of
+    ;; the Hadamard bound: sqrt(76^2 * 8)^8 ~ 4.56e18 < 4.61e18 ~ 2^62
+    (dolist (magnitute '(5 76))
+      (loop with trial = 0
+            for m = (+ 1 (random 8))
+            for n = (+ 1 (random 8))
+            until (=  trial 20000)
+            when (> m n)
+            do (rotatef m n)
+            do (let ((mat (make-array (list m n) :element-type 'fixnum :initial-element 0)))
+                 (dotimes (i m)
+                   (dotimes (j n)
+                     (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
+                 ;; equality between hnf-naive and %hnf-full-rank is tested in hnf-naive/random
+                 (when (= (calc-rank mat) m)
+                   (let ((h (finishes (%hnf-full-rank mat))))
+                     (is (eql m (hnf-p h))))
+                   (incf trial)))))))
 
 (test %gram-schmidt/hand
   (declare (notinline %gram-schmidt))
@@ -189,28 +211,6 @@
                                        'simple-vector)))
                          (is (equalp restored-vector target-vector)))))))))))
 
-(test %hnf-full-rank/random
-  (let ((*random-state* (sb-ext:seed-random-state 0))
-        (*test-dribble* nil))
-    ;; Numbers that appear in the computation should be within fixnum because of
-    ;; the Hadamard bound: sqrt(76^2 * 8)^8 ~ 4.56e18 < 4.61e18 ~ 2^62
-    (dolist (magnitute '(5 76))
-      (loop with trial = 0
-            for m = (+ 1 (random 8))
-            for n = (+ 1 (random 8))
-            until (=  trial 20000)
-            when (> m n)
-            do (rotatef m n)
-            do (let ((mat (make-array (list m n) :element-type 'fixnum :initial-element 0)))
-                 (dotimes (i m)
-                   (dotimes (j n)
-                     (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
-                 ;; equality between hnf-naive and %hnf-full-rank is tested in hnf-naive/random
-                 (when (= (calc-rank mat) m)
-                   (let ((h (finishes (%hnf-full-rank mat))))
-                     (is (eql m (hnf-p h))))
-                   (incf trial)))))))
-
 (test hnf/hand
   (declare (notinline hnf))
   ;; zero-size case
@@ -281,7 +281,8 @@
                      (is (eql rank (hnf-p hnf-mat)))
                      (when calc-unimodular-p
                        (is (equalp (gemm mat (hnf-unimodular-matrix hnf))
-                                   (hnf-matrix hnf))))
+                                   (hnf-matrix hnf)))
+                       (is (= 1 (abs (bareiss-det (bareiss! (copy-array (hnf-unimodular-matrix hnf))))))))
                      ;; restore non-pivot row vectors based on COEFS and the preceding rows
                      (loop
                        for row below m
