@@ -393,6 +393,7 @@ returns (VALUES NIL NIL HNF)."
            ((array * (*)) b))
   (destructuring-bind (m n) (array-dimensions a)
     (declare ((mod #.array-dimension-limit) m n))
+    (assert (= m (length b)))
     (let* ((hnf (hnf a t))
            (h (hnf-matrix hnf)) ; AU = H
            (u (hnf-unimodular-matrix hnf))
@@ -405,6 +406,9 @@ returns (VALUES NIL NIL HNF)."
                 do (incf row))
           (setf (aref pivot-rows col) row)))
       ;; solve Hy = b
+      (dotimes (row (if (zerop rank) m (aref pivot-rows 0)))
+        (unless (zerop (the integer (aref b row)))
+          (return-from solve-integer-linear-system (values nil nil hnf))))
       (dotimes (col rank)
         (let ((pivot-row (aref pivot-rows col)))
           (multiple-value-bind (quot rem)
