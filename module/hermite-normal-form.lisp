@@ -379,7 +379,6 @@ triangular matrix), and if so, returns the row rank."
           (setq prev-pivot-row pivot-row)))
       rank)))
 
-;; NOTE: NOT TESTED
 (defun solve-integer-linear-system (a b)
   "Receives an m * n matrix A and an m-dimensional vector b, this function solves
 Ax = b in the integer space.

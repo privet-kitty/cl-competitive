@@ -356,6 +356,55 @@
     (is (null intercepts))
     (is (null coefs))))
 
+;; from https://atcoder.jp/contests/abc088/tasks/abc088_c
+
+(defun solve-abc088-by-hnf (cs)
+  (declare ((simple-array * (3 3)) cs))
+  (let ((mat (make-array '(9 6) :element-type 'fixnum :initial-element 0)))
+    (dotimes (i 3)
+      (dotimes (j 3)
+        (let ((row (+ (* i 3) j)))
+          (setf (aref mat row i) 1
+                (aref mat row (+ 3 j)) 1))))
+    (solve-integer-linear-system mat (sb-ext:array-storage-vector cs))))
+
+(defun solve-abc088-by-hand (cs)
+  (let* ((b0 (aref cs 0 0))
+         (b1 (aref cs 0 1))
+         (b2 (aref cs 0 2))
+         (a1 (- (aref cs 1 1) b1))
+         (a2 (- (aref cs 2 1) b1)))
+    (when (and (= (aref cs 1 0) (+ a1 b0))
+               (= (aref cs 1 2) (+ a1 b2))
+               (= (aref cs 2 0) (+ a2 b0))
+               (= (aref cs 2 2) (+ a2 b2)))
+      (vector 0 a1 a2 b0 b1 b2))))
+
+(test solve-integer-linear-system/abc088
+  (let ((*random-state* (sb-ext:seed-random-state 0))
+        (*test-dribble* nil)
+        (trial 0))
+    (loop
+      (when (= trial 100)
+        (return))
+      (let ((cs (make-array '(3 3) :element-type 'fixnum)))
+        (dotimes (i 3)
+          (dotimes (j 3)
+            (setf (aref cs i j) (random 2))))
+        (let ((mat (make-array '(9 6) :element-type 'fixnum)))
+          (dotimes (i 3)
+            (dotimes (j 3)
+              (let ((row (+ (* i 3) j)))
+                (setf (aref mat row i) 1
+                      (aref mat row (+ 3 j)) 1))))
+          (let ((sol1 (solve-integer-linear-system mat (sb-ext:array-storage-vector cs)))
+                (sol2 (solve-abc088-by-hand cs)))
+            (when sol1
+              (incf trial))
+            (if sol1
+                (is (not (null sol2)))
+                (is (null sol2)))))))))
+
 (test hnf-p
   (declare (notinline hnf-p))
   (is (eql 0 (hnf-p #2a())))
