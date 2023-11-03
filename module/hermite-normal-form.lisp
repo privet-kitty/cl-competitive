@@ -4,7 +4,8 @@
            #:hnf-matrix #:hnf-unimodular-matrix #:hnf-gram-schmidt
            #:gram-schmidt #:make-gram-schmidt #:%gram-schmidt
            #:gram-schmidt-matrix #:gram-schmidt-coefs #:gram-schmidt-rank #:gram-schmidt-det2
-           #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers)
+           #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers
+           #:solve-integer-linear-system)
   (:documentation "Provides an algorithm to compute the column-style (i.e. lower triangular)
 Hermite normal form.
 
@@ -17,8 +18,6 @@ Reference:
   note), https://cseweb.ucsd.edu/classes/sp14/cse206A-a/lec4.pdf
 "))
 (in-package :cp/hermite-normal-form)
-
-;; **WORK IN PROGRESS**
 
 (declaim (inline %ref))
 (defun %ref (array i j)
@@ -379,3 +378,62 @@ triangular matrix), and if so, returns the row rank."
                 (t (return-from hnf-p)))
           (setq prev-pivot-row pivot-row)))
       rank)))
+
+;; NOTE: NOT TESTED
+(defun solve-integer-linear-system (a b)
+  "Receives an m * n matrix A and an m-dimensional vector b, this function solves
+Ax = b in the integer space.
+
+If Ax = b is feasible, this function returns three values: an n-dimensional
+vector c, an n * (n - rank) matrix M, and the HNF of A such that x = c + Mz is a
+solution of Ax = b for any integer vector z. If it is infeasible, this function
+returns (VALUES NIL NIL HNF)."
+  (declare (optimize (speed 3))
+           ((array * (* *)) a)
+           ((array * (*)) b))
+  (destructuring-bind (m n) (array-dimensions a)
+    (declare ((mod #.array-dimension-limit) m n))
+    (let* ((hnf (hnf a t))
+           (h (hnf-matrix hnf)) ; AU = H
+           (u (hnf-unimodular-matrix hnf))
+           (rank (gram-schmidt-rank (hnf-gram-schmidt hnf)))
+           (y (make-array n :element-type (array-element-type a) :initial-element 1))
+           (pivot-rows (make-array rank :element-type '(integer 0 #.most-positive-fixnum))))
+      (let ((row 0))
+        (dotimes (col rank)
+          (loop while (zerop (%ref h row col))
+                do (incf row))
+          (setf (aref pivot-rows col) row)))
+      ;; solve Hy = b
+      (dotimes (col rank)
+        (let ((pivot-row (aref pivot-rows col)))
+          (multiple-value-bind (quot rem)
+              (floor (- (the integer (aref b pivot-row))
+                        (loop for j below col
+                              sum (* (%ref h pivot-row j) (the integer (aref y j)))
+                              of-type integer))
+                     (%ref h pivot-row col))
+            (unless (zerop rem)
+              (return-from solve-integer-linear-system (values nil nil hnf)))
+            (setf (aref y col) quot))
+          ;; check linearly dependent rows
+          (let ((end-row (if (= (+ col 1) rank)
+                             m
+                             (aref pivot-rows (+ col 1)))))
+            (loop for row from (+ pivot-row 1) below end-row
+                  for val = (loop for j to col
+                                  sum (* (%ref h row j) (the integer (aref y j)))
+                                  of-type integer)
+                  unless (= val (the integer (aref b row)))
+                  do (return-from solve-integer-linear-system (values nil nil hnf))))))
+      ;; x = Uy
+      (let ((intercepts (make-array n :element-type (array-element-type a)))
+            (coefs (make-array (list n (- n rank)) :element-type (array-element-type a))))
+        (dotimes (i n)
+          (setf (aref intercepts i)
+                (loop for j below rank
+                      sum (* (%ref u i j) (the integer (aref y j)))
+                      of-type integer))
+          (loop for j from rank below n
+                do (setf (aref coefs i (- j rank)) (aref u i j))))
+        (values intercepts coefs hnf)))))
