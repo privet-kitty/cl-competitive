@@ -206,7 +206,7 @@ given by row vectors of MATRIX."
                          :basis-rows (adjust-array basis-rows basis-end)
                          :row-multipliers row-multipliers))))
 
-(defun %hnf-full-rank (matrix)
+(defun %hnf-full-rank (matrix &optional det)
   "Returns the Hermite normal form H of the given m * n matrix such that m <= n.
 
 NOTE: The given matrix must have full row rank. Otherwise the behaviour is
@@ -216,20 +216,21 @@ This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
 well as O(mn) extended Euclidean algorithm operations on numbers up to about the
 size of the determinant of (some m linearly independent columns of) MATRIX."
   (declare (optimize (speed 3))
-           ((array * (* *)) matrix))
+           ((array * (* *)) matrix)
+           ((or null integer) det))
   (destructuring-bind  (m n) (array-dimensions matrix)
     (declare ((mod #.array-dimension-limit) m n))
     (assert (<= m n))
-    (let ((matrix (copy-array matrix))
-          (ext (make-array (list m (+ n m))
+    (let ((ext (make-array (list m (+ n m))
                            :element-type (array-element-type matrix)
                            :initial-element 0)))
       (dotimes (i m)
         (dotimes (j n)
           (setf (aref ext i j) (aref matrix i j))))
-      (let ((det (let ((bareiss (bareiss! matrix)))
-                   (assert (= (bareiss-rank bareiss) m))
-                   (abs (bareiss-det bareiss)))))
+      (let ((det (or det
+                     (let ((bareiss (bareiss! (copy-array matrix))))
+                       (assert (= (bareiss-rank bareiss) m))
+                       (abs (bareiss-det bareiss))))))
         (dotimes (i m)
           (setf (aref ext i (+ n i)) det))
         (dotimes (i m)
@@ -275,14 +276,17 @@ size of the determinant of (some m linearly independent columns of) MATRIX."
   ;; artifact obtained during applying the Gram-Schmidt process to the given matrix 
   (gram-schmidt nil :type gram-schmidt))
 
-;; TODO: compute the unimodular matrix
-(defun hnf (matrix)
-  "Computes the Hermite normal form H of the given m * n matrix.
+(defun hnf (matrix &optional calc-unimodular-p)
+  "Computes the Hermite normal form H of the given m * n matrix A.
 
-This is a polynomial algorithm that requires O(m^2n) arithmetic operations as
-well as O(mn) extended Euclidean algorithm operations on numbers up to about a
-constant power of the lattice determinant given by some row or column vectors of
-MATRIX."
+If CALC-UNIMODULAR-P is true, this function additionally computes the unimodular
+matrix such that AU = H.
+
+This is a polynomial algorithm that requires O(mn*min(m, n)) arithmetic
+operations as well as O(mn) extended Euclidean algorithm operations on numbers
+up to about a constant power of the lattice determinant given by some row or
+column vectors of MATRIX. When CALC-UNIMODULAR-P is true, it requires O(mn^2)
+arithmetic operations instead."
   (declare (optimize (speed 3))
            ((array * (* *)) matrix))
   (destructuring-bind  (m n) (array-dimensions matrix)
@@ -294,16 +298,31 @@ MATRIX."
       (dotimes (i rank)
         (let ((i-row (aref basis-rows i)))
           (dotimes (col n)
-            (setf (aref full-rank-submatrix i col)
-                  (aref matrix i-row col)))))
-      (let ((sub-hnf (%hnf-full-rank full-rank-submatrix))
-            (hnf (make-array (list m n)
-                             :element-type (array-element-type matrix)
-                             :initial-element 0))
-            (coefs (gram-schmidt-coefs gram-schmidt))
-            (row-magnifiers (gram-schmidt-row-multipliers gram-schmidt))
-            (restored-vector (make-array n :element-type (array-element-type matrix)))
-            (last-basis-index -1))
+            (setf (aref full-rank-submatrix i col) (aref matrix i-row col)))))
+      (let* ((bareiss (bareiss! (copy-array full-rank-submatrix)))
+             (extended-full-rank-submatrix
+               (if calc-unimodular-p
+                   (let ((cols (bareiss-cols bareiss))
+                         (res (adjust-array full-rank-submatrix (list n n) :initial-element 0))
+                         (row rank))
+                     (assert (= (length cols) rank))
+                     (dotimes (i (+ rank 1))
+                       (let ((start-col (if (zerop i) 0 (+ 1 (aref cols (- i 1)))))
+                             (end-col (if (= i rank) n (aref cols i))))
+                         (loop for col from start-col below end-col
+                               do (setf (aref res row col) 1)
+                                  (incf row))))
+                     (assert (= row n))
+                     res)
+                   full-rank-submatrix))
+             (sub-hnf (%hnf-full-rank extended-full-rank-submatrix (bareiss-det bareiss)))
+             (hnf (make-array (list m n)
+                              :element-type (array-element-type matrix)
+                              :initial-element 0))
+             (coefs (gram-schmidt-coefs gram-schmidt))
+             (row-magnifiers (gram-schmidt-row-multipliers gram-schmidt))
+             (restored-vector (make-array n :element-type (array-element-type matrix)))
+             (last-basis-index -1))
         (declare ((integer -1 #.array-dimension-limit) last-basis-index))
         (dotimes (row m)
           (let ((basis-index (position row basis-rows)))
@@ -324,7 +343,11 @@ MATRIX."
                     (setf (aref hnf row col)
                           (%div (aref restored-vector col)
                                 (aref row-magnifiers row))))))))
-        (make-hnf :matrix hnf :unimodular-matrix nil :gram-schmidt gram-schmidt)))))
+        (if calc-unimodular-p
+            (let ((u (solve-regular-linear-system! extended-full-rank-submatrix sub-hnf)))
+              (assert u)
+              (make-hnf :matrix hnf :unimodular-matrix u :gram-schmidt gram-schmidt))
+            (make-hnf :matrix hnf :unimodular-matrix nil :gram-schmidt gram-schmidt))))))
 
 (declaim (inline hnf-p))
 (defun hnf-p (matrix)
