@@ -36,67 +36,6 @@ Reference:
     (assert (zerop rem))
     quot))
 
-(declaim (inline hnf-naive))
-(defun hnf-naive (matrix)
-  "Returns the Hermite normal form H of the given m * n matrix A such that m <= n,
-and returns the unimodular matrix U such that AU = H as the second value.
-
-Actually the returned H is the same object as MATRIX, but I don't recommend that
-you exploit this behaviour.
-
-NOTE: A must have full row rank. Otherwise the behaviour is undefined.
-
-This algorithm requires O(mn^2) arithmetic operations as well as O(mn) extended
-Euclidean algorithm operations. (Potentially this can be reduced to O(m^2n), if
-you don't need the unimodular matrix.) However, it does NOT mean that this is a
-polynomial algorithm, because the size of the numbers that appear in the
-computation may grow exponentially. For details, please see the reference above."
-  (declare ((array * (* *)) matrix))
-  (destructuring-bind  (m n) (array-dimensions matrix)
-    (declare ((mod #.array-dimension-limit) m n))
-    (assert (<= m n))
-    (let* ((matrix (copy-array matrix))
-           (u (make-array (list n n) :element-type (array-element-type matrix) :initial-element 0)))
-      (dotimes (i n)
-        (setf (aref u i i) 1))
-      (dotimes (i m)
-        (loop with hi = (%ref matrix i i)
-              for j from (+ i 1) below n
-              for hj = (%ref matrix i j)
-              unless (zerop (%ref matrix i j))
-              do (multiple-value-bind (x y) (ext-gcd (%ref matrix i i) (%ref matrix i j))
-                   (let* ((g (+ (* x (%ref matrix i i)) (* y (%ref matrix i j))))
-                          (hi/g (%div (%ref matrix i i) g))
-                          (-hj/g (- (%div (%ref matrix i j) g))))
-                     ;; A_{k, j} = 0 for all k < i
-                     (loop for k from i below m
-                           for value-i = (+ (* (%ref matrix k i) x)
-                                            (* (%ref matrix k j) y))
-                           for value-j = (+ (* (%ref matrix k i) -hj/g)
-                                            (* (%ref matrix k j) hi/g))
-                           do (setf (aref matrix k i) value-i
-                                    (aref matrix k j) value-j))
-                     (loop for k below n
-                           for value-i = (+ (* (%ref u k i) x)
-                                            (* (%ref u k j) y))
-                           for value-j = (+ (* (%ref u k i) -hj/g)
-                                            (* (%ref u k j) hi/g))
-                           do (setf (aref u k i) value-i
-                                    (aref u k j) value-j)))))
-        (when (< (%ref matrix i i) 0)
-          (dotimes (k m)
-            (setf (aref matrix k i) (- (%ref matrix k i))))
-          (dotimes (k n)
-            (setf (aref u k i) (- (%ref u k i)))))
-        (dotimes (j i)
-          (let ((q (floor (%ref matrix i j) (%ref matrix i i))))
-            ;; A_{k, i} = 0 for all k < i
-            (loop for k from i below m
-                  do (decf (%ref matrix k j) (* q (%ref matrix k i))))
-            (dotimes (k n)
-              (decf (%ref u k j) (* q (%ref u k i)))))))
-      (values matrix u))))
-
 ;; TODO: Can I further decrease the magnitute of the numbers that appear in the
 ;; computation?
 (defstruct gram-schmidt
@@ -440,3 +379,64 @@ returns (VALUES NIL NIL HNF)."
           (loop for j from rank below n
                 do (setf (aref coefs i (- j rank)) (aref u i j))))
         (values intercepts coefs hnf)))))
+
+(declaim (inline hnf-naive))
+(defun hnf-naive (matrix)
+  "Returns the Hermite normal form H of the given m * n matrix A such that m <= n,
+and returns the unimodular matrix U such that AU = H as the second value.
+
+NOTE: This naive implementation is not for practical use, but just for
+reference. Please use HNF instead.
+
+NOTE: A must have full row rank. Otherwise the behaviour is undefined.
+
+This algorithm requires O(mn^2) arithmetic operations as well as O(mn) extended
+Euclidean algorithm operations. (Potentially this can be reduced to O(m^2n), if
+you don't need the unimodular matrix.) However, it does NOT mean that this is a
+polynomial algorithm, because the size of the numbers that appear in the
+computation may grow exponentially. For details, please see the reference above."
+  (declare ((array * (* *)) matrix))
+  (destructuring-bind  (m n) (array-dimensions matrix)
+    (declare ((mod #.array-dimension-limit) m n))
+    (assert (<= m n))
+    (let* ((matrix (copy-array matrix))
+           (u (make-array (list n n) :element-type (array-element-type matrix) :initial-element 0)))
+      (dotimes (i n)
+        (setf (aref u i i) 1))
+      (dotimes (i m)
+        (loop with hi = (%ref matrix i i)
+              for j from (+ i 1) below n
+              for hj = (%ref matrix i j)
+              unless (zerop (%ref matrix i j))
+              do (multiple-value-bind (x y) (ext-gcd (%ref matrix i i) (%ref matrix i j))
+                   (let* ((g (+ (* x (%ref matrix i i)) (* y (%ref matrix i j))))
+                          (hi/g (%div (%ref matrix i i) g))
+                          (-hj/g (- (%div (%ref matrix i j) g))))
+                     ;; A_{k, j} = 0 for all k < i
+                     (loop for k from i below m
+                           for value-i = (+ (* (%ref matrix k i) x)
+                                            (* (%ref matrix k j) y))
+                           for value-j = (+ (* (%ref matrix k i) -hj/g)
+                                            (* (%ref matrix k j) hi/g))
+                           do (setf (aref matrix k i) value-i
+                                    (aref matrix k j) value-j))
+                     (loop for k below n
+                           for value-i = (+ (* (%ref u k i) x)
+                                            (* (%ref u k j) y))
+                           for value-j = (+ (* (%ref u k i) -hj/g)
+                                            (* (%ref u k j) hi/g))
+                           do (setf (aref u k i) value-i
+                                    (aref u k j) value-j)))))
+        (when (< (%ref matrix i i) 0)
+          (dotimes (k m)
+            (setf (aref matrix k i) (- (%ref matrix k i))))
+          (dotimes (k n)
+            (setf (aref u k i) (- (%ref u k i)))))
+        (dotimes (j i)
+          (let ((q (floor (%ref matrix i j) (%ref matrix i i))))
+            ;; A_{k, i} = 0 for all k < i
+            (loop for k from i below m
+                  do (decf (%ref matrix k j) (* q (%ref matrix k i))))
+            (dotimes (k n)
+              (decf (%ref u k j) (* q (%ref u k i)))))))
+      (values matrix u))))
