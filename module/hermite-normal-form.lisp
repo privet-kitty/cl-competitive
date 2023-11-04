@@ -6,8 +6,8 @@
            #:gram-schmidt-matrix #:gram-schmidt-coefs #:gram-schmidt-rank #:gram-schmidt-det2
            #:gram-schmidt-basis-rows #:gram-schmidt-row-multipliers
            #:solve-integer-linear-system)
-  (:documentation "Provides an algorithm to compute the column-style (i.e. lower triangular)
-Hermite normal form.
+  (:documentation "Provides a polynomital-time algorithm to compute the column-style
+(i.e. lower triangular) Hermite normal form.
 
 Reference:
 - Friedrich Eisenbrand, Integer Programming and Algorithmic Geometry of Numbers,
@@ -113,9 +113,9 @@ b'_k such that b'_i = D_i * b*_i for some integer scalar D_i."
   ;; vectors as well. This array has a size of m * rank.
   (coefs nil :type (array * (* *)))
   (rank nil :type (mod #.array-dimension-limit))
-  ;; the squared determinant of the lattice spanned by the basis. (Note that it
-  ;; is unique w.r.t. the basis though the basis itself isn't necessarily
-  ;; unique.)
+  ;; the squared determinant of the lattice spanned by the basis. Note that it
+  ;; is unique w.r.t. the lattice though the lattice here is obtained from the
+  ;; **first** k linearly independent vectors, not from the m given vectors.
   (det2 nil :type integer)
   ;; row indices of the basis (in ascending order)
   (basis-rows nil :type (simple-array (integer 0 #.most-positive-fixnum) (*)))
