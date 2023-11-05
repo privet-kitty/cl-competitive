@@ -49,9 +49,9 @@ about the determinant (or the Hadamard bound, equivalently).
 This is a so-called single-step Bareiss algorithm. For details, please see the
 reference.
 
-NOTE: When the MATRIX is not square, the computed DET means the determinant of
-the min(m, n) linearly independent rows or columns. (The latter is stored in
-COLS.)
+NOTE: When the MATRIX is not square but has row or column full rank, the
+computed DET means the determinant of the min(m, n) linearly independent rows or
+columns. (The latter is stored in COLS.)
 
 NOTE: NOT SUFFICIENTLY TESTED for non-row-full-rank case!!
 
