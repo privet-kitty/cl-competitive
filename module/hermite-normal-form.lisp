@@ -36,8 +36,6 @@ Reference:
     (assert (zerop rem))
     quot))
 
-;; TODO: Can I further decrease the magnitute of the numbers that appear in the
-;; computation?
 (defstruct gram-schmidt
   "Let b*_1, ..., b*_k be the basis produced by the Gram-Schmidt algorithm from
 vectors b_1, ..., b_m (which is given as the row vectors in an m * n
