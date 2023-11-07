@@ -4,7 +4,7 @@
   (:documentation "Provides deterministic Miller-Rabin algorithm for primality
 test.
 
-This module is tuned for SBCL on x86-64, i.e., here (integer 0
+This module is tuned for SBCL on x86-64, i.e., (INTEGER 0
 #.MOST-POSITIVE-FIXNUM) is assumed to be (UNSIGNED-BYTE 62)"))
 (in-package :cp/primality)
 
