@@ -126,6 +126,7 @@ Every data structure and algorithm uses a 0-based index and a half-open interval
 - [zeta-integer.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/zeta-integer.lisp) fast zeta/Möbius transform w.r.t. divisors or multiples of integer
 - [farey.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/farey.lisp) iteration on Farey sequence
 - [farey-next.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/farey-next.lisp) next/previous element on Farey sequence
+- [hermite-normal-form](https://github.com/privet-kitty/cl-competitive/blob/master/module/hermite-normal-form.lisp) Hermite normal form
 
 ### Real and complex
 - [fft.lisp](https://github.com/privet-kitty/cl-competitive/blob/master/module/fft.lisp) complex FFT (radix-2)
