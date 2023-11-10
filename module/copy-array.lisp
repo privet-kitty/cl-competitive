@@ -4,7 +4,7 @@
                 #:defoptimizer #:derive-type #:unsupplied-or-nil #:lvar-type
                 #:compiler-warn #:combination-kind #:*compiler-error-context*)
   (:import-from #:sb-kernel #:type-specifier #:type-intersection #:make-array-type
-                #:*wild-type* #:*empty-type*)
+                #:*wild-type* #:*empty-type* #:array-type-p)
   (:import-from #:sb-int #:index)
   (:export #:copy-array))
 (in-package :cp/copy-array)
@@ -19,23 +19,25 @@
        node)
     (let* ((array-type (lvar-type array))
            (int (type-intersection array-type
-                                   (make-array-type '* 
-                                                    :complexp nil
-                                                    :element-type *wild-type*))))
-      (if (eq int *empty-type*)
-          (let ((*compiler-error-context* node))
-            (setf (combination-kind node) :error)
-            (compiler-warn "~A doesn't seem to be a SIMPLE-ARRAY"
-                           (type-specifier array-type)))
-          int))))
+                                   (make-array-type '* :element-type *wild-type*))))
+      (if (array-type-p int)
+          (make-array-type (sb-c::array-type-dimensions int)
+                           :complexp nil
+                           :element-type (sb-c::array-type-element-type int)
+                           :specialized-element-type (sb-c::array-type-specialized-element-type int))
+          (make-array-type '* :element-type *wild-type*)))))
 
 (defun copy-array (array)
-  "Returns a copy of an ARRAY.
+  "Returns a (simple) copy of an ARRAY.
 
-NOTE: Currently this function can only deal with a simple-array."
-  (declare (simple-array array))
+If the array is a vector with a fill pointer, the fill pointer is ignored and
+the whole array is copied."
+  (declare (array array))
   (let ((new (make-array (array-dimensions array) :element-type (array-element-type array))))
-    #+sbcl (replace (sb-ext:array-storage-vector new) (sb-ext:array-storage-vector array))
-    #-sbcl (dotimes (i (array-total-size array))
-             (setf (row-major-aref new i) (row-major-aref array i)))
+    #+sbcl
+    (when (typep array 'simple-array)
+      (replace (sb-ext:array-storage-vector new) (sb-ext:array-storage-vector array))
+      (return-from copy-array new))
+    (dotimes (i (array-total-size array))
+      (setf (row-major-aref new i) (row-major-aref array i)))
     new))
