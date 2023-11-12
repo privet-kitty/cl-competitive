@@ -21,7 +21,7 @@
 
 (defconstant +not-supplied+ (if (boundp '+not-supplied+)
                                 (symbol-value '+not-supplied+)
-                                (make-symbol "NOT-SUPPLIED")))
+                                'not-supplied))
 
 (define-modify-macro extend-vectorf (new-size &optional (initial-element '+not-supplied+))
   (lambda (vector new-size initial-element)
