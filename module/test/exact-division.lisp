@@ -1,0 +1,20 @@
+(defpackage :cp/test/exact-division
+  (:use :cl :fiveam :cp/exact-division)
+  (:import-from :cp/test/base #:base-suite))
+(in-package :cp/test/exact-division)
+(in-suite base-suite)
+
+(test exact-division/hand
+  (with-exact-division (-10 %div)
+    (is (= -11 (%div 110)))
+    (is (= 12 (%div -120)))
+    (is (= 123456789 (%div -1234567890)))
+    (is (= (- (+ 1 (ash 1 100000)))
+           (%div (* 10 (+ 1 (ash 1 100000))))))
+    (is (= 0 (%div 0))))
+  (with-exact-division (30 %div)
+    (is (= 4 (%div 120)))
+    (is (= -4 (%div -120)))
+    (is (= (- (+ 1 (ash 1 100000)))
+           (%div (* -30 (+ 1 (ash 1 100000))))))
+    (is (= 0 (%div 0)))))
