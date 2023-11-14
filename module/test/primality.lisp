@@ -13,4 +13,7 @@
         (assert (eq (if (prime-p x) 1 0) (aref table x)))))
     (loop repeat 5000
           for x = (+ 4759123141 (* 2 (random 10000000 state)))
+          do (is (eq (prime-p x) (sb-int:positive-primep x))))
+    (loop repeat 5000
+          for x = (+ 2152302898747 (* 2 (random 10000000 state)))
           do (is (eq (prime-p x) (sb-int:positive-primep x))))))
