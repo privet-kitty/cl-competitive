@@ -1,7 +1,7 @@
 (defpackage :cp/lll
   (:use :cl)
   (:export #:lll-fractional #:lll)
-  (:documentation "Provides an LLL algorithm for the basis reduction.
+  (:documentation "Provides a fraction-free LLL algorithm for the basis reduction.
 
 Reference:
 - Hoffstein, Pipher, Silverman. An Introduction to Mathematical Cryptography,
