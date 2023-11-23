@@ -107,6 +107,7 @@
   (:import-from :cp/test/lca)
   (:import-from :cp/test/linear-sieve)
   (:import-from :cp/test/lis)
+  (:import-from :cp/test/lll)
   (:import-from :cp/test/log-prefix-p)
   (:import-from :cp/test/logreverse)
   (:import-from :cp/test/lud)
