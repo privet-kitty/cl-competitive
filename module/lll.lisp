@@ -14,7 +14,7 @@ Reference:
 ;; locality of reference (though the bottleneck should be the operations of
 ;; bignums in most cases).
 
-(defun rational-gram-schmidt (mat)
+(defun %rational-gram-schmidt (mat)
   (declare ((simple-array * (* *)) mat))
   (destructuring-bind (m n) (array-dimensions mat)
     (declare ((mod #.array-dimension-limit) m n))
@@ -40,7 +40,9 @@ Reference:
 (defun lll-fractional (mat &optional (delta 3/4))
   "Applies the basis reduction to the given rational column vectors.
 
-NOTE: MAT should have full column rank. Otherwise the consequence is undefined."
+NOTE: MAT should have full column rank. Otherwise the consequence is undefined.
+
+You should use LLL instead if MAT is an integer matrix, because it's way faster."
   (declare (optimize (speed 3))
            ((array * (* *)) mat)
            ((rational (1/4) 1) delta))
@@ -105,7 +107,7 @@ NOTE: MAT should have full column rank. Otherwise the consequence is undefined."
             (setq max-pos pos)
             ;; naive way: recompute Gram-Schmidt basis each time
             ;; (multiple-value-setq (ort-mat coefs l2s)
-            ;;   (rational-gram-schmidt mat))
+            ;;   (%rational-gram-schmidt mat))
             (dotimes (i m)
               (setf (aref ort-mat i pos) (aref mat i pos)))
             (dotimes (j pos)

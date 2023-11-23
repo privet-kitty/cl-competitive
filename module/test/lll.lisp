@@ -38,7 +38,7 @@
                    (let ((reduced (lll-fractional mat)))
                      (is (equalp (hnf-matrix (hnf reduced))
                                  (hnf-matrix (hnf mat))))
-                     (multiple-value-bind (ort coefs) (cp/lll::rational-gram-schmidt reduced)
+                     (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
                        ;; Size reduction condtion
                        (dotimes (i n)
                          (dotimes (j n)
@@ -79,7 +79,7 @@
                    (let ((reduced (lll mat)))
                      (is (equalp (hnf-matrix (hnf reduced))
                                  (hnf-matrix (hnf mat))))
-                     (multiple-value-bind (ort coefs) (cp/lll::rational-gram-schmidt reduced)
+                     (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
                        ;; Size reduction condtion
                        (dotimes (i n)
                          (dotimes (j n)
