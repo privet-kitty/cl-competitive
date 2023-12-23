@@ -461,5 +461,5 @@
                (dotimes (i m)
                  (dotimes (j n)
                    (setf (aref mat i j) (- (random (* 2 mag)) mag))))
-               (let ((hnf (hnf mat calc-unimodular-p)))
-                 (hnf-p (hnf-matrix hnf)))))))
+               (let ((hnf (hnf-naive mat)))
+                 (hnf-p hnf))))))

@@ -40,7 +40,7 @@ Reference:
 (defun lll-fractional (mat &optional (delta 3/4))
   "Applies the basis reduction to the given rational column vectors.
 
-NOTE: MAT should have full column rank. Otherwise the consequence is undefined.
+NOTE: If MAT doesn't have full column rank, DIVISION-BY-ZERO is thrown.
 
 You should use LLL instead if MAT is an integer matrix, because it's way faster."
   (declare (optimize (speed 3))
@@ -48,6 +48,8 @@ You should use LLL instead if MAT is an integer matrix, because it's way faster.
            ((rational (1/4) 1) delta))
   (destructuring-bind (m n) (array-dimensions mat)
     (declare ((mod #.array-dimension-limit) m n))
+    (when (< m n)
+      (error 'division-by-zero))
     (let ((mat
             (let ((tmp (make-array (list m n) :element-type 'rational)))
               (dotimes (i m tmp)
@@ -121,7 +123,9 @@ You should use LLL instead if MAT is an integer matrix, because it's way faster.
             (setf (aref l2s pos)
                   (loop for i below m
                         sum (expt (aref ort-mat i pos) 2)
-                        of-type rational)))
+                        of-type rational))
+            (when (zerop (aref l2s pos))
+              (error 'division-by-zero)))
           (if (zerop pos)
               (incf pos)
               (loop
@@ -151,12 +155,14 @@ You should use LLL instead if MAT is an integer matrix, because it's way faster.
 (defun lll (mat &optional (delta 3/4))
   "Applies the basis reduction to the given integer column vectors.
 
-NOTE: MAT should have full column rank. Otherwise the consequence is undefined."
+NOTE: If MAT doesn't have full column rank, DIVISION-BY-ZERO is thrown."
   (declare (optimize (speed 3))
            ((array * (* *)) mat)
            ((rational (1/4) 1) delta))
   (destructuring-bind (m n) (array-dimensions mat)
     (declare ((mod #.array-dimension-limit) m n))
+    (when (< m n)
+      (error 'division-by-zero))
     (let ((mat
             (let ((tmp (make-array (list m n) :element-type 'integer)))
               (dotimes (i m tmp)
@@ -256,6 +262,8 @@ NOTE: MAT should have full column rank. Otherwise the consequence is undefined."
                   (loop for i below m
                         sum (expt (aref ort-mat i pos) 2)
                         of-type rational))
+            (when (zerop (aref l2s pos))
+              (error 'division-by-zero))
             (setf (aref det2s (+ pos 1))
                   (%div (aref l2s pos) (aref det2s pos))))
           (if (zerop pos)

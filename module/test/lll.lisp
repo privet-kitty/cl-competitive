@@ -18,7 +18,10 @@
   (is (equalp (lll-fractional #2a((0 1) (1 0))) #2a((0 1) (1 0))))
   (is (equalp (lll-fractional #2a((1 0) (0 1))) #2a((1 0) (0 1))))
   (is (equalp (lll-fractional #2a((4 1) (1 1))) #2a((1 2) (1 -1))))
-  (is (equalp (lll-fractional #2a((1 4) (1 1))) #2a((1 2) (1 -1)))))
+  (is (equalp (lll-fractional #2a((1 4) (1 1))) #2a((1 2) (1 -1))))
+  (signals division-by-zero (lll-fractional #2a((0))))
+  (signals division-by-zero (lll-fractional #2a((6 4) (9 6))))
+  (signals division-by-zero (lll-fractional #2a((1 2 3) (2 -1 3)))))
 
 (test lll-fractional/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
@@ -34,24 +37,25 @@
                  (dotimes (i m)
                    (dotimes (j n)
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
-                 (when (= (calc-rank mat) n)
-                   (let ((reduced (lll-fractional mat)))
-                     (is (equalp (hnf-matrix (hnf reduced))
-                                 (hnf-matrix (hnf mat))))
-                     (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
-                       ;; Size reduction condtion
-                       (dotimes (i n)
-                         (dotimes (j n)
-                           (is (<= (abs (aref coefs i j)) 1/2))))
-                       ;; Lovász condition
-                       (dotimes (k (- n 1))
-                         (let ((l2 (loop for i below m
-                                         sum (expt (aref ort i k) 2)))
-                               (l2-next (loop for i below m
-                                              sum (expt (aref ort i (+ k 1)) 2))))
-                           (is (<= (* 3/4 l2)
-                                   (+ l2-next (* (expt (aref coefs (+ k 1) k) 2) l2))))))))
-                   (incf trial)))))))
+                 (if (= (calc-rank mat) n)
+                     (let ((reduced (lll-fractional mat)))
+                       (is (equalp (hnf-matrix (hnf reduced))
+                                   (hnf-matrix (hnf mat))))
+                       (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
+                         ;; Size reduction condtion
+                         (dotimes (i n)
+                           (dotimes (j n)
+                             (is (<= (abs (aref coefs i j)) 1/2))))
+                         ;; Lovász condition
+                         (dotimes (k (- n 1))
+                           (let ((l2 (loop for i below m
+                                           sum (expt (aref ort i k) 2)))
+                                 (l2-next (loop for i below m
+                                                sum (expt (aref ort i (+ k 1)) 2))))
+                             (is (<= (* 3/4 l2)
+                                     (+ l2-next (* (expt (aref coefs (+ k 1) k) 2) l2)))))))
+                       (incf trial))
+                     (signals division-by-zero (lll-fractional mat))))))))
 
 (test lll/hand
   (is (equalp (lll #2a()) #2a()))
@@ -59,7 +63,10 @@
   (is (equalp (lll #2a((0 1) (1 0))) #2a((0 1) (1 0))))
   (is (equalp (lll #2a((1 0) (0 1))) #2a((1 0) (0 1))))
   (is (equalp (lll #2a((4 1) (1 1))) #2a((1 2) (1 -1))))
-  (is (equalp (lll #2a((1 4) (1 1))) #2a((1 2) (1 -1)))))
+  (is (equalp (lll #2a((1 4) (1 1))) #2a((1 2) (1 -1))))
+  (signals division-by-zero (lll-fractional #2a((0))))
+  (signals division-by-zero (lll-fractional #2a((6 4) (9 6))))
+  (signals division-by-zero (lll-fractional #2a((1 2 3) (2 -1 3)))))
 
 (test lll/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
@@ -75,24 +82,25 @@
                  (dotimes (i m)
                    (dotimes (j n)
                      (setf (aref mat i j) (- (random (* 2 magnitute)) magnitute))))
-                 (when (= (calc-rank mat) n)
-                   (let ((reduced (lll mat)))
-                     (is (equalp (hnf-matrix (hnf reduced))
-                                 (hnf-matrix (hnf mat))))
-                     (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
-                       ;; Size reduction condtion
-                       (dotimes (i n)
-                         (dotimes (j n)
-                           (is (<= (abs (aref coefs i j)) 1/2))))
-                       ;; Lovász condition
-                       (dotimes (k (- n 1))
-                         (let ((l2 (loop for i below m
-                                         sum (expt (aref ort i k) 2)))
-                               (l2-next (loop for i below m
-                                              sum (expt (aref ort i (+ k 1)) 2))))
-                           (is (<= (* 3/4 l2)
-                                   (+ l2-next (* (expt (aref coefs (+ k 1) k) 2) l2))))))))
-                   (incf trial)))))))
+                 (if (= (calc-rank mat) n)
+                     (let ((reduced (lll mat)))
+                       (is (equalp (hnf-matrix (hnf reduced))
+                                   (hnf-matrix (hnf mat))))
+                       (multiple-value-bind (ort coefs) (cp/lll::%rational-gram-schmidt reduced)
+                         ;; Size reduction condtion
+                         (dotimes (i n)
+                           (dotimes (j n)
+                             (is (<= (abs (aref coefs i j)) 1/2))))
+                         ;; Lovász condition
+                         (dotimes (k (- n 1))
+                           (let ((l2 (loop for i below m
+                                           sum (expt (aref ort i k) 2)))
+                                 (l2-next (loop for i below m
+                                                sum (expt (aref ort i (+ k 1)) 2))))
+                             (is (<= (* 3/4 l2)
+                                     (+ l2-next (* (expt (aref coefs (+ k 1) k) 2) l2)))))))
+                       (incf trial))
+                     (signals division-by-zero (lll mat))))))))
 
 (defun lll-single (mag size &optional (trial 1))
   (declare (optimize (speed 3))
