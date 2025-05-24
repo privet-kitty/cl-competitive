@@ -14,7 +14,7 @@ jobs:
     needs: prepare
     strategy:
       matrix:
-        lisp: [sbcl-bin/2.1.6, sbcl-bin/2.0.3, sbcl-bin/1.3.13, sbcl-bin/1.3.1]
+        lisp: [sbcl-bin/2.3.6, sbcl-bin/2.1.6, sbcl-bin/1.3.13, sbcl-bin/1.3.1]
       fail-fast: false
 
     steps:
