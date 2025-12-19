@@ -1,8 +1,9 @@
 (defpackage :cp/multi-slope-trick
   (:use :cl)
-  (:export #:make-multi-slope-trick #:mstrick-add+ #:mstrick-add- #:mstrick-add
-           #:mstrick-min #:mstrick-argmin #:mstrick-shift
-           #:mstrick-left-cum #:mstrick-right-cum)
+  (:export #:make-multi-slope-trick #:mstrick-add #:mstrick-add-both
+           #:mstrick-delete #:mstrick-min #:mstrick-argmin #:mstrick-shift
+           #:mstrick-left-cum #:mstrick-right-cum
+           #:mstrick-subdiff)
   (:documentation "Provides slope trick with multiset."))
 (in-package :cp/multi-slope-trick)
 
@@ -233,6 +234,44 @@ cannot rely on the side effect. Use the returned value."
           mset
           res))))
 
+(define-condition mset-empty-error (error)
+  ((mset :initarg :mset :reader mset-empty-error-mset))
+  (:report
+   (lambda (condition stream)
+     (format stream "Attempted to draw excessive number of elements from multiset ~W."
+             (mset-empty-error-mset condition)))))
+
+(declaim (ftype (function * (values (or null mset) &optional)) mset-delete))
+(defun mset-delete (mset key count)
+  "Destructively deletes KEY in MSET and returns the resultant multiset. You
+cannot rely on the side effect. Use the returned multiset."
+  (declare ((or null mset) mset)
+           ((integer 0 #.most-positive-fixnum) count))
+  (labels
+      ((%error () (error 'mset-empty-error :mset mset))
+       (recur (mset)
+         (unless mset (%error))
+         (force-down mset)
+         (cond ((< key (%mset-key mset))
+                (setf (%mset-left mset) (recur (%mset-left mset)))
+                (update-size mset)
+                mset)
+               ((< (%mset-key mset) key)
+                (setf (%mset-right mset) (recur (%mset-right mset)))
+                (update-size mset)
+                mset)
+               (t
+                (let ((current (%mset-count mset)))
+                  (cond ((< current count) (%error))
+                        ((> current count)
+                         (decf (%mset-count mset) count)
+                         (update-size mset)
+                         mset)
+                        (t
+                         (%mset-concat (%mset-left mset)
+                                       (%mset-right mset)))))))))
+    (recur mset)))
+
 (declaim (inline mset-map-run-length))
 (defun mset-map-run-length (function mset)
   "Successively applies FUNCTION to each element of MSET in the underlying
@@ -256,25 +295,25 @@ order. FUNCTION must take two arguments: KEY and COUNT."
          (format stream "<~A . ~A>" key count))
        object))))
 
-(declaim (ftype (function * (values fixnum &optional)) mset-first))
+(declaim (ftype (function * (values mset &optional)) mset-first))
 (defun mset-first (mset)
-  "Returns the leftmost key of MSET."
+  "Returns the leftmost node of MSET."
   (declare (optimize (speed 3))
            (mset mset))
   (force-down mset)
   (if (%mset-left mset)
       (mset-first (%mset-left mset))
-      (%mset-key mset)))
+      mset))
 
-(declaim (ftype (function * (values fixnum &optional)) mset-last))
+(declaim (ftype (function * (values mset &optional)) mset-last))
 (defun mset-last (mset)
-  "Returns the rightmost key of MSET."
+  "Returns the rightmost node of MSET."
   (declare (optimize (speed 3))
            (mset mset))
   (force-down mset)
   (if (%mset-right mset)
       (mset-last (%mset-right mset))
-      (%mset-key mset)))
+      mset))
 
 (defun mset-shift (mset delta)
   "Adds DELTA to all keys in MSET."
@@ -289,6 +328,9 @@ order. FUNCTION must take two arguments: KEY and COUNT."
                               (:conc-name %mstrick-)
                               (:copier nil)
                               (:predicate nil))
+  "Manages convex piecewise linear function. The primitive function the constructor
+gives is a constant function. Note that this structure doesn't store a constant
+term, i.e., it only gives you a slope."
   (ltree nil :type (or null mset))
   (rtree nil :type (or null mset)))
 
@@ -300,50 +342,86 @@ which f takes the minimum. Positive and negative infinities are represented by
 NIL."
   (let ((ltree (%mstrick-ltree mstrick))
         (rtree (%mstrick-rtree mstrick)))
-    (values (when ltree (mset-last ltree))
-            (when rtree (mset-first rtree)))))
+    (values (when ltree (%mset-key (mset-last ltree)))
+            (when rtree (%mset-key (mset-first rtree))))))
 
-(defun mstrick-add+ (mstrick a count)
-  "Adds x |-> count*max(0, x-a) to f."
+(defun mstrick-add (mstrick a weight)
+  "Adds x |-> max(0, weight*(x-a)) to f."
   (declare (optimize (speed 3))
-           (fixnum a)
-           ((integer 0 #.most-positive-fixnum) count))
+           (fixnum a weight))
   (symbol-macrolet ((ltree (%mstrick-ltree mstrick))
                     (rtree (%mstrick-rtree mstrick)))
-    (if (or (null ltree)
-            (<= (mset-last ltree) a))
-        (setq rtree (mset-insert rtree a count))
-        (progn
-          (setq ltree (mset-insert ltree a count))
-          (multiple-value-bind (l r)
-              (mset-indexed-split ltree (- (mset-size ltree) count))
-            (setq ltree l
-                  rtree (mset-concat r rtree)))))
+    (cond ((> weight 0)
+           (if (or (null ltree)
+                   (<= (%mset-key (mset-last ltree)) a))
+               (setq rtree (mset-insert rtree a weight))
+               (progn
+                 (setq ltree (mset-insert ltree a weight))
+                 (multiple-value-bind (l r)
+                     (mset-indexed-split ltree (- (mset-size ltree) weight))
+                   (setq ltree l
+                         rtree (mset-concat r rtree)))
+                 ())))
+          ((< weight 0)
+           (setq weight (- weight))
+           (if (or (null rtree)
+                   (<= a (%mset-key (mset-first rtree))))
+               (setq ltree (mset-insert ltree a weight))
+               (progn
+                 (setq rtree (mset-insert rtree a weight))
+                 (multiple-value-bind (l r) (mset-indexed-split rtree weight)
+                   (setq ltree (mset-concat ltree l)
+                         rtree r))))))
     mstrick))
 
-(defun mstrick-add- (mstrick a count)
-  "Adds x |-> count*max(0, a-x) to f."
+(defun mstrick-delete (mstrick a weight)
+  "Subtracts x |-> max(0, weight*(x-a)) from f.
+
+This is intended to be a rollback operation against MSTRICK-ADD. The behaviour
+is undefined if this operation breaks convexity."
   (declare (optimize (speed 3))
-           (fixnum a)
-           ((integer 0 #.most-positive-fixnum) count))
+           (fixnum a weight))
   (symbol-macrolet ((ltree (%mstrick-ltree mstrick))
                     (rtree (%mstrick-rtree mstrick)))
-    (if (or (null rtree)
-            (<= a (mset-first rtree)))
-        (setq ltree (mset-insert ltree a count))
-        (progn
-          (setq rtree (mset-insert rtree a count))
-          (multiple-value-bind (l r) (mset-indexed-split rtree count)
-            (setq ltree (mset-concat ltree l)
-                  rtree r))))
+    (cond ((> weight 0)
+           (handler-bind ((mset-empty-error
+                            (lambda (c) (declare (ignorable c))
+                              (multiple-value-bind (l r)
+                                  (mset-indexed-split rtree weight)
+                                (setq ltree (mset-concat ltree l)
+                                      rtree r))
+                              (setq ltree (mset-delete ltree a weight))
+                              (return-from mstrick-delete mstrick))))
+             (setq rtree (mset-delete rtree a weight))))
+          ((< weight 0)
+           (setq weight (- weight))
+           (handler-bind ((mset-empty-error
+                            (lambda (c) (declare (ignorable c))
+                              (multiple-value-bind (l r)
+                                  (mset-indexed-split ltree (- (mset-size ltree) weight))
+                                (setq ltree l
+                                      rtree (mset-concat r rtree)))
+                              (setq rtree (mset-delete rtree a weight))
+                              (return-from mstrick-delete mstrick))))
+             (setq ltree (mset-delete ltree a weight)))))
     mstrick))
 
-(defun mstrick-add (mstrick a count)
-  "Adds x |-> count*abs(x-a) to f."
+(defun test-mstrick ()
+  (let ((ms (make-multi-slope-trick))
+        (*random-state* (sb-ext:seed-random-state 0)))
+    (mstrick-add ms -9 8)
+    (print ms)
+    (mstrick-add ms -8 5)
+    (mstrick-add ms -8 -5)
+    (print ms)
+    (mstrick-delete ms -8 -5)))
+
+(defun mstrick-add-both (mstrick a weight)
+  "Adds x |-> weight*abs(x-a) to f."
   (declare (fixnum a)
-           ((integer 0 #.most-positive-fixnum) count))
-  (mstrick-add+ mstrick a count)
-  (mstrick-add- mstrick a count))
+           ((integer 0 #.most-positive-fixnum) weight))
+  (mstrick-add mstrick a weight)
+  (mstrick-add mstrick a (- weight)))
 
 (defun mstrick-left-cum (mstrick)
   "Replaces f to g such that g(x) := min_{t <= x} f(t)."
@@ -365,3 +443,64 @@ NIL."
     (mset-shift (%mstrick-ltree mstrick) ldelta)
     (mset-shift (%mstrick-rtree mstrick) rdelta)
     mstrick))
+
+(declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-subdiff))
+(defun mstrick-subdiff (mstrick x)
+  "Returns the subdifferential of f at x.
+
+This function returns the left and right end of the closed interval of
+subdifferential."
+  (declare (optimize (speed 3))
+           (fixnum x))
+  (let* ((ltree (%mstrick-ltree mstrick))
+         (rtree (%mstrick-rtree mstrick))
+         (left-node (when ltree (mset-last ltree)))
+         (right-node (when rtree (mset-first rtree))))
+    (cond
+      ((and left-node right-node
+            (= x (%mset-key left-node) (%mset-key right-node)))
+       (values (- (%mset-count left-node)) (%mset-count right-node)))
+      ((and right-node (<= (%mset-key right-node) x))
+       (labels
+           ((recur (mset offset)
+              (declare ((integer 0 #.most-positive-fixnum) offset))
+              (force-down mset)
+              (cond ((< x (%mset-key mset))
+                     (if (%mset-left mset)
+                         (recur (%mset-left mset) offset)
+                         (values offset offset)))
+                    ((< (%mset-key mset) x)
+                     (if (%mset-right mset)
+                         (recur (%mset-right mset)
+                                (+ offset
+                                   (%mset-count mset)
+                                   (mset-size (%mset-left mset))))
+                         (values (+ offset (%mset-size mset))
+                                 (+ offset (%mset-size mset)))))
+                    (t (let ((left-size (+ offset (mset-size (%mset-left mset)))))
+                         (declare ((integer 0 #.most-positive-fixnum) left-size))
+                         (values left-size (+ left-size (%mset-count mset))))))))
+         (recur rtree 0)))
+      ((and left-node (<= x (%mset-key left-node)))
+       (labels
+           ((recur (mset offset)
+              (declare ((integer 0 #.most-positive-fixnum) offset))
+              (force-down mset)
+              (cond ((< (%mset-key mset) x)
+                     (if (%mset-right mset)
+                         (recur (%mset-right mset) offset)
+                         (values offset offset)))
+                    ((< x (%mset-key mset))
+                     (if (%mset-left mset)
+                         (recur (%mset-left mset)
+                                (+ offset
+                                   (%mset-count mset)
+                                   (mset-size (%mset-right mset))))
+                         (values (+ offset (%mset-size mset))
+                                 (+ offset (%mset-size mset)))))
+                    (t (let ((right-size (+ offset (mset-size (%mset-right mset)))))
+                         (declare ((integer 0 #.most-positive-fixnum) right-size))
+                         (values right-size (+ right-size (%mset-count mset))))))))
+         (multiple-value-bind (l r) (recur ltree 0)
+           (values (- r) (- l)))))
+      (t (values 0 0)))))
