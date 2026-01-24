@@ -9,12 +9,24 @@
 (in-package :cp/multi-slope-trick)
 
 (defstruct (mset (:constructor %make-mset
-                     (key priority count &key left right (size count)))
+                     (key priority count
+                      &key left right (size count) (rkey key)))
                  (:conc-name %mset-))
+  "
+Slope trick interpretation of each element:
+- KEY: X coordinate of the left end of an interval
+- RKEY: rightmost KEY of the subtree
+- LAZY: amount of the right shift of the subtree
+- COUNT: increment of the slope compared to the previous interval
+- SIZE: slope
+- AGG: Vertical increment from leftmost KEY to the rightmost KEY of the subtree
+"
   (key nil :type fixnum)
+  (rkey nil :type fixnum) ; rightmost key of the tree
   (lazy 0 :type fixnum)
   (count nil :type (integer 0 #.most-positive-fixnum))
   (size nil :type (integer 0 #.most-positive-fixnum))
+  (agg 0 :type fixnum) ; := sum of |difference of adjacent keys| * size in the tree
   (priority nil :type (integer 0 #.most-positive-fixnum))
   (left nil :type (or null mset))
   (right nil :type (or null mset)))
@@ -24,6 +36,12 @@
   "Returns the root key of (nullable) MSET."
   (and mset (%mset-key mset)))
 
+(declaim (inline mset-rkey))
+(declaim (ftype (function * (values (or fixnum null) &optional)) mset-rkey))
+(defun mset-rkey (mset)
+  "Returns the rightmost key of (nullable) MSET."
+  (and mset (+ (%mset-lazy mset) (%mset-rkey mset))))
+
 (declaim (inline mset-size))
 (defun mset-size (mset)
   "Returns the total number of elements in MSET."
@@ -32,22 +50,48 @@
       0
       (%mset-size mset)))
 
-(declaim (inline update-size))
-(defun update-size (mset)
-  (declare (mset mset))
-  (setf (%mset-size mset)
-        (if (%mset-left mset)
-            (if (%mset-right mset)
-                (let ((tmp (+ (%mset-size (%mset-left mset))
-                              (%mset-count mset))))
-                  (declare ((integer 0 #.most-positive-fixnum) tmp))
-                  (+ tmp (%mset-size (%mset-right mset))))
-                (+ (%mset-size (%mset-left mset))
-                   (%mset-count mset)))
-            (if (%mset-right mset)
-                (+ (%mset-count mset)
-                   (%mset-size (%mset-right mset)))
-                (%mset-count mset)))))
+(declaim (inline mset-agg))
+(defun mset-agg (mset)
+  "Returns the aggregated value of MSET."
+  (declare ((or null mset) mset))
+  (if (null mset)
+      0
+      (%mset-agg mset)))
+
+(defmacro the+ (type &rest exprs)
+  (assert (cdr exprs))
+  (labels ((recur (exprs)
+             (if (cdr exprs)
+                 (let ((tmp (gensym)))
+                   `(let ((,tmp (+ (the ,type ,(first exprs))
+                                   (the ,type ,(second exprs)))))
+                      (declare (,type ,tmp))
+                      ,(recur `(,tmp ,@(cddr exprs)))))
+                 `(the ,type ,(car exprs)))))
+    (recur exprs)))
+
+(declaim (inline force-up))
+(defun force-up (mset)
+  (declare (mset mset)
+           (optimize (speed 3)))
+  (let ((left (%mset-left mset))
+        (right (%mset-right mset)))
+    (setf (%mset-size mset)
+          (the+ (integer 0 #.most-positive-fixnum)
+                (mset-size left)
+                (%mset-count mset)
+                (mset-size right))
+          (%mset-agg mset)
+          (the+ fixnum
+                (mset-agg left)
+                (if left
+                    (* (%mset-size left)
+                       (the fixnum (- (%mset-rkey mset)
+                                      (+ (%mset-lazy left) (%mset-rkey left)))))
+                    0)
+                (* (%mset-count mset)
+                   (the fixnum (- (%mset-rkey mset) (%mset-key mset))))
+                (mset-agg right)))))
 
 (declaim (inline force-down))
 (defun force-down (mset)
@@ -56,12 +100,39 @@
     (unless (zerop lazy)
       (setf (%mset-lazy mset) 0)
       (incf (%mset-key mset) lazy)
+      (incf (%mset-rkey mset) lazy)
       (let ((left (%mset-left mset))
             (right (%mset-right mset)))
         (when left
           (incf (%mset-lazy left) lazy))
         (when right
           (incf (%mset-lazy right) lazy))))))
+
+(defun mset-key-agg (mset key)
+  "Returns the aggregated value at KEY of MSET."
+  (declare (optimize (speed 3))
+           ((or null mset) mset)
+           (fixnum key))
+  (labels
+      ((recur (mset sum)
+         (unless mset
+           (return-from recur sum))
+         (let ((left (%mset-left mset)))
+           (if (< key (%mset-key mset))
+               (recur left sum)
+               (recur (%mset-right mset)
+                      (the+ fixnum
+                            sum
+                            (mset-agg left)
+                            (if left
+                                (* (%mset-size left)
+                                   (the fixnum
+                                        (- key
+                                           (+ (%mset-lazy left) (%mset-rkey left)))))
+                                0)
+                            (* (%mset-count mset)
+                               (the fixnum (- key (%mset-key mset))))))))))
+    (recur mset 0)))
 
 (declaim (ftype (function * (values (or null mset) (or null mset) &optional))
                 mset-split))
@@ -78,11 +149,11 @@ the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
              (if (< (%mset-key mset) key)
                  (multiple-value-bind (left right) (recur (%mset-right mset))
                    (setf (%mset-right mset) left)
-                   (update-size mset)
+                   (force-up mset)
                    (values mset right))
                  (multiple-value-bind (left right) (recur (%mset-left mset))
                    (setf (%mset-left mset) right)
-                   (update-size mset)
+                   (force-up mset)
                    (values left mset)))))
     (recur mset)))
 
@@ -108,13 +179,13 @@ sub-multiset and the larger one."
                   (multiple-value-bind (left right)
                       (recur (%mset-right mset) (- index end))
                     (setf (%mset-right mset) left)
-                    (update-size mset)
+                    (force-up mset)
                     (values mset right)))
                  ((<= index start)
                   (multiple-value-bind (left right)
                       (recur (%mset-left mset) index)
                     (setf (%mset-left mset) right)
-                    (update-size mset)
+                    (force-up mset)
                     (values left mset)))
                  (t
                   (let ((count (%mset-count mset))
@@ -124,8 +195,8 @@ sub-multiset and the larger one."
                           (%mset-count rnode) (- count (%mset-count lnode))
                           (%mset-right lnode) nil
                           (%mset-left rnode) nil)
-                    (update-size lnode)
-                    (update-size rnode)
+                    (force-up lnode)
+                    (force-up rnode)
                     (values lnode rnode)))))))
     (recur mset index)))
 
@@ -143,14 +214,14 @@ sub-multiset and the larger one."
          (force-down right)
          (setf (%mset-right left)
                (%mset-concat (%mset-right left) right))
-         (update-size left)
+         (force-up left)
          left)
         (t
          (force-down left)
          (force-down right)
          (setf (%mset-left right)
                (%mset-concat left (%mset-left right)))
-         (update-size right)
+         (force-up right)
          right)))
 
 (declaim (ftype (function * (values (or null mset) &optional))
@@ -178,14 +249,14 @@ This function includes %MSET-CONCAT, but it is not as fast."
                         (force-down mset)
                         (cond ((%mset-left mset)
                                (setf (%mset-left mset) (rrecur (%mset-left mset)))
-                               (update-size mset)
+                               (force-up mset)
                                mset)
                               ((= (%mset-key mset) (%mset-key lend))
                                (incf (%mset-count lend) (%mset-count mset))
                                (%mset-right mset))
                               (t (return-from preprocess)))))
                    (setq right (rrecur right)))))
-           (update-size mset)
+           (force-up mset)
            mset))
       (setq left (lrecur left))))
   (%mset-concat left right))
@@ -215,19 +286,19 @@ cannot rely on the side effect. Use the returned value."
                                 (incf (%mset-count mset) count)
                                 t))))
                (cond ((eql res t)
-                      (update-size mset)
+                      (force-up mset)
                       t)
                      ((mset-p res)
                       (if (< key (%mset-key mset))
                           (setf (%mset-left mset) res)
                           (setf (%mset-right mset) res))
-                      (update-size mset)
+                      (force-up mset)
                       mset)
                      ((not (eq found new-found))
                       (multiple-value-bind (left right) (mset-split mset key)
                         (let ((res (%make-mset key new-priority count
                                                :left left :right right)))
-                          (update-size res)
+                          (force-up res)
                           res)))
                      (t nil)))))
     (let ((res (recur (random (+ 1 most-positive-fixnum)) mset nil)))
@@ -257,18 +328,18 @@ cannot rely on the side effect. Use the returned multiset."
          (force-down mset)
          (cond ((< key (%mset-key mset))
                 (setf (%mset-left mset) (recur (%mset-left mset)))
-                (update-size mset)
+                (force-up mset)
                 mset)
                ((< (%mset-key mset) key)
                 (setf (%mset-right mset) (recur (%mset-right mset)))
-                (update-size mset)
+                (force-up mset)
                 mset)
                (t
                 (let ((current (%mset-count mset)))
                   (cond ((< current count) (%error))
                         ((> current count)
                          (decf (%mset-count mset) count)
-                         (update-size mset)
+                         (force-up mset)
                          mset)
                         (t
                          (%mset-concat (%mset-left mset)
@@ -386,18 +457,42 @@ order."
     (force-down mset))
   mset)
 
+
+(declaim (ftype (function * (values fixnum &optional)) mset-base-key))
+(defun mset-leftmost-key (mset)
+  "Returns the leftmost key of MSET."
+  (declare (optimize (speed 3))
+           (mset mset))
+  (if (%mset-left mset)
+      (mset-leftmost-key (%mset-left mset))
+      (%mset-key mset)))
+
 (defconstant +NEGATIVE-INF+ most-negative-fixnum)
 (defconstant +POSITIVE-INF+ most-positive-fixnum)
 
-(defstruct (multi-slope-trick (:constructor make-multi-slope-trick (&optional base-slope))
-                              (:conc-name %mstrick-)
-                              (:copier nil)
-                              (:predicate nil))
+(defstruct (multi-slope-trick
+            (:constructor make-multi-slope-trick (&optional base-slope intercept))
+            (:conc-name %mstrick-)
+            (:copier nil)
+            (:predicate nil))
   "Manages convex piecewise linear function. The primitive function the constructor
 gives is a constant function. Note that this structure doesn't store a constant
 term, i.e., it only gives you a slope."
   (base-slope 0 :type fixnum)
+  (intercept 0 :type fixnum) ; value at leftmost breakpoint (value at 0 if linear)
   (mset nil :type (or null mset)))
+
+(declaim (ftype (function * (values fixnum &optional)) mstrick-value))
+(defun mstrick-value (mstrick x)
+  "Returns the function value at X."
+  (declare (optimize (speed 3))
+           (fixnum x))
+  (let ((mset (%mstrick-mset mstrick)))
+    (the+ fixnum
+          (%mstrick-intercept mstrick)
+          (* (%mstrick-base-slope mstrick)
+             (the fixnum (- x (if mset (mset-leftmost-key mset) 0))))
+          (mset-key-agg mset x))))
 
 (declaim (ftype (function * (values (or null fixnum) (or null fixnum) &optional))
                 mstrick-argmin))
@@ -424,7 +519,17 @@ NIL)."
   (declare (optimize (speed 3))
            (fixnum a weight))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
+                    (intercept (%mstrick-intercept mstrick))
                     (mset (%mstrick-mset mstrick)))
+    (let* ((base-x-del (if mset (mset-leftmost-key mset) 0))
+           (base-x-add (if (null mset)
+                           a
+                           (min a base-x-del))))
+      (setq intercept
+            (+ (if (= base-x-del base-x-add)
+                   intercept
+                   (mstrick-value mstrick base-x-add))
+               (max 0 (the fixnum (* weight (the fixnum (- base-x-add a))))))))
     (cond ((> weight 0)
            (setq mset (mset-insert mset a weight)))
           ((< weight 0)
@@ -440,6 +545,7 @@ undefined if this operation breaks convexity."
   (declare (optimize (speed 3))
            (fixnum a weight))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
+                    (intercept (%mstrick-intercept mstrick))
                     (mset (%mstrick-mset mstrick)))
     (cond ((> weight 0)
            (setq mset (mset-delete mset a weight)))
@@ -447,6 +553,14 @@ undefined if this operation breaks convexity."
            (setq mset (mset-delete mset a (- weight)))
            (decf base-slope weight)))
     mstrick))
+
+(defun test ()
+  (let ((ms (make-multi-slope-trick)))
+    (mstrick-add ms -1 -1)
+    (mstrick-add ms 1 1)
+    (mstrick-add ms -4 -3)
+    (loop for x from -5 to 5
+          do (format t "~% ~A ~A" x (mstrick-value ms x)))))
 
 (defun mstrick-add-abs (mstrick a weight)
   "Adds x |-> weight*abs(x-a) to f."
@@ -457,8 +571,12 @@ undefined if this operation breaks convexity."
 
 (defun mstrick-add-linear (mstrick slope)
   "Adds a linear function x |-> slope*x to f."
-  (declare (fixnum slope))
-  (incf (%mstrick-base-slope mstrick) slope))
+  (declare (fixnum slope)
+           (optimize (speed 3)))
+  (incf (%mstrick-base-slope mstrick) slope)
+  (when (%mstrick-mset mstrick)
+    (incf (%mstrick-intercept mstrick)
+          (the fixnum (* slope (mset-leftmost-key (%mstrick-mset mstrick)))))))
 
 (declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-subdiff))
 (defun mstrick-subdiff (mstrick x)

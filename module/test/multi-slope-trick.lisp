@@ -255,7 +255,7 @@ Returns NIL for unbounded directions."
           (values (aref slopes index) (aref slopes (1+ index)))
           (values (aref slopes index) (aref slopes index))))))
 
-(test slope-trick2-operation/random
+(test slope-trick-operation/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
     (dotimes (_ 2000)
