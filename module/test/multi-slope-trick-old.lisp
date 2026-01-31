@@ -1,121 +1,8 @@
 (defpackage :cp/test/multi-slope-trick-old
-  (:use :cl :fiveam :cp/multi-slope-trick-old :cp/bisect)
-  (:import-from :cp/multi-slope-trick-old
-                #:mset #:%mset-key #:%mset-left #:%mset-right #:%mset-count
-                #:%mset-concat #:mset-concat #:mset-split #:mset-indexed-split
-                #:mset-insert #:mset-map-run-length #:mset-shift
-                #:mset-first #:mset-last #:mset-size #:force-down #:update-size
-                #:%mstrick-ltree #:%mstrick-rtree)
+  (:use :cl :fiveam :cp/multi-slope-trick-old :cp/bisect :cp/shuffle)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/multi-slope-trick-old)
 (in-suite base-suite)
-
-(declaim (inline mset-find))
-(defun mset-find (mset key)
-  "Finds and returns KEY if it exists, otherwise returns NIL. Equality is here
-equivalent to 'neither larger nor smaller'."
-  (declare ((or null mset) mset))
-  (labels ((recur (mset)
-             (unless mset
-               (return-from recur nil))
-             (force-down mset)
-             (cond ((< key (%mset-key mset))
-                    (recur (%mset-left mset)))
-                   ((< (%mset-key mset) key)
-                    (recur (%mset-right mset)))
-                   (t key))))
-    (recur mset)))
-
-(declaim (inline mset-ref))
-(defun mset-count (mset key)
-  "Returns the number of KEYs in MSET."
-  (declare ((or null mset) mset))
-  (labels ((recur (mset)
-             (unless mset
-               (return-from recur 0))
-             (force-down mset)
-             (cond ((< key (%mset-key mset))
-                    (recur (%mset-left mset)))
-                   ((< (%mset-key mset) key)
-                    (recur (%mset-right mset)))
-                   (t (%mset-count mset)))))
-    (recur mset)))
-
-(test translatable-multiset/random
-  (let ((*random-state* (sb-ext:seed-random-state 0))
-        (*test-dribble* nil)
-        (counter (make-hash-table :test #'eq)))
-    (dotimes (_ 20)
-      (let (mset
-            (vector (make-array 0 :element-type 'fixnum)))
-        (dotimes (_ 300)
-          (ecase (random 4)
-            ;; push
-            (0 (let ((key (random 15))
-                     (count (+ 1 (random 3))))
-                 (setq mset (mset-insert mset key count))
-                 (let ((pos (bisect-left vector key)))
-                   (setq vector (concatenate
-                                 '(simple-array fixnum (*))
-                                 (subseq vector 0 pos)
-                                 (make-array count :initial-element key)
-                                 (subseq vector pos))))))
-            ;; split and concat
-            (1
-             (let ((key (random 15)))
-               (multiple-value-bind (l r) (mset-split mset key)
-                 (let ((shiftl (- (random 6) 3))
-                       (shiftr (- (random 6) 3)))
-                   (when (> shiftl shiftr)
-                     (rotatef shiftl shiftr))
-                   (when l
-                     (mset-shift l shiftl)
-                     (loop for i below (mset-size l)
-                           do (incf (aref vector i) shiftl)))
-                   (when r
-                     (mset-shift r shiftr)
-                     (loop for i below (mset-size r)
-                           do (incf (aref vector (+ (mset-size l) i)) shiftr))))
-                 (setq mset (%mset-concat l r))))
-             (let ((index (random (+ 1 (length vector)))))
-               (multiple-value-bind (l r) (mset-indexed-split mset index)
-                 (let ((shiftl (- (random 6) 3))
-                       (shiftr (- (random 6) 3)))
-                   (when (> shiftl shiftr)
-                     (rotatef shiftl shiftr))
-                   (when l
-                     (mset-shift l shiftl)
-                     (loop for i below (mset-size l)
-                           do (incf (aref vector i) shiftl)))
-                   (when r
-                     (mset-shift r shiftr)
-                     (loop for i below (mset-size r)
-                           do (incf (aref vector (+ (mset-size l) i)) shiftr))))
-                 (setq mset (mset-concat l r)))))
-            ;; search
-            (2
-             (let ((key (if (or (zerop (length vector)) (zerop (random 3)))
-                            (random 15)
-                            (aref vector (random (length vector))))))
-               (is (eql (mset-find mset key) (find key vector)))
-               (is (eql (mset-count mset key) (count key vector)))
-               (is (= (mset-size mset) (length vector)))
-               (when (> (length vector) 0)
-                 (is (= (%mset-key (mset-first mset)) (aref vector 0)))
-                 (is (= (%mset-key (mset-last mset)) (aref vector (- (length vector) 1)))))))
-            ;; map
-            (3
-             (clrhash counter)
-             (let ((prev most-negative-fixnum))
-               (mset-map-run-length
-                (lambda (key count)
-                  (declare (ignore count))
-                  (is (< prev key))
-                  (setq prev key)
-                  (incf (the fixnum (gethash key counter 0))))
-                mset))
-             (is (loop for x being each hash-value of counter
-                       always (<= x 1))))))))))
 
 (defstruct (piecewise-linear (:constructor make-pl ())
                              (:conc-name %pl-)
@@ -146,23 +33,6 @@ SLOPES[i] is the slope of the function in the interval [BREAKPOINTS[i-1], BREAKP
       (setf (%pl-breakpoints pl) new-bp
             (%pl-slopes pl) new-slopes)))
   pl)
-
-(defun pl-ensure-breakpoint (pl a)
-  "Ensures there's a breakpoint at A. Returns the position."
-  (let ((breakpoints (%pl-breakpoints pl))
-        (slopes (%pl-slopes pl)))
-    (let ((index (bisect-left breakpoints a)))
-      (unless (and (< index (length breakpoints))
-                   (= a (aref breakpoints index)))
-        ;; Insert breakpoint
-        (vector-push-extend a breakpoints)
-        (loop for i from (1- (length breakpoints)) downto (1+ index)
-              do (setf (aref breakpoints i) (aref breakpoints (1- i))))
-        ;; Insert slope (copy from current interval)
-        (vector-push-extend (aref slopes (1+ index)) slopes)
-        (loop for i from (1- (length slopes)) downto (+ index 2)
-              do (setf (aref slopes i) (aref slopes (1- i)))))
-      index)))
 
 (defun pl-add (pl a weight)
   "Adds max(0, weight*(x-a)) to f.
@@ -224,27 +94,72 @@ The behaviour is undefined if the convexity is broken."
               do (decf (aref slopes i) weight)))
     (pl-merge pl)))
 
-(defun pl-add-both (pl a weight)
+(defun pl-add-abs (pl a weight)
   "Adds weight*|x-a| to f."
   (pl-add pl a weight)
   (pl-add pl a (- weight)))
 
-(defun pl-left-cum (pl)
-  "g(x) = min_{t <= x} f(t).
-Sets all positive slopes to 0."
+(defun pl-add-linear (pl slope)
+  "Adds a linear function x |-> slope*x to f."
   (let ((slopes (%pl-slopes pl)))
     (dotimes (i (length slopes))
-      (when (> (aref slopes i) 0)
-        (setf (aref slopes i) 0))))
+      (incf (aref slopes i) slope)))
+  pl)
+
+(defun pl-left-cum (pl c)
+  "g(x) = min_{t <= x} (f(t) - Ct) + Cx.
+Clips slopes to (-infinity, C]."
+  (let ((breakpoints (%pl-breakpoints pl))
+        (slopes (%pl-slopes pl)))
+    (cond
+      ;; If leftmost slope > c, make constant c
+      ((> (aref slopes 0) c)
+       (setf (fill-pointer breakpoints) 0)
+       (setf (fill-pointer slopes) 1)
+       (setf (aref slopes 0) c))
+      (t
+       ;; Find first breakpoint where slope becomes > c
+       (let ((cut-index nil))
+         (dotimes (i (length breakpoints))
+           (when (> (aref slopes (1+ i)) c)
+             (setq cut-index i)
+             (return)))
+         (when cut-index
+           ;; Keep breakpoints[0..cut-index] and set last slope to c
+           (setf (fill-pointer breakpoints) (1+ cut-index))
+           (setf (fill-pointer slopes) (+ 2 cut-index))
+           (setf (aref slopes (1+ cut-index)) c))))))
   (pl-merge pl))
 
-(defun pl-right-cum (pl)
-  "g(x) = min_{x <= t} f(t).
-Sets all negative slopes to 0."
-  (let ((slopes (%pl-slopes pl)))
-    (dotimes (i (length slopes))
-      (when (< (aref slopes i) 0)
-        (setf (aref slopes i) 0))))
+(defun pl-right-cum (pl c)
+  "g(x) = min_{x <= t} (f(t) - Ct) + Cx.
+Clips slopes to [C, infinity)."
+  (let ((breakpoints (%pl-breakpoints pl))
+        (slopes (%pl-slopes pl)))
+    (cond
+      ;; If rightmost slope < c, make constant c
+      ((< (aref slopes (1- (length slopes))) c)
+       (setf (fill-pointer breakpoints) 0)
+       (setf (fill-pointer slopes) 1)
+       (setf (aref slopes 0) c))
+      (t
+       ;; Find last breakpoint where slope BEFORE it is < c
+       (let ((cut-index nil))
+         (loop for i from (1- (length breakpoints)) downto 0
+               when (< (aref slopes i) c)
+               do (setq cut-index i)
+                  (return))
+         (when cut-index
+           ;; Remove breakpoints 0..cut-index-1, keep from cut-index onwards
+           (let ((keep-count (- (length breakpoints) cut-index)))
+             (dotimes (j keep-count)
+               (setf (aref breakpoints j) (aref breakpoints (+ cut-index j))))
+             (setf (fill-pointer breakpoints) keep-count)
+             ;; Shift slopes similarly and set first to c
+             (dotimes (j (1+ keep-count))
+               (setf (aref slopes j) (aref slopes (+ cut-index j))))
+             (setf (fill-pointer slopes) (1+ keep-count))
+             (setf (aref slopes 0) c)))))))
   (pl-merge pl))
 
 (defun pl-shift (pl ldelta &optional rdelta)
@@ -289,7 +204,6 @@ shifts right breakpoints (positive slope after) by rdelta."
                   (vector-push-extend (+ bp rdelta) new-bp)
                   (vector-push-extend right-slope new-slopes))
                  ;; Neither: slope before is 0, slope after is 0
-                 ;; This shouldn't happen after merge, but handle anyway
                  (t
                   (vector-push-extend (+ bp ldelta) new-bp)
                   (vector-push-extend right-slope new-slopes)))))
@@ -298,28 +212,37 @@ shifts right breakpoints (positive slope after) by rdelta."
            (pl-merge pl))))))
   pl)
 
-(defun pl-argmin (pl)
-  "Returns the interval [left, right] where the function is minimized.
-Returns NIL for unbounded directions."
+(defun pl-arg-subdiff (pl diff)
+  "Returns the interval [left, right] where the subdifferential contains DIFF.
+Returns [-inf, -inf] or [+inf, +inf] if DIFF is below or above every slope of f."
   (let ((breakpoints (%pl-breakpoints pl))
         (slopes (%pl-slopes pl)))
-    (if (zerop (length breakpoints))
-        (values nil nil)
-        (let ((left-end nil)
-              (right-end nil))
-          ;; left-end: breakpoint where slope becomes non-negative
-          (loop for i from 0 below (length breakpoints)
-                when (and (< (aref slopes i) 0)
-                          (>= (aref slopes (1+ i)) 0))
-                do (setq left-end (aref breakpoints i))
-                   (return))
-          ;; right-end: breakpoint where slope becomes positive
-          (loop for i from (1- (length breakpoints)) downto 0
-                when (and (<= (aref slopes i) 0)
-                          (> (aref slopes (1+ i)) 0))
-                do (setq right-end (aref breakpoints i))
-                   (return))
-          (values left-end right-end)))))
+    (let ((base-slope (aref slopes 0))
+          (end-slope (aref slopes (1- (length slopes)))))
+      (cond ((< diff base-slope) (values most-negative-fixnum most-negative-fixnum))
+            ((< end-slope diff) (values most-positive-fixnum most-positive-fixnum))
+            (t
+             (let ((left-end (if (= diff base-slope)
+                                 most-negative-fixnum
+                                 nil))
+                   (right-end (if (= diff end-slope)
+                                  most-positive-fixnum
+                                  nil)))
+               ;; Find left-end: first breakpoint where slope becomes >= diff
+               (unless left-end
+                 (loop for i from 0 below (length breakpoints)
+                       when (and (< (aref slopes i) diff)
+                                 (>= (aref slopes (1+ i)) diff))
+                       do (setq left-end (aref breakpoints i))
+                          (return)))
+               ;; Find right-end: last breakpoint where slope becomes > diff
+               (unless right-end
+                 (loop for i from (1- (length breakpoints)) downto 0
+                       when (and (<= (aref slopes i) diff)
+                                 (> (aref slopes (1+ i)) diff))
+                       do (setq right-end (aref breakpoints i))
+                          (return)))
+               (values left-end right-end)))))))
 
 (defun pl-subdiff (pl x)
   "Returns the subdifferential at x as (values left-slope right-slope)."
@@ -332,23 +255,19 @@ Returns NIL for unbounded directions."
           (values (aref slopes index) (aref slopes (1+ index)))
           (values (aref slopes index) (aref slopes index))))))
 
-(defun pl-equal (pl1 pl2)
-  "Checks if two pl-slope-tricks represent the same function."
-  (and (equalp (%pl-breakpoints pl1) (%pl-breakpoints pl2))
-       (equalp (%pl-slopes pl1) (%pl-slopes pl2))))
-
-
-(test slope-trick-operation/random
+(test slope-trick2-operation/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
-    (dotimes (i 500)
-      (let ((mstrick (make-multi-slope-trick))
-            (pl (make-pl))
-            (add-history nil))
-        ;; (format t "~%case: ~D" i)
-        (dotimes (_ 50)
-          ;; (format t "~%state: ~A" mstrick)
-          (ecase (random 14)
+    (dotimes (_ 2000)
+      (let* ((base-slope (- (random 10) 5)) 
+             (mstrick (make-multi-slope-trick base-slope))
+             (pl (make-pl))
+             (add-history nil))
+        (pl-add-linear pl base-slope)
+        (dotimes (i 100)
+          ;; (print mstrick)
+          ;; (print pl)
+          (ecase (random 17)
             ((0 1 2 3)
              ;; add
              (let ((a (- (random 20) 10))
@@ -358,47 +277,68 @@ Returns NIL for unbounded directions."
                (pl-add pl a weight)
                (push (cons a weight) add-history)))
             ((4 5 6 7)
-             ;; add-both (record as two separate adds)
+             ;; add-abs (record as two separate adds)
              (let ((a (- (random 20) 10))
                    (weight (random 10)))
                ;; (format t "~%add: ~D ~D" a weight)
                ;; (format t "~%add: ~D ~D" a (- weight))
-               (mstrick-add-both mstrick a weight)
-               (pl-add-both pl a weight)
+               (mstrick-add-abs mstrick a weight)
+               (pl-add-abs pl a weight)
                (push (cons a weight) add-history)
                (push (cons a (- weight)) add-history)))
-            ((8 9)
-             ;; check subdiff and argmin
-             (loop for x from -21 to 21
-                   do (is (equal (multiple-value-list (mstrick-subdiff mstrick x))
-                                 (multiple-value-list (pl-subdiff pl x)))))
-             (is (equal (multiple-value-list (mstrick-argmin mstrick))
-                        (multiple-value-list (pl-argmin pl)))))
-            (10
-             ;; left-cum or right-cum (invalidates history)
-             (if (zerop (random 2))
-                 (progn
-                   (mstrick-left-cum mstrick)
-                   (pl-left-cum pl))
-                 (progn
-                   (mstrick-right-cum mstrick)
-                   (pl-right-cum pl)))
-             (setq add-history nil))
-            (11
+            ((8)
+             ;; add-linear (invalidates history since we don't track linear adds)
+             (let ((slope (- (random 10) 5)))
+               ;; (format t "~%add-linear: ~D" slope)
+               (mstrick-add-linear mstrick slope)
+               (pl-add-linear pl slope)
+               (setq add-history nil)))
+            ((9 10)
+             ;; check subdiff and arg-subdiff with various diff values
+             (let ((xs (shuffle! (coerce (loop for x from -21 to 21 collect x) 'vector))))
+               (is-true (loop for x across xs
+                              always (equal (multiple-value-list (mstrick-subdiff mstrick x))
+                                            (multiple-value-list (pl-subdiff pl x))))))
+             ;; Test arg-subdiff with multiple diff values
+             (is-true (loop for diff from -20 to 20
+                            always (equal (multiple-value-list (mstrick-arg-subdiff mstrick diff))
+                                          (multiple-value-list (pl-arg-subdiff pl diff))))))
+            ((11 12)
+             ;; left-cum or right-cum with various c values
+             ;; With 1/3 probability, rollback (pl stays unchanged, history preserved)
+             (let ((c (- (random 20) 10))
+                   (do-rollback (zerop (random 2))))
+               (if (zerop (random 2))
+                   (let ((rest-part (mstrick-left-cum mstrick c)))
+                     (if do-rollback
+                         (mstrick-left-cum-rollback mstrick rest-part)
+                         (progn
+                           ;; (format t "~%left-cum: ~D" c)
+                           (pl-left-cum pl c)
+                           (setq add-history nil))))
+                   (let ((rest-part (mstrick-right-cum mstrick c)))
+                     (if do-rollback
+                         (mstrick-right-cum-rollback mstrick rest-part)
+                         (progn
+                           ;; (format t "~%right-cum: ~D" c)
+                           (pl-right-cum pl c)
+                           (setq add-history nil)))))))
+            ((13 14)
              ;; shift operation (invalidates history)
              (let* ((ldelta (- (random 10) 5))
                     (rdelta (+ ldelta (random 5))))
+               ;; (format t "~%shift: ~D ~D" ldelta rdelta)
                (mstrick-shift mstrick ldelta rdelta)
                (pl-shift pl ldelta rdelta))
              (setq add-history nil))
-            ((12 13)
+            ((15 16)
              ;; delete (rollback a random add from history)
              (when add-history
                (let* ((idx (random (length add-history)))
                       (entry (nth idx add-history))
                       (a (car entry))
                       (weight (cdr entry)))
-                 ;; (format t "~%delete: ~D ~D" a weight)
+                 ;; (format t "~%del: ~D ~D" a weight)
                  (mstrick-delete mstrick a weight)
                  (pl-delete pl a weight)
                  (setq add-history
