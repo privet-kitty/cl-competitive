@@ -151,6 +151,162 @@ The behaviour is undefined if the convexity is broken."
     (decf (%pl-intercept pl) (max 0d0 (* (- weight) a)))
     (pl-merge pl)))
 
+(defun pl-max-affine (pl a b)
+  "Replaces f(x) with max(f(x), ax+b). f must be convex.
+h(x) = f(x) - ax - b is convex, so {x : h(x) <= 0} is a contiguous interval [x1, x2].
+Outside that interval f dominates; inside, the line ax+b dominates."
+  (let* ((old-bp (%pl-breakpoints pl))
+         (old-slopes (%pl-slopes pl))
+         (n (length old-bp))
+         (nseg (length old-slopes)))
+    ;; h-slope for segment k is (old-slopes[k] - a)
+    ;; Evaluate h at breakpoints
+    (let ((hv (make-array n :element-type 'double-float)))
+      (dotimes (i n)
+        (let ((x (aref old-bp i)))
+          (setf (aref hv i) (- (pl-value pl x) (* a x) b))))
+      ;; Quick check: if h >= 0 at all breakpoints and on infinite segments, f dominates
+      (let ((min-h (- (%pl-intercept pl) b)))
+        (dotimes (i n) (setq min-h (min min-h (aref hv i))))
+        (when (and (>= min-h (- +key-eps+))
+                   (<= (- (aref old-slopes 0) a) 0d0)        ; h non-increasing on left
+                   (>= (- (aref old-slopes (1- nseg)) a) 0d0)) ; h non-decreasing on right
+          (return-from pl-max-affine pl)))
+      ;; Find x1 (leftmost zero of h) and x2 (rightmost zero of h)
+      (let* ((h0 (- (%pl-intercept pl) b))
+             (x1 (find-h-left-zero old-bp old-slopes hv n a h0))
+             (x2 (find-h-right-zero old-bp old-slopes hv n a h0)))
+        (when (or (null x1) (null x2))
+          (return-from pl-max-affine pl))
+        ;; Rebuild: f for x < x1, L for x1..x2, f for x > x2
+        (let ((new-bp (make-array 0 :element-type 'double-float :adjustable t :fill-pointer 0))
+              (new-slopes (make-array 0 :element-type 'double-float :adjustable t :fill-pointer 0)))
+          ;; Left part (x < x1)
+          (if (= x1 +negative-inf+)
+              (vector-push-extend a new-slopes)
+              (progn
+                (vector-push-extend (aref old-slopes 0) new-slopes)
+                (loop for i from 0 below n
+                      while (float< (aref old-bp i) x1 +key-eps+)
+                      do (vector-push-extend (aref old-bp i) new-bp)
+                         (vector-push-extend (aref old-slopes (1+ i)) new-slopes))
+                (vector-push-extend x1 new-bp)
+                (vector-push-extend a new-slopes)))
+          ;; Right part (x > x2)
+          (unless (= x2 +positive-inf+)
+            (vector-push-extend x2 new-bp)
+            (let ((seg (bisect-left old-bp x2 :order #'key<)))
+              (when (and (< seg n) (float= x2 (aref old-bp seg) +key-eps+))
+                (incf seg))
+              (vector-push-extend (aref old-slopes seg) new-slopes)
+              (loop for i from seg below n
+                    do (vector-push-extend (aref old-bp i) new-bp)
+                       (vector-push-extend (aref old-slopes (1+ i)) new-slopes))))
+          (setf (%pl-breakpoints pl) new-bp
+                (%pl-slopes pl) new-slopes
+                (%pl-intercept pl) (max (%pl-intercept pl) b)))
+        (pl-merge pl)))))
+
+(defun find-h-left-zero (bp slopes hv n a &optional (h0 0d0))
+  "Find x1: the leftmost x where h(x)=f(x)-ax-b transitions from positive to zero.
+Returns +negative-inf+ if h <= 0 extends to -infinity, NIL if h >= 0 everywhere.
+H0 is h(0) = intercept - b, used when n=0."
+  (let ((hs0 (- (aref slopes 0) a)))
+    (cond
+      ;; n=0: single segment, h(x) = h0 + hs0*x, zero at x*=-h0/hs0
+      ;; hs0>0: h increasing, {h<=0}=(-inf,x*]. x1=-inf
+      ;; hs0<0: h decreasing, {h<=0}=[x*,+inf). x1=x*
+      ;; hs0=0: h constant. <=0 => x1=-inf, >0 => nil
+      ((zerop n)
+       (cond
+         ((> hs0 0d0) +negative-inf+)
+         ((< hs0 0d0) (- (/ h0 hs0)))
+         (t (if (<= h0 0d0) +negative-inf+ nil))))
+      ;; h -> -inf as x -> -inf => x1 = -inf
+      ((> hs0 0d0) +negative-inf+)
+      ;; h constant on left
+      ((= hs0 0d0)
+       (if (<= (aref hv 0) 0d0)
+           +negative-inf+
+           (scan-left-zero-internal bp slopes hv n a)))
+      ;; h -> +inf as x -> -inf, decreasing on left
+      (t
+       (if (<= (aref hv 0) 0d0)
+           ;; Zero in left segment: h(x) = hv[0] + hs0*(x - bp[0])
+           (- (aref bp 0) (/ (aref hv 0) hs0))
+           (scan-left-zero-internal bp slopes hv n a))))))
+
+(defun scan-left-zero-internal (bp slopes hv n a)
+  "Scan internal and right segments to find x1."
+  ;; Internal segments
+  (loop for i from 0 below (1- n)
+        when (and (> (aref hv i) 0d0) (<= (aref hv (1+ i)) 0d0))
+        do (let ((hs (- (aref slopes (1+ i)) a)))
+             (return-from scan-left-zero-internal
+               (if (/= hs 0d0)
+                   (- (aref bp i) (/ (aref hv i) hs))
+                   (aref bp (1+ i))))))
+  ;; Right segment
+  (when (> n 0)
+    (let ((hn (aref hv (1- n)))
+          (hsn (- (aref slopes n) a)))
+      (when (and (> hn 0d0) (< hsn 0d0))
+        (- (aref bp (1- n)) (/ hn hsn))))))
+
+(defun find-h-right-zero (bp slopes hv n a &optional (h0 0d0))
+  "Find x2: the rightmost x where h(x)=f(x)-ax-b transitions from zero to positive.
+Returns +positive-inf+ if h <= 0 extends to +infinity, NIL if h >= 0 everywhere.
+H0 is h(0) = intercept - b, used when n=0."
+  (let ((hsn (- (aref slopes n) a)))
+    (cond
+      ;; n=0: single segment, h(x) = h0 + hsn*x, zero at x*=-h0/hsn
+      ;; hsn>0: h increasing, {h<=0}=(-inf,x*]. x2=x*
+      ;; hsn<0: h decreasing, {h<=0}=[x*,+inf). x2=+inf
+      ;; hsn=0: h constant. <=0 => x2=+inf, >0 => nil
+      ((zerop n)
+       (cond
+         ((< hsn 0d0) +positive-inf+)
+         ((> hsn 0d0) (- (/ h0 hsn)))
+         (t (if (<= h0 0d0) +positive-inf+ nil))))
+      ;; h -> -inf as x -> +inf => x2 = +inf
+      ((< hsn 0d0) +positive-inf+)
+      ;; h constant on right
+      ((= hsn 0d0)
+       (if (<= (aref hv (1- n)) 0d0)
+           +positive-inf+
+           (scan-right-zero-internal bp slopes hv n a)))
+      ;; h -> +inf as x -> +inf, increasing on right
+      (t
+       (if (<= (aref hv (1- n)) 0d0)
+           ;; Zero in right segment: h(x) = hv[n-1] + hsn*(x - bp[n-1])
+           (- (aref bp (1- n)) (/ (aref hv (1- n)) hsn))
+           (scan-right-zero-internal bp slopes hv n a))))))
+
+(defun scan-right-zero-internal (bp slopes hv n a)
+  "Scan internal and left segments from right to find x2."
+  ;; Internal segments (scan right to left)
+  (loop for i from (- n 2) downto 0
+        when (and (<= (aref hv i) 0d0) (> (aref hv (1+ i)) 0d0))
+        do (let ((hs (- (aref slopes (1+ i)) a)))
+             (return-from scan-right-zero-internal
+               (if (/= hs 0d0)
+                   ;; h(x) = hv[i] + hs*(x - bp[i]), solve h=0
+                   (- (aref bp i) (/ (aref hv i) hs))
+                   (aref bp i)))))
+  ;; Left segment: h goes from {-inf if hs0>0, +inf if hs0<0, hv[0] if hs0=0} to hv[0]
+  ;; x2 is in this segment if the zero is here (h transitions from <=0 to >0)
+  (when (> n 0)
+    (let ((h0-val (aref hv 0))
+          (hs0 (- (aref slopes 0) a)))
+      (cond
+        ;; hs0 > 0: h goes from -inf to hv[0]. Zero always exists at bp[0]-hv[0]/hs0
+        ((> hs0 0d0) (- (aref bp 0) (/ h0-val hs0)))
+        ;; hs0 < 0: h goes from +inf to hv[0]. If hv[0] <= 0, zero in this segment
+        ((and (< hs0 0d0) (<= h0-val 0d0))
+         (- (aref bp 0) (/ h0-val hs0)))
+        ;; hs0 = 0: h constant = hv[0]. No transition.
+        (t nil)))))
+
 (defun pl-add-abs (pl a weight)
   "Adds weight*|x-a| to f."
   (pl-add pl a weight)
