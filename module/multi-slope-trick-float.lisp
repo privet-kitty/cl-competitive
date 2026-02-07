@@ -26,20 +26,18 @@
 
 (defstruct (mset (:constructor %make-mset
                      (key priority weight
-                      &key left right (size weight) (rkey key)))
+                      &key left right (size weight)))
                  (:conc-name %mset-))
   "
 Slope trick interpretation of each slot:
 - KEY: X coordinate of the left end of an interval
-- RKEY: rightmost KEY of the subtree
 - LAZY: amount of the right shift of the subtree
-- WEIGHT: increment of the slope compared to the previous interval
-- SIZE: slope
-- AGG: Vertical increment from leftmost KEY to the rightmost KEY of the subtree,
-i.e. sum of <difference of adjacent keys> * <size>.
+- WEIGHT: increment of the slope compared to the previous interval (= weight)
+- SIZE: total weight of the subtree (= cumulative slope increment)
+- AGG: sum of WEIGHT*KEY over the subtree.
+  Use MSET-AGG for the corrected value.
 "
   (key 0d0 :type double-float)
-  (rkey 0d0 :type double-float)
   (lazy 0d0 :type double-float)
   (weight 0d0 :type (double-float 0d0))
   (size 0d0 :type (double-float 0d0))
@@ -52,12 +50,6 @@ i.e. sum of <difference of adjacent keys> * <size>.
 (defun mset-key (mset)
   "Returns the root key of (nullable) MSET."
   (and mset (%mset-key mset)))
-
-(declaim (inline mset-rkey))
-(declaim (ftype (function * (values (or double-float null) &optional)) mset-rkey))
-(defun mset-rkey (mset)
-  "Returns the rightmost key of (nullable) MSET."
-  (and mset (+ (%mset-lazy mset) (%mset-rkey mset))))
 
 (declaim (inline mset-size))
 (defun mset-size (mset)
@@ -73,29 +65,21 @@ i.e. sum of <difference of adjacent keys> * <size>.
   (declare ((or null mset) mset))
   (if (null mset)
       0d0
-      (%mset-agg mset)))
+      (+ (%mset-agg mset)
+         (* (%mset-lazy mset) (%mset-size mset)))))
 
 (declaim (inline force-up))
 (defun force-up (mset)
   (declare (mset mset))
   (let ((left (%mset-left mset))
         (right (%mset-right mset)))
-    (when right
-      (setf (%mset-rkey mset)
-            (+ (%mset-lazy right) (%mset-rkey right))))
     (setf (%mset-size mset)
           (+ (mset-size left)
              (%mset-weight mset)
              (mset-size right))
           (%mset-agg mset)
           (+ (mset-agg left)
-             (if left
-                 (* (%mset-size left)
-                    (- (%mset-rkey mset)
-                       (+ (%mset-lazy left) (%mset-rkey left))))
-                 0d0)
-             (* (%mset-weight mset)
-                (- (%mset-rkey mset) (%mset-key mset)))
+             (* (%mset-weight mset) (%mset-key mset))
              (mset-agg right)))))
 
 (declaim (inline force-down))
@@ -105,38 +89,37 @@ i.e. sum of <difference of adjacent keys> * <size>.
     (unless (float= lazy 0d0 +key-eps+)
       (setf (%mset-lazy mset) 0d0)
       (incf (%mset-key mset) lazy)
-      (incf (%mset-rkey mset) lazy)
+      (incf (%mset-agg mset) (* lazy (%mset-size mset)))
       (when (%mset-left mset)
         (incf (%mset-lazy (%mset-left mset)) lazy))
       (when (%mset-right mset)
         (incf (%mset-lazy (%mset-right mset)) lazy)))))
 
-(declaim (ftype (function * (values double-float &optional)) mset-key-agg))
-(defun mset-key-agg (mset key)
-  "Returns the aggregated value at KEY of MSET."
+(declaim (ftype (function * (values double-float &optional)) mset-value))
+(defun mset-value (mset key)
+  "Returns the function value at KEY of MSET.
+That is, sum of weight_i * (key - x_i) for all x_i <= key."
   (declare (optimize (speed 3))
            ((or null mset) mset)
            (double-float key))
   (labels
-      ((recur (mset sum)
-         (declare (double-float sum))
+      ((recur (mset prefix-size prefix-wagg)
+         (declare ((double-float 0d0) prefix-size)
+                  (double-float prefix-wagg))
          (unless mset
-           (return-from recur sum))
+           (return-from recur (- (* key prefix-size) prefix-wagg)))
          (force-down mset)
          (let ((left (%mset-left mset)))
            (if (float< key (%mset-key mset) +key-eps+)
-               (recur left sum)
+               (recur left prefix-size prefix-wagg)
                (recur (%mset-right mset)
-                      (+ sum
+                      (+ prefix-size
+                         (mset-size left)
+                         (%mset-weight mset))
+                      (+ prefix-wagg
                          (mset-agg left)
-                         (if left
-                             (* (%mset-size left)
-                                (- key
-                                   (+ (%mset-lazy left) (%mset-rkey left))))
-                             0d0)
-                         (* (%mset-weight mset)
-                            (- key (%mset-key mset)))))))))
-    (recur mset 0d0)))
+                         (* (%mset-weight mset) (%mset-key mset))))))))
+    (recur mset 0d0 0d0)))
 
 (declaim (ftype (function * (values (or null mset) (or null mset) &optional))
                 mset-split))
@@ -527,7 +510,7 @@ term, i.e., it only gives you a slope."
     (+ (%mstrick-intercept mstrick)
        (* (%mstrick-base-slope mstrick)
           (the double-float (- x (if mset (mset-first mset) 0d0))))
-       (mset-key-agg mset x))))
+       (mset-value mset x))))
 
 (declaim (ftype (function * (values double-float double-float &optional))
                 mstrick-arg-subdiff))

@@ -10,23 +10,21 @@
 (in-package :cp/multi-slope-trick)
 
 (defstruct (mset (:constructor %make-mset
-                     (key priority count
-                      &key left right (size count) (rkey key)))
+                     (key priority weight
+                      &key left right (size weight)))
                  (:conc-name %mset-))
   "
 Slope trick interpretation of each slot:
 - KEY: X coordinate of the left end of an interval
-- RKEY: rightmost KEY of the subtree
 - LAZY: amount of the right shift of the subtree
-- COUNT: increment of the slope compared to the previous interval
-- SIZE: slope
-- AGG: Vertical increment from leftmost KEY to the rightmost KEY of the subtree,
-i.e. sum of <difference of adjacent keys> * <size>.
+- WEIGHT: increment of the slope compared to the previous interval (= weight)
+- SIZE: total weight of the subtree (= cumulative slope increment)
+- AGG: sum of WEIGHT*KEY over the subtree.
+  Use MSET-AGG for the corrected value.
 "
   (key nil :type fixnum)
-  (rkey nil :type fixnum)
   (lazy 0 :type fixnum)
-  (count nil :type (integer 0 #.most-positive-fixnum))
+  (weight nil :type (integer 0 #.most-positive-fixnum))
   (size nil :type (integer 0 #.most-positive-fixnum))
   (agg 0 :type fixnum)
   (priority nil :type (integer 0 #.most-positive-fixnum))
@@ -38,12 +36,6 @@ i.e. sum of <difference of adjacent keys> * <size>.
   "Returns the root key of (nullable) MSET."
   (and mset (%mset-key mset)))
 
-(declaim (inline mset-rkey))
-(declaim (ftype (function * (values (or fixnum null) &optional)) mset-rkey))
-(defun mset-rkey (mset)
-  "Returns the rightmost key of (nullable) MSET."
-  (and mset (+ (%mset-lazy mset) (%mset-rkey mset))))
-
 (declaim (inline mset-size))
 (defun mset-size (mset)
   "Returns the total number of elements in MSET."
@@ -51,14 +43,6 @@ i.e. sum of <difference of adjacent keys> * <size>.
   (if (null mset)
       0
       (%mset-size mset)))
-
-(declaim (inline mset-agg))
-(defun mset-agg (mset)
-  "Returns the aggregated value of MSET."
-  (declare ((or null mset) mset))
-  (if (null mset)
-      0
-      (%mset-agg mset)))
 
 (defmacro the+ (type &rest exprs)
   (assert (cdr exprs))
@@ -81,29 +65,30 @@ i.e. sum of <difference of adjacent keys> * <size>.
                  expr)))
     (recur expr)))
 
+(declaim (inline mset-agg))
+(defun mset-agg (mset)
+  "Returns the aggregated value of MSET"
+  (declare ((or null mset) mset))
+  (if (null mset)
+      0
+      (the+ fixnum
+            (%mset-agg mset)
+            (* (%mset-lazy mset) (%mset-size mset)))))
+
 (declaim (inline force-up))
 (defun force-up (mset)
   (declare (mset mset))
   (let ((left (%mset-left mset))
         (right (%mset-right mset)))
-    (when right
-      (setf (%mset-rkey mset)
-            (+ (%mset-lazy right) (%mset-rkey right))))
     (setf (%mset-size mset)
           (the+ (integer 0 #.most-positive-fixnum)
                 (mset-size left)
-                (%mset-count mset)
+                (%mset-weight mset)
                 (mset-size right))
           (%mset-agg mset)
           (the+ fixnum
                 (mset-agg left)
-                (if left
-                    (* (%mset-size left)
-                       (the fixnum (- (%mset-rkey mset)
-                                      (+ (%mset-lazy left) (%mset-rkey left)))))
-                    0)
-                (* (%mset-count mset)
-                   (the fixnum (- (%mset-rkey mset) (%mset-key mset))))
+                (* (%mset-weight mset) (%mset-key mset))
                 (mset-agg right)))))
 
 (declaim (inline force-down))
@@ -113,39 +98,40 @@ i.e. sum of <difference of adjacent keys> * <size>.
     (unless (zerop lazy)
       (setf (%mset-lazy mset) 0)
       (incf (%mset-key mset) lazy)
-      (incf (%mset-rkey mset) lazy)
+      (incf (%mset-agg mset) (the fixnum (* lazy (%mset-size mset))))
       (when (%mset-left mset)
         (incf (%mset-lazy (%mset-left mset)) lazy))
       (when (%mset-right mset)
         (incf (%mset-lazy (%mset-right mset)) lazy)))))
 
-(declaim (ftype (function * (values fixnum &optional)) mset-key-agg))
-(defun mset-key-agg (mset key)
-  "Returns the aggregated value at KEY of MSET."
+(declaim (ftype (function * (values fixnum &optional)) mset-value))
+(defun mset-value (mset key)
+  "Returns the function value at KEY of MSET.
+That is, sum of weight_i * (key - x_i) for all x_i <= key."
   (declare (optimize (speed 3))
            ((or null mset) mset)
            (fixnum key))
   (labels
-      ((recur (mset sum)
+      ((recur (mset prefix-size prefix-agg)
+         (declare ((integer 0 #.most-positive-fixnum) prefix-size)
+                  (fixnum prefix-agg))
          (unless mset
-           (return-from recur sum))
+           (return-from recur
+             (the* fixnum (- (* key prefix-size) prefix-agg))))
          (force-down mset)
          (let ((left (%mset-left mset)))
            (if (< key (%mset-key mset))
-               (recur left sum)
+               (recur left prefix-size prefix-agg)
                (recur (%mset-right mset)
+                      (the+ (integer 0 #.most-positive-fixnum)
+                            prefix-size
+                            (mset-size left)
+                            (%mset-weight mset))
                       (the+ fixnum
-                            sum
+                            prefix-agg
                             (mset-agg left)
-                            (if left
-                                (* (%mset-size left)
-                                   (the fixnum
-                                        (- key
-                                           (+ (%mset-lazy left) (%mset-rkey left)))))
-                                0)
-                            (* (%mset-count mset)
-                               (the fixnum (- key (%mset-key mset))))))))))
-    (recur mset 0)))
+                            (* (%mset-weight mset) (%mset-key mset))))))))
+    (recur mset 0 0)))
 
 (declaim (ftype (function * (values (or null mset) (or null mset) &optional))
                 mset-split))
@@ -186,7 +172,7 @@ sub-multiset and the larger one."
            (return-from recur (values nil nil)))
          (force-down mset)
          (let* ((start (mset-size (%mset-left mset)))
-                (end (+ start (%mset-count mset))))
+                (end (+ start (%mset-weight mset))))
            (declare ((integer 0 #.most-positive-fixnum) start end))
            (cond ((<= end index)
                   (multiple-value-bind (left right)
@@ -201,11 +187,11 @@ sub-multiset and the larger one."
                     (force-up mset)
                     (values left mset)))
                  (t
-                  (let ((count (%mset-count mset))
+                  (let ((weight (%mset-weight mset))
                         (lnode (copy-mset mset))
                         (rnode mset))
-                    (setf (%mset-count lnode) (- index start)
-                          (%mset-count rnode) (- count (%mset-count lnode))
+                    (setf (%mset-weight lnode) (- index start)
+                          (%mset-weight rnode) (- weight (%mset-weight lnode))
                           (%mset-right lnode) nil
                           (%mset-left rnode) nil)
                     (force-up lnode)
@@ -265,7 +251,7 @@ This function includes %MSET-CONCAT, but it is not as fast."
                                (force-up mset)
                                mset)
                               ((= (%mset-key mset) (%mset-key lend))
-                               (incf (%mset-count lend) (%mset-count mset))
+                               (incf (%mset-weight lend) (%mset-weight mset))
                                (%mset-right mset))
                               (t (return-from preprocess)))))
                    (declare (dynamic-extent #'rrecur))
@@ -275,14 +261,14 @@ This function includes %MSET-CONCAT, but it is not as fast."
       (setq left (lrecur left))))
   (%mset-concat left right))
 
-(defun mset-insert (mset key count)
+(defun mset-insert (mset key weight)
   "Destructively inserts KEY into MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned value."
   (declare (optimize (speed 3))
            ((or null mset) mset)
            (fixnum key)
-           ((integer 0 #.most-positive-fixnum) count))
-  (when (zerop count)
+           ((integer 0 #.most-positive-fixnum) weight))
+  (when (zerop weight)
     (return-from mset-insert mset))
   (labels ((recur (new-priority mset found)
              (declare ((integer 0 #.most-positive-fixnum) new-priority))
@@ -297,7 +283,7 @@ cannot rely on the side effect. Use the returned value."
                                ((< (%mset-key mset) key)
                                 (recur new-priority (%mset-right mset) new-found))
                                (t
-                                (incf (%mset-count mset) count)
+                                (incf (%mset-weight mset) weight)
                                 t))))
                (cond ((eql res t)
                       (force-up mset)
@@ -310,7 +296,7 @@ cannot rely on the side effect. Use the returned value."
                       mset)
                      ((not (eq found new-found))
                       (multiple-value-bind (left right) (mset-split mset key)
-                        (let ((res (%make-mset key new-priority count
+                        (let ((res (%make-mset key new-priority weight
                                                :left left :right right)))
                           (force-up res)
                           res)))
@@ -328,13 +314,13 @@ cannot rely on the side effect. Use the returned value."
              (mset-empty-error-mset condition)))))
 
 (declaim (ftype (function * (values (or null mset) &optional)) mset-delete))
-(defun mset-delete (mset key count)
+(defun mset-delete (mset key weight)
   "Destructively deletes KEY in MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned multiset."
   (declare (optimize (speed 3))
            (fixnum key)
            ((or null mset) mset)
-           ((integer 0 #.most-positive-fixnum) count))
+           ((integer 0 #.most-positive-fixnum) weight))
   (labels
       ((%error () (error 'mset-empty-error :mset mset))
        (recur (mset)
@@ -349,10 +335,10 @@ cannot rely on the side effect. Use the returned multiset."
                 (force-up mset)
                 mset)
                (t
-                (let ((current (%mset-count mset)))
-                  (cond ((< current count) (%error))
-                        ((> current count)
-                         (decf (%mset-count mset) count)
+                (let ((current (%mset-weight mset)))
+                  (cond ((< current weight) (%error))
+                        ((> current weight)
+                         (decf (%mset-weight mset) weight)
                          (force-up mset)
                          mset)
                         (t
@@ -363,12 +349,12 @@ cannot rely on the side effect. Use the returned multiset."
 (declaim (inline mset-map-run-length))
 (defun mset-map-run-length (function mset)
   "Successively applies FUNCTION to each element of MSET in the underlying
-order. FUNCTION must take two arguments: KEY and COUNT."
+order. FUNCTION must take two arguments: KEY and WEIGHT."
   (labels ((recur (mset)
              (when mset
                (force-down mset)
                (recur (%mset-left mset))
-               (funcall function (%mset-key mset) (%mset-count mset))
+               (funcall function (%mset-key mset) (%mset-weight mset))
                (recur (%mset-right mset)))))
     (recur mset)))
 
@@ -376,11 +362,11 @@ order. FUNCTION must take two arguments: KEY and COUNT."
   (print-unreadable-object (object stream :type t)
     (let ((init t))
       (mset-map-run-length
-       (lambda (key count)
+       (lambda (key weight)
          (if init
              (setq init nil)
              (write-char #\  stream))
-         (format stream "<~A . ~A>" key count))
+         (format stream "<~A . ~A>" key weight))
        object))))
 
 (defun mset-ref (mset index)
@@ -395,7 +381,7 @@ order. FUNCTION must take two arguments: KEY and COUNT."
                (declare ((integer 0 #.most-positive-fixnum) sum))
                (cond ((< index (incf sum (mset-size (%mset-left mset))))
                       (recur (%mset-left mset) parent-sum))
-                     ((< index (incf sum (%mset-count mset)))
+                     ((< index (incf sum (%mset-weight mset)))
                       (%mset-key mset))
                      (t (recur (%mset-right mset) sum))))))
     (recur mset 0)))
@@ -404,7 +390,7 @@ order. FUNCTION must take two arguments: KEY and COUNT."
   "Returns the element right before the INDEX-th one of MSET.
 
 This is equivalent to (INDEX-1)-th element, but I implement it separately for
-the future expansion of this data structure to fractional count."
+the future expansion of this data structure to fractional weight."
   (declare (optimize (speed 3))
            (mset mset)
            ((integer 1 #.most-positive-fixnum) index))
@@ -415,7 +401,7 @@ the future expansion of this data structure to fractional count."
                (declare ((integer 0 #.most-positive-fixnum) sum))
                (cond ((<= index (incf sum (mset-size (%mset-left mset))))
                       (recur (%mset-left mset) parent-sum))
-                     ((<= index (incf sum (%mset-count mset)))
+                     ((<= index (incf sum (%mset-weight mset)))
                       (%mset-key mset))
                      (t (recur (%mset-right mset) sum))))))
     (recur mset 0)))
@@ -435,7 +421,7 @@ order."
                    ((< (%mset-key mset) key)
                     (the (integer 0 #.most-positive-fixnum)
                          (+ (mset-size (%mset-left mset))
-                            (%mset-count mset)
+                            (%mset-weight mset)
                             (recur (%mset-right mset)))))
                    (t
                     (recur (%mset-left mset))))))
@@ -458,7 +444,7 @@ order."
                    (t
                     (the (integer 0 #.most-positive-fixnum)
                          (+ (mset-size (%mset-left mset))
-                            (%mset-count mset)
+                            (%mset-weight mset)
                             (recur (%mset-right mset))))))))
     (recur mset)))
 
@@ -533,7 +519,7 @@ term, i.e., it only gives you a slope."
           (%mstrick-intercept mstrick)
           (* (%mstrick-base-slope mstrick)
              (the fixnum (- x (if mset (mset-first mset) 0))))
-          (mset-key-agg mset x))))
+          (mset-value mset x))))
 
 (declaim (ftype (function * (values fixnum fixnum &optional))
                 mstrick-arg-subdiff))
@@ -597,7 +583,7 @@ undefined if this operation breaks convexity."
              (if mset
                  (let ((first-node (mset-first-node mset)))
                    (if (and (= a (%mset-key first-node))
-                            (= (abs weight) (%mset-count first-node)))
+                            (= (abs weight) (%mset-weight first-node)))
                        (or (mset-bisect-right mset a) 0)
                        (%mset-key first-node)))
                  0))
