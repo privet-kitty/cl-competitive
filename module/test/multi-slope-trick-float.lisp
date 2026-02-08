@@ -1,6 +1,8 @@
 (defpackage :cp/test/multi-slope-trick-float
   (:use :cl :fiveam :cp/multi-slope-trick-float :cp/bisect :cp/shuffle)
-  (:import-from :cp/multi-slope-trick-float #:%mstrick-base-slope #:%mstrick-intercept)
+  (:import-from :cp/multi-slope-trick-float
+                #:%mstrick-base-slope #:%mstrick-intercept
+                #:float< #:float= #:float<=)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/multi-slope-trick-float)
 (in-suite base-suite)
@@ -555,7 +557,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
              (add-history nil))
         (pl-add-linear pl base-slope)
         (dotimes (i 100)
-          (ecase (random 16)
+          (ecase (random 18)
             ((0 1 2 3 4 5)
              ;; add
              (let ((a (/ (float (- (random 20) 10) 0d0) denom))
@@ -638,7 +640,24 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                  (pl-delete pl a weight)
                  (setq add-history
                        (nconc (subseq add-history 0 idx)
-                              (nthcdr (+ idx 1) add-history))))))))))))
+                              (nthcdr (+ idx 1) add-history))))))
+            ((16 17)
+             ;; max-affine
+             (multiple-value-bind (x0l x0r) (pl-arg-subdiff pl 0d0)
+               (declare (ignore x0r))
+               (let* ((a (if (and (< +negative-inf+ x0l) (< x0l +positive-inf+))
+                             x0l
+                             0d0))
+                      (fval (if (/= a 0d0)
+                                (pl-value pl a)
+                                (%pl-intercept pl)))
+                      (slope (/ (float (- (random 20) 10) 0d0) denom))
+                      (offset (/ (float (- (random 20) 10) 0d0) denom))
+                      (line-a slope)
+                      (line-b (+ fval offset (- (* slope a)))))
+                 (mstrick-max-affine mstrick line-a line-b)
+                 (pl-max-affine pl line-a line-b)
+                 (setq add-history nil))))))))))
 
 (test slope-trick-operation-float/random
   (let ((*random-state* (sb-ext:seed-random-state 42))
@@ -650,7 +669,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
              (add-history nil))
         (pl-add-linear pl base-slope)
         (dotimes (i 100)
-          (ecase (random 16)
+          (ecase (random 18)
             ((0 1 2 3 4 5)
              ;; add
              (let ((a (- (random 20d0) 10d0))
@@ -729,7 +748,24 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                  (pl-delete pl a weight)
                  (setq add-history
                        (nconc (subseq add-history 0 idx)
-                              (nthcdr (+ idx 1) add-history))))))))))))
+                              (nthcdr (+ idx 1) add-history))))))
+            ((16 17)
+             ;; max-affine
+             (multiple-value-bind (x0l x0r) (pl-arg-subdiff pl 0d0)
+               (declare (ignore x0r))
+               (let* ((a (if (and (< +negative-inf+ x0l) (< x0l +positive-inf+))
+                             x0l
+                             0d0))
+                      (fval (if (/= a 0d0)
+                                (pl-value pl a)
+                                (%pl-intercept pl)))
+                      (slope (- (random 20d0) 10d0))
+                      (offset (- (random 20d0) 10d0))
+                      (line-a slope)
+                      (line-b (+ fval offset (- (* slope a)))))
+                 (mstrick-max-affine mstrick line-a line-b)
+                 (pl-max-affine pl line-a line-b)
+                 (setq add-history nil))))))))))
 
 (defun test-hand ()
   (let ((*random-state* (sb-ext:seed-random-state 2)))
