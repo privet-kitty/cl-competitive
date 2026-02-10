@@ -639,10 +639,11 @@ subdifferential."
              (mstrick-breaking-convexity-error-mstrick condition)))))
 
 (defun mstrick-left-cum (mstrick c)
-  "Clips the slope of f to (-infinity, C].
+  "Convolves f with g(x) = Cx if x in [0, +inf) and +inf otherwise.
 
-This function raises an error if C is less than the minimum slope of f. This
-function returns the rest part, which is used to rollback this operation."
+This operation is equivalent to clipping the slope of f to (-inf, C]. This
+function raises an error if C is less than the minimum slope of f. This function
+returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
            (fixnum c))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
@@ -674,9 +675,10 @@ Note that this function breaks REST-MSTRICK."
   mstrick)
 
 (defun mstrick-right-cum (mstrick c)
-  "Clips the slope of f to [C, +infinity).
+  "Convolves f with g(x) = Cx if x in (-inf, 0] and +inf otherwise.
 
-This function raises an error if C is greater than the maximum slope of f. This
+This operation is equivalent to clipping the slope of f to [C, +inf). This
+function raises an error if C is greater than the maximum slope of f. This
 function returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
            (fixnum c))
