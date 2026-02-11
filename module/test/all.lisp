@@ -135,7 +135,6 @@
   (:import-from :cp/test/multiset)
   (:import-from :cp/test/multi-slope-trick)
   (:import-from :cp/test/multi-slope-trick-float)
-  (:import-from :cp/test/multi-slope-trick-old)
   (:import-from :cp/test/next-permutation)
   (:import-from :cp/test/next-table)
   (:import-from :cp/test/ntt)
