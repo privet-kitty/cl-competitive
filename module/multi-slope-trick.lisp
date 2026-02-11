@@ -503,7 +503,7 @@ larger than any keys in MSET."
             (:copier nil)
             (:predicate nil))
   "Manages convex piecewise linear function. The primitive function the constructor
-gives is a constant function."
+gives is an affine function."
   (base-slope 0 :type fixnum)
   (base-value 0 :type fixnum) ; value at leftmost breakpoint (value at 0 if linear)
   (mset nil :type (or null mset)))

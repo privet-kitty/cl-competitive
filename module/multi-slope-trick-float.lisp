@@ -554,83 +554,67 @@ Assumes the function is strictly increasing in that region and the root exists."
                         (recur left prefix-size prefix-agg))))))))
     (recur mset 0d0 0d0)))
 
-(declaim (ftype (function * (values (or null mset) double-float double-float &optional))
+(declaim (ftype (function * (values double-float &optional))
                 mset-intercept-leftmost mset-intercept-rightmost))
-(defun mset-intercept-leftmost (mset y-intercept0 b)
-  "Binary searches MSET for the leftmost node where
-y-intercept0 - cumulative_agg >= b. Assumes all keys in MSET are negative and the
-y-intercept sequence is increasing. Returns NIL if the piece before all breakpoints
-already qualifies (tangent extends to -inf). Otherwise returns three values: the found
-node, the y-intercept value after that node, and the cumulative weight through that node."
+(defun mset-intercept-leftmost (mset base-intercept b)
+  "Binary searches MSET for the leftmost key (< 0) where BASE-INTERCEPT -
+cumulative_agg >= b. BASE-INTERCEPT is the y-intercept of the leftmost linear
+piece of f. The y-intercept sequence is increasing for keys < 0. Nodes with
+key >= 0 are skipped. Returns +NEGATIVE-INF+ if the piece before all breakpoints
+already qualifies (tangent extends to -inf)."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (double-float y-intercept0 b))
-  ;; If the piece before all breakpoints qualifies, tangent goes to -inf
-  (when (float<= b y-intercept0 +value-eps+)
-    (return-from mset-intercept-leftmost (values nil 0d0 0d0)))
-  (let ((best nil)
-        (best-y-intercept-after 0d0)
-        (best-cum-weight 0d0))
-    (declare (double-float best-y-intercept-after best-cum-weight))
-    (labels
-        ((recur (node prefix-agg prefix-size)
-           (declare (double-float prefix-agg)
-                    ((double-float 0d0) prefix-size))
-           (when node
-             (force-down node)
-             (let* ((left (%mset-left node))
-                    (a-k (+ prefix-agg (mset-agg left)
-                            (* (%mset-weight node) (%mset-key node))))
-                    (y-intercept-k (- y-intercept0 a-k))
-                    (cum-w (+ prefix-size (mset-size left)
-                              (%mset-weight node))))
-               (if (float<= b y-intercept-k +value-eps+)
-                   (progn
-                     (setq best node
-                           best-y-intercept-after y-intercept-k
-                           best-cum-weight cum-w)
-                     (recur left prefix-agg prefix-size))
-                   (recur (%mset-right node) a-k cum-w))))))
-      (recur mset 0d0 0d0))
-    (values best best-y-intercept-after best-cum-weight)))
+           (double-float base-intercept b))
+  (when (float<= b base-intercept +value-eps+)
+    (return-from mset-intercept-leftmost +negative-inf+))
+  (labels
+      ((recur (node prefix-agg best)
+         (declare (double-float prefix-agg best))
+         (unless node
+           (return-from recur best))
+         (force-down node)
+         (let ((left (%mset-left node))
+               (key (%mset-key node)))
+           (if (float<= 0d0 key +key-eps+)
+               (recur left prefix-agg best)
+               (let ((new-agg (+ prefix-agg (mset-agg left)
+                                 (* (%mset-weight node) key))))
+                 (if (float<= b (- base-intercept new-agg) +value-eps+)
+                     (recur left prefix-agg key)
+                     (recur (%mset-right node) new-agg best)))))))
+    (recur mset 0d0 +negative-inf+)))
 
-(defun mset-intercept-rightmost (mset y-intercept0-right b)
-  "Binary searches MSET for the rightmost node where
-y-intercept0-right - prefix_agg >= b. Assumes all keys in MSET are non-negative and the
-y-intercept sequence is decreasing. Returns NIL if the piece after all breakpoints
-already qualifies (tangent extends to +inf). Otherwise returns three values: the found
-node, the y-intercept value before that node, and the cumulative weight before that node."
+(defun mset-intercept-rightmost (mset base-intercept b)
+  "Binary searches MSET for the rightmost key (>= 0) where BASE-INTERCEPT -
+prefix_agg >= b. BASE-INTERCEPT is the y-intercept of the leftmost linear piece
+of f. The y-intercept sequence is decreasing for keys >= 0. Nodes with key < 0
+are skipped (their agg is accumulated into the prefix). Returns +POSITIVE-INF+
+if the piece after all breakpoints already qualifies (tangent extends to +inf)."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (double-float y-intercept0-right b))
-  ;; If the piece after all breakpoints qualifies, tangent goes to +inf
-  (when (float<= b (- y-intercept0-right (mset-agg mset)) +value-eps+)
-    (return-from mset-intercept-rightmost (values nil 0d0 0d0)))
-  (let ((best nil)
-        (best-y-intercept-before 0d0)
-        (best-cum-weight-before 0d0))
-    (declare (double-float best-y-intercept-before best-cum-weight-before))
-    (labels
-        ((recur (node prefix-agg prefix-size)
-           (declare (double-float prefix-agg)
-                    ((double-float 0d0) prefix-size))
-           (when node
-             (force-down node)
-             (let* ((left (%mset-left node))
-                    (y-intercept-before (- y-intercept0-right prefix-agg (mset-agg left)))
-                    (cum-w-before (+ prefix-size (mset-size left))))
-               (if (float<= b y-intercept-before +value-eps+)
-                   (progn
-                     (setq best node
-                           best-y-intercept-before y-intercept-before
-                           best-cum-weight-before cum-w-before)
-                     (recur (%mset-right node)
-                            (+ prefix-agg (mset-agg left)
-                               (* (%mset-weight node) (%mset-key node)))
-                            (+ cum-w-before (%mset-weight node))))
-                   (recur left prefix-agg prefix-size))))))
-      (recur mset 0d0 0d0))
-    (values best best-y-intercept-before best-cum-weight-before)))
+           (double-float base-intercept b))
+  (when (float<= b (- base-intercept (mset-agg mset)) +value-eps+)
+    (return-from mset-intercept-rightmost +positive-inf+))
+  (labels
+      ((recur (node prefix-agg best)
+         (declare (double-float prefix-agg best))
+         (unless node
+           (return-from recur best))
+         (force-down node)
+         (let ((left (%mset-left node))
+               (key (%mset-key node)))
+           (if (float< key 0d0 +key-eps+)
+               (recur (%mset-right node)
+                      (+ prefix-agg (mset-agg left)
+                         (* (%mset-weight node) key))
+                      best)
+               (if (float<= b (- base-intercept prefix-agg (mset-agg left)) +value-eps+)
+                   (recur (%mset-right node)
+                          (+ prefix-agg (mset-agg left)
+                             (* (%mset-weight node) key))
+                          key)
+                   (recur left prefix-agg best))))))
+    (recur mset 0d0 +positive-inf+)))
 
 (defstruct (multi-slope-trick
             (:constructor make-multi-slope-trick (&optional base-slope base-value))
@@ -638,8 +622,8 @@ node, the y-intercept value before that node, and the cumulative weight before t
             (:copier nil)
             (:predicate nil))
   "Manages convex piecewise linear function. The primitive function the constructor
-gives is a constant function."
-  (base-slope 0d0 :type double-float)
+gives is an affine function."
+  (base-slope 0d0 :type double-float) ; slope of leftmost linear piece
   (base-value 0d0 :type double-float) ; value at leftmost breakpoint (value at 0 if linear)
   (mset nil :type (or null mset)))
 
@@ -956,71 +940,50 @@ Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by 
       ;; Shift so that a -> 0
       (mstrick-shift mstrick (- a) (- a))
       (let* ((base-x (if mset (mset-first mset) 0d0))
-             (y-intercept0 (- base-value (* base-slope base-x))))
-        ;; Split mset at 0 -> left-mset (< 0), right-mset (>= 0)
-        (multiple-value-bind (left-mset right-mset) (mset-split mset 0d0)
-          ;; Find left tangent
-          (multiple-value-bind (best-l best-y-intercept-after best-cum-weight)
-              (mset-intercept-leftmost left-mset y-intercept0 b)
-            (multiple-value-bind (x-l s-l)
-                (if best-l
-                    (let ((x-l (%mset-key best-l)))
-                      (values x-l
-                              (/ (- (+ best-y-intercept-after
-                                       (* (+ base-slope best-cum-weight) x-l))
-                                    b)
-                                 x-l)))
-                    (values +negative-inf+ base-slope))
-              ;; Find right tangent
-              (multiple-value-bind
-                    (best-r best-y-intercept-before best-cum-weight-before)
-                  (mset-intercept-rightmost right-mset f0 b)
-                (multiple-value-bind (x-r s-r)
-                    (if best-r
-                        (let* ((x-r (%mset-key best-r))
-                               (slope-at-xr (+ base-slope (mset-size left-mset)
-                                               best-cum-weight-before)))
-                          (values x-r
-                                  (if (float= x-r 0d0 +key-eps+)
-                                      slope-at-xr
-                                      (+ slope-at-xr
-                                         (/ (- best-y-intercept-before b)
-                                            x-r)))))
-                        (values +positive-inf+ (+ base-slope (mset-size mset))))
-                  ;; Reconstruct mset
-                  (setq mset (%mset-concat left-mset right-mset))
-                  (let ((has-left (> x-l +negative-inf+))
-                        (has-right (< x-r +positive-inf+)))
-                    (multiple-value-bind (l-part rest-mset)
-                        (if has-left
-                            (mset-split mset x-l)
-                            (values nil mset))
-                      (multiple-value-bind (middle r-part)
-                          (if has-right
-                              (let ((next-key (mset-bisect-right rest-mset x-r)))
-                                (if next-key
-                                    (mset-split rest-mset next-key)
-                                    (values rest-mset nil)))
-                              (values rest-mset nil))
-                        (let* ((l-size (mset-size l-part))
-                               (middle-size (mset-size middle))
-                               (slope-before-l (+ base-slope l-size))
-                               (slope-after-r (+ base-slope l-size middle-size)))
-                          (setq mset (%mset-concat l-part r-part))
-                          (when has-left
-                            (setq mset (mset-insert mset x-l (- s-l slope-before-l))))
-                          (when (float< s-l s-r +weight-eps+)
-                            (setq mset (mset-insert mset 0d0 (- s-r s-l))))
-                          (when has-right
-                            (setq mset (mset-insert mset x-r (- slope-after-r s-r))))
-                          (cond
-                            (l-part nil)
-                            ((not has-left)
-                             (setq base-slope s-l)
-                             (setq base-value
-                                   (if mset (+ b (* s-l (mset-first mset))) b)))
-                            (t
-                             (setq base-value (+ b (* s-l x-l)))))))))))))))))
+             (base-intercept (- base-value (* base-slope base-x)))
+             (end-slope (+ base-slope (mset-size mset))))
+        ;; Find tangent points
+        (let* ((x-l (mset-intercept-leftmost mset base-intercept b))
+               (s-l (if (> x-l +negative-inf+)
+                        (/ (- (mstrick-value mstrick x-l) b) x-l)
+                        base-slope))
+               (x-r (mset-intercept-rightmost mset base-intercept b))
+               (s-r (if (< x-r +positive-inf+)
+                        (if (float= x-r 0d0 +key-eps+)
+                            end-slope
+                            (/ (- (mstrick-value mstrick x-r) b) x-r))
+                        end-slope))
+               (has-left (> x-l +negative-inf+))
+               (has-right (< x-r +positive-inf+)))
+          ;; Reconstruct mset
+          (multiple-value-bind (l-part rest-mset)
+              (if has-left
+                  (mset-split mset x-l)
+                  (values nil mset))
+            (multiple-value-bind (middle r-part)
+                (if has-right
+                    (let ((next-key (mset-bisect-right rest-mset x-r)))
+                      (if next-key
+                          (mset-split rest-mset next-key)
+                          (values rest-mset nil)))
+                    (values rest-mset nil))
+              (let* ((l-size (mset-size l-part))
+                     (middle-size (mset-size middle))
+                     (slope-before-l (+ base-slope l-size))
+                     (slope-after-r (+ base-slope l-size middle-size)))
+                (setq mset (%mset-concat l-part r-part))
+                (when has-left
+                  (setq mset (mset-insert mset x-l (- s-l slope-before-l))))
+                (when (float< s-l s-r +weight-eps+)
+                  (setq mset (mset-insert mset 0d0 (- s-r s-l))))
+                (when has-right
+                  (setq mset (mset-insert mset x-r (- slope-after-r s-r))))
+                (unless l-part
+                  (if has-left
+                      (setq base-value (+ b (* s-l x-l)))
+                      (setq base-slope s-l
+                            base-value
+                            (if mset (+ b (* s-l (mset-first mset))) b)))))))))))
   ;; Shift back
   (mstrick-shift mstrick a a)
   mstrick)
