@@ -1,7 +1,8 @@
 (defpackage :cp/test/multi-slope-trick-float
   (:use :cl :fiveam :cp/multi-slope-trick-float :cp/bisect :cp/shuffle)
   (:import-from :cp/multi-slope-trick-float
-                #:%mstrick-base-slope #:%mstrick-intercept
+                #:%mstrick-base-slope #:%mstrick-intercept #:%mstrick-mset
+                #:mset-insert
                 #:float< #:float= #:float<=)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/multi-slope-trick-float)
@@ -208,6 +209,114 @@ Outside that interval f dominates; inside, the line ax+b dominates."
                 (%pl-slopes pl) new-slopes
                 (%pl-intercept pl) (max (%pl-intercept pl) b)))
         (pl-merge pl)))))
+
+(defun pl-convex-hull-with-point (pl a b)
+  "Replace f with the function whose epigraph is the closure of
+conv(epi(f) ∪ {(a, b)})."
+  (let ((fa (pl-value pl a)))
+    ;; If point is already in epigraph, no change
+    (when (float<= fa b +value-eps+)
+      (return-from pl-convex-hull-with-point pl))
+    (let* ((breakpoints (%pl-breakpoints pl))
+           (slopes (%pl-slopes pl))
+           (n (length breakpoints))
+           (nseg (length slopes)))
+      ;; Compute V[i] for each segment: value at x=a of the tangent line with slope s[i].
+      ;; V is concave in the slope index and reaches its maximum f(a) at the segment
+      ;; containing a. We use V to find tangent points from (a, b) to f.
+      (let ((v (make-array nseg :element-type 'double-float)))
+        (cond
+          ((zerop n)
+           (setf (aref v 0) (+ (%pl-intercept pl) (* (aref slopes 0) a))))
+          (t
+           ;; V[0]: use bp[0] as reference
+           (setf (aref v 0) (+ (pl-value pl (aref breakpoints 0))
+                                (* (aref slopes 0) (- a (aref breakpoints 0)))))
+           ;; V[i] for 1 <= i <= n: use bp[i-1] as reference
+           (loop for i from 1 below nseg
+                 do (setf (aref v i)
+                          (+ (pl-value pl (aref breakpoints (min (1- i) (1- n))))
+                             (* (aref slopes i)
+                                (- a (aref breakpoints (min (1- i) (1- n))))))))))
+        ;; Find left tangent: scan from i=0 upward, find first i where V[i] >= b
+        (let (s-l x-l)
+          (loop for i from 0 below nseg
+                when (float<= b (aref v i) +value-eps+)
+                do (cond
+                     ((= i 0)
+                      (setq s-l (aref slopes 0)
+                            x-l +negative-inf+))
+                     ((float= (aref v i) b +value-eps+)
+                      (setq s-l (aref slopes i)
+                            x-l (aref breakpoints (1- i))))
+                     (t
+                      (let ((bpi (aref breakpoints (1- i))))
+                        (setq s-l (/ (- (pl-value pl bpi) b) (- bpi a))
+                              x-l bpi))))
+                   (return))
+          ;; Find right tangent: scan from i=nseg-1 downward, find first i where V[i] >= b
+          (let (s-r x-r)
+            (loop for i from (1- nseg) downto 0
+                  when (float<= b (aref v i) +value-eps+)
+                  do (cond
+                       ((= i n)
+                        (setq s-r (aref slopes n)
+                              x-r +positive-inf+))
+                       ((float= (aref v i) b +value-eps+)
+                        (setq s-r (aref slopes i)
+                              x-r (aref breakpoints i)))
+                       (t
+                        (let ((bpi (aref breakpoints i)))
+                          (setq s-r (/ (- (pl-value pl bpi) b) (- bpi a))
+                                x-r bpi))))
+                     (return))
+            ;; Rebuild the function
+            (let ((new-bp (make-array 0 :element-type 'double-float :adjustable t :fill-pointer 0))
+                  (new-slopes (make-array 0 :element-type 'double-float :adjustable t :fill-pointer 0)))
+              ;; Left part (x < x-l)
+              (if (= x-l +negative-inf+)
+                  (vector-push-extend s-l new-slopes)
+                  (progn
+                    (vector-push-extend (aref slopes 0) new-slopes)
+                    (loop for i from 0 below n
+                          while (float< (aref breakpoints i) x-l +key-eps+)
+                          do (vector-push-extend (aref breakpoints i) new-bp)
+                             (vector-push-extend (aref slopes (1+ i)) new-slopes))
+                    (vector-push-extend x-l new-bp)
+                    (vector-push-extend s-l new-slopes)))
+              ;; Breakpoint at a (if s-l != s-r)
+              (unless (float= s-l s-r +weight-eps+)
+                (vector-push-extend a new-bp)
+                (vector-push-extend s-r new-slopes))
+              ;; Right part (x > x-r)
+              (unless (= x-r +positive-inf+)
+                (vector-push-extend x-r new-bp)
+                (let ((seg (bisect-left breakpoints x-r :order #'key<)))
+                  (when (and (< seg n) (float= x-r (aref breakpoints seg) +key-eps+))
+                    (incf seg))
+                  (vector-push-extend (aref slopes seg) new-slopes)
+                  (loop for i from seg below n
+                        do (vector-push-extend (aref breakpoints i) new-bp)
+                           (vector-push-extend (aref slopes (1+ i)) new-slopes))))
+              ;; Compute new intercept: g(0)
+              (let ((new-intercept
+                      (cond
+                        ;; 0 in left part (unchanged)
+                        ((and (/= x-l +negative-inf+) (float<= 0d0 x-l +key-eps+))
+                         (%pl-intercept pl))
+                        ;; 0 in right part (unchanged)
+                        ((and (/= x-r +positive-inf+) (float<= x-r 0d0 +key-eps+))
+                         (%pl-intercept pl))
+                        ;; 0 in middle, left of a
+                        ((float<= 0d0 a +key-eps+)
+                         (- b (* s-l a)))
+                        ;; 0 in middle, right of a
+                        (t
+                         (- b (* s-r a))))))
+                (setf (%pl-breakpoints pl) new-bp
+                      (%pl-slopes pl) new-slopes
+                      (%pl-intercept pl) new-intercept)))))))
+    (pl-merge pl)))
 
 (defun find-h-left-zero (bp slopes hv n a &optional (h0 0d0))
   "Find x1: the leftmost x where h(x)=f(x)-ax-b transitions from positive to zero.
@@ -546,6 +655,179 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
           (values (aref slopes index) (aref slopes (1+ index)))
           (values (aref slopes index) (aref slopes index))))))
 
+(defun make-test-pl (breakpoints slopes intercept)
+  "Create a piecewise-linear function from explicit breakpoints, slopes, and intercept."
+  (let ((pl (make-pl)))
+    (setf (%pl-breakpoints pl)
+          (make-array (length breakpoints) :element-type 'double-float
+                      :initial-contents breakpoints :adjustable t
+                      :fill-pointer (length breakpoints)))
+    (setf (%pl-slopes pl)
+          (make-array (length slopes) :element-type 'double-float
+                      :initial-contents slopes :adjustable t
+                      :fill-pointer (length slopes)))
+    (setf (%pl-intercept pl) (coerce intercept 'double-float))
+    pl))
+
+(defun make-test-mstrick (breakpoints slopes intercept)
+  "Create a multi-slope-trick matching a piecewise-linear specification."
+  (let* ((base-slope (coerce (first slopes) 'double-float))
+         (ms (make-multi-slope-trick base-slope)))
+    (when breakpoints
+      (setf (%mstrick-intercept ms)
+            (pl-value (make-test-pl (mapcar (lambda (x) (coerce x 'double-float)) breakpoints)
+                                    (mapcar (lambda (x) (coerce x 'double-float)) slopes)
+                                    (coerce intercept 'double-float))
+                      (coerce (first breakpoints) 'double-float)))
+      (loop for i from 0 below (length breakpoints)
+            for bp in breakpoints
+            for weight = (- (nth (1+ i) slopes) (nth i slopes))
+            do (setf (%mstrick-mset ms)
+                     (mset-insert (%mstrick-mset ms)
+                                  (coerce bp 'double-float)
+                                  (coerce weight 'double-float)))))
+    (unless breakpoints
+      (setf (%mstrick-intercept ms) (coerce intercept 'double-float)))
+    ms))
+
+(test convex-hull-with-point/handmade
+  ;; Case 1: Point in epigraph (no-op). f(x) = |x|, point (1, 2). f(1)=1 <= 2.
+  (let ((pl (make-test-pl '(0d0) '(-1d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0) '(-1 1) 0)))
+    (pl-convex-hull-with-point pl 1d0 2d0)
+    (mstrick-convex-hull-with-point ms 1d0 2d0)
+    (is (approx= (pl-value pl 0d0) 0d0))
+    (is (approx= (mstrick-value ms 0d0) 0d0))
+    (is (approx= (mstrick-value ms 1d0) 1d0))
+    (is (approx= (mstrick-value ms -1d0) 1d0)))
+
+  ;; Case 2: Point exactly on f (no-op). f(x) = |x|, point (1, 1).
+  (let ((pl (make-test-pl '(0d0) '(-1d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0) '(-1 1) 0)))
+    (pl-convex-hull-with-point pl 1d0 1d0)
+    (mstrick-convex-hull-with-point ms 1d0 1d0)
+    (is (approx= (mstrick-value ms 0d0) 0d0))
+    (is (approx= (mstrick-value ms 1d0) 1d0)))
+
+  ;; Case 3: f is a single line f(x)=2x+3, point (1, 2). f(1)=5>2.
+  ;; g is the parallel line through (1,2): g(x) = 2x. g(0)=0.
+  (let ((pl (make-test-pl '() '(2d0) 3d0))
+        (ms (make-test-mstrick '() '(2) 3)))
+    (pl-convex-hull-with-point pl 1d0 2d0)
+    (mstrick-convex-hull-with-point ms 1d0 2d0)
+    (is (approx= (mstrick-value ms 0d0) 0d0))
+    (is (approx= (mstrick-value ms 1d0) 2d0))
+    (is (approx= (mstrick-value ms -1d0) -2d0)))
+
+  ;; Case 4: f(x) = |x|, point (0, -1) directly below minimum.
+  ;; Both tangents at infinity. g(x) = |x| - 1.
+  (let ((pl (make-test-pl '(0d0) '(-1d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0) '(-1 1) 0)))
+    (pl-convex-hull-with-point pl 0d0 -1d0)
+    (mstrick-convex-hull-with-point ms 0d0 -1d0)
+    (is (approx= (mstrick-value ms 0d0) -1d0))
+    (is (approx= (mstrick-value ms 1d0) 0d0))
+    (is (approx= (mstrick-value ms -1d0) 0d0))
+    (is (approx= (mstrick-value ms 5d0) 4d0)))
+
+  ;; Case 5: f(x) = |x|, point (2, -1) to the right of minimum.
+  ;; Left tangent from (2,-1) to f at x=0, slope = (0-(-1))/(0-2) = -0.5.
+  ;; Right tangent slope = 1 (f's rightmost slope), x_R = +inf.
+  ;; g: -x (x<0), -0.5x (0<=x<=2), x-3 (x>=2).
+  (let ((pl (make-test-pl '(0d0) '(-1d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0) '(-1 1) 0)))
+    (pl-convex-hull-with-point pl 2d0 -1d0)
+    (mstrick-convex-hull-with-point ms 2d0 -1d0)
+    (is (approx= (mstrick-value ms -2d0) 2d0))
+    (is (approx= (mstrick-value ms 0d0) 0d0))
+    (is (approx= (mstrick-value ms 1d0) -0.5d0))
+    (is (approx= (mstrick-value ms 2d0) -1d0))
+    (is (approx= (mstrick-value ms 5d0) 2d0)))
+
+  ;; Case 6: f(x) = max(0, x), point (-1, -1).
+  ;; Left tangent slope = 0 (f's leftmost), x_L = -inf.
+  ;; Right tangent from (-1,-1) with slope 1 gives y=x, which coincides with f for x>=0.
+  ;; g: -1 (x<=-1), x (x>=-1).
+  (let ((pl (make-test-pl '(0d0) '(0d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0) '(0 1) 0)))
+    (pl-convex-hull-with-point pl -1d0 -1d0)
+    (mstrick-convex-hull-with-point ms -1d0 -1d0)
+    (is (approx= (mstrick-value ms -3d0) -1d0))
+    (is (approx= (mstrick-value ms -1d0) -1d0))
+    (is (approx= (mstrick-value ms 0d0) 0d0))
+    (is (approx= (mstrick-value ms 3d0) 3d0)))
+
+  ;; Case 7: Right tangent coincides with f on an interval.
+  ;; f: bp=[0,2,4], slopes=[-1,-0.5,0.5,1], intercept=0.
+  ;; f(0)=0, f(2)=-1, f(4)=0.
+  ;; Point (1, -1.5). f(1)=-0.5 > -1.5.
+  ;; Left tangent: slope -1, x_L = -inf (V[0]=-1 >= -1.5).
+  ;; Right tangent: V[2]=f(2)+0.5*(1-2)=-1.5 = b exactly. s_R=0.5, x_R=4.
+  ;; g on [1,4] has slope 0.5, which equals f on [2,4]. Tangent coincides!
+  ;; g: slope -1 (x<1), slope 0.5 (1<=x<=4), slope 1 (x>4).
+  (let ((pl (make-test-pl '(0d0 2d0 4d0) '(-1d0 -0.5d0 0.5d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0 2 4) '(-1 -0.5 0.5 1) 0)))
+    (pl-convex-hull-with-point pl 1d0 -1.5d0)
+    (mstrick-convex-hull-with-point ms 1d0 -1.5d0)
+    (is (approx= (mstrick-value ms -1d0) 0.5d0))
+    (is (approx= (mstrick-value ms 0d0) -0.5d0))
+    (is (approx= (mstrick-value ms 1d0) -1.5d0))
+    (is (approx= (mstrick-value ms 2d0) -1d0))   ; = f(2), coincides
+    (is (approx= (mstrick-value ms 4d0) 0d0))    ; = f(4), tangent point
+    (is (approx= (mstrick-value ms 5d0) 1d0)))   ; = f(5)
+
+  ;; Case 8: Left tangent coincides with f on an interval.
+  ;; Same f. Point (3, -1.5). f(3)=-0.5 > -1.5.
+  ;; Left tangent: V[1]=f(0)+(-0.5)*(3-0)=-1.5 = b exactly. s_L=-0.5, x_L=0.
+  ;; g on [0,3] has slope -0.5, which equals f on [0,2]. Tangent coincides!
+  ;; Right tangent: slope 1, x_R = +inf.
+  ;; g: slope -1 (x<0), slope -0.5 (0<=x<=3), slope 1 (x>3).
+  (let ((pl (make-test-pl '(0d0 2d0 4d0) '(-1d0 -0.5d0 0.5d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0 2 4) '(-1 -0.5 0.5 1) 0)))
+    (pl-convex-hull-with-point pl 3d0 -1.5d0)
+    (mstrick-convex-hull-with-point ms 3d0 -1.5d0)
+    (is (approx= (mstrick-value ms -1d0) 1d0))   ; = f(-1)
+    (is (approx= (mstrick-value ms 0d0) 0d0))    ; = f(0), coincides start
+    (is (approx= (mstrick-value ms 2d0) -1d0))   ; = f(2), coincides end
+    (is (approx= (mstrick-value ms 3d0) -1.5d0)) ; = b
+    (is (approx= (mstrick-value ms 5d0) 0.5d0))) ; g(5) = -1.5 + 1*2 = 0.5
+
+  ;; Case 9: Multiple breakpoints, tangent skips inner breakpoints.
+  ;; f: bp=[-2,-1,0,1,2], slopes=[-3,-2,-1,1,2,3], intercept=0.
+  ;; Symmetric: f(-2)=3, f(-1)=1, f(0)=0, f(1)=1, f(2)=3.
+  ;; Point (0, -1). V[1]=-1=b, V[4]=-1=b.
+  ;; Left tangent: s=-2, x_L=-2. Right tangent: s=2, x_R=2.
+  ;; Inner breakpoints at -1, 0, 1 are skipped.
+  ;; g: slopes [-3, -2, 2, 3], bp = [-2, 0, 2].
+  (let ((pl (make-test-pl '(-2d0 -1d0 0d0 1d0 2d0) '(-3d0 -2d0 -1d0 1d0 2d0 3d0) 0d0))
+        (ms (make-test-mstrick '(-2 -1 0 1 2) '(-3 -2 -1 1 2 3) 0)))
+    (pl-convex-hull-with-point pl 0d0 -1d0)
+    (mstrick-convex-hull-with-point ms 0d0 -1d0)
+    (is (approx= (mstrick-value ms -3d0) 6d0))   ; = f(-3)
+    (is (approx= (mstrick-value ms -2d0) 3d0))   ; = f(-2), tangent point
+    (is (approx= (mstrick-value ms -1d0) 1d0))   ; g(-1) = -1 + (-2)*(-1) = 1
+    (is (approx= (mstrick-value ms 0d0) -1d0))   ; = b
+    (is (approx= (mstrick-value ms 1d0) 1d0))    ; g(1) = -1 + 2*1 = 1
+    (is (approx= (mstrick-value ms 2d0) 3d0))    ; = f(2), tangent point
+    (is (approx= (mstrick-value ms 3d0) 6d0)))   ; = f(3)
+
+  ;; Case 10: Point below flat region.
+  ;; f: bp=[0,4], slopes=[-1,0,1], intercept=0.
+  ;; f(x) = -x (x<0), 0 (0<=x<=4), x-4 (x>4).
+  ;; Point (2, -1). Tangent from (2,-1) to f at x=0 (slope -0.5) and x=4 (slope 0.5).
+  ;; Flat region replaced by V shape.
+  (let ((pl (make-test-pl '(0d0 4d0) '(-1d0 0d0 1d0) 0d0))
+        (ms (make-test-mstrick '(0 4) '(-1 0 1) 0)))
+    (pl-convex-hull-with-point pl 2d0 -1d0)
+    (mstrick-convex-hull-with-point ms 2d0 -1d0)
+    (is (approx= (mstrick-value ms -1d0) 1d0))   ; = f(-1)
+    (is (approx= (mstrick-value ms 0d0) 0d0))    ; = f(0), tangent point
+    (is (approx= (mstrick-value ms 1d0) -0.5d0))
+    (is (approx= (mstrick-value ms 2d0) -1d0))   ; = b
+    (is (approx= (mstrick-value ms 3d0) -0.5d0))
+    (is (approx= (mstrick-value ms 4d0) 0d0))    ; = f(4), tangent point
+    (is (approx= (mstrick-value ms 5d0) 1d0))))  ; = f(5)
+
 (test slope-trick-operation-rational/random
   (let ((*random-state* (sb-ext:seed-random-state 0))
         (*test-dribble* nil))
@@ -557,7 +839,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
              (add-history nil))
         (pl-add-linear pl base-slope)
         (dotimes (i 100)
-          (ecase (random 18)
+          (ecase (random 20)
             ((0 1 2 3 4 5)
              ;; add
              (let ((a (/ (float (- (random 20) 10) 0d0) denom))
@@ -606,7 +888,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                (is-true
                 (loop for x across xs
                       always (approx= (mstrick-value mstrick x)
-                                       (pl-value pl x))))))
+                                      (pl-value pl x))))))
             ((12 13)
              ;; check subdiff and arg-subdiff
              (let ((xs (subseq (shuffle! (coerce (loop for xi from -21 to 21
@@ -657,6 +939,21 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                       (line-b (+ fval offset (- (* slope a)))))
                  (mstrick-max-affine mstrick line-a line-b)
                  (pl-max-affine pl line-a line-b)
+                 (setq add-history nil))))
+            ((18 19)
+             ;; convex-hull-with-point
+             (multiple-value-bind (x0l x0r) (pl-arg-subdiff pl 0d0)
+               (declare (ignore x0r))
+               (let* ((a (if (and (< +negative-inf+ x0l) (< x0l +positive-inf+))
+                             x0l
+                             0d0))
+                      (fval (if (/= a 0d0)
+                                (pl-value pl a)
+                                (%pl-intercept pl)))
+                      (offset (/ (float (- (random 20) 10) 0d0) denom))
+                      (point-b (+ fval offset)))
+                 (mstrick-convex-hull-with-point mstrick a point-b)
+                 (pl-convex-hull-with-point pl a point-b)
                  (setq add-history nil))))))))))
 
 (test slope-trick-operation-float/random
@@ -669,7 +966,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
              (add-history nil))
         (pl-add-linear pl base-slope)
         (dotimes (i 100)
-          (ecase (random 18)
+          (ecase (random 20)
             ((0 1 2 3 4 5)
              ;; add
              (let ((a (- (random 20d0) 10d0))
@@ -765,6 +1062,21 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                       (line-b (+ fval offset (- (* slope a)))))
                  (mstrick-max-affine mstrick line-a line-b)
                  (pl-max-affine pl line-a line-b)
+                 (setq add-history nil))))
+            ((18 19)
+             ;; convex-hull-with-point
+             (multiple-value-bind (x0l x0r) (pl-arg-subdiff pl 0d0)
+               (declare (ignore x0r))
+               (let* ((a (if (and (< +negative-inf+ x0l) (< x0l +positive-inf+))
+                             x0l
+                             0d0))
+                      (fval (if (/= a 0d0)
+                                (pl-value pl a)
+                                (%pl-intercept pl)))
+                      (offset (- (random 20d0) 10d0))
+                      (point-b (+ fval offset)))
+                 (mstrick-convex-hull-with-point mstrick a point-b)
+                 (pl-convex-hull-with-point pl a point-b)
                  (setq add-history nil))))))))))
 
 (defun test-hand ()
