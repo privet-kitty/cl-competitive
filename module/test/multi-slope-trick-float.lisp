@@ -1,7 +1,7 @@
 (defpackage :cp/test/multi-slope-trick-float
   (:use :cl :fiveam :cp/multi-slope-trick-float :cp/bisect :cp/shuffle)
   (:import-from :cp/multi-slope-trick-float
-                #:%mstrick-base-slope #:%mstrick-intercept #:%mstrick-mset
+                #:%mstrick-base-slope #:%mstrick-base-value #:%mstrick-mset
                 #:mset-insert
                 #:float< #:float= #:float<=)
   (:import-from :cp/test/base #:base-suite))
@@ -23,12 +23,12 @@
 BREAKPOINTS is a sorted vector of x-coordinates where the slope changes.
 SLOPES is a vector of length (1+ n) where n is the number of breakpoints.
 SLOPES[i] is the slope of the function in the interval [BREAKPOINTS[i-1], BREAKPOINTS[i]).
-INTERCEPT is the value of the function at x=0."
+BASE-VALUE is the value of the function at x=0."
   (breakpoints (make-array 0 :element-type 'double-float :adjustable t :fill-pointer 0)
    :type (vector double-float))
   (slopes (make-array 1 :element-type 'double-float :initial-element 0d0 :adjustable t :fill-pointer 1)
    :type (vector double-float))
-  (intercept 0d0 :type double-float))
+  (base-value 0d0 :type double-float))
 
 (defun pl-merge (pl)
   "Merge adjacent intervals with the same slope."
@@ -51,15 +51,15 @@ INTERCEPT is the value of the function at x=0."
   "Compute the function value at X by integrating from x=0."
   (let ((breakpoints (%pl-breakpoints pl))
         (slopes (%pl-slopes pl))
-        (intercept (%pl-intercept pl)))
+        (base-value (%pl-base-value pl)))
     (cond
       ((zerop (length breakpoints))
        ;; No breakpoints, linear function
-       (+ intercept (* (aref slopes 0) x)))
+       (+ base-value (* (aref slopes 0) x)))
       (t
        ;; Find which segment x=0 is in and integrate to x
        (let* ((seg-0 (bisect-left breakpoints 0d0 :order #'key<))
-              (value intercept)
+              (value base-value)
               (current-x 0d0))
          (cond
            ((>= x 0d0)
@@ -117,8 +117,8 @@ For weight < 0: slope increases by weight for x < a."
         ;; Increase slopes for x < a (that's slopes[0..pos])
         (loop for i from 0 to index
               do (incf (aref slopes i) weight)))
-    ;; Update intercept: max(0, weight*(x-a)) at x=0 is max(0, -weight*a)
-    (incf (%pl-intercept pl) (max 0d0 (* (- weight) a)))
+    ;; Update base-value: max(0, weight*(x-a)) at x=0 is max(0, -weight*a)
+    (incf (%pl-base-value pl) (max 0d0 (* (- weight) a)))
     (pl-merge pl)))
 
 (defun pl-delete (pl a weight)
@@ -150,8 +150,8 @@ The behaviour is undefined if the convexity is broken."
         ;; Decrease slopes for x < a (that's slopes[0..index])
         (loop for i from 0 to index
             do (decf (aref slopes i) weight)))
-    ;; Update intercept: subtract max(0, -weight*a) (inverse of pl-add)
-    (decf (%pl-intercept pl) (max 0d0 (* (- weight) a)))
+    ;; Update base-value: subtract max(0, -weight*a) (inverse of pl-add)
+    (decf (%pl-base-value pl) (max 0d0 (* (- weight) a)))
     (pl-merge pl)))
 
 (defun pl-max-affine (pl a b)
@@ -169,14 +169,14 @@ Outside that interval f dominates; inside, the line ax+b dominates."
         (let ((x (aref old-bp i)))
           (setf (aref hv i) (- (pl-value pl x) (* a x) b))))
       ;; Quick check: if h >= 0 at all breakpoints and on infinite segments, f dominates
-      (let ((min-h (- (%pl-intercept pl) b)))
+      (let ((min-h (- (%pl-base-value pl) b)))
         (dotimes (i n) (setq min-h (min min-h (aref hv i))))
         (when (and (>= min-h (- +key-eps+))
                    (<= (- (aref old-slopes 0) a) 0d0)        ; h non-increasing on left
                    (>= (- (aref old-slopes (1- nseg)) a) 0d0)) ; h non-decreasing on right
           (return-from pl-max-affine pl)))
       ;; Find x1 (leftmost zero of h) and x2 (rightmost zero of h)
-      (let* ((h0 (- (%pl-intercept pl) b))
+      (let* ((h0 (- (%pl-base-value pl) b))
              (x1 (find-h-left-zero old-bp old-slopes hv n a h0))
              (x2 (find-h-right-zero old-bp old-slopes hv n a h0)))
         (when (or (null x1) (null x2))
@@ -207,7 +207,7 @@ Outside that interval f dominates; inside, the line ax+b dominates."
                        (vector-push-extend (aref old-slopes (1+ i)) new-slopes))))
           (setf (%pl-breakpoints pl) new-bp
                 (%pl-slopes pl) new-slopes
-                (%pl-intercept pl) (max (%pl-intercept pl) b)))
+                (%pl-base-value pl) (max (%pl-base-value pl) b)))
         (pl-merge pl)))))
 
 (defun pl-convex-hull-with-point (pl a b)
@@ -227,7 +227,7 @@ conv(epi(f) ∪ {(a, b)})."
       (let ((v (make-array nseg :element-type 'double-float)))
         (cond
           ((zerop n)
-           (setf (aref v 0) (+ (%pl-intercept pl) (* (aref slopes 0) a))))
+           (setf (aref v 0) (+ (%pl-base-value pl) (* (aref slopes 0) a))))
           (t
            ;; V[0]: use bp[0] as reference
            (setf (aref v 0) (+ (pl-value pl (aref breakpoints 0))
@@ -298,15 +298,15 @@ conv(epi(f) ∪ {(a, b)})."
                   (loop for i from seg below n
                         do (vector-push-extend (aref breakpoints i) new-bp)
                            (vector-push-extend (aref slopes (1+ i)) new-slopes))))
-              ;; Compute new intercept: g(0)
-              (let ((new-intercept
+              ;; Compute new base-value: g(0)
+              (let ((new-base-value
                       (cond
                         ;; 0 in left part (unchanged)
                         ((and (/= x-l +negative-inf+) (float<= 0d0 x-l +key-eps+))
-                         (%pl-intercept pl))
+                         (%pl-base-value pl))
                         ;; 0 in right part (unchanged)
                         ((and (/= x-r +positive-inf+) (float<= x-r 0d0 +key-eps+))
-                         (%pl-intercept pl))
+                         (%pl-base-value pl))
                         ;; 0 in middle, left of a
                         ((float<= 0d0 a +key-eps+)
                          (- b (* s-l a)))
@@ -315,13 +315,13 @@ conv(epi(f) ∪ {(a, b)})."
                          (- b (* s-r a))))))
                 (setf (%pl-breakpoints pl) new-bp
                       (%pl-slopes pl) new-slopes
-                      (%pl-intercept pl) new-intercept)))))))
+                      (%pl-base-value pl) new-base-value)))))))
     (pl-merge pl)))
 
 (defun find-h-left-zero (bp slopes hv n a &optional (h0 0d0))
   "Find x1: the leftmost x where h(x)=f(x)-ax-b transitions from positive to zero.
 Returns +negative-inf+ if h <= 0 extends to -infinity, NIL if h >= 0 everywhere.
-H0 is h(0) = intercept - b, used when n=0."
+H0 is h(0) = base-value - b, used when n=0."
   (let ((hs0 (- (aref slopes 0) a)))
     (cond
       ;; n=0: single segment, h(x) = h0 + hs0*x, zero at x*=-h0/hs0
@@ -367,7 +367,7 @@ H0 is h(0) = intercept - b, used when n=0."
 (defun find-h-right-zero (bp slopes hv n a &optional (h0 0d0))
   "Find x2: the rightmost x where h(x)=f(x)-ax-b transitions from zero to positive.
 Returns +positive-inf+ if h <= 0 extends to +infinity, NIL if h >= 0 everywhere.
-H0 is h(0) = intercept - b, used when n=0."
+H0 is h(0) = base-value - b, used when n=0."
   (let ((hsn (- (aref slopes n) a)))
     (cond
       ;; n=0: single segment, h(x) = h0 + hsn*x, zero at x*=-h0/hsn
@@ -437,12 +437,12 @@ Clips slopes to (-infinity, C]."
   ;; For convex f, minimum of f(t) - Ct is where slope_f = C
   ;; If slope at 0 <= C, then minimum for t <= 0 is at t = 0
   ;; Otherwise, find point t* <= 0 where slope = C
-  (let ((new-intercept
+  (let ((new-base-value
           (multiple-value-bind (left-slope right-slope) (pl-subdiff pl 0d0)
             (declare (ignore left-slope))
             (if (float<= right-slope c +weight-eps+)
                 ;; Slope at 0 is <= C, so minimum is at t = 0
-                (%pl-intercept pl)
+                (%pl-base-value pl)
                 ;; Find point where slope = C (it must be < 0)
                 (multiple-value-bind (left right) (pl-arg-subdiff pl c)
                   (declare (ignore left))
@@ -450,7 +450,7 @@ Clips slopes to (-infinity, C]."
                            (float<= right 0d0 +key-eps+))
                       (- (pl-value pl right) (* c right))
                       ;; Fallback: minimum at t = 0
-                      (%pl-intercept pl)))))))
+                      (%pl-base-value pl)))))))
     (let ((breakpoints (%pl-breakpoints pl))
           (slopes (%pl-slopes pl)))
       (cond
@@ -471,7 +471,7 @@ Clips slopes to (-infinity, C]."
              (setf (fill-pointer breakpoints) (1+ cut-index))
              (setf (fill-pointer slopes) (+ 2 cut-index))
              (setf (aref slopes (1+ cut-index)) c))))))
-    (setf (%pl-intercept pl) new-intercept))
+    (setf (%pl-base-value pl) new-base-value))
   (pl-merge pl))
 
 (defun pl-right-cum (pl c)
@@ -481,12 +481,12 @@ Clips slopes to [C, infinity)."
   ;; For convex f, minimum of f(t) - Ct is where slope_f = C
   ;; If slope at 0 >= C, then minimum for t >= 0 is at t = 0
   ;; Otherwise, find point t* >= 0 where slope = C
-  (let ((new-intercept
+  (let ((new-base-value
           (multiple-value-bind (left-slope right-slope) (pl-subdiff pl 0d0)
             (declare (ignore right-slope))
             (if (float<= c left-slope +weight-eps+)
                 ;; Slope at 0 is >= C, so minimum is at t = 0
-                (%pl-intercept pl)
+                (%pl-base-value pl)
                 ;; Find point where slope = C (it must be > 0)
                 (multiple-value-bind (left right) (pl-arg-subdiff pl c)
                   (declare (ignore right))
@@ -494,7 +494,7 @@ Clips slopes to [C, infinity)."
                            (float<= 0d0 left +key-eps+))
                       (- (pl-value pl left) (* c left))
                       ;; Fallback: minimum at t = 0
-                      (%pl-intercept pl)))))))
+                      (%pl-base-value pl)))))))
     (let ((breakpoints (%pl-breakpoints pl))
           (slopes (%pl-slopes pl)))
       (cond
@@ -521,7 +521,7 @@ Clips slopes to [C, infinity)."
                  (setf (aref slopes j) (aref slopes (+ cut-index j))))
                (setf (fill-pointer slopes) (1+ keep-count))
                (setf (aref slopes 0) c)))))))
-    (setf (%pl-intercept pl) new-intercept))
+    (setf (%pl-base-value pl) new-base-value))
   (pl-merge pl))
 
 (defun pl-shift (pl ldelta &optional rdelta)
@@ -530,7 +530,7 @@ Shifts left breakpoints (negative slope before) by ldelta,
 shifts right breakpoints (positive slope after) by rdelta."
   (let ((rdelta (or rdelta ldelta)))
     (assert (<= ldelta rdelta))
-    ;; Compute new intercept: g(0) = min_{-rdelta <= t <= -ldelta} f(t)
+    ;; Compute new base-value: g(0) = min_{-rdelta <= t <= -ldelta} f(t)
     ;; For convex f, minimum over [a, b] is at:
     ;; - a if slope at a >= 0
     ;; - b if slope at b <= 0
@@ -539,13 +539,13 @@ shifts right breakpoints (positive slope after) by rdelta."
            (right-bound (- ldelta)))
       (if (= left-bound right-bound)
           ;; Uniform shift: g(0) = f(-delta)
-          (setf (%pl-intercept pl) (pl-value pl left-bound))
+          (setf (%pl-base-value pl) (pl-value pl left-bound))
           ;; Find minimum over interval
           (multiple-value-bind (slope-left-l slope-left-r) (pl-subdiff pl left-bound)
             (declare (ignore slope-left-l))
             (multiple-value-bind (slope-right-l slope-right-r) (pl-subdiff pl right-bound)
               (declare (ignore slope-right-r))
-              (setf (%pl-intercept pl)
+              (setf (%pl-base-value pl)
                     (cond
                       ;; Minimum at right bound (slope <= 0 throughout interval)
                       ((float<= slope-right-l 0d0 +weight-eps+)
@@ -655,8 +655,8 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
           (values (aref slopes index) (aref slopes (1+ index)))
           (values (aref slopes index) (aref slopes index))))))
 
-(defun make-test-pl (breakpoints slopes intercept)
-  "Create a piecewise-linear function from explicit breakpoints, slopes, and intercept."
+(defun make-test-pl (breakpoints slopes base-value)
+  "Create a piecewise-linear function from explicit breakpoints, slopes, and base-value."
   (let ((pl (make-pl)))
     (setf (%pl-breakpoints pl)
           (make-array (length breakpoints) :element-type 'double-float
@@ -666,18 +666,18 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
           (make-array (length slopes) :element-type 'double-float
                       :initial-contents slopes :adjustable t
                       :fill-pointer (length slopes)))
-    (setf (%pl-intercept pl) (coerce intercept 'double-float))
+    (setf (%pl-base-value pl) (coerce base-value 'double-float))
     pl))
 
-(defun make-test-mstrick (breakpoints slopes intercept)
+(defun make-test-mstrick (breakpoints slopes base-value)
   "Create a multi-slope-trick matching a piecewise-linear specification."
   (let* ((base-slope (coerce (first slopes) 'double-float))
          (ms (make-multi-slope-trick base-slope)))
     (when breakpoints
-      (setf (%mstrick-intercept ms)
+      (setf (%mstrick-base-value ms)
             (pl-value (make-test-pl (mapcar (lambda (x) (coerce x 'double-float)) breakpoints)
                                     (mapcar (lambda (x) (coerce x 'double-float)) slopes)
-                                    (coerce intercept 'double-float))
+                                    (coerce base-value 'double-float))
                       (coerce (first breakpoints) 'double-float)))
       (loop for i from 0 below (length breakpoints)
             for bp in breakpoints
@@ -687,7 +687,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                                   (coerce bp 'double-float)
                                   (coerce weight 'double-float)))))
     (unless breakpoints
-      (setf (%mstrick-intercept ms) (coerce intercept 'double-float)))
+      (setf (%mstrick-base-value ms) (coerce base-value 'double-float)))
     ms))
 
 (test convex-hull-with-point/handmade
@@ -758,7 +758,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
     (is (approx= (mstrick-value ms 3d0) 3d0)))
 
   ;; Case 7: Right tangent coincides with f on an interval.
-  ;; f: bp=[0,2,4], slopes=[-1,-0.5,0.5,1], intercept=0.
+  ;; f: bp=[0,2,4], slopes=[-1,-0.5,0.5,1], base-value=0.
   ;; f(0)=0, f(2)=-1, f(4)=0.
   ;; Point (1, -1.5). f(1)=-0.5 > -1.5.
   ;; Left tangent: slope -1, x_L = -inf (V[0]=-1 >= -1.5).
@@ -793,7 +793,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
     (is (approx= (mstrick-value ms 5d0) 0.5d0))) ; g(5) = -1.5 + 1*2 = 0.5
 
   ;; Case 9: Multiple breakpoints, tangent skips inner breakpoints.
-  ;; f: bp=[-2,-1,0,1,2], slopes=[-3,-2,-1,1,2,3], intercept=0.
+  ;; f: bp=[-2,-1,0,1,2], slopes=[-3,-2,-1,1,2,3], base-value=0.
   ;; Symmetric: f(-2)=3, f(-1)=1, f(0)=0, f(1)=1, f(2)=3.
   ;; Point (0, -1). V[1]=-1=b, V[4]=-1=b.
   ;; Left tangent: s=-2, x_L=-2. Right tangent: s=2, x_R=2.
@@ -812,7 +812,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
     (is (approx= (mstrick-value ms 3d0) 6d0)))   ; = f(3)
 
   ;; Case 10: Point below flat region.
-  ;; f: bp=[0,4], slopes=[-1,0,1], intercept=0.
+  ;; f: bp=[0,4], slopes=[-1,0,1], base-value=0.
   ;; f(x) = -x (x<0), 0 (0<=x<=4), x-4 (x>4).
   ;; Point (2, -1). Tangent from (2,-1) to f at x=0 (slope -0.5) and x=4 (slope 0.5).
   ;; Flat region replaced by V shape.
@@ -932,7 +932,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                              0d0))
                       (fval (if (/= a 0d0)
                                 (pl-value pl a)
-                                (%pl-intercept pl)))
+                                (%pl-base-value pl)))
                       (slope (/ (float (- (random 20) 10) 0d0) denom))
                       (offset (/ (float (- (random 20) 10) 0d0) denom))
                       (line-a slope)
@@ -949,7 +949,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                              0d0))
                       (fval (if (/= a 0d0)
                                 (pl-value pl a)
-                                (%pl-intercept pl)))
+                                (%pl-base-value pl)))
                       (offset (/ (float (- (random 20) 10) 0d0) denom))
                       (point-b (+ fval offset)))
                  (mstrick-convex-hull-with-point mstrick a point-b)
@@ -1055,7 +1055,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                              0d0))
                       (fval (if (/= a 0d0)
                                 (pl-value pl a)
-                                (%pl-intercept pl)))
+                                (%pl-base-value pl)))
                       (slope (- (random 20d0) 10d0))
                       (offset (- (random 20d0) 10d0))
                       (line-a slope)
@@ -1072,7 +1072,7 @@ Returns [-inf, -inf] if DIFF is below every slope, [+inf, +inf] if above."
                              0d0))
                       (fval (if (/= a 0d0)
                                 (pl-value pl a)
-                                (%pl-intercept pl)))
+                                (%pl-base-value pl)))
                       (offset (- (random 20d0) 10d0))
                       (point-b (+ fval offset)))
                  (mstrick-convex-hull-with-point mstrick a point-b)

@@ -498,15 +498,14 @@ larger than any keys in MSET."
 (defconstant +positive-inf+ most-positive-fixnum)
 
 (defstruct (multi-slope-trick
-            (:constructor make-multi-slope-trick (&optional base-slope intercept))
+            (:constructor make-multi-slope-trick (&optional base-slope base-value))
             (:conc-name %mstrick-)
             (:copier nil)
             (:predicate nil))
   "Manages convex piecewise linear function. The primitive function the constructor
-gives is a constant function. Note that this structure doesn't store a constant
-term, i.e., it only gives you a slope."
+gives is a constant function."
   (base-slope 0 :type fixnum)
-  (intercept 0 :type fixnum) ; value at leftmost breakpoint (value at 0 if linear)
+  (base-value 0 :type fixnum) ; value at leftmost breakpoint (value at 0 if linear)
   (mset nil :type (or null mset)))
 
 (declaim (ftype (function * (values fixnum &optional)) mstrick-value))
@@ -516,7 +515,7 @@ term, i.e., it only gives you a slope."
            (fixnum x))
   (let ((mset (%mstrick-mset mstrick)))
     (the+ fixnum
-          (%mstrick-intercept mstrick)
+          (%mstrick-base-value mstrick)
           (* (%mstrick-base-slope mstrick)
              (the fixnum (- x (if mset (mset-first mset) 0))))
           (mset-value mset x))))
@@ -548,16 +547,16 @@ or [+inf, +inf], depending on if DIFF is below or above every slope of f."
   (when (zerop weight)
     (return-from mstrick-add mstrick))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
-                    (intercept (%mstrick-intercept mstrick))
+                    (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
     (let* ((base-x-del (if mset (mset-first mset) 0))
            (base-x-add (if (null mset)
                            a
                            (min a base-x-del))))
       (declare (fixnum base-x-del base-x-add))
-      (setq intercept
+      (setq base-value
             (+ (if (= base-x-del base-x-add)
-                   intercept
+                   base-value
                    (mstrick-value mstrick base-x-add))
                (the* fixnum (max 0 (* weight (- base-x-add a)))))))
     (cond ((> weight 0)
@@ -577,7 +576,7 @@ undefined if this operation breaks convexity."
   (when (zerop weight)
     (return-from mstrick-delete mstrick))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
-                    (intercept (%mstrick-intercept mstrick))
+                    (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
     (let* ((post-base-x
              (if mset
@@ -587,15 +586,15 @@ undefined if this operation breaks convexity."
                        (or (mset-bisect-right mset a) 0)
                        (%mset-key first-node)))
                  0))
-           (new-intercept (- (mstrick-value mstrick post-base-x)
+           (new-base-value (- (mstrick-value mstrick post-base-x)
                              (the* fixnum (max 0 (* weight (- post-base-x a)))))))
-      (declare (fixnum post-base-x new-intercept))
+      (declare (fixnum post-base-x new-base-value))
       (cond ((> weight 0)
              (setq mset (mset-delete mset a weight)))
             ((< weight 0)
              (setq mset (mset-delete mset a (- weight)))
              (decf base-slope weight)))
-      (setq intercept new-intercept))
+      (setq base-value new-base-value))
     mstrick))
 
 (defun mstrick-add-abs (mstrick a weight)
@@ -611,7 +610,7 @@ undefined if this operation breaks convexity."
            (optimize (speed 3)))
   (incf (%mstrick-base-slope mstrick) slope)
   (when (%mstrick-mset mstrick)
-    (incf (%mstrick-intercept mstrick)
+    (incf (%mstrick-base-value mstrick)
           (the fixnum (* slope (mset-first (%mstrick-mset mstrick)))))))
 
 (declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-subdiff))
@@ -647,9 +646,9 @@ returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
            (fixnum c))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
-                    (intercept (%mstrick-intercept mstrick))
+                    (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
-    (let ((rest-part (make-multi-slope-trick base-slope intercept))
+    (let ((rest-part (make-multi-slope-trick base-slope base-value))
           (base-x (when mset (mset-first mset))))
       (cond ((< c base-slope)
              (error 'mstrick-breaking-convexity-error :mstrick mstrick))
@@ -659,7 +658,7 @@ returns the rest part, which is used to rollback this operation."
                (setf mset l
                      (%mstrick-mset rest-part) r))))
       (when (and base-x (null mset))
-        (decf intercept (the fixnum (* base-x base-slope))))
+        (decf base-value (the fixnum (* base-x base-slope))))
       (setq base-slope (min base-slope c))
       rest-part)))
 
@@ -671,7 +670,7 @@ Note that this function breaks REST-MSTRICK."
   (setf (%mstrick-mset mstrick)
         (mset-concat (%mstrick-mset mstrick) (%mstrick-mset rest-mstrick))
         (%mstrick-base-slope mstrick) (%mstrick-base-slope rest-mstrick)
-        (%mstrick-intercept mstrick) (%mstrick-intercept rest-mstrick))
+        (%mstrick-base-value mstrick) (%mstrick-base-value rest-mstrick))
   mstrick)
 
 (defun mstrick-right-cum (mstrick c)
@@ -683,9 +682,9 @@ function returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
            (fixnum c))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
-                    (intercept (%mstrick-intercept mstrick))
+                    (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
-    (let ((rest-part (make-multi-slope-trick base-slope intercept)))
+    (let ((rest-part (make-multi-slope-trick base-slope base-value)))
       (multiple-value-bind (left-c right-c)
           (mstrick-arg-subdiff mstrick c)
         (cond ((= right-c +negative-inf+))
@@ -695,20 +694,20 @@ function returns the rest part, which is used to rollback this operation."
                    (let* ((end-x (if (/= +negative-inf+ left-c)
                                      left-c
                                      0))
-                          (new-intercept (- (mstrick-value mstrick end-x)
-                                           (the fixnum (* end-x c)))))
+                          (new-base-value (- (mstrick-value mstrick end-x)
+                                             (the fixnum (* end-x c)))))
                      (setf (%mstrick-mset rest-part) mset)
                      (setq mset nil
                            base-slope c
-                           intercept new-intercept))))
+                           base-value new-base-value))))
               (t
-               (let ((new-intercept (mstrick-value mstrick right-c)))
+               (let ((new-base-value (mstrick-value mstrick right-c)))
                  (multiple-value-bind (l r)
                      (mset-indexed-split mset (the fixnum (- c base-slope)))
                    (setf (%mstrick-mset rest-part) l)
                    (setq mset r
                          base-slope c
-                         intercept new-intercept))))))
+                         base-value new-base-value))))))
       rest-part)))
 
 (defun mstrick-right-cum-rollback (mstrick rest-mstrick)
@@ -719,7 +718,7 @@ Note that this function breaks REST-MSTRICK."
   (setf (%mstrick-mset mstrick)
         (mset-concat (%mstrick-mset rest-mstrick) (%mstrick-mset mstrick))
         (%mstrick-base-slope mstrick) (%mstrick-base-slope rest-mstrick)
-        (%mstrick-intercept mstrick) (%mstrick-intercept rest-mstrick))
+        (%mstrick-base-value mstrick) (%mstrick-base-value rest-mstrick))
   mstrick)
 
 
@@ -730,7 +729,7 @@ Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by 
            (fixnum ldelta rdelta))
   (assert (<= ldelta rdelta))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
-                    (intercept (%mstrick-intercept mstrick))
+                    (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
     (if mset
         (cond
@@ -744,18 +743,7 @@ Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by 
              (setq mset (mset-concat (mset-shift left ldelta)
                                      (mset-shift right rdelta))))))
         (if (< 0 base-slope)
-            (decf intercept (the fixnum (* base-slope rdelta)))
-            (decf intercept (the fixnum (* base-slope ldelta))))))
+            (decf base-value (the fixnum (* base-slope rdelta)))
+            (decf base-value (the fixnum (* base-slope ldelta))))))
   mstrick)
 
-(defun test-hand ()
-  (let ((*random-state* (sb-ext:seed-random-state 2)))
-    (let ((ms (make-multi-slope-trick -5)))
-      ;; (print ms)
-      (mstrick-add ms 4 -1)
-      ;; (print ms)
-      (mstrick-add ms 3 1)
-      (print ms)
-      (mstrick-shift ms -3 -3)
-      (print ms)
-      (mstrick-value ms 10))))
