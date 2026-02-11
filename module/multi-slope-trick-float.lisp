@@ -956,8 +956,7 @@ Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by 
       ;; Shift so that a -> 0
       (mstrick-shift mstrick (- a) (- a))
       (let* ((base-x (if mset (mset-first mset) 0d0))
-             (y-intercept0 (- base-value (* base-slope base-x)))
-             (end-slope (+ base-slope (mset-size mset))))
+             (y-intercept0 (- base-value (* base-slope base-x))))
         ;; Split mset at 0 -> left-mset (< 0), right-mset (>= 0)
         (multiple-value-bind (left-mset right-mset) (mset-split mset 0d0)
           ;; Find left tangent
@@ -987,7 +986,7 @@ Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by 
                                       (+ slope-at-xr
                                          (/ (- best-y-intercept-before b)
                                             x-r)))))
-                        (values +positive-inf+ end-slope))
+                        (values +positive-inf+ (+ base-slope (mset-size mset))))
                   ;; Reconstruct mset
                   (setq mset (%mset-concat left-mset right-mset))
                   (let ((has-left (> x-l +negative-inf+))
