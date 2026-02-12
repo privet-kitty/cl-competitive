@@ -1,13 +1,31 @@
-(defpackage :cp/multi-slope-trick
+(defpackage :cp/multi-slope-trick-float
   (:use :cl)
   (:export #:make-multi-slope-trick #:mstrick-add #:mstrick-add-abs #:mstrick-add-linear
            #:mstrick-delete #:mstrick-min #:mstrick-argmin #:mstrick-shift
            #:mstrick-left-cum #:mstrick-left-cum-rollback
            #:mstrick-right-cum #:mstrick-right-cum-rollback
            #:mstrick-arg-subdiff #:mstrick-subdiff #:mstrick-value
-           #:+negative-inf+ #:+positive-inf+)
-  (:documentation "Provides slope trick with multiset."))
-(in-package :cp/multi-slope-trick)
+           #:+negative-inf+ #:+positive-inf+
+           #:mstrick-max-affine
+           #:mstrick-convex-hull-with-point
+           #:+key-eps+ #:+weight-eps+ #:+value-eps+)
+  (:documentation "Provides slope trick with multiset (double-float version)."))
+(in-package :cp/multi-slope-trick-float)
+
+(defconstant +key-eps+ 1d-5)
+(defconstant +weight-eps+ 1d-5)
+(defconstant +value-eps+ 1d-5)
+
+(declaim (inline float< float<= float=))
+(defun float< (a b eps)
+  (declare (double-float a b eps))
+  (< (+ a eps) b))
+(defun float<= (a b eps)
+  (declare (double-float a b eps))
+  (<= a (+ b eps)))
+(defun float= (a b eps)
+  (declare (double-float a b eps))
+  (not (or (float< a b eps) (float< b a eps))))
 
 (defstruct (mset (:constructor %make-mset
                      (key priority weight
@@ -22,11 +40,11 @@ Slope trick interpretation of each slot:
 - AGG: sum of WEIGHT*KEY over the subtree.
   Use MSET-AGG for the corrected value.
 "
-  (key nil :type fixnum)
-  (lazy 0 :type fixnum)
-  (weight nil :type (integer 0 #.most-positive-fixnum))
-  (size nil :type (integer 0 #.most-positive-fixnum))
-  (agg 0 :type fixnum)
+  (key 0d0 :type double-float)
+  (lazy 0d0 :type double-float)
+  (weight 0d0 :type (double-float 0d0))
+  (size 0d0 :type (double-float 0d0))
+  (agg 0d0 :type double-float)
   (priority nil :type (integer 0 #.most-positive-fixnum))
   (left nil :type (or null mset))
   (right nil :type (or null mset)))
@@ -41,39 +59,17 @@ Slope trick interpretation of each slot:
   "Returns the total number of elements in MSET."
   (declare ((or null mset) mset))
   (if (null mset)
-      0
+      0d0
       (%mset-size mset)))
-
-(defmacro the+ (type &rest exprs)
-  (assert (cdr exprs))
-  (labels ((recur (exprs)
-             (if (cdr exprs)
-                 (let ((tmp (gensym)))
-                   `(let ((,tmp (+ (the ,type ,(first exprs))
-                                   (the ,type ,(second exprs)))))
-                      (declare (,type ,tmp))
-                      ,(recur `(,tmp ,@(cddr exprs)))))
-                 `(the ,type ,(car exprs)))))
-    (recur exprs)))
-
-(defmacro the* (type expr)
-  (labels ((recur (expr)
-             (if (listp expr)
-                 `(,(car expr)
-                   ,@(loop for elem in (cdr expr)
-                           collect `(the ,type ,(recur elem))))
-                 expr)))
-    (recur expr)))
 
 (declaim (inline mset-agg))
 (defun mset-agg (mset)
-  "Returns the aggregated value of MSET"
+  "Returns the aggregated value of MSET."
   (declare ((or null mset) mset))
   (if (null mset)
-      0
-      (the+ fixnum
-            (%mset-agg mset)
-            (* (%mset-lazy mset) (%mset-size mset)))))
+      0d0
+      (+ (%mset-agg mset)
+         (* (%mset-lazy mset) (%mset-size mset)))))
 
 (declaim (inline force-up))
 (defun force-up (mset)
@@ -81,57 +77,52 @@ Slope trick interpretation of each slot:
   (let ((left (%mset-left mset))
         (right (%mset-right mset)))
     (setf (%mset-size mset)
-          (the+ (integer 0 #.most-positive-fixnum)
-                (mset-size left)
-                (%mset-weight mset)
-                (mset-size right))
+          (+ (mset-size left)
+             (%mset-weight mset)
+             (mset-size right))
           (%mset-agg mset)
-          (the+ fixnum
-                (mset-agg left)
-                (* (%mset-weight mset) (%mset-key mset))
-                (mset-agg right)))))
+          (+ (mset-agg left)
+             (* (%mset-weight mset) (%mset-key mset))
+             (mset-agg right)))))
 
 (declaim (inline force-down))
 (defun force-down (mset)
   (declare (mset mset))
   (let ((lazy (%mset-lazy mset)))
-    (unless (zerop lazy)
-      (setf (%mset-lazy mset) 0)
+    (unless (float= lazy 0d0 +key-eps+)
+      (setf (%mset-lazy mset) 0d0)
       (incf (%mset-key mset) lazy)
-      (incf (%mset-agg mset) (the fixnum (* lazy (%mset-size mset))))
+      (incf (%mset-agg mset) (* lazy (%mset-size mset)))
       (when (%mset-left mset)
         (incf (%mset-lazy (%mset-left mset)) lazy))
       (when (%mset-right mset)
         (incf (%mset-lazy (%mset-right mset)) lazy)))))
 
-(declaim (ftype (function * (values fixnum &optional)) mset-value))
+(declaim (ftype (function * (values double-float &optional)) mset-value))
 (defun mset-value (mset key)
   "Returns the function value at KEY of MSET.
 That is, sum of weight_i * (key - x_i) for all x_i <= key."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (fixnum key))
+           (double-float key))
   (labels
       ((recur (mset prefix-size prefix-agg)
-         (declare ((integer 0 #.most-positive-fixnum) prefix-size)
-                  (fixnum prefix-agg))
+         (declare ((double-float 0d0) prefix-size)
+                  (double-float prefix-agg))
          (unless mset
-           (return-from recur
-             (the* fixnum (- (* key prefix-size) prefix-agg))))
+           (return-from recur (- (* key prefix-size) prefix-agg)))
          (force-down mset)
          (let ((left (%mset-left mset)))
-           (if (< key (%mset-key mset))
+           (if (float< key (%mset-key mset) +key-eps+)
                (recur left prefix-size prefix-agg)
                (recur (%mset-right mset)
-                      (the+ (integer 0 #.most-positive-fixnum)
-                            prefix-size
-                            (mset-size left)
-                            (%mset-weight mset))
-                      (the+ fixnum
-                            prefix-agg
-                            (mset-agg left)
-                            (* (%mset-weight mset) (%mset-key mset))))))))
-    (recur mset 0 0)))
+                      (+ prefix-size
+                         (mset-size left)
+                         (%mset-weight mset))
+                      (+ prefix-agg
+                         (mset-agg left)
+                         (* (%mset-weight mset) (%mset-key mset))))))))
+    (recur mset 0d0 0d0)))
 
 (declaim (ftype (function * (values (or null mset) (or null mset) &optional))
                 mset-split))
@@ -140,12 +131,12 @@ That is, sum of weight_i * (key - x_i) for all x_i <= key."
 the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (fixnum key))
+           (double-float key))
   (labels ((recur (mset)
              (unless mset
                (return-from recur (values nil nil)))
              (force-down mset)
-             (if (< (%mset-key mset) key)
+             (if (float< (%mset-key mset) key +key-eps+)
                  (multiple-value-bind (left right) (recur (%mset-right mset))
                    (setf (%mset-right mset) left)
                    (force-up mset)
@@ -163,24 +154,24 @@ the smaller sub-multiset (< KEY) and the larger one (>= KEY)."
 sub-multiset and the larger one."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           ((integer 0 #.most-positive-fixnum) index))
-  (assert (<= index (mset-size mset)))
+           ((double-float 0d0) index))
+  (assert (float<= index (mset-size mset) +weight-eps+))
   (labels
       ((recur (mset index)
-         (declare ((integer 0 #.most-positive-fixnum) index))
+         (declare ((double-float 0d0) index))
          (when (null mset)
            (return-from recur (values nil nil)))
          (force-down mset)
          (let* ((start (mset-size (%mset-left mset)))
                 (end (+ start (%mset-weight mset))))
-           (declare ((integer 0 #.most-positive-fixnum) start end))
-           (cond ((<= end index)
+           (declare ((double-float 0d0) start end))
+           (cond ((float<= end index +weight-eps+)
                   (multiple-value-bind (left right)
-                      (recur (%mset-right mset) (- index end))
+                      (recur (%mset-right mset) (max 0d0 (- index end)))
                     (setf (%mset-right mset) left)
                     (force-up mset)
                     (values mset right)))
-                 ((<= index start)
+                 ((float<= index start +weight-eps+)
                   (multiple-value-bind (left right)
                       (recur (%mset-left mset) index)
                     (setf (%mset-left mset) right)
@@ -250,7 +241,7 @@ This function includes %MSET-CONCAT, but it is not as fast."
                                (setf (%mset-left mset) (rrecur (%mset-left mset)))
                                (force-up mset)
                                mset)
-                              ((= (%mset-key mset) (%mset-key lend))
+                              ((float= (%mset-key mset) (%mset-key lend) +key-eps+)
                                (incf (%mset-weight lend) (%mset-weight mset))
                                (%mset-right mset))
                               (t (return-from preprocess)))))
@@ -266,9 +257,9 @@ This function includes %MSET-CONCAT, but it is not as fast."
 cannot rely on the side effect. Use the returned value."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (fixnum key)
-           ((integer 0 #.most-positive-fixnum) weight))
-  (when (zerop weight)
+           (double-float key)
+           ((double-float 0d0) weight))
+  (when (float= weight 0d0 +weight-eps+)
     (return-from mset-insert mset))
   (labels ((recur (new-priority mset found)
              (declare ((integer 0 #.most-positive-fixnum) new-priority))
@@ -278,9 +269,9 @@ cannot rely on the side effect. Use the returned value."
                                    (null mset)
                                    (> new-priority (%mset-priority mset))))
                     (res (cond ((null mset) nil)
-                               ((< key (%mset-key mset))
+                               ((float< key (%mset-key mset) +key-eps+)
                                 (recur new-priority (%mset-left mset) new-found))
-                               ((< (%mset-key mset) key)
+                               ((float< (%mset-key mset) key +key-eps+)
                                 (recur new-priority (%mset-right mset) new-found))
                                (t
                                 (incf (%mset-weight mset) weight)
@@ -289,7 +280,7 @@ cannot rely on the side effect. Use the returned value."
                       (force-up mset)
                       t)
                      ((mset-p res)
-                      (if (< key (%mset-key mset))
+                      (if (float< key (%mset-key mset) +key-eps+)
                           (setf (%mset-left mset) res)
                           (setf (%mset-right mset) res))
                       (force-up mset)
@@ -318,26 +309,26 @@ cannot rely on the side effect. Use the returned value."
   "Destructively deletes KEY in MSET and returns the resultant multiset. You
 cannot rely on the side effect. Use the returned multiset."
   (declare (optimize (speed 3))
-           (fixnum key)
+           (double-float key)
            ((or null mset) mset)
-           ((integer 0 #.most-positive-fixnum) weight))
+           ((double-float 0d0) weight))
   (labels
       ((%error () (error 'mset-empty-error :mset mset))
        (recur (mset)
          (unless mset (%error))
          (force-down mset)
-         (cond ((< key (%mset-key mset))
+         (cond ((float< key (%mset-key mset) +key-eps+)
                 (setf (%mset-left mset) (recur (%mset-left mset)))
                 (force-up mset)
                 mset)
-               ((< (%mset-key mset) key)
+               ((float< (%mset-key mset) key +key-eps+)
                 (setf (%mset-right mset) (recur (%mset-right mset)))
                 (force-up mset)
                 mset)
                (t
                 (let ((current (%mset-weight mset)))
-                  (cond ((< current weight) (%error))
-                        ((> current weight)
+                  (cond ((float< current weight +weight-eps+) (%error))
+                        ((float< weight current +weight-eps+)
                          (decf (%mset-weight mset) weight)
                          (force-up mset)
                          mset)
@@ -373,18 +364,18 @@ order. FUNCTION must take two arguments: KEY and WEIGHT."
   "Returns the INDEX-th element of MSET."
   (declare (optimize (speed 3))
            (mset mset)
-           ((integer 0 #.most-positive-fixnum) index))
-  (assert (< index (%mset-size mset)))
+           ((double-float 0d0) index))
+  (assert (float< index (%mset-size mset) +weight-eps+))
   (labels ((recur (mset parent-sum)
              (force-down mset)
              (let ((sum parent-sum))
-               (declare ((integer 0 #.most-positive-fixnum) sum))
-               (cond ((< index (incf sum (mset-size (%mset-left mset))))
+               (declare ((double-float 0d0) sum))
+               (cond ((float< index (incf sum (mset-size (%mset-left mset))) +weight-eps+)
                       (recur (%mset-left mset) parent-sum))
-                     ((< index (incf sum (%mset-weight mset)))
+                     ((float< index (incf sum (%mset-weight mset)) +weight-eps+)
                       (%mset-key mset))
                      (t (recur (%mset-right mset) sum))))))
-    (recur mset 0)))
+    (recur mset 0d0)))
 
 (defun mset-ref-1 (mset index)
   "Returns the element right before the INDEX-th one of MSET.
@@ -393,33 +384,33 @@ This is equivalent to (INDEX-1)-th element, but I implement it separately for
 the future expansion of this data structure to fractional weight."
   (declare (optimize (speed 3))
            (mset mset)
-           ((integer 1 #.most-positive-fixnum) index))
-  (assert (<= index (%mset-size mset)))
+           ((double-float 0d0) index))
+  (assert (float<= index (%mset-size mset) +weight-eps+))
   (labels ((recur (mset parent-sum)
              (force-down mset)
              (let ((sum parent-sum))
-               (declare ((integer 0 #.most-positive-fixnum) sum))
-               (cond ((<= index (incf sum (mset-size (%mset-left mset))))
+               (declare ((double-float 0d0) sum))
+               (cond ((float<= index (incf sum (mset-size (%mset-left mset))) +weight-eps+)
                       (recur (%mset-left mset) parent-sum))
-                     ((<= index (incf sum (%mset-weight mset)))
+                     ((float<= index (incf sum (%mset-weight mset)) +weight-eps+)
                       (%mset-key mset))
                      (t (recur (%mset-right mset) sum))))))
-    (recur mset 0)))
+    (recur mset 0d0)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+(declaim (ftype (function * (values (double-float 0d0) &optional))
                 mset-position-left))
 (defun mset-position-left (mset key)
   "Returns the leftmost index at which KEY can be inserted with keeping the
 order."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (fixnum key))
+           (double-float key))
   (labels ((recur (mset)
              (when mset
                (force-down mset))
-             (cond ((null mset) 0)
-                   ((< (%mset-key mset) key)
-                    (the (integer 0 #.most-positive-fixnum)
+             (cond ((null mset) 0d0)
+                   ((float< (%mset-key mset) key +key-eps+)
+                    (the (double-float 0d0)
                          (+ (mset-size (%mset-left mset))
                             (%mset-weight mset)
                             (recur (%mset-right mset)))))
@@ -427,22 +418,22 @@ order."
                     (recur (%mset-left mset))))))
     (recur mset)))
 
-(declaim (ftype (function * (values (integer 0 #.most-positive-fixnum) &optional))
+(declaim (ftype (function * (values (double-float 0d0) &optional))
                 mset-position-right))
 (defun mset-position-right (mset key)
   "Returns the rightmost index at which KEY can be inserted with keeping the
 order."
   (declare (optimize (speed 3))
            ((or null mset) mset)
-           (fixnum key))
+           (double-float key))
   (labels ((recur (mset)
              (when mset
                (force-down mset))
-             (cond ((null mset) 0)
-                   ((< key (%mset-key mset))
+             (cond ((null mset) 0d0)
+                   ((float< key (%mset-key mset) +key-eps+)
                     (recur (%mset-left mset)))
                    (t
-                    (the (integer 0 #.most-positive-fixnum)
+                    (the (double-float 0d0)
                          (+ (mset-size (%mset-left mset))
                             (%mset-weight mset)
                             (recur (%mset-right mset))))))))
@@ -451,14 +442,14 @@ order."
 (defun mset-shift (mset delta)
   "Adds DELTA to all keys in MSET."
   (declare (optimize (speed 3))
-           (fixnum delta))
+           (double-float delta))
   (when mset
     (incf (%mset-lazy mset) delta)
     (force-down mset))
   mset)
 
 
-(declaim (ftype (function * (values fixnum &optional)) mset-first))
+(declaim (ftype (function * (values double-float &optional)) mset-first))
 (defun mset-first (mset)
   "Returns the leftmost key of MSET."
   (declare (optimize (speed 3))
@@ -482,20 +473,148 @@ order."
 "Returns the smallest key larger than KEY. Returns NIL if KEY is equal to or
 larger than any keys in MSET."
 (declare (optimize (speed 3))
-         (fixnum key)
+         (double-float key)
          ((or null mset) mset))
 (labels ((recur (mset)
            (unless mset
              (return-from recur nil))
            (force-down mset)
-           (if (< key (%mset-key mset))
+           (if (float< key (%mset-key mset) +key-eps+)
                (or (recur (%mset-left mset))
                    mset)
                (recur (%mset-right mset)))))
   (mset-key (recur mset))))
 
-(defconstant +negative-inf+ most-negative-fixnum)
-(defconstant +positive-inf+ most-positive-fixnum)
+(defconstant +negative-inf+
+  #+sbcl sb-ext:double-float-negative-infinity
+  #-sbcl most-negative-double-float)
+(defconstant +positive-inf+
+  #+sbcl sb-ext:double-float-positive-infinity
+  #-sbcl most-positive-double-float)
+
+(declaim (ftype (function * (values double-float &optional))
+                mset-solve-increasing mset-solve-decreasing))
+(defun mset-solve-decreasing (mset target slope-offset upper-bound)
+  "Finds x <= UPPER-BOUND where SLOPE-OFFSET * x + mset-value(MSET, x) = TARGET.
+Assumes the function is strictly decreasing in that region and the root exists."
+  (declare (optimize (speed 3))
+           (double-float target slope-offset upper-bound))
+  (labels
+      ((interp (prefix-size prefix-agg)
+         (declare ((double-float 0d0) prefix-size) (double-float prefix-agg))
+         (/ (+ target prefix-agg) (+ slope-offset prefix-size)))
+       (recur (node prefix-size prefix-agg)
+         (declare ((double-float 0d0) prefix-size) (double-float prefix-agg))
+         (unless node
+           (return-from recur (interp prefix-size prefix-agg)))
+         (force-down node)
+         (let* ((left (%mset-left node))
+                (left-size (mset-size left))
+                (left-agg (mset-agg left))
+                (key (%mset-key node))
+                (weight (%mset-weight node))
+                (full-size (+ prefix-size left-size weight))
+                (full-agg (+ prefix-agg left-agg (* key weight))))
+           (cond ((float< upper-bound key +key-eps+)
+                  (recur left prefix-size prefix-agg))
+                 (t
+                  (let ((val (- (* (+ slope-offset full-size) key) full-agg)))
+                    (if (float< target val +value-eps+)
+                        (recur (%mset-right node) full-size full-agg)
+                        (recur left prefix-size prefix-agg))))))))
+    (recur mset 0d0 0d0)))
+
+(defun mset-solve-increasing (mset target slope-offset lower-bound)
+  "Finds x >= LOWER-BOUND where SLOPE-OFFSET * x + mset-value(MSET, x) = TARGET.
+Assumes the function is strictly increasing in that region and the root exists."
+  (declare (optimize (speed 3))
+           (double-float target slope-offset lower-bound))
+  (labels
+      ((interp (prefix-size prefix-agg)
+         (declare ((double-float 0d0) prefix-size) (double-float prefix-agg))
+         (/ (+ target prefix-agg) (+ slope-offset prefix-size)))
+       (recur (node prefix-size prefix-agg)
+         (declare ((double-float 0d0) prefix-size) (double-float prefix-agg))
+         (unless node
+           (return-from recur (interp prefix-size prefix-agg)))
+         (force-down node)
+         (let* ((left (%mset-left node))
+                (left-size (mset-size left))
+                (left-agg (mset-agg left))
+                (key (%mset-key node))
+                (weight (%mset-weight node))
+                (full-size (+ prefix-size left-size weight))
+                (full-agg (+ prefix-agg left-agg (* key weight))))
+           (cond ((float< key lower-bound +key-eps+)
+                  (recur (%mset-right node) full-size full-agg))
+                 (t
+                  (let ((val (- (* (+ slope-offset full-size) key) full-agg)))
+                    (if (float< val target +value-eps+)
+                        (recur (%mset-right node) full-size full-agg)
+                        (recur left prefix-size prefix-agg))))))))
+    (recur mset 0d0 0d0)))
+
+(declaim (ftype (function * (values double-float &optional))
+                mset-intercept-leftmost mset-intercept-rightmost))
+(defun mset-intercept-leftmost (mset base-intercept b)
+  "Binary searches MSET for the leftmost key (< 0) where BASE-INTERCEPT -
+cumulative_agg >= b. BASE-INTERCEPT is the y-intercept of the leftmost linear
+piece of f. The y-intercept sequence is increasing for keys < 0. Nodes with
+key >= 0 are skipped. Returns +NEGATIVE-INF+ if the piece before all breakpoints
+already qualifies (tangent extends to -inf)."
+  (declare (optimize (speed 3))
+           ((or null mset) mset)
+           (double-float base-intercept b))
+  (when (float<= b base-intercept +value-eps+)
+    (return-from mset-intercept-leftmost +negative-inf+))
+  (labels
+      ((recur (node prefix-agg best)
+         (declare (double-float prefix-agg best))
+         (unless node
+           (return-from recur best))
+         (force-down node)
+         (let ((left (%mset-left node))
+               (key (%mset-key node)))
+           (if (float<= 0d0 key +key-eps+)
+               (recur left prefix-agg best)
+               (let ((new-agg (+ prefix-agg (mset-agg left)
+                                 (* (%mset-weight node) key))))
+                 (if (float<= b (- base-intercept new-agg) +value-eps+)
+                     (recur left prefix-agg key)
+                     (recur (%mset-right node) new-agg best)))))))
+    (recur mset 0d0 +negative-inf+)))
+
+(defun mset-intercept-rightmost (mset base-intercept b)
+  "Binary searches MSET for the rightmost key (>= 0) where BASE-INTERCEPT -
+prefix_agg >= b. BASE-INTERCEPT is the y-intercept of the leftmost linear piece
+of f. The y-intercept sequence is decreasing for keys >= 0. Nodes with key < 0
+are skipped (their agg is accumulated into the prefix). Returns +POSITIVE-INF+
+if the piece after all breakpoints already qualifies (tangent extends to +inf)."
+  (declare (optimize (speed 3))
+           ((or null mset) mset)
+           (double-float base-intercept b))
+  (when (float<= b (- base-intercept (mset-agg mset)) +value-eps+)
+    (return-from mset-intercept-rightmost +positive-inf+))
+  (labels
+      ((recur (node prefix-agg best)
+         (declare (double-float prefix-agg best))
+         (unless node
+           (return-from recur best))
+         (force-down node)
+         (let ((left (%mset-left node))
+               (key (%mset-key node)))
+           (if (float< key 0d0 +key-eps+)
+               (recur (%mset-right node)
+                      (+ prefix-agg (mset-agg left)
+                         (* (%mset-weight node) key))
+                      best)
+               (if (float<= b (- base-intercept prefix-agg (mset-agg left)) +value-eps+)
+                   (recur (%mset-right node)
+                          (+ prefix-agg (mset-agg left)
+                             (* (%mset-weight node) key))
+                          key)
+                   (recur left prefix-agg best))))))
+    (recur mset 0d0 +positive-inf+)))
 
 (defstruct (multi-slope-trick
             (:constructor make-multi-slope-trick (&optional base-slope base-value))
@@ -504,64 +623,66 @@ larger than any keys in MSET."
             (:predicate nil))
   "Manages convex piecewise linear function. The primitive function the constructor
 gives is an affine function."
-  (base-slope 0 :type fixnum)
-  (base-value 0 :type fixnum) ; value at leftmost breakpoint (value at 0 if linear)
+  (base-slope 0d0 :type double-float) ; slope of leftmost linear piece
+  (base-value 0d0 :type double-float) ; value at leftmost breakpoint (value at 0 if linear)
   (mset nil :type (or null mset)))
 
-(declaim (ftype (function * (values fixnum &optional)) mstrick-value))
+(declaim (ftype (function * (values double-float &optional)) mstrick-value))
 (defun mstrick-value (mstrick x)
   "Returns the function value at X."
   (declare (optimize (speed 3))
-           (fixnum x))
+           (double-float x))
   (let ((mset (%mstrick-mset mstrick)))
-    (the+ fixnum
-          (%mstrick-base-value mstrick)
-          (* (%mstrick-base-slope mstrick)
-             (the fixnum (- x (if mset (mset-first mset) 0))))
-          (mset-value mset x))))
+    (+ (%mstrick-base-value mstrick)
+       (* (%mstrick-base-slope mstrick)
+          (the double-float (- x (if mset (mset-first mset) 0d0))))
+       (mset-value mset x))))
 
-(declaim (ftype (function * (values fixnum fixnum &optional))
+(declaim (ftype (function * (values double-float double-float &optional))
                 mstrick-arg-subdiff))
 (defun mstrick-arg-subdiff (mstrick diff)
   "Returns two values: the left and right end of the closed interval on which the
 subdifferential of f contains DIFF. If it doesn't exist, it returns [-inf, -inf]
 or [+inf, +inf], depending on if DIFF is below or above every slope of f."
   (declare (optimize (speed 3))
-           (fixnum diff))
+           (double-float diff))
   (let* ((base-slope (%mstrick-base-slope mstrick))
          (mset (%mstrick-mset mstrick))
          (end-slope (+ base-slope (mset-size mset))))
-    (cond ((< diff base-slope) (values +negative-inf+ +negative-inf+))
-          ((< end-slope diff) (values +positive-inf+ +positive-inf+))
-          (t (values (if (= diff base-slope)
-                         +negative-inf+
-                         (mset-ref-1 mset (the fixnum (- diff base-slope))))
-                     (if (= diff end-slope)
-                         +positive-inf+
-                         (mset-ref mset (the fixnum (- diff base-slope)))))))))
+    (cond ((float< diff base-slope +weight-eps+)
+           (values +negative-inf+ +negative-inf+))
+          ((float< end-slope diff +weight-eps+)
+           (values +positive-inf+ +positive-inf+))
+          (t (let ((idx (max 0d0 (- diff base-slope))))
+               (values (if (float= diff base-slope +weight-eps+)
+                           +negative-inf+
+                           (mset-ref-1 mset idx))
+                       (if (float= diff end-slope +weight-eps+)
+                           +positive-inf+
+                           (mset-ref mset idx))))))))
 
 (defun mstrick-add (mstrick a weight)
   "Adds x |-> max(0, weight*(x-a)) to f."
   (declare (optimize (speed 3))
-           (fixnum a weight))
-  (when (zerop weight)
+           (double-float a weight))
+  (when (float= weight 0d0 +weight-eps+)
     (return-from mstrick-add mstrick))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
                     (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
-    (let* ((base-x-del (if mset (mset-first mset) 0))
+    (let* ((base-x-del (if mset (mset-first mset) 0d0))
            (base-x-add (if (null mset)
                            a
                            (min a base-x-del))))
-      (declare (fixnum base-x-del base-x-add))
+      (declare (double-float base-x-del base-x-add))
       (setq base-value
-            (+ (if (= base-x-del base-x-add)
+            (+ (if (float= base-x-del base-x-add +key-eps+)
                    base-value
                    (mstrick-value mstrick base-x-add))
-               (the* fixnum (max 0 (* weight (- base-x-add a)))))))
-    (cond ((> weight 0)
+               (max 0d0 (* weight (- base-x-add a))))))
+    (cond ((float< 0d0 weight +weight-eps+)
            (setq mset (mset-insert mset a weight)))
-          ((< weight 0)
+          ((float< weight 0d0 +weight-eps+)
            (incf base-slope weight)
            (setq mset (mset-insert mset a (- weight))))))
   mstrick)
@@ -572,8 +693,8 @@ or [+inf, +inf], depending on if DIFF is below or above every slope of f."
 This is intended to be a rollback operation against MSTRICK-ADD. The behavior is
 undefined if this operation breaks convexity."
   (declare (optimize (speed 3))
-           (fixnum a weight))
-  (when (zerop weight)
+           (double-float a weight))
+  (when (float= weight 0d0 +weight-eps+)
     (return-from mstrick-delete mstrick))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
                     (base-value (%mstrick-base-value mstrick))
@@ -581,17 +702,17 @@ undefined if this operation breaks convexity."
     (let* ((post-base-x
              (if mset
                  (let ((first-node (mset-first-node mset)))
-                   (if (and (= a (%mset-key first-node))
-                            (= (abs weight) (%mset-weight first-node)))
-                       (or (mset-bisect-right mset a) 0)
+                   (if (and (float= a (%mset-key first-node) +key-eps+)
+                            (float= (abs weight) (%mset-weight first-node) +weight-eps+))
+                       (or (mset-bisect-right mset a) 0d0)
                        (%mset-key first-node)))
-                 0))
+                 0d0))
            (new-base-value (- (mstrick-value mstrick post-base-x)
-                             (the* fixnum (max 0 (* weight (- post-base-x a)))))))
-      (declare (fixnum post-base-x new-base-value))
-      (cond ((> weight 0)
+                             (max 0d0 (* weight (- post-base-x a))))))
+      (declare (double-float post-base-x new-base-value))
+      (cond ((float< 0d0 weight +weight-eps+)
              (setq mset (mset-delete mset a weight)))
-            ((< weight 0)
+            ((float< weight 0d0 +weight-eps+)
              (setq mset (mset-delete mset a (- weight)))
              (decf base-slope weight)))
       (setq base-value new-base-value))
@@ -599,36 +720,36 @@ undefined if this operation breaks convexity."
 
 (defun mstrick-add-abs (mstrick a weight)
   "Adds x |-> weight*abs(x-a) to f."
-  (declare (fixnum a)
-           ((integer 0 #.most-positive-fixnum) weight))
+  (declare (double-float a)
+           ((double-float 0d0) weight))
   (mstrick-add mstrick a weight)
   (mstrick-add mstrick a (- weight)))
 
 (defun mstrick-add-linear (mstrick slope)
   "Adds a linear function x |-> slope*x to f."
-  (declare (fixnum slope)
+  (declare (double-float slope)
            (optimize (speed 3)))
   (incf (%mstrick-base-slope mstrick) slope)
   (when (%mstrick-mset mstrick)
     (incf (%mstrick-base-value mstrick)
-          (the fixnum (* slope (mset-first (%mstrick-mset mstrick)))))))
+          (* slope (mset-first (%mstrick-mset mstrick))))))
 
-(declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-subdiff))
+(declaim (ftype (function * (values double-float double-float &optional)) mstrick-subdiff))
 (defun mstrick-subdiff (mstrick x)
   "Returns the subdifferential of f at x.
 
 This function returns the left and right end of the closed interval of
 subdifferential."
   (declare (optimize (speed 3))
-           (fixnum x))
+           (double-float x))
   (let* ((mset (%mstrick-mset mstrick))
          (base-slope (%mstrick-base-slope mstrick)))
     (if (null mset)
         (values base-slope base-slope)
         (let ((res-l (mset-position-left mset x))
               (res-r (mset-position-right mset x)))
-          (values (the fixnum (+ base-slope res-l))
-                  (the fixnum (+ base-slope res-r)))))))
+          (values (+ base-slope res-l)
+                  (+ base-slope res-r))))))
 
 (define-condition mstrick-breaking-convexity-error (error)
   ((mstrick :initarg :mstrick :reader mstrick-breaking-convexity-error-mstrick))
@@ -644,21 +765,21 @@ This operation is equivalent to clipping the slope of f to (-inf, C]. This
 function raises an error if C is less than the minimum slope of f. This function
 returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
-           (fixnum c))
+           (double-float c))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
                     (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
     (let ((rest-part (make-multi-slope-trick base-slope base-value))
           (base-x (when mset (mset-first mset))))
-      (cond ((< c base-slope)
+      (cond ((float< c base-slope +weight-eps+)
              (error 'mstrick-breaking-convexity-error :mstrick mstrick))
-            ((< c (+ base-slope (mset-size mset)))
+            ((float< c (+ base-slope (mset-size mset)) +weight-eps+)
              (multiple-value-bind (l r)
-                 (mset-indexed-split mset (the fixnum (- c base-slope)))
+                 (mset-indexed-split mset (max 0d0 (- c base-slope)))
                (setf mset l
                      (%mstrick-mset rest-part) r))))
       (when (and base-x (null mset))
-        (decf base-value (the fixnum (* base-x base-slope))))
+        (decf base-value (* base-x base-slope)))
       (setq base-slope (min base-slope c))
       rest-part)))
 
@@ -680,7 +801,7 @@ This operation is equivalent to clipping the slope of f to [C, +inf). This
 function raises an error if C is greater than the maximum slope of f. This
 function returns the rest part, which is used to rollback this operation."
   (declare (optimize (speed 3))
-           (fixnum c))
+           (double-float c))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
                     (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
@@ -693,9 +814,9 @@ function returns the rest part, which is used to rollback this operation."
                    (error 'mstrick-breaking-convexity-error :mstrick mstrick)
                    (let* ((end-x (if (/= +negative-inf+ left-c)
                                      left-c
-                                     0))
+                                     0d0))
                           (new-base-value (- (mstrick-value mstrick end-x)
-                                             (the fixnum (* end-x c)))))
+                                            (* end-x c))))
                      (setf (%mstrick-mset rest-part) mset)
                      (setq mset nil
                            base-slope c
@@ -703,7 +824,7 @@ function returns the rest part, which is used to rollback this operation."
               (t
                (let ((new-base-value (mstrick-value mstrick right-c)))
                  (multiple-value-bind (l r)
-                     (mset-indexed-split mset (the fixnum (- c base-slope)))
+                     (mset-indexed-split mset (max 0d0 (- c base-slope)))
                    (setf (%mstrick-mset rest-part) l)
                    (setq mset r
                          base-slope c
@@ -721,29 +842,149 @@ Note that this function breaks REST-MSTRICK."
         (%mstrick-base-value mstrick) (%mstrick-base-value rest-mstrick))
   mstrick)
 
-
 (defun mstrick-shift (mstrick ldelta &optional (rdelta ldelta))
   "Replaces f to g such that g(x) := min_{x-rdelta <= t <= x-ldelta} f(t).
 Shifts left breakpoints (slope < 0) by ldelta, right breakpoints (slope > 0) by rdelta."
   (declare (optimize (speed 3))
-           (fixnum ldelta rdelta))
+           (double-float ldelta rdelta))
   (assert (<= ldelta rdelta))
   (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
                     (base-value (%mstrick-base-value mstrick))
                     (mset (%mstrick-mset mstrick)))
     (if mset
         (cond
-          ((<= 0 base-slope)
+          ((float<= 0d0 base-slope +weight-eps+)
            (setq mset (mset-shift mset rdelta)))
-          ((<= (+ base-slope (mset-size mset)) 0)
+          ((float<= (+ base-slope (mset-size mset)) 0d0 +weight-eps+)
            (setq mset (mset-shift mset ldelta)))
           (t
            (multiple-value-bind (left right)
-               (mset-indexed-split mset (- base-slope))
+               (mset-indexed-split mset (max 0d0 (- base-slope)))
              (setq mset (mset-concat (mset-shift left ldelta)
                                      (mset-shift right rdelta))))))
-        (if (< 0 base-slope)
-            (decf base-value (the fixnum (* base-slope rdelta)))
-            (decf base-value (the fixnum (* base-slope ldelta))))))
+        (if (float< 0d0 base-slope +weight-eps+)
+            (decf base-value (* base-slope rdelta))
+            (decf base-value (* base-slope ldelta)))))
+  mstrick)
+
+(defun mstrick-max-affine (mstrick a b)
+  "Replaces f with max(f(x), a*x + b)."
+  (declare (optimize (speed 3))
+           (double-float a b))
+  ;; Reduce to max(g(x), b) by subtracting a*x
+  (mstrick-add-linear mstrick (- a))
+  (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
+                    (base-value (%mstrick-base-value mstrick))
+                    (mset (%mstrick-mset mstrick)))
+    ;; Determine if clipping is needed by finding the minimum of g
+    (multiple-value-bind (x0l x0r) (mstrick-arg-subdiff mstrick 0d0)
+      (let ((min-val
+              (cond ((and (< +negative-inf+ x0l) (< x0l +positive-inf+))
+                     (mstrick-value mstrick x0l))
+                    ((and (< +negative-inf+ x0r) (< x0r +positive-inf+))
+                     (mstrick-value mstrick x0r))
+                    ((and (= x0l +negative-inf+) (= x0r +positive-inf+))
+                     base-value)
+                    (t +negative-inf+))))
+        (when (float< min-val b +value-eps+)
+          ;; Clipping needed
+          (let* ((has-left (> x0l +negative-inf+))
+                 (has-right (< x0r +positive-inf+))
+                 (base-x (if mset (mset-first mset) 0d0))
+                 (solve-target (+ (- b base-value) (* base-slope base-x)))
+                 (x-left (when has-left
+                           (mset-solve-decreasing
+                            mset solve-target base-slope x0l)))
+                 (x-right (when has-right
+                            (mset-solve-increasing
+                             mset solve-target base-slope x0r))))
+            ;; Split mset into left-part | middle (discarded) | right-part
+            (multiple-value-bind (left-part rest-mset)
+                (if has-left
+                    (mset-split mset x-left)
+                    (values nil mset))
+              (multiple-value-bind (middle right-part)
+                  (if has-right
+                      (mset-split rest-mset x-right)
+                      (values rest-mset nil))
+                ;; Slopes at crossover points
+                (let ((s-left (+ base-slope (mset-size left-part)))
+                      (s-right (+ base-slope (mset-size left-part) (mset-size middle))))
+                  ;; Rebuild mset
+                  (setf mset (%mset-concat left-part right-part))
+                  (when has-left
+                    (setf mset (mset-insert mset x-left (- s-left))))
+                  (when has-right
+                    (setf mset (mset-insert mset x-right s-right)))
+                  ;; Update base-value and base-slope
+                  (when (null left-part)
+                    (setf base-value b)
+                    (unless has-left
+                      (setf base-slope 0d0)))))))))))
+  ;; Add a*x back
+  (mstrick-add-linear mstrick a)
+  mstrick)
+
+(defun mstrick-convex-hull-with-point (mstrick a b)
+  "Replaces f with the function whose epigraph is the closure of conv(epi(f) \cup
+{(a, b)})."
+  (declare (optimize (speed 3))
+           (double-float a b))
+  (symbol-macrolet ((base-slope (%mstrick-base-slope mstrick))
+                    (base-value (%mstrick-base-value mstrick))
+                    (mset (%mstrick-mset mstrick)))
+    ;; b < f(a): modification needed
+    (let ((f0 (mstrick-value mstrick a)))
+      (when (float<= f0 b +value-eps+)
+        (return-from mstrick-convex-hull-with-point mstrick))
+      ;; Shift so that a -> 0
+      (mstrick-shift mstrick (- a) (- a))
+      (let* ((base-x (if mset (mset-first mset) 0d0))
+             (base-intercept (- base-value (* base-slope base-x)))
+             (end-slope (+ base-slope (mset-size mset))))
+        ;; Find tangent points
+        (let* ((x-l (mset-intercept-leftmost mset base-intercept b))
+               (s-l (if (> x-l +negative-inf+)
+                        (/ (- (mstrick-value mstrick x-l) b) x-l)
+                        base-slope))
+               (x-r (mset-intercept-rightmost mset base-intercept b))
+               (s-r (if (< x-r +positive-inf+)
+                        (if (float= x-r 0d0 +key-eps+)
+                            end-slope
+                            (/ (- (mstrick-value mstrick x-r) b) x-r))
+                        end-slope))
+               (has-left (> x-l +negative-inf+))
+               (has-right (< x-r +positive-inf+)))
+          ;; Reconstruct mset
+          (multiple-value-bind (l-part rest-mset)
+              (if has-left
+                  (mset-split mset x-l)
+                  (values nil mset))
+            (multiple-value-bind (middle r-part)
+                (if has-right
+                    (let ((next-key (mset-bisect-right rest-mset x-r)))
+                      (if next-key
+                          (mset-split rest-mset next-key)
+                          (values rest-mset nil)))
+                    (values rest-mset nil))
+              (let* ((l-size (mset-size l-part))
+                     (middle-size (mset-size middle))
+                     (slope-before-l (+ base-slope l-size))
+                     (slope-after-r (+ base-slope l-size middle-size)))
+                (setq mset (%mset-concat l-part r-part))
+                (when has-left
+                  (setq mset (mset-insert mset x-l (- s-l slope-before-l))))
+                (when (float< s-l s-r +weight-eps+)
+                  (setq mset (mset-insert mset 0d0 (- s-r s-l))))
+                (when has-right
+                  (setq mset (mset-insert mset x-r (- slope-after-r s-r))))
+                (unless l-part
+                  (if has-left
+                      (setq base-value (+ b (* s-l x-l)))
+                      (setq base-slope s-l
+                            base-value
+                            (if mset (+ b (* s-l (mset-first mset))) b)))))))))))
+  ;; Shift back
+  (mstrick-shift mstrick a a)
   mstrick)
 

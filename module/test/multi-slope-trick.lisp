@@ -1,6 +1,6 @@
 (defpackage :cp/test/multi-slope-trick
   (:use :cl :fiveam :cp/multi-slope-trick :cp/bisect :cp/shuffle)
-  (:import-from :cp/multi-slope-trick #:%mstrick-base-slope #:%mstrick-intercept)
+  (:import-from :cp/multi-slope-trick #:%mstrick-base-slope #:%mstrick-base-value)
   (:import-from :cp/test/base #:base-suite))
 (in-package :cp/test/multi-slope-trick)
 (in-suite base-suite)
@@ -13,12 +13,12 @@
 BREAKPOINTS is a sorted vector of x-coordinates where the slope changes.
 SLOPES is a vector of length (1+ n) where n is the number of breakpoints.
 SLOPES[i] is the slope of the function in the interval [BREAKPOINTS[i-1], BREAKPOINTS[i]).
-INTERCEPT is the value of the function at x=0."
+BASE-VALUE is the value of the function at x=0."
   (breakpoints (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer 0)
    :type (vector fixnum))
   (slopes (make-array 1 :element-type 'fixnum :initial-element 0 :adjustable t :fill-pointer 1)
    :type (vector fixnum))
-  (intercept 0 :type fixnum))
+  (base-value 0 :type fixnum))
 
 (defun pl-merge (pl)
   "Merge adjacent intervals with the same slope."
@@ -41,15 +41,15 @@ INTERCEPT is the value of the function at x=0."
   "Compute the function value at X by integrating from x=0."
   (let ((breakpoints (%pl-breakpoints pl))
         (slopes (%pl-slopes pl))
-        (intercept (%pl-intercept pl)))
+        (base-value (%pl-base-value pl)))
     (cond
       ((zerop (length breakpoints))
        ;; No breakpoints, linear function
-       (+ intercept (* (aref slopes 0) x)))
+       (+ base-value (* (aref slopes 0) x)))
       (t
        ;; Find which segment x=0 is in and integrate to x
        (let* ((seg-0 (bisect-left breakpoints 0))
-              (value intercept)
+              (value base-value)
               (current-x 0))
          (cond
            ((>= x 0)
@@ -107,8 +107,8 @@ For weight < 0: slope increases by weight for x < a."
         ;; Increase slopes for x < a (that's slopes[0..pos])
         (loop for i from 0 to index
               do (incf (aref slopes i) weight)))
-    ;; Update intercept: max(0, weight*(x-a)) at x=0 is max(0, -weight*a)
-    (incf (%pl-intercept pl) (max 0 (* (- weight) a)))
+    ;; Update base-value: max(0, weight*(x-a)) at x=0 is max(0, -weight*a)
+    (incf (%pl-base-value pl) (max 0 (* (- weight) a)))
     (pl-merge pl)))
 
 (defun pl-delete (pl a weight)
@@ -140,8 +140,8 @@ The behaviour is undefined if the convexity is broken."
         ;; Decrease slopes for x < a (that's slopes[0..index])
         (loop for i from 0 to index
             do (decf (aref slopes i) weight)))
-    ;; Update intercept: subtract max(0, -weight*a) (inverse of pl-add)
-    (decf (%pl-intercept pl) (max 0 (* (- weight) a)))
+    ;; Update base-value: subtract max(0, -weight*a) (inverse of pl-add)
+    (decf (%pl-base-value pl) (max 0 (* (- weight) a)))
     (pl-merge pl)))
 
 (defun pl-add-abs (pl a weight)
@@ -163,12 +163,12 @@ Clips slopes to (-infinity, C]."
   ;; For convex f, minimum of f(t) - Ct is where slope_f = C
   ;; If slope at 0 <= C, then minimum for t <= 0 is at t = 0
   ;; Otherwise, find point t* <= 0 where slope = C
-  (let ((new-intercept
+  (let ((new-base-value
           (multiple-value-bind (left-slope right-slope) (pl-subdiff pl 0)
             (declare (ignore left-slope))
             (if (<= right-slope c)
                 ;; Slope at 0 is <= C, so minimum is at t = 0
-                (%pl-intercept pl)
+                (%pl-base-value pl)
                 ;; Find point where slope = C (it must be < 0)
                 (multiple-value-bind (left right) (pl-arg-subdiff pl c)
                   (declare (ignore left))
@@ -176,7 +176,7 @@ Clips slopes to (-infinity, C]."
                            (<= right 0))
                       (- (pl-value pl right) (* c right))
                       ;; Fallback: minimum at t = 0
-                      (%pl-intercept pl)))))))
+                      (%pl-base-value pl)))))))
     (let ((breakpoints (%pl-breakpoints pl))
           (slopes (%pl-slopes pl)))
       (cond
@@ -197,7 +197,7 @@ Clips slopes to (-infinity, C]."
              (setf (fill-pointer breakpoints) (1+ cut-index))
              (setf (fill-pointer slopes) (+ 2 cut-index))
              (setf (aref slopes (1+ cut-index)) c))))))
-    (setf (%pl-intercept pl) new-intercept))
+    (setf (%pl-base-value pl) new-base-value))
   (pl-merge pl))
 
 (defun pl-right-cum (pl c)
@@ -207,12 +207,12 @@ Clips slopes to [C, infinity)."
   ;; For convex f, minimum of f(t) - Ct is where slope_f = C
   ;; If slope at 0 >= C, then minimum for t >= 0 is at t = 0
   ;; Otherwise, find point t* >= 0 where slope = C
-  (let ((new-intercept
+  (let ((new-base-value
           (multiple-value-bind (left-slope right-slope) (pl-subdiff pl 0)
             (declare (ignore right-slope))
             (if (>= left-slope c)
                 ;; Slope at 0 is >= C, so minimum is at t = 0
-                (%pl-intercept pl)
+                (%pl-base-value pl)
                 ;; Find point where slope = C (it must be > 0)
                 (multiple-value-bind (left right) (pl-arg-subdiff pl c)
                   (declare (ignore right))
@@ -220,7 +220,7 @@ Clips slopes to [C, infinity)."
                            (>= left 0))
                       (- (pl-value pl left) (* c left))
                       ;; Fallback: minimum at t = 0
-                      (%pl-intercept pl)))))))
+                      (%pl-base-value pl)))))))
     (let ((breakpoints (%pl-breakpoints pl))
           (slopes (%pl-slopes pl)))
       (cond
@@ -247,7 +247,7 @@ Clips slopes to [C, infinity)."
                  (setf (aref slopes j) (aref slopes (+ cut-index j))))
                (setf (fill-pointer slopes) (1+ keep-count))
                (setf (aref slopes 0) c)))))))
-    (setf (%pl-intercept pl) new-intercept))
+    (setf (%pl-base-value pl) new-base-value))
   (pl-merge pl))
 
 (defun pl-shift (pl ldelta &optional rdelta)
@@ -256,7 +256,7 @@ Shifts left breakpoints (negative slope before) by ldelta,
 shifts right breakpoints (positive slope after) by rdelta."
   (let ((rdelta (or rdelta ldelta)))
     (assert (<= ldelta rdelta))
-    ;; Compute new intercept: g(0) = min_{-rdelta <= t <= -ldelta} f(t)
+    ;; Compute new base-value: g(0) = min_{-rdelta <= t <= -ldelta} f(t)
     ;; For convex f, minimum over [a, b] is at:
     ;; - a if slope at a >= 0
     ;; - b if slope at b <= 0
@@ -265,13 +265,13 @@ shifts right breakpoints (positive slope after) by rdelta."
            (right-bound (- ldelta)))
       (if (= left-bound right-bound)
           ;; Uniform shift: g(0) = f(-delta)
-          (setf (%pl-intercept pl) (pl-value pl left-bound))
+          (setf (%pl-base-value pl) (pl-value pl left-bound))
           ;; Find minimum over interval
           (multiple-value-bind (slope-left-l slope-left-r) (pl-subdiff pl left-bound)
             (declare (ignore slope-left-l))
             (multiple-value-bind (slope-right-l slope-right-r) (pl-subdiff pl right-bound)
               (declare (ignore slope-right-r))
-              (setf (%pl-intercept pl)
+              (setf (%pl-base-value pl)
                     (cond
                       ;; Minimum at right bound (slope <= 0 throughout interval)
                       ((<= slope-right-l 0)
