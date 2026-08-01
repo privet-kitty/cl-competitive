@@ -131,7 +131,7 @@ and is contrary to the `visual' direction: i.e. (bit-lshift #*1011000 2) |->
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
-           ((mod #.array-dimension-limit) delta)
+           ((integer 0 #.most-positive-fixnum) delta)
            ((or null (mod #.array-dimension-limit)) end))
   (setq result-vector
         (etypecase result-vector
@@ -157,7 +157,7 @@ and is contrary to the `visual' direction: i.e. (bit-rshift #*1011000 2) |->
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
-           ((mod #.array-dimension-limit) delta))
+           ((integer 0 #.most-positive-fixnum) delta))
   (setq result-vector
         (etypecase result-vector
           (null (make-array (length bit-vector) :element-type 'bit :initial-element 0))
@@ -173,7 +173,7 @@ and is contrary to the `visual' direction: i.e. (bit-rshift #*1011000 2) |->
   (declare (optimize (speed 3))
            (simple-bit-vector bit-vector)
            ((or null (eql t) simple-bit-vector) result-vector)
-           ((integer #.(- array-dimension-limit) #.array-dimension-limit) delta))
+           ((integer #.(- most-positive-fixnum) #.most-positive-fixnum) delta))
   (if (>= delta 0)
       (bit-lshift bit-vector delta result-vector)
       (bit-rshift bit-vector (- delta) result-vector)))
