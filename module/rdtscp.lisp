@@ -8,15 +8,27 @@ instruction."))
 (in-package :cp/rdtscp)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (find-package :sb-x86-64-asm)
-    (sb-ext:unlock-package :sb-x86-64-asm)))
+  (sb-ext:unlock-package :sb-x86-64-asm))
 
 (defmacro emit-bytes (segment &rest bytes)
   `(progn ,@(mapcar (lambda (x) `(emit-byte ,segment ,x)) bytes)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-instruction rdtscp (segment)
-    (:emitter (emit-bytes segment #x0f #x01 #xf9))))
+  (defun emit-rdtscp (segment)
+    (emit-bytes segment #x0f #x01 #xf9))
+
+  (defun register-rdtscp ()
+    "Adds RDTSCP to the assembler's instruction set. Later versions of SBCL don't
+retain DEFINE-INSTRUCTION in the runtime image, so the encoder has to be
+registered by hand."
+    (let ((table (symbol-value (find-symbol "*INST-ENCODER*" :sb-assem)))
+          (asm-package (symbol-value (find-symbol "*BACKEND-INSTRUCTION-SET-PACKAGE*" :sb-assem))))
+      (setf (gethash (intern "RDTSCP" asm-package) table) #'emit-rdtscp)))
+
+  #.(if (find-symbol "DEFINE-INSTRUCTION" :sb-assem)
+        '(define-instruction rdtscp (segment)
+           (:emitter (emit-rdtscp segment)))
+        '(register-rdtscp)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defknown %read-tsc () (values (unsigned-byte 32) (unsigned-byte 32)) ()
@@ -43,5 +55,4 @@ instruction."))
     (dpb hi (byte 32 32) lo)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (when (find-package :sb-x86-64-asm)
-    (sb-ext:lock-package :sb-x86-64-asm)))
+  (sb-ext:lock-package :sb-x86-64-asm))

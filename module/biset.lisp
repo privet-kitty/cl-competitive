@@ -3,12 +3,25 @@
   (:export #:biset #:biset-set1 #:biset-set0 #:biset-set #:biset-ref
            #:biset-count1 #:biset-count #:make-biset #:%biset-total
            #:biset-select #:biset-find>= #:biset-find> #:biset-find<= #:biset-find<)
-  (:import-from #:sb-vm #:n-word-bits #:unsigned-word-find-first-bit)
+  (:import-from #:sb-vm #:n-word-bits)
   (:import-from #:sb-sys #:%primitive))
 (in-package :cp/biset)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (assert (= n-word-bits 64)))
+
+(declaim (inline find-first-bit))
+(defun find-first-bit (word)
+  "Returns the index of the least significant set bit of WORD, which must not be
+zero."
+  (declare (optimize (speed 3) (safety 0))
+           ((unsigned-byte 64) word))
+  ;; SB-VM::UNSIGNED-WORD-FIND-FIRST-BIT was superseded by
+  ;; SB-KERNEL:COUNT-TRAILING-ZEROS.
+  #.(let ((vop (find-symbol "UNSIGNED-WORD-FIND-FIRST-BIT" :sb-vm)))
+      (if vop
+          `(%primitive ,vop word)
+          `(,(find-symbol "COUNT-TRAILING-ZEROS" :sb-kernel) word))))
 
 (deftype uint () '(unsigned-byte 31))
 
@@ -159,10 +172,9 @@ ordered set interpretation: Returns the (0-based) RANK-th element."
               (incf index+1 step))))))
     (+ (* n-word-bits index+1)
        (the uint
-            (%primitive unsigned-word-find-first-bit
-                        (%primitive pdep
-                                    (ash 1 (the (mod 64) rank))
-                                    (sb-kernel:%vector-raw-bits bits index+1)))))))
+            (find-first-bit (%primitive pdep
+                                        (ash 1 (the (mod 64) rank))
+                                        (sb-kernel:%vector-raw-bits bits index+1)))))))
 
 (defun biset-find>= (biset x)
   (declare (optimize (speed 3))

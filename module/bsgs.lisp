@@ -17,11 +17,8 @@ C. Monico. Semirings and semigroup actions in public-key cryptography."))
 (defun %power-of-two-ceiling (x)
   (ash 1 (integer-length (- x 1))))
 
-;; embedded identity
-(defconstant +identity+
-  (if (boundp '+identity+)
-      (symbol-value '+identity+)
-      (make-symbol "IDENTITY")))
+;; Embedded identity.
+(defconstant +identity+ '%identity)
 
 (declaim (inline %power))
 (defun %power (base exponent op)

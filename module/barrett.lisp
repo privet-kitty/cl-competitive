@@ -14,7 +14,7 @@
                 #:define-vop
                 #:tn-offset)
   (:import-from #:sb-vm
-                #:move #:inst #:rax-offset #:rdx-offset #:temp-reg-tn
+                #:move #:inst #:rax-offset #:rdx-offset
                 #:any-reg #:control-stack #:unsigned-reg
                 #:positive-fixnum
                 #:fixnumize #:ea)
@@ -42,7 +42,30 @@
     (declare (ignorable x))
     #.(if (find-symbol "GPR-TN-P" :sb-vm)
           `(funcall (intern "GPR-TN-P" :sb-vm) x)
-          t)))
+          t))
+
+  (defun scratch-reg-offset ()
+    "Returns the offset of a GPR that the register allocator never assigns to a
+VOP argument. SB-VM::TEMP-REG-TN was removed in a later version of SBCL; it has
+always been R11 on x86-64."
+    (flet ((tn (name)
+             (let ((symbol (find-symbol name :sb-vm)))
+               (and symbol (boundp symbol) (symbol-value symbol)))))
+      (tn-offset (or (tn "TEMP-REG-TN") (tn "R11-TN")))))
+
+  (defun mul-takes-destination-p ()
+    "Returns true if MUL takes an explicit destination operand, which must be
+RAX. A later version of SBCL made RDX:RAX implicit and left MUL with the source
+operand only."
+    (let* ((name (find-symbol "MUL" :sb-x86-64-asm))
+           (encoder (if (fboundp name)
+                        (symbol-function name)
+                        ;; newer SBCL keeps the encoders out of the fdefinitions
+                        (let ((entry (gethash name (symbol-value (find-symbol "*INST-ENCODER*" :sb-assem)))))
+                          (if (consp entry) (car entry) entry)))))
+      (and (member "DST" (sb-kernel:%fun-lambda-list encoder)
+                   :key #'symbol-name :test #'string=)
+           t))))
 
 ;; *-high62
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -72,7 +95,9 @@
     (:save-p :compute-only)
     (:generator 6
                 (move rax x)
-                (inst mul rax y)
+                #.(if (mul-takes-destination-p)
+                      '(inst mul rax y)
+                      '(inst mul y))
                 (inst shl rdx 1)
                 (move r rdx)))
 
@@ -122,7 +147,7 @@
     (:arg-types positive-fixnum (:constant (unsigned-byte 31)))
     (:temporary (:sc any-reg :from :eval :to :result
                      ;; FIXME: hack to avoid collision of X and Y
-                     :offset #.(tn-offset temp-reg-tn))
+                     :offset (scratch-reg-offset))
                 y)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
@@ -160,7 +185,7 @@
     (:args (x :scs (any-reg) :target r))
     (:info m)
     (:arg-types fixnum (:constant (unsigned-byte 31)))
-    (:temporary (:sc any-reg :from :eval :to :result :offset #.(tn-offset temp-reg-tn)) y)
+    (:temporary (:sc any-reg :from :eval :to :result :offset (scratch-reg-offset)) y)
     (:results (r :scs (any-reg)))
     (:result-types positive-fixnum)
     (:note "inline constant %lomod")

@@ -12,8 +12,10 @@
   (sb-c:defknown %mod-inverse ((integer 0) (integer 1)) (integer 0)
       (sb-c:flushable sb-c:foldable)
     :overwrite-fndb-silently t)
+  ;; NOTE: MOD-INVERSE must not be FLUSHABLE. It signals DIVISION-BY-ZERO for a
+  ;; non-coprime input and hence a call whose value is unused is not dead code.
   (sb-c:defknown mod-inverse (integer (integer 1)) (integer 0)
-      (sb-c:flushable sb-c:foldable)
+      (sb-c:foldable)
     :overwrite-fndb-silently t)
   (defun derive-mod (modulus)
     (let ((high (nth-value 1 (integer-type-numeric-bounds (lvar-type modulus)))))
