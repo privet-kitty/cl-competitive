@@ -173,6 +173,7 @@
   (:import-from :cp/test/seek-line)
   (:import-from :cp/test/self-dual-simplex)
   (:import-from :cp/test/series-parallel-decomposition)
+  (:import-from :cp/test/series-parallel-mcf)
   (:import-from :cp/test/set-equal)
   (:import-from :cp/test/sparse-simplex)
   (:import-from :cp/test/ssp)
