@@ -1,9 +1,9 @@
 (defpackage :cp/ext-gcd
   (:use :cl)
   (:import-from :sb-c #:defoptimizer #:defknown #:movable #:foldable #:flushable
-                #:derive-type #:lvar-type #:integer-type-numeric-bounds #:make-numeric-type
+                #:derive-type #:lvar-type #:integer-type-numeric-bounds
                 #:make-values-type)
-  (:import-from :sb-kernel #:%fun-lambda-list)
+  (:import-from :sb-kernel #:%fun-lambda-list #:specifier-type)
   (:export #:ext-gcd)
   (:documentation "Provides extended euclidean algorithm (aka Blankinship algorithm).
 
@@ -22,8 +22,8 @@ https://topcoder-g-hatena-ne-jp.jag-icpc.org/spaghetti_source/20130126/"))
         (let ((type
                 (if (every #'integerp (list lo1 hi1 lo2 hi2))
                     (let ((max (max (abs lo1) (abs hi1) (abs lo2) (abs hi2))))
-                      (make-numeric-type :class 'integer :low `(,(- max)) :high `(,max)))
-                    (make-numeric-type :class 'integer))))
+                      (specifier-type `(integer (,(- max)) (,max))))
+                    (specifier-type 'integer))))
           (if (member '&optional (%fun-lambda-list #'make-values-type))
               (make-values-type (list type type))
               (make-values-type :required (list type type))))))))
