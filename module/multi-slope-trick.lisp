@@ -595,6 +595,26 @@ aggregates up. Returns the right part's first absolute slope."
                   node-slope))
       (pull-up node))))
 
+(declaim (ftype (function * (values (or null node) &optional)) simple-concat))
+(defun simple-concat (left right)
+  "Destructively concatenates respecting in-order, driven by priorities alone.
+RIGHT's leftmost SLOPE-GAP must already encode the in-order gap to LEFT's
+rightmost."
+  (declare (optimize (speed 3))
+           ((or null node) left right))
+  (cond ((null left) right)
+        ((null right) left)
+        ((> (%node-priority left) (%node-priority right))
+         (setf (%node-right left)
+               (simple-concat (%node-right left) right))
+         (pull-up left)
+         left)
+        (t
+         (setf (%node-left right)
+               (simple-concat left (%node-left right)))
+         (pull-up right)
+         right)))
+
 (declaim (ftype (function * (values (or null node) (or null node) (or null fixnum)
                                     &optional))
                 split-by-slope split-by-width-idx))
@@ -647,43 +667,34 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
               ((<= idx ls)
                (multiple-value-bind (ll lr lr-first)
                    (split-by-width-idx left idx min-slope)
-                 (setf (%node-left node) lr)
-                 (values ll node (reanchor-after-left-split node lr-first node-slope))))
+                 (setf (%node-left node) nil
+                       (%node-slope-gap node)
+                       (if lr
+                           (the fixnum
+                                (- node-slope
+                                   (the+ fixnum lr-first (%node-slope-gap-sum lr))))
+                           0))
+                 (pull-up node)
+                 ;; Priority-aware reattachment: LR may contain the
+                 ;; fresh-priority fragment of a deeper inside cut that
+                 ;; outranks NODE.
+                 (values ll (simple-concat lr node) (or lr-first node-slope))))
               (t
                ;; Split inside this node's width. NODE becomes the left half;
-               ;; the right half is a standalone node at the same absolute
-               ;; slope carrying the remaining width and the original right
-               ;; child. It reuses the original priority so the heap
-               ;; invariant holds on both halves.
+               ;; the right half starts with a fresh leaf at the same absolute
+               ;; slope (SLOPE-GAP = 0) carrying the remaining width, joined
+               ;; to the original right child by priorities. The leaf draws a
+               ;; fresh priority; copying NODE's would let repeated cuts into
+               ;; one wide segment accumulate an equal-priority run that
+               ;; SIMPLE-CONCAT arranges as a chain, destroying treap balance.
                (let* ((within (- idx ls))
                       (remainder (- (%node-width node) within))
-                      (rhalf (make-node remainder 0 (%node-priority node))))
-                 (setf (%node-right rhalf) (%node-right node))
-                 (pull-up rhalf)
+                      (right-child (%node-right node))
+                      (rleaf (make-node remainder 0 (random-priority))))
                  (setf (%node-width node) within
                        (%node-right node) nil)
                  (pull-up node)
-                 (values node rhalf node-slope)))))))
-
-(declaim (ftype (function * (values (or null node) &optional)) simple-concat))
-(defun simple-concat (left right)
-  "Destructively concatenates respecting in-order, driven by priorities alone.
-RIGHT's leftmost SLOPE-GAP must already encode the in-order gap to LEFT's
-rightmost."
-  (declare (optimize (speed 3))
-           ((or null node) left right))
-  (cond ((null left) right)
-        ((null right) left)
-        ((> (%node-priority left) (%node-priority right))
-         (setf (%node-right left)
-               (simple-concat (%node-right left) right))
-         (pull-up left)
-         left)
-        (t
-         (setf (%node-left right)
-               (simple-concat left (%node-left right)))
-         (pull-up right)
-         right)))
+                 (values node (simple-concat rleaf right-child) node-slope)))))))
 
 (declaim (ftype (function * (values (or null node) fixnum &optional)) remove-leftmost))
 (defun remove-leftmost (node pred-slope)

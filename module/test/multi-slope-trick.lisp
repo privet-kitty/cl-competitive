@@ -1083,6 +1083,36 @@ priorities included -- for exact restoration checks after a rollback."
                 (unless (equal (pop states) (snap-state f))
                   (error "nested rollback did not restore the function"))))))))))
 
+(test multi-slope-trick/repeated-interior-splits-stay-balanced
+  ;; Each ADD-KINK cuts the rightmost wide segment strictly inside. The cut
+  ;; fragment must draw a fresh priority: inheriting the cut node's priority
+  ;; would accumulate an equal-priority run that concatenation arranges as a
+  ;; chain, degrading the treap to a list.
+  (let ((*random-state* (sb-ext:seed-random-state 16))
+        (*test-dribble* nil))
+    (finishes
+      (let* ((n 2000)
+             (f (make-mstrick 0 0)))
+        (mstrick-insert-segment f 0 (+ (* 2 n) 1))
+        (loop for k from 1 to n
+              do (mstrick-add-kink f k 0 1))
+        (validate f)
+        ;; f(x) = sum over k in [1, N] of max(0, x - k) on [0, 2N + 1].
+        (dolist (x (list 0 1 2 100 n (* 2 n)))
+          (let ((expected (loop for k from 1 to n sum (max 0 (- x k)))))
+            (unless (= (mstrick-value f x) expected)
+              (error "value(~A) mismatch after repeated kinks" x))))
+        (labels ((depth (node)
+                   (if (null node)
+                       0
+                       (+ 1 (max (depth (%node-left node))
+                                 (depth (%node-right node)))))))
+          (let ((depth (depth (%mstrick-segments f))))
+            ;; About 2000 nodes: the expected treap depth is a few dozen,
+            ;; while an equal-priority chain would reach the node count.
+            (unless (<= depth 120)
+              (error "degenerate treap: depth ~A after ~A kinks" depth n))))))))
+
 (test multi-slope-trick/random-inf-conv
   (let ((*random-state* (sb-ext:seed-random-state 2))
         (*test-dribble* nil))
