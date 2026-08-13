@@ -918,32 +918,30 @@ RIGHT's leftmost, the two WIDTHs are summed."
                 left
                 (set-leftmost-slope-gap right (- right-anchor left-last))))))))
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) insert))
-(defun insert (node slope width min-slope)
-  "Destructively inserts a kink at absolute slope SLOPE with slope-increment
-WIDTH >= 0 (a zero WIDTH is a no-op). If SLOPE matches an existing kink, the
-corresponding WIDTH is incremented. Returns (values new-root new-min-slope).
-
-Single-pass: a random priority is drawn once, then one descent either
-increments a matching kink in place, or, at the highest level where the new
-priority outranks the current node, splits that subtree by SLOPE and places
-the new node there."
+(defun place-new-root (subtree slope width priority pred-slope)
+  "Splits SUBTREE by SLOPE and wraps the halves under a new root carrying the
+new kink. Used only at the priority-transition level of INSERT-INNER."
   (declare (optimize (speed 3))
-           ((or null node) node)
-           (fixnum slope width min-slope))
-  (when (zerop width)
-    (return-from insert (values node min-slope)))
-  (let ((new-priority (random-priority)))
-    (cond ((null node)
-           (values (make-node width 0 new-priority) slope))
-          ((< slope min-slope)
-           ;; New leftmost: prepend a fresh leaf and re-gap the old leftmost.
-           (values (simple-concat (make-node width 0 new-priority)
-                                  (set-leftmost-slope-gap node (- min-slope slope)))
-                   slope))
-          (t
-           (values (insert-inner node slope width new-priority nil min-slope)
-                   min-slope)))))
+           (node subtree)
+           (fixnum slope width pred-slope)
+           ((integer 0 #.most-positive-fixnum) priority))
+  (multiple-value-bind (left-part right-part right-first)
+      (split-by-slope subtree slope pred-slope)
+    (let ((new-root (make-node width
+                               (if left-part
+                                   (the fixnum
+                                        (- slope
+                                           (the+ fixnum pred-slope
+                                                 (%node-slope-gap-sum left-part))))
+                                   (- slope pred-slope))
+                               priority)))
+      (setf (%node-left new-root) left-part
+            (%node-right new-root)
+            (if right-first
+                (set-leftmost-slope-gap right-part (- right-first slope))
+                right-part))
+      (pull-up new-root)
+      (values new-root t))))
 
 (defun insert-inner (node slope width new-priority found pred-slope)
   "Returns (values subtree changed-p). CHANGED-P is true iff an existing kink
@@ -998,57 +996,32 @@ the descent has passed the priority-transition level."
                (pull-up node)
                (values node t))))))
 
-(defun place-new-root (subtree slope width priority pred-slope)
-  "Splits SUBTREE by SLOPE and wraps the halves under a new root carrying the
-new kink. Used only at the priority-transition level of INSERT-INNER."
-  (declare (optimize (speed 3))
-           (node subtree)
-           (fixnum slope width pred-slope)
-           ((integer 0 #.most-positive-fixnum) priority))
-  (multiple-value-bind (left-part right-part right-first)
-      (split-by-slope subtree slope pred-slope)
-    (let ((new-root (make-node width
-                               (if left-part
-                                   (the fixnum
-                                        (- slope
-                                           (the+ fixnum pred-slope
-                                                 (%node-slope-gap-sum left-part))))
-                                   (- slope pred-slope))
-                               priority)))
-      (setf (%node-left new-root) left-part
-            (%node-right new-root)
-            (if right-first
-                (set-leftmost-slope-gap right-part (- right-first slope))
-                right-part))
-      (pull-up new-root)
-      (values new-root t))))
+(declaim (ftype (function * (values (or null node) fixnum &optional)) insert))
+(defun insert (node slope width min-slope)
+  "Destructively inserts a kink at absolute slope SLOPE with slope-increment
+WIDTH >= 0 (a zero WIDTH is a no-op). If SLOPE matches an existing kink, the
+corresponding WIDTH is incremented. Returns (values new-root new-min-slope).
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) %delete))
-(defun %delete (node slope width min-slope)
-  "Destructively deletes WIDTH units of slope-increment from the kink at SLOPE.
-Signals an error if no kink at SLOPE holds at least WIDTH. If the matched
-kink's WIDTH reaches zero the node is spliced out. Returns
-\(values new-root new-min-slope). Single-pass O(log n) descent."
+Single-pass: a random priority is drawn once, then one descent either
+increments a matching kink in place, or, at the highest level where the new
+priority outranks the current node, splits that subtree by SLOPE and places
+the new node there."
   (declare (optimize (speed 3))
            ((or null node) node)
            (fixnum slope width min-slope))
   (when (zerop width)
-    (return-from %delete (values node min-slope)))
-  (unless node
-    (error "%delete: no kink at slope ~D holding width ~D" slope width))
-  (let ((was-at-leftmost (= slope min-slope)))
-    (multiple-value-bind (new-root outcome) (delete-inner node slope width min-slope)
-      (when (eq outcome :not-found)
-        (error "%delete: no kink at slope ~D holding width ~D" slope width))
-      (if (or (not was-at-leftmost) (not (eq outcome :spliced)))
-          (values new-root min-slope)
-          ;; Removed the global leftmost: the new leftmost may carry a
-          ;; non-zero SLOPE-GAP (the gap from the deleted leftmost). Absorb it
-          ;; into min-slope to restore the standalone-tree invariant.
-          (if (null new-root)
-              (values nil 0)
-              (multiple-value-bind (gap normalized) (take-leftmost-slope-gap new-root)
-                (values normalized (the+ fixnum min-slope gap))))))))
+    (return-from insert (values node min-slope)))
+  (let ((new-priority (random-priority)))
+    (cond ((null node)
+           (values (make-node width 0 new-priority) slope))
+          ((< slope min-slope)
+           ;; New leftmost: prepend a fresh leaf and re-gap the old leftmost.
+           (values (simple-concat (make-node width 0 new-priority)
+                                  (set-leftmost-slope-gap node (- min-slope slope)))
+                   slope))
+          (t
+           (values (insert-inner node slope width new-priority nil min-slope)
+                   min-slope)))))
 
 (defun delete-inner (node slope width pred-slope)
   "Returns (values subtree outcome), OUTCOME being :NOT-FOUND, :DECREMENTED, or
@@ -1104,6 +1077,33 @@ kink's WIDTH reaches zero the node is spliced out. Returns
                             (simple-concat
                              l (add-to-leftmost-slope-gap r (%node-slope-gap node)))))
                      :spliced))))))
+
+(declaim (ftype (function * (values (or null node) fixnum &optional)) %delete))
+(defun %delete (node slope width min-slope)
+  "Destructively deletes WIDTH units of slope-increment from the kink at SLOPE.
+Signals an error if no kink at SLOPE holds at least WIDTH. If the matched
+kink's WIDTH reaches zero the node is spliced out. Returns
+\(values new-root new-min-slope). Single-pass O(log n) descent."
+  (declare (optimize (speed 3))
+           ((or null node) node)
+           (fixnum slope width min-slope))
+  (when (zerop width)
+    (return-from %delete (values node min-slope)))
+  (unless node
+    (error "%delete: no kink at slope ~D holding width ~D" slope width))
+  (let ((was-at-leftmost (= slope min-slope)))
+    (multiple-value-bind (new-root outcome) (delete-inner node slope width min-slope)
+      (when (eq outcome :not-found)
+        (error "%delete: no kink at slope ~D holding width ~D" slope width))
+      (if (or (not was-at-leftmost) (not (eq outcome :spliced)))
+          (values new-root min-slope)
+          ;; Removed the global leftmost: the new leftmost may carry a
+          ;; non-zero SLOPE-GAP (the gap from the deleted leftmost). Absorb it
+          ;; into min-slope to restore the standalone-tree invariant.
+          (if (null new-root)
+              (values nil 0)
+              (multiple-value-bind (gap normalized) (take-leftmost-slope-gap new-root)
+                (values normalized (the+ fixnum min-slope gap))))))))
 
 (defun concat-kept (keep-left keep-right original-min-slope keep-right-first rest-anchor)
   "Recombines the kept outer parts of an envelope splice: concatenates
@@ -1765,48 +1765,6 @@ Conjugate view: f*(p) += DELTA*p."
   (incf (%mstrick-dom-min mstrick) delta)
   mstrick)
 
-(defun mstrick-inf-conv (mstrick other)
-  "Infimal convolution f := f box OTHER, i.e. f(x) := inf over x1 + x2 = x of
-\(f(x1) + OTHER(x2)). The effective domains Minkowski-add, the anchor vertices
-add, and the segment multisets union by slope via bulk treap union. OTHER is
-destructively consumed.
-
-Conjugate view: f* += OTHER* (pointwise sum of the conjugates)."
-  (declare (optimize (speed 3)))
-  (incf (%mstrick-dom-min mstrick) (%mstrick-dom-min other))
-  (incf (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
-  (multiple-value-bind (segments min-slope)
-      (union-by-slope (%mstrick-segments mstrick) (%mstrick-segments other)
-                      (%mstrick-min-slope mstrick) (%mstrick-min-slope other))
-    (setf (%mstrick-segments mstrick) segments
-          (%mstrick-min-slope mstrick) (if segments min-slope 0)))
-  mstrick)
-
-(defun mstrick-pointwise-add (mstrick other)
-  "Pointwise sum f := f + OTHER on the intersection of the effective domains;
-signals an error if the domains are disjoint. Both operands are restricted to
-the common window, then the segment trees merge into the common refinement of
-the two partitions via bulk treap union. OTHER is destructively consumed.
-
-Conjugate view: f* := f* box OTHER*."
-  (declare (optimize (speed 3)))
-  (let ((lo (max (%mstrick-dom-min mstrick) (%mstrick-dom-min other)))
-        (hi (min (mstrick-dom-max mstrick) (mstrick-dom-max other))))
-    (unless (<= lo hi)
-      (error "mstrick-pointwise-add: disjoint effective domains"))
-    (mstrick-restrict-dom-min mstrick lo)
-    (mstrick-restrict-dom-max mstrick hi)
-    (mstrick-restrict-dom-min other lo)
-    (mstrick-restrict-dom-max other hi)
-    (incf (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
-    (incf (%mstrick-min-slope mstrick) (%mstrick-min-slope other))
-    (let ((segments (union-by-width (%mstrick-segments mstrick)
-                                    (%mstrick-segments other))))
-      (setf (%mstrick-segments mstrick) segments)
-      (unless segments
-        (setf (%mstrick-min-slope mstrick) 0))))
-  mstrick)
-
 (defun mstrick-restrict-dom-max (mstrick c)
   "Restricts the effective domain to (-inf, C]: f := f + delta_{(-inf, C]}.
 Signals an error if C < DOM-MIN (the domain would become empty).
@@ -1909,6 +1867,48 @@ MSTRICK-RESTRICT-DOM-MIN-ROLLBACK."
             (%mstrick-min-slope mstrick) (%mstrick-min-slope rest)
             (%mstrick-dom-min mstrick) (%mstrick-dom-min rest)
             (%mstrick-anchor-value mstrick) (%mstrick-anchor-value rest))))
+  mstrick)
+
+(defun mstrick-inf-conv (mstrick other)
+  "Infimal convolution f := f box OTHER, i.e. f(x) := inf over x1 + x2 = x of
+\(f(x1) + OTHER(x2)). The effective domains Minkowski-add, the anchor vertices
+add, and the segment multisets union by slope via bulk treap union. OTHER is
+destructively consumed.
+
+Conjugate view: f* += OTHER* (pointwise sum of the conjugates)."
+  (declare (optimize (speed 3)))
+  (incf (%mstrick-dom-min mstrick) (%mstrick-dom-min other))
+  (incf (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
+  (multiple-value-bind (segments min-slope)
+      (union-by-slope (%mstrick-segments mstrick) (%mstrick-segments other)
+                      (%mstrick-min-slope mstrick) (%mstrick-min-slope other))
+    (setf (%mstrick-segments mstrick) segments
+          (%mstrick-min-slope mstrick) (if segments min-slope 0)))
+  mstrick)
+
+(defun mstrick-pointwise-add (mstrick other)
+  "Pointwise sum f := f + OTHER on the intersection of the effective domains;
+signals an error if the domains are disjoint. Both operands are restricted to
+the common window, then the segment trees merge into the common refinement of
+the two partitions via bulk treap union. OTHER is destructively consumed.
+
+Conjugate view: f* := f* box OTHER*."
+  (declare (optimize (speed 3)))
+  (let ((lo (max (%mstrick-dom-min mstrick) (%mstrick-dom-min other)))
+        (hi (min (mstrick-dom-max mstrick) (mstrick-dom-max other))))
+    (unless (<= lo hi)
+      (error "mstrick-pointwise-add: disjoint effective domains"))
+    (mstrick-restrict-dom-min mstrick lo)
+    (mstrick-restrict-dom-max mstrick hi)
+    (mstrick-restrict-dom-min other lo)
+    (mstrick-restrict-dom-max other hi)
+    (incf (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
+    (incf (%mstrick-min-slope mstrick) (%mstrick-min-slope other))
+    (let ((segments (union-by-width (%mstrick-segments mstrick)
+                                    (%mstrick-segments other))))
+      (setf (%mstrick-segments mstrick) segments)
+      (unless segments
+        (setf (%mstrick-min-slope mstrick) 0))))
   mstrick)
 
 ;; The journaled binary operations below produce the same result as their
