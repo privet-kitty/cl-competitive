@@ -33,10 +33,13 @@ axis -- the classic slope-trick function --
 whose breakpoints are the a_i (with slope increment w_i) and whose slopes range
 over [b_0, b_n]. Every operation below documents both readings.
 
-All scalars are fixnums and all comparisons are exact. Most operations are
-expected O(log n); INF-CONV and POINTWISE-ADD are bulk treap unions with
-expected O(m log(n/m + 1)) for operand sizes m <= n; MAX-AFFINE and
-CONVEX-HULL-WITH-POINT are discrete (integer-grid) envelope operations.
+All scalars are integers of type INT and all comparisons are exact. INT is
+FIXNUM by default, and +NEGATIVE-INF+ and +POSITIVE-INF+ are its bounds;
+widening the two constants widens every scalar of f -- abscissa, slope, and
+value -- at once. Most operations are expected O(log n); INF-CONV and
+POINTWISE-ADD are bulk treap unions with expected O(m log(n/m + 1)) for operand
+sizes m <= n; MAX-AFFINE and CONVEX-HULL-WITH-POINT are discrete (integer-grid)
+envelope operations.
 
 The destructive binary operations have journaled -WITH-ROLLBACK variants whose
 tokens restore both operands exactly (same undo cost as the forward call);
@@ -45,6 +48,8 @@ tokens must be consumed strictly LIFO across nested calls."))
 
 (defconstant +negative-inf+ most-negative-fixnum)
 (defconstant +positive-inf+ most-positive-fixnum)
+(deftype int () '(integer #.+negative-inf+ #.+positive-inf+))
+(deftype positive-int () '(integer 1 #.+positive-inf+))
 
 (defmacro the+ (type &rest exprs)
   (assert (cdr exprs))
@@ -57,15 +62,6 @@ tokens must be consumed strictly LIFO across nested calls."))
                       ,(recur `(,tmp ,@(cddr exprs)))))
                  `(the ,type ,(car exprs)))))
     (recur exprs)))
-
-(defmacro the* (type expr)
-  (labels ((recur (expr)
-             (if (listp expr)
-                 `(,(car expr)
-                   ,@(loop for elem in (cdr expr)
-                           collect `(the ,type ,(recur elem))))
-                 expr)))
-    (recur expr)))
 
 ;; Each node is one linear segment of f (equivalently one kink of the
 ;; conjugate f*):
@@ -86,11 +82,11 @@ tokens must be consumed strictly LIFO across nested calls."))
                  (:conc-name %node-)
                  (:copier nil)
                  (:predicate nil))
-  (width 1 :type (integer 1 #.most-positive-fixnum))
-  (slope-gap 0 :type fixnum)
-  (width-sum 1 :type (integer 1 #.most-positive-fixnum))
-  (slope-gap-sum 0 :type fixnum)
-  (bregman 0 :type fixnum)
+  (width 1 :type positive-int)
+  (slope-gap 0 :type int)
+  (width-sum 1 :type positive-int)
+  (slope-gap-sum 0 :type int)
+  (bregman 0 :type int)
   (priority 0 :type (integer 0 #.most-positive-fixnum))
   (left nil :type (or null node))
   (right nil :type (or null node)))
@@ -120,15 +116,15 @@ tokens must be consumed strictly LIFO across nested calls."))
          (lx (node-slope-gap-sum left))
          (rx (node-slope-gap-sum right)))
     (setf (%node-width-sum node)
-          (the+ fixnum ls (%node-width node) (node-width-sum right))
+          (the+ int ls (%node-width node) (node-width-sum right))
           (%node-slope-gap-sum node)
-          (the+ fixnum lx (%node-slope-gap node) rx)
+          (the+ int lx (%node-slope-gap node) rx)
           (%node-bregman node)
-          (the+ fixnum
+          (the+ int
                 (node-bregman left)
                 (* ls (%node-slope-gap node))
                 (node-bregman right)
-                (* (the+ fixnum ls (%node-width node)) rx)))))
+                (* (the+ int ls (%node-width node)) rx)))))
 
 ;; BREGMAN = sum_{i<j} WIDTH_i * SLOPE-GAP_j has no term indexed by
 ;; j = leftmost, so mutating the leftmost SLOPE-GAP leaves every ancestor's
@@ -140,14 +136,14 @@ tokens must be consumed strictly LIFO across nested calls."))
   "Sets the leftmost in-order node's SLOPE-GAP to NEW-SLOPE-GAP."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum new-slope-gap))
+           (int new-slope-gap))
   (labels ((recur (node)
              (let* ((left (%node-left node))
                     (delta (if left
                                (recur left)
-                               (prog1 (the fixnum (- new-slope-gap (%node-slope-gap node)))
+                               (prog1 (the int (- new-slope-gap (%node-slope-gap node)))
                                  (setf (%node-slope-gap node) new-slope-gap)))))
-               (declare (fixnum delta))
+               (declare (int delta))
                (incf (%node-slope-gap-sum node) delta)
                delta)))
     (recur node)
@@ -158,7 +154,7 @@ tokens must be consumed strictly LIFO across nested calls."))
   "Adds EXTRA (possibly negative) to the rightmost in-order node's WIDTH."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum extra))
+           (int extra))
   (labels ((recur (node)
              (let ((right (%node-right node)))
                (if right
@@ -173,7 +169,7 @@ tokens must be consumed strictly LIFO across nested calls."))
   "Adds EXTRA to the leftmost in-order node's SLOPE-GAP."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum extra))
+           (int extra))
   (labels ((recur (node)
              (let ((left (%node-left node)))
                (if left
@@ -183,7 +179,7 @@ tokens must be consumed strictly LIFO across nested calls."))
     (recur node)
     node))
 
-(declaim (ftype (function * (values fixnum node &optional)) take-leftmost-slope-gap))
+(declaim (ftype (function * (values int node &optional)) take-leftmost-slope-gap))
 (defun take-leftmost-slope-gap (node)
   "Takes the leftmost in-order node's SLOPE-GAP, setting it to zero. Returns
 \(values gap node)."
@@ -195,13 +191,13 @@ tokens must be consumed strictly LIFO across nested calls."))
                              (recur left)
                              (prog1 (%node-slope-gap node)
                                (setf (%node-slope-gap node) 0)))))
-               (declare (fixnum gap))
+               (declare (int gap))
                (decf (%node-slope-gap-sum node) gap)
                gap)))
     (let ((gap (recur node)))
       (values gap node))))
 
-(declaim (ftype (function * (values fixnum &optional)) leftmost-width))
+(declaim (ftype (function * (values int &optional)) leftmost-width))
 (defun leftmost-width (node)
   (declare (optimize (speed 3))
            (node node))
@@ -216,28 +212,28 @@ where PRED-SLOPE is the absolute slope of the run's in-order predecessor
 \(MIN-SLOPE for a standalone tree). O(1) via the aggregate identity
 sum w_i*a_i = PRED-SLOPE*WIDTH-SUM + SLOPE-GAP-SUM*WIDTH-SUM - BREGMAN."
   (declare ((or null node) node)
-           (fixnum pred-slope))
+           (int pred-slope))
   (let ((ws (node-width-sum node)))
-    (the fixnum
-         (- (the+ fixnum (* pred-slope ws) (* (node-slope-gap-sum node) ws))
+    (the int
+         (- (the+ int (* pred-slope ws) (* (node-slope-gap-sum node) ws))
             (node-bregman node)))))
 
-(declaim (ftype (function * (values fixnum &optional)) width-sum-lt width-sum-le))
+(declaim (ftype (function * (values int &optional)) width-sum-lt width-sum-le))
 (defun width-sum-lt (node slope min-slope)
   "Returns the cumulative WIDTH over segments with slope strictly less than
 SLOPE."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope min-slope))
+           (int slope min-slope))
   (let ((acc 0)
         (pred-slope min-slope))
-    (declare (fixnum acc pred-slope))
+    (declare (int acc pred-slope))
     (loop while node
           do (let* ((left (%node-left node))
-                    (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+                    (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                       (%node-slope-gap node))))
                (if (< node-slope slope)
-                   (setq acc (the+ fixnum acc (node-width-sum left) (%node-width node))
+                   (setq acc (the+ int acc (node-width-sum left) (%node-width node))
                          pred-slope node-slope
                          node (%node-right node))
                    (setq node left))))
@@ -248,44 +244,44 @@ SLOPE."
 SLOPE."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope min-slope))
+           (int slope min-slope))
   (let ((acc 0)
         (pred-slope min-slope))
-    (declare (fixnum acc pred-slope))
+    (declare (int acc pred-slope))
     (loop while node
           do (let* ((left (%node-left node))
-                    (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+                    (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                       (%node-slope-gap node))))
                (if (< slope node-slope)
                    (setq node left)
-                   (setq acc (the+ fixnum acc (node-width-sum left) (%node-width node))
+                   (setq acc (the+ int acc (node-width-sum left) (%node-width node))
                          pred-slope node-slope
                          node (%node-right node)))))
     acc))
 
-(declaim (ftype (function * (values fixnum &optional))
+(declaim (ftype (function * (values int &optional))
                 slope-at-width-idx slope-before-width-idx))
 (defun slope-at-width-idx (node idx min-slope)
   "Returns the slope of the segment containing cumulative width IDX
 \(0 <= IDX < WIDTH-SUM)."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum idx min-slope))
+           (int idx min-slope))
   (let ((pred-slope min-slope))
-    (declare (fixnum pred-slope))
+    (declare (int pred-slope))
     (loop
       (unless node
         (error "slope-at-width-idx: index out of bounds"))
       (let* ((left (%node-left node))
              (ls (node-width-sum left))
-             (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+             (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                (%node-slope-gap node))))
         (cond ((< idx ls)
                (setq node left))
-              ((< idx (the+ fixnum ls (%node-width node)))
+              ((< idx (the+ int ls (%node-width node)))
                (return node-slope))
               (t
-               (setq idx (the fixnum (- idx ls (%node-width node)))
+               (setq idx (the int (- idx ls (%node-width node)))
                      pred-slope node-slope
                      node (%node-right node))))))))
 
@@ -294,55 +290,55 @@ SLOPE."
 \(0 < IDX <= WIDTH-SUM)."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum idx min-slope))
+           (int idx min-slope))
   (let ((pred-slope min-slope))
-    (declare (fixnum pred-slope))
+    (declare (int pred-slope))
     (loop
       (unless node
         (error "slope-before-width-idx: index out of bounds"))
       (let* ((left (%node-left node))
              (ls (node-width-sum left))
-             (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+             (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                (%node-slope-gap node))))
         (cond ((<= idx ls)
                (setq node left))
-              ((<= idx (the+ fixnum ls (%node-width node)))
+              ((<= idx (the+ int ls (%node-width node)))
                (return node-slope))
               (t
-               (setq idx (the fixnum (- idx ls (%node-width node)))
+               (setq idx (the int (- idx ls (%node-width node)))
                      pred-slope node-slope
                      node (%node-right node))))))))
 
-(declaim (ftype (function * (values fixnum &optional)) rise-up-to-width-idx))
+(declaim (ftype (function * (values int &optional)) rise-up-to-width-idx))
 (defun rise-up-to-width-idx (node idx min-slope)
   "Returns the rise over [0, IDX], measured in cumulative width from the run's
 left end. Requires a non-empty tree and 0 <= IDX <= WIDTH-SUM."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum idx min-slope))
+           (int idx min-slope))
   (let ((acc 0)
         (pred-slope min-slope))
-    (declare (fixnum acc pred-slope))
+    (declare (int acc pred-slope))
     (loop
       (unless node
         (error "rise-up-to-width-idx: index out of bounds"))
       (let* ((left (%node-left node))
              (ls (node-width-sum left))
-             (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+             (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                (%node-slope-gap node))))
         (cond ((< idx ls)
                (setq node left))
-              ((<= idx (the+ fixnum ls (%node-width node)))
-               (return (the+ fixnum acc (link-rise left pred-slope)
-                             (* node-slope (the fixnum (- idx ls))))))
+              ((<= idx (the+ int ls (%node-width node)))
+               (return (the+ int acc (link-rise left pred-slope)
+                             (* node-slope (the int (- idx ls))))))
               (t
-               (setq acc (the+ fixnum acc (link-rise left pred-slope)
+               (setq acc (the+ int acc (link-rise left pred-slope)
                                (* node-slope (%node-width node)))
-                     idx (the fixnum (- idx ls (%node-width node)))
+                     idx (the int (- idx ls (%node-width node)))
                      pred-slope node-slope
                      node (%node-right node))))))))
 
-(declaim (ftype (function * (values fixnum &optional)) conj-value-fold))
+(declaim (ftype (function * (values int &optional)) conj-value-fold))
 (defun conj-value-fold (node p min-slope dom-min anchor-value)
   "Evaluates the conjugate f*(p): the maximum of the Fenchel lines of the graph
 vertices. The trunk DOM-MIN*p - ANCHOR-VALUE is the anchor vertex's line; each
@@ -350,32 +346,32 @@ kink at a slope <= p switches to the next vertex's line, folded from the
 prefix aggregates."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum p min-slope dom-min anchor-value))
-  (let ((trunk (the fixnum (- (the fixnum (* dom-min p)) anchor-value)))
+           (int p min-slope dom-min anchor-value))
+  (let ((trunk (the int (- (the int (* dom-min p)) anchor-value)))
         (acc-w 0)
         (acc-breg 0)
         (last-slope min-slope)
         (pred-slope min-slope)
         (visited nil))
-    (declare (fixnum acc-w acc-breg last-slope pred-slope))
+    (declare (int acc-w acc-breg last-slope pred-slope))
     (loop while node
           do (let* ((left (%node-left node))
-                    (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+                    (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                       (%node-slope-gap node))))
                (if (< p node-slope)
                    (setq node left)
-                   (let* ((new-breg (the+ fixnum acc-breg (node-bregman left)
+                   (let* ((new-breg (the+ int acc-breg (node-bregman left)
                                           (* acc-w (node-slope-gap-sum left))))
-                          (new-w (the+ fixnum acc-w (node-width-sum left))))
-                     (setq acc-breg (the+ fixnum new-breg
+                          (new-w (the+ int acc-w (node-width-sum left))))
+                     (setq acc-breg (the+ int new-breg
                                           (* new-w (%node-slope-gap node)))
-                           acc-w (the+ fixnum new-w (%node-width node))
+                           acc-w (the+ int new-w (%node-width node))
                            last-slope node-slope
                            visited t
                            pred-slope node-slope
                            node (%node-right node))))))
     (if visited
-        (the+ fixnum trunk acc-breg (* acc-w (the fixnum (- p last-slope))))
+        (the+ int trunk acc-breg (* acc-w (the int (- p last-slope))))
         trunk)))
 
 ;; The descent helpers below carry two running quantities over the visited
@@ -383,7 +379,7 @@ prefix aggregates."
 ;; left subtree L is incorporated in one step via
 ;; sum_{i in L} w_i*a_i = PRED-SLOPE*WIDTH-SUM(L) + SLOPE-GAP-SUM(L)*WIDTH-SUM(L) - BREGMAN(L).
 
-(declaim (ftype (function * (values (or null fixnum) fixnum fixnum &optional))
+(declaim (ftype (function * (values (or null int) int int &optional))
                 conj-intercept-leftmost conj-intercept-rightmost))
 (defun conj-intercept-leftmost (node x y dom-min anchor-value min-slope)
   "Returns the leftmost conjugate vertex of f* lying on or below the cut line
@@ -394,40 +390,40 @@ conjugate segment left-adjacent to the vertex; KEY is NIL when no such vertex
 exists."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum x y dom-min anchor-value min-slope))
+           (int x y dom-min anchor-value min-slope))
   (let ((pred-slope min-slope)
         (cum-w 0)
         (cum-sp 0)
         (best-key nil)
         (best-fstar 0)
         (best-adj 0))
-    (declare (fixnum pred-slope cum-w cum-sp best-fstar best-adj))
+    (declare (int pred-slope cum-w cum-sp best-fstar best-adj))
     (loop while node
           do (let* ((left (%node-left node))
                     (ls (node-width-sum left))
                     (lx (node-slope-gap-sum left))
-                    (key (the+ fixnum pred-slope lx (%node-slope-gap node)))
-                    (pre-w (the+ fixnum cum-w ls))
-                    (pre-sp (the+ fixnum cum-sp
-                                  (the fixnum
-                                       (- (the+ fixnum (* pred-slope ls) (* lx ls))
+                    (key (the+ int pred-slope lx (%node-slope-gap node)))
+                    (pre-w (the+ int cum-w ls))
+                    (pre-sp (the+ int cum-sp
+                                  (the int
+                                       (- (the+ int (* pred-slope ls) (* lx ls))
                                           (node-bregman left)))))
-                    (left-conj-slope (the+ fixnum dom-min pre-w)))
+                    (left-conj-slope (the+ int dom-min pre-w)))
                (if (<= x left-conj-slope)
                    ;; The vertex sits in the non-decreasing region; so does
                    ;; everything in-order after it.
                    (setq node left)
-                   (let ((fstar (the fixnum
-                                     (- (the+ fixnum (* dom-min key) (* pre-w key))
-                                        (the+ fixnum anchor-value pre-sp)))))
-                     (if (<= fstar (the fixnum (- (the fixnum (* x key)) y)))
+                   (let ((fstar (the int
+                                     (- (the+ int (* dom-min key) (* pre-w key))
+                                        (the+ int anchor-value pre-sp)))))
+                     (if (<= fstar (the int (- (the int (* x key)) y)))
                          (setq best-key key
                                best-fstar fstar
                                best-adj left-conj-slope
                                node left)
                          (setq pred-slope key
-                               cum-w (the+ fixnum pre-w (%node-width node))
-                               cum-sp (the+ fixnum pre-sp (* (%node-width node) key))
+                               cum-w (the+ int pre-w (%node-width node))
+                               cum-sp (the+ int pre-sp (* (%node-width node) key))
                                node (%node-right node)))))))
     (values best-key best-fstar best-adj)))
 
@@ -437,27 +433,27 @@ below the cut line, searched over the vertices whose right-adjacent conjugate
 segment has slope > X; ADJ-SLOPE is the right-adjacent conjugate slope."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum x y dom-min anchor-value min-slope))
+           (int x y dom-min anchor-value min-slope))
   (let ((pred-slope min-slope)
         (cum-w 0)
         (cum-sp 0)
         (best-key nil)
         (best-fstar 0)
         (best-adj 0))
-    (declare (fixnum pred-slope cum-w cum-sp best-fstar best-adj))
+    (declare (int pred-slope cum-w cum-sp best-fstar best-adj))
     (loop while node
           do (let* ((left (%node-left node))
                     (ls (node-width-sum left))
                     (lx (node-slope-gap-sum left))
-                    (key (the+ fixnum pred-slope lx (%node-slope-gap node)))
-                    (pre-w (the+ fixnum cum-w ls))
-                    (pre-sp (the+ fixnum cum-sp
-                                  (the fixnum
-                                       (- (the+ fixnum (* pred-slope ls) (* lx ls))
+                    (key (the+ int pred-slope lx (%node-slope-gap node)))
+                    (pre-w (the+ int cum-w ls))
+                    (pre-sp (the+ int cum-sp
+                                  (the int
+                                       (- (the+ int (* pred-slope ls) (* lx ls))
                                           (node-bregman left)))))
-                    (full-w (the+ fixnum pre-w (%node-width node)))
-                    (full-sp (the+ fixnum pre-sp (* (%node-width node) key)))
-                    (right-conj-slope (the+ fixnum dom-min full-w)))
+                    (full-w (the+ int pre-w (%node-width node)))
+                    (full-sp (the+ int pre-sp (* (%node-width node) key)))
+                    (right-conj-slope (the+ int dom-min full-w)))
                (if (<= right-conj-slope x)
                    ;; The vertex sits in the non-increasing region; so does
                    ;; everything in-order before it.
@@ -465,10 +461,10 @@ segment has slope > X; ADJ-SLOPE is the right-adjacent conjugate slope."
                          cum-w full-w
                          cum-sp full-sp
                          node (%node-right node))
-                   (let ((fstar (the fixnum
-                                     (- (the+ fixnum (* dom-min key) (* pre-w key))
-                                        (the+ fixnum anchor-value pre-sp)))))
-                     (if (<= fstar (the fixnum (- (the fixnum (* x key)) y)))
+                   (let ((fstar (the int
+                                     (- (the+ int (* dom-min key) (* pre-w key))
+                                        (the+ int anchor-value pre-sp)))))
+                     (if (<= fstar (the int (- (the int (* x key)) y)))
                          (setq best-key key
                                best-fstar fstar
                                best-adj right-conj-slope
@@ -479,7 +475,7 @@ segment has slope > X; ADJ-SLOPE is the right-adjacent conjugate slope."
                          (setq node left))))))
     (values best-key best-fstar best-adj)))
 
-(declaim (ftype (function * (values fixnum &optional))
+(declaim (ftype (function * (values int &optional))
                 intercept-leftmost intercept-rightmost))
 (defun intercept-leftmost (node anchor-value dom-min b threshold min-slope)
   "Returns the slope of the leftmost segment of f crossed by the cut line
@@ -489,31 +485,31 @@ evaluated at p = THRESHOLD, reaches B. Returns +NEGATIVE-INF+ when the cut
 instead clears the left domain end."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum anchor-value dom-min b threshold min-slope))
-  (let ((v-thr (the fixnum (- (the fixnum (* dom-min threshold)) anchor-value))))
+           (int anchor-value dom-min b threshold min-slope))
+  (let ((v-thr (the int (- (the int (* dom-min threshold)) anchor-value))))
     (when (<= b v-thr)
       (return-from intercept-leftmost +negative-inf+))
     (let ((pred-slope min-slope)
           (cum-w 0)
           (cum-sp 0)
           (best +negative-inf+))
-      (declare (fixnum pred-slope cum-w cum-sp best))
+      (declare (int pred-slope cum-w cum-sp best))
       (loop while node
             do (let* ((left (%node-left node))
                       (ls (node-width-sum left))
                       (lx (node-slope-gap-sum left))
-                      (node-slope (the+ fixnum pred-slope lx (%node-slope-gap node))))
+                      (node-slope (the+ int pred-slope lx (%node-slope-gap node))))
                  (if (<= threshold node-slope)
                      (setq node left)
-                     (let* ((new-cum-w (the+ fixnum cum-w ls (%node-width node)))
+                     (let* ((new-cum-w (the+ int cum-w ls (%node-width node)))
                             (new-cum-sp
-                              (the+ fixnum cum-sp
-                                    (the fixnum
-                                         (- (the+ fixnum (* pred-slope ls) (* lx ls))
+                              (the+ int cum-sp
+                                    (the int
+                                         (- (the+ int (* pred-slope ls) (* lx ls))
                                             (node-bregman left)))
                                     (* (%node-width node) node-slope)))
-                            (extrap (the fixnum
-                                         (- (the+ fixnum v-thr (* new-cum-w threshold))
+                            (extrap (the int
+                                         (- (the+ int v-thr (* new-cum-w threshold))
                                             new-cum-sp))))
                        (if (<= b extrap)
                            (setq best node-slope
@@ -529,11 +525,11 @@ instead clears the left domain end."
 or +POSITIVE-INF+ when the cut clears the right domain end."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum anchor-value dom-min b threshold min-slope))
-  (let* ((v-thr (the fixnum (- (the fixnum (* dom-min threshold)) anchor-value)))
+           (int anchor-value dom-min b threshold min-slope))
+  (let* ((v-thr (the int (- (the int (* dom-min threshold)) anchor-value)))
          (total-w (node-width-sum node))
          (total-sp (link-rise node min-slope))
-         (end-value (the fixnum (- (the+ fixnum v-thr (* total-w threshold))
+         (end-value (the int (- (the+ int v-thr (* total-w threshold))
                                    total-sp))))
     (when (<= b end-value)
       (return-from intercept-rightmost +positive-inf+))
@@ -541,39 +537,39 @@ or +POSITIVE-INF+ when the cut clears the right domain end."
           (cum-w 0)
           (cum-sp 0)
           (best +positive-inf+))
-      (declare (fixnum pred-slope cum-w cum-sp best))
+      (declare (int pred-slope cum-w cum-sp best))
       (loop while node
             do (let* ((left (%node-left node))
                       (ls (node-width-sum left))
                       (lx (node-slope-gap-sum left))
-                      (node-slope (the+ fixnum pred-slope lx (%node-slope-gap node)))
-                      (pre-cum-w (the+ fixnum cum-w ls))
+                      (node-slope (the+ int pred-slope lx (%node-slope-gap node)))
+                      (pre-cum-w (the+ int cum-w ls))
                       (pre-cum-sp
-                        (the+ fixnum cum-sp
-                              (the fixnum
-                                   (- (the+ fixnum (* pred-slope ls) (* lx ls))
+                        (the+ int cum-sp
+                              (the int
+                                   (- (the+ int (* pred-slope ls) (* lx ls))
                                       (node-bregman left))))))
                  (if (< node-slope threshold)
                      (setq pred-slope node-slope
-                           cum-w (the+ fixnum pre-cum-w (%node-width node))
-                           cum-sp (the+ fixnum pre-cum-sp (* (%node-width node) node-slope))
+                           cum-w (the+ int pre-cum-w (%node-width node))
+                           cum-sp (the+ int pre-cum-sp (* (%node-width node) node-slope))
                            node (%node-right node))
                      ;; Extrapolate the affine piece just to the left of NODE
                      ;; out to THRESHOLD.
-                     (let ((val (the fixnum
-                                     (- (the+ fixnum v-thr (* pre-cum-w threshold))
+                     (let ((val (the int
+                                     (- (the+ int v-thr (* pre-cum-w threshold))
                                         pre-cum-sp))))
                        (if (<= b val)
                            (setq best node-slope
                                  pred-slope node-slope
-                                 cum-w (the+ fixnum pre-cum-w (%node-width node))
-                                 cum-sp (the+ fixnum pre-cum-sp
+                                 cum-w (the+ int pre-cum-w (%node-width node))
+                                 cum-sp (the+ int pre-cum-sp
                                               (* (%node-width node) node-slope))
                                  node (%node-right node))
                            (setq node left))))))
       best)))
 
-(declaim (ftype (function * (values (or null fixnum) &optional))
+(declaim (ftype (function * (values (or null int) &optional))
                 reanchor-after-left-split))
 (defun reanchor-after-left-split (node lr-first node-slope)
   "Re-anchors a node that goes to the right part of a split after the left
@@ -581,14 +577,14 @@ recursion's right part was attached as its new left subtree, and pulls the
 aggregates up. Returns the right part's first absolute slope."
   (declare (optimize (speed 3))
            (node node)
-           ((or null fixnum) lr-first)
-           (fixnum node-slope))
+           ((or null int) lr-first)
+           (int node-slope))
   (let ((new-left (%node-left node)))
     (prog1 (cond (new-left
                   (setf (%node-slope-gap node)
-                        (the fixnum
+                        (the int
                              (- node-slope
-                                (the+ fixnum lr-first (%node-slope-gap-sum new-left)))))
+                                (the+ int lr-first (%node-slope-gap-sum new-left)))))
                   lr-first)
                  (t
                   (setf (%node-slope-gap node) 0)
@@ -615,7 +611,7 @@ rightmost."
          (pull-up right)
          right)))
 
-(declaim (ftype (function * (values (or null node) (or null node) (or null fixnum)
+(declaim (ftype (function * (values (or null node) (or null node) (or null int)
                                     &optional))
                 split-by-slope split-by-width-idx))
 (defun split-by-slope (node slope min-slope)
@@ -625,11 +621,11 @@ SLOPE-GAP = 0). Returns (values left right right-first-slope), where
 RIGHT-FIRST-SLOPE is the first absolute slope of the right part or NIL."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope min-slope))
+           (int slope min-slope))
   (if (null node)
       (values nil nil nil)
       (let* ((left (%node-left node))
-             (node-slope (the+ fixnum min-slope (node-slope-gap-sum left)
+             (node-slope (the+ int min-slope (node-slope-gap-sum left)
                                (%node-slope-gap node))))
         (if (< node-slope slope)
             (multiple-value-bind (rl rr rr-first)
@@ -650,14 +646,14 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
 \(values left right right-first-slope)."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum idx min-slope))
+           (int idx min-slope))
   (if (null node)
       (values nil nil nil)
       (let* ((left (%node-left node))
              (ls (node-width-sum left))
-             (node-slope (the+ fixnum min-slope (node-slope-gap-sum left)
+             (node-slope (the+ int min-slope (node-slope-gap-sum left)
                                (%node-slope-gap node)))
-             (end-b (the+ fixnum ls (%node-width node))))
+             (end-b (the+ int ls (%node-width node))))
         (cond ((<= end-b idx)
                (multiple-value-bind (rl rr rr-first)
                    (split-by-width-idx (%node-right node) (- idx end-b) node-slope)
@@ -670,9 +666,9 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
                  (setf (%node-left node) nil
                        (%node-slope-gap node)
                        (if lr
-                           (the fixnum
+                           (the int
                                 (- node-slope
-                                   (the+ fixnum lr-first (%node-slope-gap-sum lr))))
+                                   (the+ int lr-first (%node-slope-gap-sum lr))))
                            0))
                  (pull-up node)
                  ;; Priority-aware reattachment: LR may contain the
@@ -696,16 +692,16 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
                  (pull-up node)
                  (values node (simple-concat rleaf right-child) node-slope)))))))
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) remove-leftmost))
+(declaim (ftype (function * (values (or null node) int &optional)) remove-leftmost))
 (defun remove-leftmost (node pred-slope)
   "Destructively removes the leftmost in-order node. Returns
 \(values new-root new-min-slope); NEW-MIN-SLOPE is the slope of the new
 leftmost (or PRED-SLOPE if the result is empty)."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum pred-slope))
+           (int pred-slope))
   (let* ((left (%node-left node))
-         (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+         (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                            (%node-slope-gap node))))
     (if left
         (multiple-value-bind (new-left new-anchor) (remove-leftmost left pred-slope)
@@ -714,9 +710,9 @@ leftmost (or PRED-SLOPE if the result is empty)."
                  ;; left subtree.
                  (setf (%node-left node) new-left
                        (%node-slope-gap node)
-                       (the fixnum
+                       (the int
                             (- node-slope
-                               (the+ fixnum new-anchor (%node-slope-gap-sum new-left)))))
+                               (the+ int new-anchor (%node-slope-gap-sum new-left)))))
                  (pull-up node)
                  (values node new-anchor))
                 (t
@@ -729,10 +725,10 @@ leftmost (or PRED-SLOPE if the result is empty)."
         (let ((right (%node-right node)))
           (if right
               (multiple-value-bind (gap new-root) (take-leftmost-slope-gap right)
-                (values new-root (the+ fixnum pred-slope gap)))
+                (values new-root (the+ int pred-slope gap)))
               (values nil pred-slope))))))
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) union-by-slope))
+(declaim (ftype (function * (values (or null node) int &optional)) union-by-slope))
 (defun union-by-slope (a b a-min-slope b-min-slope)
   "Destructively unions two standalone trees keyed by absolute slope: the
 result holds both trees' kinks, and WIDTHs add when the same slope occurs in
@@ -741,7 +737,7 @@ both trees. Consumes both inputs and reuses their node priorities. Returns
 non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
   (declare (optimize (speed 3))
            ((or null node) a b)
-           (fixnum a-min-slope b-min-slope))
+           (int a-min-slope b-min-slope))
   (cond ((null a) (values b b-min-slope))
         ((null b) (values a a-min-slope))
         (t
@@ -749,17 +745,17 @@ non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
            (if (>= (%node-priority a) (%node-priority b))
                (setq r a other b r-anchor a-min-slope o-anchor b-min-slope)
                (setq r b other a r-anchor b-min-slope o-anchor a-min-slope))
-           (locally (declare (node r other) (fixnum r-anchor o-anchor))
-             (let ((r-slope (the+ fixnum r-anchor
+           (locally (declare (node r other) (int r-anchor o-anchor))
+             (let ((r-slope (the+ int r-anchor
                                   (node-slope-gap-sum (%node-left r))
                                   (%node-slope-gap r))))
                (multiple-value-bind (o-less o-geq o-geq-first)
                    (split-by-slope other r-slope o-anchor)
                  (let ((o-geq-anchor r-slope))
-                   (declare (fixnum o-geq-anchor))
+                   (declare (int o-geq-anchor))
                    ;; Fuse the >= half's head into the root on an equal slope.
                    (when o-geq-first
-                     (if (= (the fixnum o-geq-first) r-slope)
+                     (if (= (the int o-geq-first) r-slope)
                          (progn
                            (incf (%node-width r) (leftmost-width o-geq))
                            (multiple-value-bind (rest rest-anchor)
@@ -771,12 +767,12 @@ non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
                    (let ((r-left (%node-left r))
                          (r-right nil)
                          (r-right-anchor r-slope))
-                     (declare (fixnum r-right-anchor))
+                     (declare (int r-right-anchor))
                      (let ((rr (%node-right r)))
                        (when rr
                          (multiple-value-bind (gap rr2) (take-leftmost-slope-gap rr)
                            (setq r-right rr2
-                                 r-right-anchor (the+ fixnum r-slope gap)))))
+                                 r-right-anchor (the+ int r-slope gap)))))
                      (multiple-value-bind (left left-anchor)
                          (union-by-slope r-left o-less r-anchor o-anchor)
                        (multiple-value-bind (right right-anchor)
@@ -785,9 +781,9 @@ non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
                          ;; against the merged left half's rightmost slope.
                          (setf (%node-slope-gap r)
                                (if left
-                                   (the fixnum
+                                   (the int
                                         (- r-slope
-                                           (the+ fixnum left-anchor
+                                           (the+ int left-anchor
                                                  (%node-slope-gap-sum left))))
                                    0)
                                (%node-left r) left
@@ -809,12 +805,12 @@ its head keeps the jump at its left edge (zero when the cut falls strictly
 inside a node's width)."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum idx))
+           (int idx))
   (if (null node)
       (values nil nil)
       (let* ((left (%node-left node))
              (ls (node-width-sum left))
-             (end-b (the+ fixnum ls (%node-width node))))
+             (end-b (the+ int ls (%node-width node))))
         (cond ((<= end-b idx)
                (let ((r (%node-right node)))
                  (setf (%node-right node) nil)
@@ -897,11 +893,11 @@ every slope in RIGHT (not validated). If LEFT's rightmost slope coincides with
 RIGHT's leftmost, the two WIDTHs are summed."
   (declare (optimize (speed 3))
            ((or null node) left right)
-           (fixnum left-anchor right-anchor))
+           (int left-anchor right-anchor))
   (cond ((null left) right)
         ((null right) left)
         (t
-         (let ((left-last (the+ fixnum left-anchor (%node-slope-gap-sum left))))
+         (let ((left-last (the+ int left-anchor (%node-slope-gap-sum left))))
            (if (= left-last right-anchor)
                ;; Boundary slopes equal: merge into the rightmost of LEFT.
                (let ((right-lm-width (leftmost-width right)))
@@ -923,15 +919,15 @@ RIGHT's leftmost, the two WIDTHs are summed."
 new kink. Used only at the priority-transition level of INSERT-INNER."
   (declare (optimize (speed 3))
            (node subtree)
-           (fixnum slope width pred-slope)
+           (int slope width pred-slope)
            ((integer 0 #.most-positive-fixnum) priority))
   (multiple-value-bind (left-part right-part right-first)
       (split-by-slope subtree slope pred-slope)
     (let ((new-root (make-node width
                                (if left-part
-                                   (the fixnum
+                                   (the int
                                         (- slope
-                                           (the+ fixnum pred-slope
+                                           (the+ int pred-slope
                                                  (%node-slope-gap-sum left-part))))
                                    (- slope pred-slope))
                                priority)))
@@ -950,7 +946,7 @@ level or below; the caller then re-anchors and pulls up. FOUND is true once
 the descent has passed the priority-transition level."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope width pred-slope)
+           (int slope width pred-slope)
            ((integer 0 #.most-positive-fixnum) new-priority))
   (if (null node)
       (if found
@@ -960,7 +956,7 @@ the descent has passed the priority-transition level."
           (values (make-node width (- slope pred-slope) new-priority) t))
       (let* ((left (%node-left node))
              (lx (node-slope-gap-sum left))
-             (node-slope (the+ fixnum pred-slope lx (%node-slope-gap node)))
+             (node-slope (the+ int pred-slope lx (%node-slope-gap node)))
              (new-found (or found (> new-priority (%node-priority node))))
              (transition-here (and (not found) new-found)))
         (cond ((< slope node-slope)
@@ -972,8 +968,8 @@ the descent has passed the priority-transition level."
                         ;; change in the subtree's SLOPE-GAP-SUM.
                         (setf (%node-left node) new-left
                               (%node-slope-gap node)
-                              (the fixnum
-                                   (- (the+ fixnum (%node-slope-gap node) lx)
+                              (the int
+                                   (- (the+ int (%node-slope-gap node) lx)
                                       (node-slope-gap-sum new-left))))
                         (pull-up node)
                         (values node t))
@@ -996,7 +992,7 @@ the descent has passed the priority-transition level."
                (pull-up node)
                (values node t))))))
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) insert))
+(declaim (ftype (function * (values (or null node) int &optional)) insert))
 (defun insert (node slope width min-slope)
   "Destructively inserts a kink at absolute slope SLOPE with slope-increment
 WIDTH >= 0 (a zero WIDTH is a no-op). If SLOPE matches an existing kink, the
@@ -1008,7 +1004,7 @@ priority outranks the current node, splits that subtree by SLOPE and places
 the new node there."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope width min-slope))
+           (int slope width min-slope))
   (when (zerop width)
     (return-from insert (values node min-slope)))
   (let ((new-priority (random-priority)))
@@ -1028,10 +1024,10 @@ the new node there."
 :SPLICED. On :NOT-FOUND the subtree is returned structurally unchanged."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum slope width pred-slope))
+           (int slope width pred-slope))
   (let* ((left (%node-left node))
          (lx (node-slope-gap-sum left))
-         (node-slope (the+ fixnum pred-slope lx (%node-slope-gap node))))
+         (node-slope (the+ int pred-slope lx (%node-slope-gap node))))
     (cond ((< slope node-slope)
            (if (null left)
                (values node :not-found)
@@ -1043,8 +1039,8 @@ the new node there."
                    ;; moved; re-anchor NODE's SLOPE-GAP from the change.
                    (when (eq outcome :spliced)
                      (setf (%node-slope-gap node)
-                           (the fixnum
-                                (- (the+ fixnum (%node-slope-gap node) lx)
+                           (the int
+                                (- (the+ int (%node-slope-gap node) lx)
                                    (node-slope-gap-sum new-left)))))
                    (pull-up node))
                  (values node outcome))))
@@ -1078,7 +1074,7 @@ the new node there."
                              l (add-to-leftmost-slope-gap r (%node-slope-gap node)))))
                      :spliced))))))
 
-(declaim (ftype (function * (values (or null node) fixnum &optional)) %delete))
+(declaim (ftype (function * (values (or null node) int &optional)) %delete))
 (defun %delete (node slope width min-slope)
   "Destructively deletes WIDTH units of slope-increment from the kink at SLOPE.
 Signals an error if no kink at SLOPE holds at least WIDTH. If the matched
@@ -1086,7 +1082,7 @@ kink's WIDTH reaches zero the node is spliced out. Returns
 \(values new-root new-min-slope). Single-pass O(log n) descent."
   (declare (optimize (speed 3))
            ((or null node) node)
-           (fixnum slope width min-slope))
+           (int slope width min-slope))
   (when (zerop width)
     (return-from %delete (values node min-slope)))
   (unless node
@@ -1103,7 +1099,7 @@ kink's WIDTH reaches zero the node is spliced out. Returns
           (if (null new-root)
               (values nil 0)
               (multiple-value-bind (gap normalized) (take-leftmost-slope-gap new-root)
-                (values normalized (the+ fixnum min-slope gap))))))))
+                (values normalized (the+ int min-slope gap))))))))
 
 (defun concat-kept (keep-left keep-right original-min-slope keep-right-first rest-anchor)
   "Recombines the kept outer parts of an envelope splice: concatenates
@@ -1113,8 +1109,8 @@ only it survives, 0 when both parts are empty. Returns
 \(values segments min-slope)."
   (declare (optimize (speed 3))
            ((or null node) keep-left keep-right)
-           (fixnum original-min-slope rest-anchor)
-           ((or null fixnum) keep-right-first))
+           (int original-min-slope rest-anchor)
+           ((or null int) keep-right-first))
   (let* ((keep-left-p (if keep-left t nil))
          (keep-right-p (if keep-right t nil))
          (keep-right-anchor (or keep-right-first rest-anchor)))
@@ -1132,30 +1128,30 @@ only it survives, 0 when both parts are empty. Returns
 ;; PULL-UP on the unwind, which reproduces them exactly since all arithmetic
 ;; is exact. Records are either a bare keyword or a cons headed by one.
 
-(declaim (ftype (function * (values (or null node) fixnum list &optional))
+(declaim (ftype (function * (values (or null node) int list &optional))
                 remove-leftmost-journaled))
 (defun remove-leftmost-journaled (node pred-slope)
   "REMOVE-LEFTMOST with an undo journal: additionally returns the record list
 consumed by UNDO-REMOVE-LEFTMOST."
   (declare (optimize (speed 3))
            (node node)
-           (fixnum pred-slope))
+           (int pred-slope))
   (let ((recs nil))
     (labels ((recur (node pred-slope)
-               (declare (node node) (fixnum pred-slope))
+               (declare (node node) (int pred-slope))
                (let* ((left (%node-left node))
-                      (node-slope (the+ fixnum pred-slope (node-slope-gap-sum left)
+                      (node-slope (the+ int pred-slope (node-slope-gap-sum left)
                                         (%node-slope-gap node))))
                  (if left
                      (let ((old-gap (%node-slope-gap node)))
                        (multiple-value-bind (new-left new-anchor) (recur left pred-slope)
-                         (declare (fixnum new-anchor))
+                         (declare (int new-anchor))
                          (cond (new-left
                                 (setf (%node-left node) new-left
                                       (%node-slope-gap node)
-                                      (the fixnum
+                                      (the int
                                            (- node-slope
-                                              (the+ fixnum new-anchor
+                                              (the+ int new-anchor
                                                     (%node-slope-gap-sum new-left)))))
                                 (pull-up node)
                                 (push (cons :spine old-gap) recs)
@@ -1172,7 +1168,7 @@ consumed by UNDO-REMOVE-LEFTMOST."
                            (multiple-value-bind (gap new-root)
                                (take-leftmost-slope-gap right)
                              (push (list* :removed node gap) recs)
-                             (values new-root (the+ fixnum pred-slope gap)))
+                             (values new-root (the+ int pred-slope gap)))
                            (progn
                              (push (list* :removed node nil) recs)
                              (values nil pred-slope))))))))
@@ -1208,23 +1204,23 @@ restores every touched field. CUR must be the tree the removal returned."
                     node))))))
     (recur cur)))
 
-(declaim (ftype (function * (values (or null node) fixnum list &optional))
+(declaim (ftype (function * (values (or null node) int list &optional))
                 union-by-slope-journaled))
 (defun union-by-slope-journaled (a b a-min-slope b-min-slope)
   "UNION-BY-SLOPE with an undo journal: additionally returns the record list
 consumed by UNDO-UNION-BY-SLOPE."
   (declare (optimize (speed 3))
            ((or null node) a b)
-           (fixnum a-min-slope b-min-slope))
+           (int a-min-slope b-min-slope))
   (let ((recs nil))
     (labels
         ((split-j (node slope min-slope)
            (declare ((or null node) node)
-                    (fixnum slope min-slope))
+                    (int slope min-slope))
            (if (null node)
                (progn (push :s-empty recs) (values nil nil nil))
                (let* ((left (%node-left node))
-                      (node-slope (the+ fixnum min-slope (node-slope-gap-sum left)
+                      (node-slope (the+ int min-slope (node-slope-gap-sum left)
                                         (%node-slope-gap node))))
                  (if (< node-slope slope)
                      (multiple-value-bind (rl rr rr-first)
@@ -1242,7 +1238,7 @@ consumed by UNDO-UNION-BY-SLOPE."
                            (values ll node rf))))))))
          (union-j (a b a-anchor b-anchor)
            (declare ((or null node) a b)
-                    (fixnum a-anchor b-anchor))
+                    (int a-anchor b-anchor))
            (cond ((null a) (push :u-trivial-a recs) (values b b-anchor))
                  ((null b) (push :u-trivial-b recs) (values a a-anchor))
                  (t
@@ -1252,10 +1248,10 @@ consumed by UNDO-UNION-BY-SLOPE."
                               root-from-a t)
                         (setq r b other a r-anchor b-anchor o-anchor a-anchor
                               root-from-a nil))
-                    (locally (declare (node r other) (fixnum r-anchor o-anchor))
+                    (locally (declare (node r other) (int r-anchor o-anchor))
                       (let ((old-width (%node-width r))
                             (old-gap (%node-slope-gap r))
-                            (r-slope (the+ fixnum r-anchor
+                            (r-slope (the+ int r-anchor
                                            (node-slope-gap-sum (%node-left r))
                                            (%node-slope-gap r)))
                             (collision nil)
@@ -1263,9 +1259,9 @@ consumed by UNDO-UNION-BY-SLOPE."
                         (multiple-value-bind (o-less o-geq o-geq-first)
                             (split-j other r-slope o-anchor)
                           (let ((o-geq-anchor r-slope))
-                            (declare (fixnum o-geq-anchor))
+                            (declare (int o-geq-anchor))
                             (when o-geq-first
-                              (if (= (the fixnum o-geq-first) r-slope)
+                              (if (= (the int o-geq-first) r-slope)
                                   (progn
                                     (incf (%node-width r) (leftmost-width o-geq))
                                     (multiple-value-bind (rest rest-anchor rl-recs)
@@ -1277,13 +1273,13 @@ consumed by UNDO-UNION-BY-SLOPE."
                             (let ((r-left (%node-left r))
                                   (r-right nil)
                                   (r-right-anchor r-slope))
-                              (declare (fixnum r-right-anchor))
+                              (declare (int r-right-anchor))
                               (let ((rr (%node-right r)))
                                 (when rr
                                   (multiple-value-bind (gap rr2)
                                       (take-leftmost-slope-gap rr)
                                     (setq r-right rr2
-                                          r-right-anchor (the+ fixnum r-slope gap)
+                                          r-right-anchor (the+ int r-slope gap)
                                           detach-gap gap))))
                               (multiple-value-bind (left left-anchor)
                                   (union-j r-left o-less r-anchor o-anchor)
@@ -1291,9 +1287,9 @@ consumed by UNDO-UNION-BY-SLOPE."
                                     (union-j r-right o-geq r-right-anchor o-geq-anchor)
                                   (setf (%node-slope-gap r)
                                         (if left
-                                            (the fixnum
+                                            (the int
                                                  (- r-slope
-                                                    (the+ fixnum left-anchor
+                                                    (the+ int left-anchor
                                                           (%node-slope-gap-sum left))))
                                             0)
                                         (%node-left r) left
@@ -1399,12 +1395,12 @@ consumed by UNDO-UNION-BY-WIDTH."
                   right)))
          (wsplit-j (node idx)
            (declare ((or null node) node)
-                    (fixnum idx))
+                    (int idx))
            (if (null node)
                (progn (push :ws-empty recs) (values nil nil))
                (let* ((left (%node-left node))
                       (ls (node-width-sum left))
-                      (end-b (the+ fixnum ls (%node-width node))))
+                      (end-b (the+ int ls (%node-width node))))
                  (cond ((<= end-b idx)
                         (let ((r (%node-right node)))
                           (setf (%node-right node) nil)
@@ -1574,14 +1570,14 @@ ANCHOR-VALUE at DOM-MIN and +inf elsewhere. Conjugate view: the affine
 function f*(p) = DOM-MIN*p - ANCHOR-VALUE."
   ;; Left end of the effective domain. (Conjugate view: the slope of the
   ;; leftmost piece of f*.)
-  (dom-min 0 :type fixnum)
+  (dom-min 0 :type int)
   ;; f(DOM-MIN). (Conjugate view: f*(p) = DOM-MIN*p - ANCHOR-VALUE left of
   ;; every breakpoint.)
-  (anchor-value 0 :type fixnum)
+  (anchor-value 0 :type int)
   ;; Slope of the leftmost segment when SEGMENTS is non-empty, 0 otherwise.
   ;; Position bookkeeping for the treap's relative SLOPE-GAP encoding; not
   ;; part of the height decoding.
-  (min-slope 0 :type fixnum)
+  (min-slope 0 :type int)
   (segments nil :type (or null node)))
 
 (declaim (inline mstrick-dom-min))
@@ -1594,14 +1590,14 @@ slope of the leftmost piece of f*."
 (defun mstrick-dom-max (mstrick)
   "Returns the right end of the effective domain of f. Conjugate view: the
 slope of the rightmost piece of f*."
-  (the fixnum (+ (%mstrick-dom-min mstrick)
+  (the int (+ (%mstrick-dom-min mstrick)
                  (node-width-sum (%mstrick-segments mstrick)))))
 
-(declaim (ftype (function * (values fixnum &optional)) mstrick-value))
+(declaim (ftype (function * (values int &optional)) mstrick-value))
 (defun mstrick-value (mstrick x)
   "Returns f(X); +POSITIVE-INF+ outside dom f = [DOM-MIN, DOM-MAX]."
   (declare (optimize (speed 3))
-           (fixnum x))
+           (int x))
   (let ((dom-min (%mstrick-dom-min mstrick))
         (segments (%mstrick-segments mstrick)))
     (cond ((or (< x dom-min) (< (mstrick-dom-max mstrick) x))
@@ -1609,28 +1605,28 @@ slope of the rightmost piece of f*."
           ((null segments)
            (%mstrick-anchor-value mstrick))
           (t
-           (the+ fixnum
+           (the+ int
                  (%mstrick-anchor-value mstrick)
                  (rise-up-to-width-idx segments (- x dom-min)
                                        (%mstrick-min-slope mstrick)))))))
 
-(declaim (ftype (function * (values fixnum &optional)) mstrick-conj-value))
+(declaim (ftype (function * (values int &optional)) mstrick-conj-value))
 (defun mstrick-conj-value (mstrick p)
   "Returns the conjugate f*(P) = max_x (P*x - f(x)) -- the classic slope-trick
 function is this conjugate."
   (declare (optimize (speed 3))
-           (fixnum p))
+           (int p))
   (conj-value-fold (%mstrick-segments mstrick) p (%mstrick-min-slope mstrick)
                    (%mstrick-dom-min mstrick) (%mstrick-anchor-value mstrick)))
 
-(declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-subdiff))
+(declaim (ftype (function * (values int int &optional)) mstrick-subdiff))
 (defun mstrick-subdiff (mstrick x)
   "Returns the subdifferential of f at X as (values left-slope right-slope).
 Empty outside the effective domain: (+NEGATIVE-INF+, +NEGATIVE-INF+) when X <
 DOM-MIN, (+POSITIVE-INF+, +POSITIVE-INF+) when X > DOM-MAX. At the left domain
 end the left slope is +NEGATIVE-INF+; mirror at the right."
   (declare (optimize (speed 3))
-           (fixnum x))
+           (int x))
   (let ((dom-min (%mstrick-dom-min mstrick))
         (dom-max (mstrick-dom-max mstrick))
         (segments (%mstrick-segments mstrick))
@@ -1646,19 +1642,19 @@ end the left slope is +NEGATIVE-INF+; mirror at the right."
                          +positive-inf+
                          (slope-at-width-idx segments idx min-slope))))))))
 
-(declaim (ftype (function * (values fixnum fixnum &optional)) mstrick-arg-subdiff))
+(declaim (ftype (function * (values int int &optional)) mstrick-arg-subdiff))
 (defun mstrick-arg-subdiff (mstrick p)
   "Returns argmin_s (f(s) - P*s) as the closed interval (values left right).
 Conjugate view: the subdifferential of f* at P."
   (declare (optimize (speed 3))
-           (fixnum p))
+           (int p))
   (let ((dom-min (%mstrick-dom-min mstrick))
         (segments (%mstrick-segments mstrick))
         (min-slope (%mstrick-min-slope mstrick)))
     (if (null segments)
         (values dom-min dom-min)
-        (values (the+ fixnum dom-min (width-sum-lt segments p min-slope))
-                (the+ fixnum dom-min (width-sum-le segments p min-slope))))))
+        (values (the+ int dom-min (width-sum-lt segments p min-slope))
+                (the+ int dom-min (width-sum-le segments p min-slope))))))
 
 (defun mstrick-insert-segment (mstrick slope width)
   "Infimal-convolves f with a single linear segment of slope SLOPE and signed
@@ -1668,14 +1664,14 @@ negative WIDTH flips the segment horizontally and grows the domain leftward.
 Conjugate view: f*(p) += max(0, WIDTH*(p - SLOPE)) -- the classic slope-trick
 addition of a ReLU kink of slope WIDTH at p = SLOPE."
   (declare (optimize (speed 3))
-           (fixnum slope width))
+           (int slope width))
   (unless (zerop width)
     ;; At the left end of the new domain only one decomposition of the
     ;; infimal convolution is feasible: the inserted segment contributes
     ;; nothing there for WIDTH > 0 and its full rise for WIDTH < 0.
     (when (< width 0)
       (incf (%mstrick-dom-min mstrick) width)
-      (incf (%mstrick-anchor-value mstrick) (the fixnum (* slope width))))
+      (incf (%mstrick-anchor-value mstrick) (the int (* slope width))))
     (multiple-value-bind (new-segments new-min-slope)
         (insert (%mstrick-segments mstrick) slope (abs width)
                 (%mstrick-min-slope mstrick))
@@ -1690,11 +1686,11 @@ undefined if the removal breaks convexity.
 
 Conjugate view: f*(p) -= max(0, WIDTH*(p - SLOPE))."
   (declare (optimize (speed 3))
-           (fixnum slope width))
+           (int slope width))
   (unless (zerop width)
     (when (< width 0)
       (decf (%mstrick-dom-min mstrick) width)
-      (decf (%mstrick-anchor-value mstrick) (the fixnum (* slope width))))
+      (decf (%mstrick-anchor-value mstrick) (the int (* slope width))))
     (multiple-value-bind (new-segments new-min-slope)
         (%delete (%mstrick-segments mstrick) slope (abs width)
                  (%mstrick-min-slope mstrick))
@@ -1715,38 +1711,38 @@ RIGHT-SLOPE] (+inf outside) -- the tilted window minimum. With equal slopes
 this adds a linear function to f; with LEFT-SLOPE = 0 or RIGHT-SLOPE = 0 it is
 the classic sliding-window minimum of f*."
   (declare (optimize (speed 3))
-           (fixnum kink left-slope right-slope))
+           (int kink left-slope right-slope))
   (let ((dom-min (%mstrick-dom-min mstrick))
         (segments (%mstrick-segments mstrick))
         (min-slope (%mstrick-min-slope mstrick)))
     (let ((offset (- dom-min kink)))
-      (declare (fixnum offset))
+      (declare (int offset))
       (cond ((null segments)
              ;; Single-point domain: add h(DOM-MIN), reading h on the side of
              ;; the kink the point falls on.
              (let ((rate (if (< kink dom-min) right-slope left-slope)))
-               (incf (%mstrick-anchor-value mstrick) (the fixnum (* rate offset)))))
+               (incf (%mstrick-anchor-value mstrick) (the int (* rate offset)))))
             ((<= (mstrick-dom-max mstrick) kink)
              ;; Whole domain left of the kink: h is linear at LEFT-SLOPE.
              (incf (%mstrick-anchor-value mstrick)
-                   (the fixnum (* left-slope offset)))
+                   (the int (* left-slope offset)))
              (incf (%mstrick-min-slope mstrick) left-slope))
             ((<= kink dom-min)
              ;; Whole domain right of the kink: h is linear at RIGHT-SLOPE.
              (incf (%mstrick-anchor-value mstrick)
-                   (the fixnum (* right-slope offset)))
+                   (the int (* right-slope offset)))
              (incf (%mstrick-min-slope mstrick) right-slope))
             (t
              ;; Kink strictly inside the domain: split the segments at it and
              ;; shift each side's slopes; the relative gaps within each side
              ;; are unchanged. The anchor sits left of the kink.
              (incf (%mstrick-anchor-value mstrick)
-                   (the fixnum (* left-slope offset)))
+                   (the int (* left-slope offset)))
              (multiple-value-bind (l r r-first)
                  (split-by-width-idx segments (- kink dom-min) min-slope)
                (let* ((l-p (if l t nil))
-                      (new-left-anchor (the+ fixnum min-slope left-slope))
-                      (new-right-anchor (the+ fixnum (or r-first min-slope)
+                      (new-left-anchor (the+ int min-slope left-slope))
+                      (new-right-anchor (the+ int (or r-first min-slope)
                                               right-slope)))
                  ;; CONCAT (not SIMPLE-CONCAT) so a kink whose gap closes to
                  ;; zero -- a negated ADD-KINK undoing the split of the call
@@ -1761,7 +1757,7 @@ the classic sliding-window minimum of f*."
   "Translates the graph of f right by DELTA: f(x) := f(x - DELTA).
 
 Conjugate view: f*(p) += DELTA*p."
-  (declare (fixnum delta))
+  (declare (int delta))
   (incf (%mstrick-dom-min mstrick) delta)
   mstrick)
 
@@ -1775,7 +1771,7 @@ left-cumulative slope clip).
 Returns an opaque rollback token, only to be consumed by
 MSTRICK-RESTRICT-DOM-MAX-ROLLBACK."
   (declare (optimize (speed 3))
-           (fixnum c))
+           (int c))
   (let ((dom-min (%mstrick-dom-min mstrick)))
     (when (< c dom-min)
       (error "mstrick-restrict-dom-max: C = ~D < DOM-MIN = ~D would empty the domain"
@@ -1783,7 +1779,7 @@ MSTRICK-RESTRICT-DOM-MAX-ROLLBACK."
     (let ((was-non-empty (if (%mstrick-segments mstrick) t nil))
           (rest-segments nil)
           (rest-min-slope 0))
-      (declare (fixnum rest-min-slope))
+      (declare (int rest-min-slope))
       (when (< c (mstrick-dom-max mstrick))
         (multiple-value-bind (l r r-first)
             (split-by-width-idx (%mstrick-segments mstrick) (- c dom-min)
@@ -1829,7 +1825,7 @@ right-cumulative slope clip).
 Returns an opaque rollback token, only to be consumed by
 MSTRICK-RESTRICT-DOM-MIN-ROLLBACK."
   (declare (optimize (speed 3))
-           (fixnum c))
+           (int c))
   (let ((dom-min (%mstrick-dom-min mstrick)))
     (if (<= c dom-min)
         (let ((rest (make-mstrick dom-min (%mstrick-anchor-value mstrick))))
@@ -2025,12 +2021,12 @@ the restored consumed operand."
 (declaim (inline min-grid-gt max-grid-lt))
 (defun min-grid-gt (m d)
   "Returns the smallest integer T with D*T > M, for D > 0."
-  (declare (fixnum m d))
-  (the fixnum (+ (floor m d) 1)))
+  (declare (int m d))
+  (the int (+ (floor m d) 1)))
 (defun max-grid-lt (n d)
   "Returns the largest integer T with D*T < N, for D > 0."
-  (declare (fixnum n d))
-  (floor (the fixnum (- n 1)) d))
+  (declare (int n d))
+  (floor (the int (- n 1)) d))
 
 (defun mstrick-max-affine (mstrick a b)
   "Replaces f by the interpolation of z |-> max(f(z), A*z + B) over the
@@ -2043,61 +2039,61 @@ upward).
 Conjugate view: convex-hull the point (A, -B) into epi f* on the integer
 grid."
   (declare (optimize (speed 3))
-           (fixnum a b))
+           (int a b))
   (let ((segments (%mstrick-segments mstrick))
         (dom-min (%mstrick-dom-min mstrick))
         (min-slope (%mstrick-min-slope mstrick))
         (anchor-value (%mstrick-anchor-value mstrick)))
     (when (null segments)
       (setf (%mstrick-anchor-value mstrick)
-            (max anchor-value (the+ fixnum (* a dom-min) b)))
+            (max anchor-value (the+ int (* a dom-min) b)))
       (return-from mstrick-max-affine mstrick))
     ;; Exact no-op guard: sup_x (line(x) - f(x)) = f*(A) + B, attained at a
     ;; graph vertex (an integer), so <= 0 means no integer improves.
-    (when (<= (the+ fixnum (mstrick-conj-value mstrick a) b) 0)
+    (when (<= (the+ int (mstrick-conj-value mstrick a) b) 0)
       (return-from mstrick-max-affine mstrick))
     (let* ((dom-max (mstrick-dom-max mstrick))
-           (f-dom-max (the+ fixnum anchor-value (link-rise segments min-slope)))
+           (f-dom-max (the+ int anchor-value (link-rise segments min-slope)))
            ;; Improving integer interval [U, V] -- the integers where the line
            ;; strictly exceeds f. A weak tie at a domain end is folded into
            ;; that end.
-           (u (if (<= anchor-value (the+ fixnum (* a dom-min) b))
+           (u (if (<= anchor-value (the+ int (* a dom-min) b))
                   dom-min
                   ;; The cut rises through the leftmost crossed segment of
                   ;; slope S < A; on it the improving integers satisfy
                   ;; (A - S)*t > f(x_l) - S*x_l - B.
                   (let* ((s (intercept-leftmost segments anchor-value dom-min
                                                 (- b) a min-slope))
-                         (x-l (the+ fixnum dom-min
+                         (x-l (the+ int dom-min
                                     (width-sum-lt segments s min-slope)))
                          (f-x-l (mstrick-value mstrick x-l)))
-                    (min-grid-gt (the fixnum
-                                      (- f-x-l (the+ fixnum (* s x-l) b)))
+                    (min-grid-gt (the int
+                                      (- f-x-l (the+ int (* s x-l) b)))
                                  (- a s)))))
-           (v (if (<= f-dom-max (the+ fixnum (* a dom-max) b))
+           (v (if (<= f-dom-max (the+ int (* a dom-max) b))
                   dom-max
                   ;; Mirror: the rightmost crossed segment has slope S > A;
                   ;; anchored at its left endpoint X-R, the improving integers
                   ;; satisfy (S - A)*t < B + S*x_r - f(x_r).
                   (let* ((s (intercept-rightmost segments anchor-value dom-min
                                                  (- b) a min-slope))
-                         (x-r (the+ fixnum dom-min
+                         (x-r (the+ int dom-min
                                     (width-sum-lt segments s min-slope)))
                          (f-x-r (mstrick-value mstrick x-r)))
-                    (max-grid-lt (the fixnum
-                                      (- (the+ fixnum b (* s x-r)) f-x-r))
+                    (max-grid-lt (the int
+                                      (- (the+ int b (* s x-r)) f-x-r))
                                  (- s a))))))
-      (declare (fixnum u v))
+      (declare (int u v))
       (assert (and (<= dom-min u) (<= u v) (<= v dom-max)))
       ;; Values pinning the two glue segments, read before mutating.
       (let ((glue-left (when (< dom-min u)
-                         (the fixnum
-                              (- (the+ fixnum (* a u) b)
+                         (the int
+                              (- (the+ int (* a u) b)
                                  (mstrick-value mstrick (- u 1))))))
             (glue-right (when (< v dom-max)
-                          (the fixnum
+                          (the int
                                (- (mstrick-value mstrick (+ v 1))
-                                  (the+ fixnum (* a v) b))))))
+                                  (the+ int (* a v) b))))))
         ;; Splice on the width axis: keep f over [DOM-MIN, U-1] and
         ;; [V+1, DOM-MAX], drop the middle wholesale, and re-tile [U-1, V+1]
         ;; with glue/body/glue.
@@ -2132,7 +2128,7 @@ grid."
                       (%mstrick-min-slope mstrick) new-min-slope)
                 (when (= u dom-min)
                   (setf (%mstrick-anchor-value mstrick)
-                        (the+ fixnum (* a dom-min) b))))))))))
+                        (the+ int (* a dom-min) b))))))))))
   mstrick)
 
 (defun mstrick-convex-hull-with-point (mstrick x y)
@@ -2145,7 +2141,7 @@ domain); strictly fractional hull edges are rounded away downward.
 Conjugate view: the discrete pointwise max of f* with the point's Fenchel line
 p |-> X*p - Y."
   (declare (optimize (speed 3))
-           (fixnum x y))
+           (int x y))
   (let ((dom-min (%mstrick-dom-min mstrick))
         (dom-max (mstrick-dom-max mstrick)))
     ;; Exact no-op guard: a point on or above the graph changes nothing.
@@ -2166,13 +2162,13 @@ p |-> X*p - Y."
           (if (< x x0)
               (setq zl x yl y zr x0 yr y0)
               (setq zl x0 yl y0 zr x yr y))
-          (locally (declare (fixnum zl yl zr yr))
+          (locally (declare (int zl yl zr yr))
             (let* ((span (- zr zl))
                    (rise (- yr yl))
                    (q (floor rise span))
-                   (w-hi (the fixnum (- rise (the fixnum (* q span)))))
-                   (w-lo (the fixnum (- span w-hi))))
-              (declare (fixnum span rise q))
+                   (w-hi (the int (- rise (the int (* q span)))))
+                   (w-lo (the int (- span w-hi))))
+              (declare (int span rise q))
               (setf (%mstrick-dom-min mstrick) zl
                     (%mstrick-anchor-value mstrick) yl)
               (multiple-value-bind (m ms) (insert nil q w-lo 0)
@@ -2197,16 +2193,16 @@ p |-> X*p - Y."
                      (if key
                          ;; The improving integers satisfy
                          ;; (X - ADJ)*p > f*(KEY) + Y - ADJ*KEY.
-                         (min-grid-gt (the fixnum
-                                           (- (the+ fixnum fstar y)
-                                              (the fixnum (* adj key))))
+                         (min-grid-gt (the int
+                                           (- (the+ int fstar y)
+                                              (the int (* adj key))))
                                       (- x adj))
                          ;; The cut line clears no conjugate vertex: the
                          ;; crossing sits in the right-infinite conjugate
                          ;; segment, possible only for X > DOM-MAX.
-                         (let ((f-dom-max (the+ fixnum anchor-value
+                         (let ((f-dom-max (the+ int anchor-value
                                                 (link-rise segments min-slope))))
-                           (min-grid-gt (the fixnum (- y f-dom-max))
+                           (min-grid-gt (the int (- y f-dom-max))
                                         (- x dom-max)))))
                    0))
              (p-r
@@ -2216,28 +2212,28 @@ p |-> X*p - Y."
                                                  anchor-value min-slope)
                      (if key
                          ;; Mirror: (ADJ - X)*p < ADJ*KEY - f*(KEY) - Y.
-                         (max-grid-lt (the fixnum
-                                           (- (the fixnum (* adj key))
-                                              (the+ fixnum fstar y)))
+                         (max-grid-lt (the int
+                                           (- (the int (* adj key))
+                                              (the+ int fstar y)))
                                       (- adj x))
                          ;; Mirror fallback: the crossing sits in the
                          ;; left-infinite conjugate segment, possible only for
                          ;; X < DOM-MIN.
-                         (max-grid-lt (the fixnum (- anchor-value y))
+                         (max-grid-lt (the int (- anchor-value y))
                                       (- dom-min x))))
                    0)))
-        (declare (fixnum p-l p-r))
+        (declare (int p-l p-r))
         (assert (or (not (and left-bounded right-bounded)) (<= p-l p-r)))
         ;; Glue abscissae -- the conjugate slopes of the result on
         ;; [P-L - 1, P-L] and [P-R, P-R + 1] -- read before mutating.
         (let ((g-l (when left-bounded
-                     (the fixnum
-                          (- (the fixnum (- (the fixnum (* x p-l)) y))
+                     (the int
+                          (- (the int (- (the int (* x p-l)) y))
                              (mstrick-conj-value mstrick (- p-l 1))))))
               (g-r (when right-bounded
-                     (the fixnum
+                     (the int
                           (- (mstrick-conj-value mstrick (+ p-r 1))
-                             (the fixnum (- (the fixnum (* x p-r)) y)))))))
+                             (the int (- (the int (* x p-r)) y)))))))
           ;; Splice on the slope axis: drop the stored kinks at slopes in
           ;; [P-L, P-R] (all slopes <= P-R on a left extension, all slopes >=
           ;; P-L on a right extension).
@@ -2251,8 +2247,8 @@ p |-> X*p - Y."
                       (split-by-slope rest (+ p-r 1) rest-anchor)
                       (values rest nil nil))
                 ;; Tangency abscissae bracketing the re-tiled slope window.
-                (let* ((t-l (the+ fixnum dom-min (node-width-sum keep-left)))
-                       (t-r (the+ fixnum t-l (node-width-sum middle))))
+                (let* ((t-l (the+ int dom-min (node-width-sum keep-left)))
+                       (t-r (the+ int t-l (node-width-sum middle))))
                   (multiple-value-bind (new-segments new-min-slope)
                       (concat-kept keep-left keep-right min-slope
                                    keep-right-first rest-anchor)
@@ -2286,7 +2282,7 @@ p |-> X*p - Y."
 order of slope. FUNCTION must take two arguments: the absolute SLOPE and the
 WIDTH."
   (let ((acc (%mstrick-min-slope mstrick)))
-    (declare (fixnum acc))
+    (declare (int acc))
     (labels ((recur (node)
                (when node
                  (recur (%node-left node))
