@@ -5,7 +5,7 @@
            #:mstrick-value #:mstrick-conj-value
            #:mstrick-subdiff #:mstrick-arg-subdiff
            #:mstrick-insert-segment #:mstrick-remove-segment
-           #:mstrick-add-kink #:mstrick-translate
+           #:mstrick-add-kink #:mstrick-translate #:mstrick-add-const
            #:mstrick-inf-conv #:mstrick-pointwise-add
            #:mstrick-inf-conv-with-rollback #:mstrick-inf-conv-rollback
            #:mstrick-pointwise-add-with-rollback #:mstrick-pointwise-add-rollback
@@ -1981,6 +1981,14 @@ Conjugate view: f*(p) += DELTA*p."
   (incf (%mstrick-dom-min mstrick) delta)
   mstrick)
 
+(defun mstrick-add-const (mstrick c)
+  "Adds the constant C to f: f(x) += C.
+
+Conjugate view: f*(p) -= C."
+  (declare (int c))
+  (incf (%mstrick-anchor-value mstrick) c)
+  mstrick)
+
 (defun mstrick-restrict-dom-max (mstrick c)
   "Restricts the effective domain to (-inf, C]: f := f + delta_{(-inf, C]}.
 Signals an error if C < DOM-MIN (the domain would become empty).
@@ -2204,8 +2212,9 @@ Conjugate view: f* := f* box OTHER*."
 ;; plain counterparts and return an opaque rollback token. The rollback
 ;; restores MSTRICK to its exact pre-operation state and returns the consumed
 ;; OTHER operand (the same object), also exactly restored. Tokens must be
-;; consumed strictly LIFO across nested calls. MSTRICK-TRANSLATE needs no
-;; token: translating by -DELTA is its exact inverse.
+;; consumed strictly LIFO across nested calls. MSTRICK-TRANSLATE and
+;; MSTRICK-ADD-CONST need no token: applying -DELTA or -C is the exact
+;; inverse.
 
 (defun mstrick-inf-conv-with-rollback (mstrick other)
   "MSTRICK-INF-CONV returning an opaque rollback token for
