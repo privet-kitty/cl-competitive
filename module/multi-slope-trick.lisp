@@ -95,6 +95,24 @@ tokens must be consumed strictly LIFO across nested calls."))
 (defun random-priority ()
   (random (1+ most-positive-fixnum)))
 
+(declaim (inline reuse-node))
+(defun reuse-node (node width slope-gap priority)
+  "Reinitializes a detached NODE as a fresh standalone leaf, reusing the
+object instead of allocating."
+  (declare (node node)
+           (positive-int width)
+           (int slope-gap)
+           ((integer 0 #.most-positive-fixnum) priority))
+  (setf (%node-width node) width
+        (%node-slope-gap node) slope-gap
+        (%node-width-sum node) width
+        (%node-slope-gap-sum node) slope-gap
+        (%node-bregman node) 0
+        (%node-priority node) priority
+        (%node-left node) nil
+        (%node-right node) nil)
+  node)
+
 (declaim (inline node-width-sum node-slope-gap-sum node-bregman))
 (defun node-width-sum (node)
   (declare ((or null node) node))
@@ -170,6 +188,8 @@ tokens must be consumed strictly LIFO across nested calls."))
   (declare (optimize (speed 3))
            (node node)
            (int extra))
+  (when (zerop extra)
+    (return-from add-to-leftmost-slope-gap node))
   (labels ((recur (node)
              (let ((left (%node-left node)))
                (if left
@@ -663,18 +683,25 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
               ((<= idx ls)
                (multiple-value-bind (ll lr lr-first)
                    (split-by-width-idx left idx min-slope)
-                 (setf (%node-left node) nil
-                       (%node-slope-gap node)
+                 (setf (%node-slope-gap node)
                        (if lr
                            (the int
                                 (- node-slope
                                    (the+ int lr-first (%node-slope-gap-sum lr))))
                            0))
-                 (pull-up node)
                  ;; Priority-aware reattachment: LR may contain the
                  ;; fresh-priority fragment of a deeper inside cut that
-                 ;; outranks NODE.
-                 (values ll (simple-concat lr node) (or lr-first node-slope))))
+                 ;; outranks NODE; only that case needs a real concat.
+                 (cond ((or (null lr)
+                            (> (%node-priority node) (%node-priority lr)))
+                        (setf (%node-left node) lr)
+                        (pull-up node)
+                        (values ll node (or lr-first node-slope)))
+                       (t
+                        (setf (%node-left node) nil)
+                        (pull-up node)
+                        (values ll (simple-concat lr node)
+                                (or lr-first node-slope))))))
               (t
                ;; Split inside this node's width. NODE becomes the left half;
                ;; the right half starts with a fresh leaf at the same absolute
@@ -691,6 +718,96 @@ absolute slope (the right piece's SLOPE-GAP = 0). Returns
                        (%node-right node) nil)
                  (pull-up node)
                  (values node (simple-concat rleaf right-child) node-slope)))))))
+
+(declaim (ftype (function * (values (or null node) &optional)) keep-width-prefix))
+(defun keep-width-prefix (node idx)
+  "Destructively keeps the prefix of NODE up to cumulative WIDTH IDX and drops
+the rest. Equivalent to the left part of SPLIT-BY-WIDTH-IDX, but built in one
+descent with no allocation and no reassembly of the dropped part: a cut
+strictly inside a segment shrinks that node in place, and dropped subtrees are
+released wholesale."
+  (declare (optimize (speed 3))
+           ((or null node) node)
+           (int idx))
+  (if (null node)
+      nil
+      (let* ((left (%node-left node))
+             (ls (node-width-sum left))
+             (end-b (the+ int ls (%node-width node))))
+        (cond ((<= end-b idx)
+               (setf (%node-right node)
+                     (keep-width-prefix (%node-right node) (- idx end-b)))
+               (pull-up node)
+               node)
+              ((<= idx ls)
+               (keep-width-prefix left idx))
+              (t
+               (setf (%node-width node) (the int (- idx ls))
+                     (%node-right node) nil)
+               (pull-up node)
+               node)))))
+
+(declaim (ftype (function * (values (or null node) int int &optional))
+                keep-width-suffix))
+(defun keep-width-suffix (node idx min-slope)
+  "Destructively drops the prefix of NODE up to cumulative WIDTH IDX and keeps
+the rest. Equivalent to the right part of SPLIT-BY-WIDTH-IDX, but built in one
+descent with no allocation: a cut strictly inside a segment shrinks that node
+in place -- the node keeps its priority, sound because the result is a
+sub-treap of the input -- and dropped subtrees are released wholesale. Returns
+\(values kept kept-min-slope dropped-rise): KEPT as a standalone tree
+\(leftmost SLOPE-GAP = 0), the absolute slope of its leftmost segment (0 when
+KEPT is empty), and the rise of f over the dropped width [0, IDX]."
+  (declare (optimize (speed 3))
+           ((or null node) node)
+           (int idx min-slope))
+  (if (null node)
+      (values nil 0 0)
+      (let* ((left (%node-left node))
+             (ls (node-width-sum left))
+             (node-slope (the+ int min-slope (node-slope-gap-sum left)
+                               (%node-slope-gap node)))
+             (end-b (the+ int ls (%node-width node))))
+        (cond ((<= end-b idx)
+               ;; LEFT and NODE are dropped entirely.
+               (multiple-value-bind (kept kept-first rise)
+                   (keep-width-suffix (%node-right node) (- idx end-b) node-slope)
+                 (values kept kept-first
+                         (the+ int rise (link-rise left min-slope)
+                               (* node-slope (%node-width node))))))
+              ((<= idx ls)
+               (multiple-value-bind (kept kept-first rise)
+                   (keep-width-suffix left idx min-slope)
+                 (declare (int kept-first))
+                 (cond (kept
+                        ;; Re-anchor NODE's SLOPE-GAP to the kept left part's
+                        ;; rightmost slope.
+                        (setf (%node-left node) kept
+                              (%node-slope-gap node)
+                              (the int
+                                   (- node-slope
+                                      (the+ int kept-first
+                                            (%node-slope-gap-sum kept)))))
+                        (pull-up node)
+                        (values node kept-first rise))
+                       (t
+                        ;; IDX sits exactly at NODE's left edge: the whole
+                        ;; left subtree is dropped and NODE becomes the new
+                        ;; leftmost.
+                        (setf (%node-left node) nil
+                              (%node-slope-gap node) 0)
+                        (pull-up node)
+                        (values node node-slope rise)))))
+              (t
+               ;; Cut strictly inside NODE's width: NODE itself becomes the
+               ;; kept head with the remaining width.
+               (setf (%node-width node) (the int (- end-b idx))
+                     (%node-left node) nil
+                     (%node-slope-gap node) 0)
+               (pull-up node)
+               (values node node-slope
+                       (the+ int (link-rise left min-slope)
+                             (* node-slope (the int (- idx ls))))))))))
 
 (declaim (ftype (function * (values (or null node) int &optional)) remove-leftmost))
 (defun remove-leftmost (node pred-slope)
@@ -728,16 +845,344 @@ leftmost (or PRED-SLOPE if the result is empty)."
                 (values new-root (the+ int pred-slope gap)))
               (values nil pred-slope))))))
 
-(declaim (ftype (function * (values (or null node) int &optional)) union-by-slope))
+(declaim (ftype (function * (values (or null node) (or null node) (or null node)
+                                    &optional))
+                split-by-width-intrinsic))
+(defun split-by-width-intrinsic (node idx head-gap spare)
+  "Splits by cumulative WIDTH in the mass-preserving reading: each node is a
+slope jump at its left edge followed by a run of WIDTH, and the split cuts the
+width axis at IDX leaving every SLOPE-GAP untouched, except that HEAD-GAP is
+added to the right part's head node -- an extra jump carried into the right
+part's window start -- within the same descent, since that head is always
+touched at the descent's bottom. Unlike SPLIT-BY-WIDTH-IDX, the right part is
+NOT re-anchored to standalone form: its head keeps the jump at its left edge
+\(HEAD-GAP alone when the cut falls strictly inside a node's width). SPARE,
+when non-null, is a detached node object an inside cut reuses instead of
+allocating. Returns (values left right unused-spare); HEAD-GAP is dropped
+when the right part is empty."
+  (declare (optimize (speed 3))
+           ((or null node) node spare)
+           (int idx head-gap))
+  (if (null node)
+      (values nil nil spare)
+      (let* ((left (%node-left node))
+             (ls (node-width-sum left))
+             (end-b (the+ int ls (%node-width node))))
+        (cond ((<= end-b idx)
+               (multiple-value-bind (rl rr rest-spare)
+                   (split-by-width-intrinsic (%node-right node) (- idx end-b)
+                                             head-gap spare)
+                 ;; Priority-aware reattachment: RL may contain a
+                 ;; fresh-priority fragment from a deeper inside cut that
+                 ;; outranks NODE; only that case needs a real concat.
+                 (cond ((or (null rl)
+                            (> (%node-priority node) (%node-priority rl)))
+                        (setf (%node-right node) rl)
+                        (pull-up node)
+                        (values node rr rest-spare))
+                       (t
+                        (setf (%node-right node) nil)
+                        (pull-up node)
+                        (values (simple-concat node rl) rr rest-spare)))))
+              ((<= idx ls)
+               (multiple-value-bind (ll lr rest-spare)
+                   (split-by-width-intrinsic left idx head-gap spare)
+                 (unless lr
+                   ;; IDX sits exactly at NODE's left edge: NODE is the right
+                   ;; part's head and receives HEAD-GAP itself.
+                   (incf (%node-slope-gap node) head-gap))
+                 (cond ((or (null lr)
+                            (> (%node-priority node) (%node-priority lr)))
+                        (setf (%node-left node) lr)
+                        (pull-up node)
+                        (values ll node rest-spare))
+                       (t
+                        (setf (%node-left node) nil)
+                        (pull-up node)
+                        (values ll (simple-concat lr node) rest-spare)))))
+              (t
+               ;; Cut strictly inside this node's width, with HEAD-GAP as the
+               ;; jump on the right fragment. The left fragment keeps the
+               ;; node's priority; the right fragment gets a fresh priority
+               ;; (copying the priority instead would let cascaded unions cut
+               ;; one node into an equal-priority run that SIMPLE-CONCAT
+               ;; arranges as a chain, destroying treap balance).
+               (let* ((within (- idx ls))
+                      (remainder (- (%node-width node) within))
+                      (right-child (%node-right node))
+                      (priority (random-priority))
+                      (rleaf (if spare
+                                 (reuse-node spare remainder head-gap priority)
+                                 (make-node remainder head-gap priority))))
+                 (setf (%node-width node) within
+                       (%node-right node) nil)
+                 (pull-up node)
+                 (values node (simple-concat rleaf right-child) nil)))))))
+
+(declaim (ftype (function * (values (or null node) &optional)) union-by-width))
+(defun union-by-width (a b)
+  "Destructively merges two trees covering the same total WIDTH into the common
+refinement of the two partitions they describe: the result has a node boundary
+wherever either input does, node widths partition accordingly, and SLOPE-GAPs
+add where boundaries of the two inputs coincide. Slope positions play no role:
+a SLOPE-GAP is the jump at the node's left edge, an intrinsic mass invariant
+under interleaving. Expected O(m log(n/m + 1)) for input sizes m <= n."
+  (declare (optimize (speed 3))
+           ((or null node) a b))
+  (cond ((null a) b)
+        ((null b) a)
+        ;; One side is a single segment: nothing to refine; fuse its jump into
+        ;; the other's head.
+        ((and (null (%node-left a)) (null (%node-right a)))
+         (add-to-leftmost-slope-gap b (%node-slope-gap a)))
+        ((and (null (%node-left b)) (null (%node-right b)))
+         (add-to-leftmost-slope-gap a (%node-slope-gap b)))
+        (t
+         ;; The larger-priority root R dissolves: the other tree's slice over
+         ;; R's width span already is the refinement of R's segment and
+         ;; inherits R's jump on its head -- delivered by the split itself
+         ;; through its HEAD-GAP argument -- while R's subtrees union with
+         ;; the outer slices. R's detached shell serves as the splits' spare
+         ;; node.
+         (let (r other)
+           (if (>= (%node-priority a) (%node-priority b))
+               (setq r a other b)
+               (setq r b other a))
+           (locally (declare (node r other))
+             (let ((r-left (%node-left r))
+                   (r-right (%node-right r))
+                   (ls (node-width-sum (%node-left r)))
+                   (r-width (%node-width r))
+                   (r-gap (%node-slope-gap r)))
+               (setf (%node-left r) nil
+                     (%node-right r) nil)
+               (multiple-value-bind (o-left o-rest spare)
+                   (split-by-width-intrinsic other ls r-gap r)
+                 (multiple-value-bind (o-mid o-right)
+                     (split-by-width-intrinsic o-rest r-width 0 spare)
+                   (let ((left (union-by-width r-left o-left))
+                         (right (union-by-width r-right o-right)))
+                     (unless o-mid
+                       (error "union-by-width: total widths of the operands differ"))
+                     (simple-concat left (simple-concat o-mid right)))))))))))
+
+(declaim (ftype (function * (values (or null node) &optional)) concat))
+(defun concat (left right left-anchor right-anchor)
+  "Destructively concatenates two standalone trees in in-order. LEFT-ANCHOR and
+RIGHT-ANCHOR are the min-slope of each side; every slope in LEFT must be <=
+every slope in RIGHT (not validated). If LEFT's rightmost slope coincides with
+RIGHT's leftmost, the two WIDTHs are summed."
+  (declare (optimize (speed 3))
+           ((or null node) left right)
+           (int left-anchor right-anchor))
+  (cond ((null left) right)
+        ((null right) left)
+        (t
+         (let ((left-last (the+ int left-anchor (%node-slope-gap-sum left))))
+           (if (= left-last right-anchor)
+               ;; Boundary slopes equal: merge into the rightmost of LEFT.
+               (let ((right-lm-width (leftmost-width right)))
+                 (setq left (add-to-rightmost-width left right-lm-width))
+                 (multiple-value-bind (right-rest new-right-anchor)
+                     (remove-leftmost right right-anchor)
+                   (if right-rest
+                       (simple-concat
+                        left
+                        (set-leftmost-slope-gap right-rest
+                                                (- new-right-anchor left-last)))
+                       left)))
+               (simple-concat
+                left
+                (set-leftmost-slope-gap right (- right-anchor left-last))))))))
+
+(defun place-new-root (subtree slope width priority carried pred-slope)
+  "Splits SUBTREE by SLOPE and wraps the halves under a new root carrying the
+new kink, reusing the detached node CARRIED for the root when non-null. Used
+only at the priority-transition level of INSERT-INNER."
+  (declare (optimize (speed 3))
+           (node subtree)
+           (int slope width pred-slope)
+           ((or null node) carried)
+           ((integer 0 #.most-positive-fixnum) priority))
+  (multiple-value-bind (left-part right-part right-first)
+      (split-by-slope subtree slope pred-slope)
+    (let* ((slope-gap (if left-part
+                          (the int
+                               (- slope
+                                  (the+ int pred-slope
+                                        (%node-slope-gap-sum left-part))))
+                          (- slope pred-slope)))
+           (new-root (if carried
+                         (reuse-node carried width slope-gap priority)
+                         (make-node width slope-gap priority))))
+      (setf (%node-left new-root) left-part
+            (%node-right new-root)
+            (if right-first
+                (set-leftmost-slope-gap right-part (- right-first slope))
+                right-part))
+      (pull-up new-root)
+      (values new-root t))))
+
+(defun insert-inner (node slope width new-priority carried found pred-slope)
+  "Returns (values subtree changed-p). CHANGED-P is true iff an existing kink
+matched and its WIDTH was incremented, or the new node was placed at this
+level or below; the caller then re-anchors and pulls up. FOUND is true once
+the descent has passed the priority-transition level. CARRIED, when non-null,
+is a detached node object reused for the placed node."
+  (declare (optimize (speed 3))
+           ((or null node) node carried)
+           (int slope width pred-slope)
+           ((integer 0 #.most-positive-fixnum) new-priority))
+  (if (null node)
+      (if found
+          (values nil nil)
+          ;; Hitting an empty slot below the transition level: drop the new
+          ;; leaf in here.
+          (values (if carried
+                      (reuse-node carried width (- slope pred-slope) new-priority)
+                      (make-node width (- slope pred-slope) new-priority))
+                  t))
+      (let* ((left (%node-left node))
+             (lx (node-slope-gap-sum left))
+             (node-slope (the+ int pred-slope lx (%node-slope-gap node)))
+             (new-found (or found (> new-priority (%node-priority node))))
+             (transition-here (and (not found) new-found)))
+        (cond ((< slope node-slope)
+               (multiple-value-bind (new-left changed)
+                   (insert-inner left slope width new-priority carried
+                                 new-found pred-slope)
+                 (cond (changed
+                        ;; The leftmost descendant of the left subtree may
+                        ;; have moved; re-anchor NODE's SLOPE-GAP from the
+                        ;; change in the subtree's SLOPE-GAP-SUM.
+                        (setf (%node-left node) new-left
+                              (%node-slope-gap node)
+                              (the int
+                                   (- (the+ int (%node-slope-gap node) lx)
+                                      (node-slope-gap-sum new-left))))
+                        (pull-up node)
+                        (values node t))
+                       (transition-here
+                        (place-new-root node slope width new-priority
+                                        carried pred-slope))
+                       (t (values node nil)))))
+              ((< node-slope slope)
+               (multiple-value-bind (new-right changed)
+                   (insert-inner (%node-right node) slope width new-priority
+                                 carried new-found node-slope)
+                 (cond (changed
+                        (setf (%node-right node) new-right)
+                        (pull-up node)
+                        (values node t))
+                       (transition-here
+                        (place-new-root node slope width new-priority
+                                        carried pred-slope))
+                       (t (values node nil)))))
+              (t
+               (incf (%node-width node) width)
+               (pull-up node)
+               (values node t))))))
+
+(declaim (ftype (function * (values (or null node) int &optional)) insert))
+(defun insert (node slope width min-slope)
+  "Destructively inserts a kink at absolute slope SLOPE with slope-increment
+WIDTH >= 0 (a zero WIDTH is a no-op). If SLOPE matches an existing kink, the
+corresponding WIDTH is incremented. Returns (values new-root new-min-slope).
+
+Single-pass: a random priority is drawn once, then one descent either
+increments a matching kink in place, or, at the highest level where the new
+priority outranks the current node, splits that subtree by SLOPE and places
+the new node there."
+  (declare (optimize (speed 3))
+           ((or null node) node)
+           (int slope width min-slope))
+  (when (zerop width)
+    (return-from insert (values node min-slope)))
+  (let ((new-priority (random-priority)))
+    (cond ((null node)
+           (values (make-node width 0 new-priority) slope))
+          ((< slope min-slope)
+           ;; New leftmost: prepend a fresh leaf and re-gap the old leftmost.
+           (values (simple-concat (make-node width 0 new-priority)
+                                  (set-leftmost-slope-gap node (- min-slope slope)))
+                   slope))
+          (t
+           (values (insert-inner node slope width new-priority nil nil min-slope)
+                   min-slope)))))
+
+(declaim (ftype (function * (values (or null node) int &optional)) insert-carried))
+(defun insert-carried (node slope carried min-slope)
+  "Like INSERT, but takes the kink as CARRIED, a detached standalone node
+object whose WIDTH, priority, and storage are reused for the insertion; on an
+equal-slope fusion CARRIED is simply discarded. No allocation and no random
+draw. Returns (values new-root new-min-slope)."
+  (declare (optimize (speed 3))
+           ((or null node) node)
+           (node carried)
+           (int slope min-slope))
+  (let ((width (%node-width carried))
+        (priority (%node-priority carried)))
+    (cond ((null node)
+           (values (reuse-node carried width 0 priority) slope))
+          ((< slope min-slope)
+           ;; New leftmost: prepend the carried leaf and re-gap the old
+           ;; leftmost.
+           (values (simple-concat (reuse-node carried width 0 priority)
+                                  (set-leftmost-slope-gap node (- min-slope slope)))
+                   slope))
+          (t
+           (values (insert-inner node slope width priority carried nil min-slope)
+                   min-slope)))))
+
+(declaim (ftype (function * (values (or null node) int &optional))
+                union-fold-tiny union-by-slope))
+(defun union-fold-tiny (small small-min-slope big big-min-slope)
+  "Folds SMALL into BIG by INSERT-CARRIED descents when SMALL holds at most
+two nodes -- the bulk union's frame bookkeeping costs more than a descent or
+two. Reuses SMALL's node objects and priorities, so the result's root
+priority never exceeds the operands' maximum. Returns
+\(values root min-slope), with a NIL root when SMALL holds three or more
+nodes."
+  (declare (optimize (speed 3))
+           (node small big)
+           (int small-min-slope big-min-slope))
+  (let ((l (%node-left small))
+        (r (%node-right small)))
+    (cond ((and (null l) (null r))
+           (insert-carried big small-min-slope small big-min-slope))
+          ((and (null l) (null (%node-left r)) (null (%node-right r)))
+           (setf (%node-right small) nil)
+           (multiple-value-bind (root min-slope)
+               (insert-carried big small-min-slope small big-min-slope)
+             (insert-carried root (the+ int small-min-slope (%node-slope-gap r))
+                             r min-slope)))
+          ((and (null r) (null (%node-left l)) (null (%node-right l)))
+           (setf (%node-left small) nil)
+           (multiple-value-bind (root min-slope)
+               (insert-carried big small-min-slope l big-min-slope)
+             (insert-carried root (the+ int small-min-slope (%node-slope-gap small))
+                             small min-slope)))
+          (t (values nil 0)))))
+
 (defun union-by-slope (a b a-min-slope b-min-slope)
   "Destructively unions two standalone trees keyed by absolute slope: the
 result holds both trees' kinks, and WIDTHs add when the same slope occurs in
-both trees. Consumes both inputs and reuses their node priorities. Returns
+both trees. Consumes both inputs and reuses their node priorities, except
+that an operand of at most two nodes is folded in by plain INSERTs. Returns
 \(values root min-slope); the returned min-slope is meaningful only for a
 non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
   (declare (optimize (speed 3))
            ((or null node) a b)
            (int a-min-slope b-min-slope))
+  (when (and a b)
+    (multiple-value-bind (root min-slope)
+        (union-fold-tiny b b-min-slope a a-min-slope)
+      (when root
+        (return-from union-by-slope (values root min-slope))))
+    (multiple-value-bind (root min-slope)
+        (union-fold-tiny a a-min-slope b b-min-slope)
+      (when root
+        (return-from union-by-slope (values root min-slope)))))
   (cond ((null a) (values b b-min-slope))
         ((null b) (values a a-min-slope))
         (t
@@ -793,231 +1238,6 @@ non-empty result. Expected O(m log(n/m + 1)) for input sizes m <= n."
                                      right (- right-anchor r-slope))))
                          (pull-up r)
                          (values r (if left left-anchor r-slope)))))))))))))
-
-(declaim (ftype (function * (values (or null node) (or null node) &optional))
-                split-by-width-intrinsic))
-(defun split-by-width-intrinsic (node idx)
-  "Splits by cumulative WIDTH in the mass-preserving reading: each node is a
-slope jump at its left edge followed by a run of WIDTH, and the split cuts the
-width axis at IDX leaving every SLOPE-GAP untouched. Unlike
-SPLIT-BY-WIDTH-IDX, the right part is NOT re-anchored to standalone form --
-its head keeps the jump at its left edge (zero when the cut falls strictly
-inside a node's width)."
-  (declare (optimize (speed 3))
-           ((or null node) node)
-           (int idx))
-  (if (null node)
-      (values nil nil)
-      (let* ((left (%node-left node))
-             (ls (node-width-sum left))
-             (end-b (the+ int ls (%node-width node))))
-        (cond ((<= end-b idx)
-               (let ((r (%node-right node)))
-                 (setf (%node-right node) nil)
-                 (pull-up node)
-                 (multiple-value-bind (rl rr) (split-by-width-intrinsic r (- idx end-b))
-                   ;; Priority-aware reattachment: RL may contain a
-                   ;; fresh-priority fragment from a deeper inside cut that
-                   ;; outranks NODE.
-                   (values (simple-concat node rl) rr))))
-              ((<= idx ls)
-               (setf (%node-left node) nil)
-               (pull-up node)
-               (multiple-value-bind (ll lr) (split-by-width-intrinsic left idx)
-                 (values ll (simple-concat lr node))))
-              (t
-               ;; Cut strictly inside this node's width, with zero jump on the
-               ;; right fragment. The left fragment keeps the node's priority;
-               ;; the right fragment is a fresh leaf with a fresh priority
-               ;; (copying the priority instead would let cascaded unions cut
-               ;; one node into an equal-priority run that SIMPLE-CONCAT
-               ;; arranges as a chain, destroying treap balance).
-               (let* ((within (- idx ls))
-                      (remainder (- (%node-width node) within))
-                      (right-child (%node-right node))
-                      (rleaf (make-node remainder 0 (random-priority))))
-                 (setf (%node-width node) within
-                       (%node-right node) nil)
-                 (pull-up node)
-                 (values node (simple-concat rleaf right-child))))))))
-
-(declaim (ftype (function * (values (or null node) &optional)) union-by-width))
-(defun union-by-width (a b)
-  "Destructively merges two trees covering the same total WIDTH into the common
-refinement of the two partitions they describe: the result has a node boundary
-wherever either input does, node widths partition accordingly, and SLOPE-GAPs
-add where boundaries of the two inputs coincide. Slope positions play no role:
-a SLOPE-GAP is the jump at the node's left edge, an intrinsic mass invariant
-under interleaving. Expected O(m log(n/m + 1)) for input sizes m <= n."
-  (declare (optimize (speed 3))
-           ((or null node) a b))
-  (cond ((null a) b)
-        ((null b) a)
-        ;; One side is a single segment: nothing to refine; fuse its jump into
-        ;; the other's head.
-        ((and (null (%node-left a)) (null (%node-right a)))
-         (add-to-leftmost-slope-gap b (%node-slope-gap a)))
-        ((and (null (%node-left b)) (null (%node-right b)))
-         (add-to-leftmost-slope-gap a (%node-slope-gap b)))
-        (t
-         ;; The larger-priority root R dissolves: the other tree's slice over
-         ;; R's width span already is the refinement of R's segment and
-         ;; inherits R's jump on its head, while R's subtrees union with the
-         ;; outer slices.
-         (let (r other)
-           (if (>= (%node-priority a) (%node-priority b))
-               (setq r a other b)
-               (setq r b other a))
-           (locally (declare (node r other))
-             (let ((ls (node-width-sum (%node-left r)))
-                   (r-left (%node-left r))
-                   (r-right (%node-right r)))
-               (multiple-value-bind (o-left o-rest) (split-by-width-intrinsic other ls)
-                 (multiple-value-bind (o-mid o-right)
-                     (split-by-width-intrinsic o-rest (%node-width r))
-                   (let ((left (union-by-width r-left o-left))
-                         (right (union-by-width r-right o-right)))
-                     (unless o-mid
-                       (error "union-by-width: total widths of the operands differ"))
-                     (simple-concat
-                      left
-                      (simple-concat
-                       (add-to-leftmost-slope-gap o-mid (%node-slope-gap r))
-                       right)))))))))))
-
-(declaim (ftype (function * (values (or null node) &optional)) concat))
-(defun concat (left right left-anchor right-anchor)
-  "Destructively concatenates two standalone trees in in-order. LEFT-ANCHOR and
-RIGHT-ANCHOR are the min-slope of each side; every slope in LEFT must be <=
-every slope in RIGHT (not validated). If LEFT's rightmost slope coincides with
-RIGHT's leftmost, the two WIDTHs are summed."
-  (declare (optimize (speed 3))
-           ((or null node) left right)
-           (int left-anchor right-anchor))
-  (cond ((null left) right)
-        ((null right) left)
-        (t
-         (let ((left-last (the+ int left-anchor (%node-slope-gap-sum left))))
-           (if (= left-last right-anchor)
-               ;; Boundary slopes equal: merge into the rightmost of LEFT.
-               (let ((right-lm-width (leftmost-width right)))
-                 (setq left (add-to-rightmost-width left right-lm-width))
-                 (multiple-value-bind (right-rest new-right-anchor)
-                     (remove-leftmost right right-anchor)
-                   (if right-rest
-                       (simple-concat
-                        left
-                        (set-leftmost-slope-gap right-rest
-                                                (- new-right-anchor left-last)))
-                       left)))
-               (simple-concat
-                left
-                (set-leftmost-slope-gap right (- right-anchor left-last))))))))
-
-(defun place-new-root (subtree slope width priority pred-slope)
-  "Splits SUBTREE by SLOPE and wraps the halves under a new root carrying the
-new kink. Used only at the priority-transition level of INSERT-INNER."
-  (declare (optimize (speed 3))
-           (node subtree)
-           (int slope width pred-slope)
-           ((integer 0 #.most-positive-fixnum) priority))
-  (multiple-value-bind (left-part right-part right-first)
-      (split-by-slope subtree slope pred-slope)
-    (let ((new-root (make-node width
-                               (if left-part
-                                   (the int
-                                        (- slope
-                                           (the+ int pred-slope
-                                                 (%node-slope-gap-sum left-part))))
-                                   (- slope pred-slope))
-                               priority)))
-      (setf (%node-left new-root) left-part
-            (%node-right new-root)
-            (if right-first
-                (set-leftmost-slope-gap right-part (- right-first slope))
-                right-part))
-      (pull-up new-root)
-      (values new-root t))))
-
-(defun insert-inner (node slope width new-priority found pred-slope)
-  "Returns (values subtree changed-p). CHANGED-P is true iff an existing kink
-matched and its WIDTH was incremented, or the new node was placed at this
-level or below; the caller then re-anchors and pulls up. FOUND is true once
-the descent has passed the priority-transition level."
-  (declare (optimize (speed 3))
-           ((or null node) node)
-           (int slope width pred-slope)
-           ((integer 0 #.most-positive-fixnum) new-priority))
-  (if (null node)
-      (if found
-          (values nil nil)
-          ;; Hitting an empty slot below the transition level: drop the new
-          ;; leaf in here.
-          (values (make-node width (- slope pred-slope) new-priority) t))
-      (let* ((left (%node-left node))
-             (lx (node-slope-gap-sum left))
-             (node-slope (the+ int pred-slope lx (%node-slope-gap node)))
-             (new-found (or found (> new-priority (%node-priority node))))
-             (transition-here (and (not found) new-found)))
-        (cond ((< slope node-slope)
-               (multiple-value-bind (new-left changed)
-                   (insert-inner left slope width new-priority new-found pred-slope)
-                 (cond (changed
-                        ;; The leftmost descendant of the left subtree may
-                        ;; have moved; re-anchor NODE's SLOPE-GAP from the
-                        ;; change in the subtree's SLOPE-GAP-SUM.
-                        (setf (%node-left node) new-left
-                              (%node-slope-gap node)
-                              (the int
-                                   (- (the+ int (%node-slope-gap node) lx)
-                                      (node-slope-gap-sum new-left))))
-                        (pull-up node)
-                        (values node t))
-                       (transition-here
-                        (place-new-root node slope width new-priority pred-slope))
-                       (t (values node nil)))))
-              ((< node-slope slope)
-               (multiple-value-bind (new-right changed)
-                   (insert-inner (%node-right node) slope width new-priority
-                                 new-found node-slope)
-                 (cond (changed
-                        (setf (%node-right node) new-right)
-                        (pull-up node)
-                        (values node t))
-                       (transition-here
-                        (place-new-root node slope width new-priority pred-slope))
-                       (t (values node nil)))))
-              (t
-               (incf (%node-width node) width)
-               (pull-up node)
-               (values node t))))))
-
-(declaim (ftype (function * (values (or null node) int &optional)) insert))
-(defun insert (node slope width min-slope)
-  "Destructively inserts a kink at absolute slope SLOPE with slope-increment
-WIDTH >= 0 (a zero WIDTH is a no-op). If SLOPE matches an existing kink, the
-corresponding WIDTH is incremented. Returns (values new-root new-min-slope).
-
-Single-pass: a random priority is drawn once, then one descent either
-increments a matching kink in place, or, at the highest level where the new
-priority outranks the current node, splits that subtree by SLOPE and places
-the new node there."
-  (declare (optimize (speed 3))
-           ((or null node) node)
-           (int slope width min-slope))
-  (when (zerop width)
-    (return-from insert (values node min-slope)))
-  (let ((new-priority (random-priority)))
-    (cond ((null node)
-           (values (make-node width 0 new-priority) slope))
-          ((< slope min-slope)
-           ;; New leftmost: prepend a fresh leaf and re-gap the old leftmost.
-           (values (simple-concat (make-node width 0 new-priority)
-                                  (set-leftmost-slope-gap node (- min-slope slope)))
-                   slope))
-          (t
-           (values (insert-inner node slope width new-priority nil min-slope)
-                   min-slope)))))
 
 (defun delete-inner (node slope width pred-slope)
   "Returns (values subtree outcome), OUTCOME being :NOT-FOUND, :DECREMENTED, or
@@ -1882,11 +2102,76 @@ Conjugate view: f* += OTHER* (pointwise sum of the conjugates)."
           (%mstrick-min-slope mstrick) (if segments min-slope 0)))
   mstrick)
 
+(defun restrict-to-window (mstrick lo hi)
+  "Restricts the effective domain of f to [LO, HI], required to intersect it.
+Same restriction as MSTRICK-RESTRICT-DOM-MIN followed by
+MSTRICK-RESTRICT-DOM-MAX, but the dropped parts are released wholesale within
+one truncating descent per bound: no rollback tokens, no allocation."
+  (declare (optimize (speed 3))
+           (int lo hi))
+  (let ((dom-min (%mstrick-dom-min mstrick)))
+    (when (< dom-min lo)
+      (multiple-value-bind (kept kept-first rise)
+          (keep-width-suffix (%mstrick-segments mstrick) (- lo dom-min)
+                             (%mstrick-min-slope mstrick))
+        (incf (%mstrick-anchor-value mstrick) rise)
+        (setf (%mstrick-segments mstrick) kept
+              (%mstrick-min-slope mstrick) (if kept kept-first 0)
+              (%mstrick-dom-min mstrick) lo)))
+    (when (< hi (mstrick-dom-max mstrick))
+      (setf (%mstrick-segments mstrick)
+            (keep-width-prefix (%mstrick-segments mstrick)
+                               (- hi (%mstrick-dom-min mstrick))))
+      (unless (%mstrick-segments mstrick)
+        (setf (%mstrick-min-slope mstrick) 0))))
+  mstrick)
+
+(defun pointwise-add-fold-tiny (mstrick other)
+  "Adds OTHER into MSTRICK when OTHER stores at most two segments: at most one
+interior breakpoint, so the sum is an ADD-KINK plus an anchor shift instead of
+a bulk union. Both operands must already share the same effective domain with
+a non-empty MSTRICK segment tree. Returns true on success, NIL when OTHER
+stores three or more segments."
+  (declare (optimize (speed 3)))
+  (let ((segments (%mstrick-segments other)))
+    (when (null segments)
+      (return-from pointwise-add-fold-tiny nil))
+    (let* ((l (%node-left segments))
+           (r (%node-right segments))
+           (min-slope (%mstrick-min-slope other))
+           (kink-offset 0)
+           (right-slope 0))
+      (declare (int kink-offset right-slope))
+      (cond ((and (null l) (null r))
+             ;; Single segment: OTHER is linear over the window.
+             (incf (%mstrick-anchor-value mstrick)
+                   (%mstrick-anchor-value other))
+             (incf (%mstrick-min-slope mstrick) min-slope)
+             (return-from pointwise-add-fold-tiny t))
+            ((and (null l) (null (%node-left r)) (null (%node-right r)))
+             (setq kink-offset (%node-width segments)
+                   right-slope (the+ int min-slope (%node-slope-gap r))))
+            ((and (null r) (null (%node-left l)) (null (%node-right l)))
+             (setq kink-offset (%node-width l)
+                   right-slope (the+ int min-slope (%node-slope-gap segments))))
+            (t
+             (return-from pointwise-add-fold-tiny nil)))
+      (mstrick-add-kink mstrick
+                        (the+ int (%mstrick-dom-min mstrick) kink-offset)
+                        min-slope right-slope)
+      ;; ADD-KINK added the hinge vanishing at the kink; OTHER exceeds it by
+      ;; the constant OTHER(kink) = anchor + slope * offset.
+      (incf (%mstrick-anchor-value mstrick)
+            (the+ int (%mstrick-anchor-value other)
+                  (* min-slope kink-offset)))
+      t)))
+
 (defun mstrick-pointwise-add (mstrick other)
   "Pointwise sum f := f + OTHER on the intersection of the effective domains;
 signals an error if the domains are disjoint. Both operands are restricted to
 the common window, then the segment trees merge into the common refinement of
-the two partitions via bulk treap union. OTHER is destructively consumed.
+the two partitions via bulk treap union; an operand of at most two segments
+is instead folded in as a kink. OTHER is destructively consumed.
 
 Conjugate view: f* := f* box OTHER*."
   (declare (optimize (speed 3)))
@@ -1894,10 +2179,18 @@ Conjugate view: f* := f* box OTHER*."
         (hi (min (mstrick-dom-max mstrick) (mstrick-dom-max other))))
     (unless (<= lo hi)
       (error "mstrick-pointwise-add: disjoint effective domains"))
-    (mstrick-restrict-dom-min mstrick lo)
-    (mstrick-restrict-dom-max mstrick hi)
-    (mstrick-restrict-dom-min other lo)
-    (mstrick-restrict-dom-max other hi)
+    (restrict-to-window mstrick lo hi)
+    (restrict-to-window other lo hi)
+    (when (%mstrick-segments mstrick)
+      (when (pointwise-add-fold-tiny mstrick other)
+        (return-from mstrick-pointwise-add mstrick))
+      (when (and (%mstrick-segments other)
+                 (pointwise-add-fold-tiny other mstrick))
+        ;; MSTRICK was the tiny side: OTHER now holds the sum; move it over.
+        (setf (%mstrick-segments mstrick) (%mstrick-segments other)
+              (%mstrick-min-slope mstrick) (%mstrick-min-slope other)
+              (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
+        (return-from mstrick-pointwise-add mstrick)))
     (incf (%mstrick-anchor-value mstrick) (%mstrick-anchor-value other))
     (incf (%mstrick-min-slope mstrick) (%mstrick-min-slope other))
     (let ((segments (union-by-width (%mstrick-segments mstrick)
