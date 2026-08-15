@@ -135,6 +135,7 @@
   (:import-from :cp/test/movable-binary-heap)
   (:import-from :cp/test/multiset)
   (:import-from :cp/test/multi-slope-trick)
+  (:import-from :cp/test/multi-slope-trick-rollback)
   (:import-from :cp/test/multi-slope-trick-float)
   (:import-from :cp/test/next-permutation)
   (:import-from :cp/test/next-table)

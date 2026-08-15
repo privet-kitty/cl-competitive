@@ -1,6 +1,6 @@
 (defpackage :cp/series-parallel-mcf
   (:use :cl :cp/min-cost-bflow :cp/series-parallel-decomposition
-        :cp/multi-slope-trick)
+        :cp/multi-slope-trick :cp/multi-slope-trick-rollback)
   (:export #:solve-bflow
            #:not-series-parallel-error #:not-series-parallel-error-problem)
   (:documentation "Provides an exact minimum cost b-flow solver for
