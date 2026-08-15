@@ -1527,7 +1527,7 @@ the classic sliding-window minimum of f*."
   mstrick)
 
 (defun mstrick-translate (mstrick delta)
-  "Translates the graph of f right by DELTA: f(x) := f(x - DELTA).
+  "Translates the graph of f right by DELTA: f(x) <- f(x - DELTA).
 
 Conjugate view: f*(p) += DELTA*p."
   (declare (int delta))
@@ -1543,7 +1543,7 @@ Conjugate view: f*(p) -= C."
   mstrick)
 
 (defun mstrick-restrict-dom-max (mstrick c)
-  "Restricts the effective domain to (-inf, C]: f := f + delta_{(-inf, C]}.
+  "Restricts the effective domain to (-inf, C]: f <- f + delta_{(-inf, C]}.
 Signals an error if C < DOM-MIN (the domain would become empty).
 
 Conjugate view: clip every slope of f* above C down to C (the classic
@@ -1597,7 +1597,7 @@ MSTRICK-RESTRICT-DOM-MAX-ROLLBACK."
   mstrick)
 
 (defun mstrick-restrict-dom-min (mstrick c)
-  "Restricts the effective domain to [C, +inf): f := f + delta_{[C, +inf)}.
+  "Restricts the effective domain to [C, +inf): f <- f + delta_{[C, +inf)}.
 Signals an error if C > DOM-MAX.
 
 Conjugate view: clip every slope of f* below C up to C (the classic
@@ -1647,7 +1647,7 @@ MSTRICK-RESTRICT-DOM-MIN-ROLLBACK."
   mstrick)
 
 (defun mstrick-inf-conv (mstrick other)
-  "Infimal convolution f := f box OTHER, i.e. f(x) := inf over x1 + x2 = x of
+  "Infimal convolution f <- f box OTHER, i.e. f(x) <- inf over x1 + x2 = x of
 \(f(x1) + OTHER(x2)). The effective domains Minkowski-add, the anchor vertices
 add, and the segment multisets union by slope via bulk treap union. OTHER is
 destructively consumed.
@@ -1728,13 +1728,13 @@ stores three or more segments."
       t)))
 
 (defun mstrick-pointwise-add (mstrick other)
-  "Pointwise sum f := f + OTHER on the intersection of the effective domains;
+  "Pointwise sum f <- f + OTHER on the intersection of the effective domains;
 signals an error if the domains are disjoint. Both operands are restricted to
 the common window, then the segment trees merge into the common refinement of
 the two partitions via bulk treap union; an operand of at most two segments
 is instead folded in as a kink. OTHER is destructively consumed.
 
-Conjugate view: f* := f* box OTHER*."
+Conjugate view: f* <- f* box OTHER*."
   (declare (optimize (speed 3)))
   (let ((lo (max (%mstrick-dom-min mstrick) (%mstrick-dom-min other)))
         (hi (min (mstrick-dom-max mstrick) (mstrick-dom-max other))))
